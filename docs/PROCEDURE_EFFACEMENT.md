@@ -49,6 +49,8 @@ select
   (select count(*) from comparables where project_id = ':dossier') as concurrents,
   (select count(*) from competitor_decisions where project_id = ':dossier') as decisions,
   (select count(*) from competitor_prospecting_files where project_id = ':dossier') as dossiers_prospection,
+  -- Mission 152 : la copie de l'annonce de chaque concurrent ; elle part avec lui (cascade).
+  (select count(*) from competitor_listing_copies where project_id = ':dossier') as copies_annonces,
   (select count(*) from live_seller_responses where project_id = ':dossier') as reponses_live,
   (select count(*) from live_seller_summary where project_id = ':dossier') as resume_live,
   -- Mission 104 : la trace des réouvertures garde les réponses effacées ; elle part avec le dossier.
@@ -61,12 +63,6 @@ select
   (select count(*) from project_market_updates where project_id = ':dossier') as points_marche,
   (select count(*) from project_market_update_links where project_id = ':dossier') as liens_points_marche,
   (select count(*) from market_study_links where project_id = ':dossier') as liens_etude_de_marche,
-  -- Mission 141 : le dossier d'adresse (données publiques de l'adresse) ; il part avec le dossier.
-  (select count(*) from address_dossiers where project_id = ':dossier') as dossier_adresse,
-  -- Mission 142 : la fiche « Vivre ici » du bien vendeur (clé `project:<id>`, sans lien en base).
-  (select count(*) from living_here_sheets where property_key = 'project:' || ':dossier'
-     or property_key in (select 'competitor:' || id from comparables where project_id = ':dossier'))
-     as vivre_ici,
   -- Mission 134 : les envois de ce bien aux acquéreurs ; ils partent avec le dossier (cascade).
   (select count(*) from buyer_proposals where project_id = ':dossier') as biens_proposes,
   -- Mission 139 : ce bien écarté pour des acquéreurs (libellé neutre, clé « project: »), à supprimer
@@ -99,11 +95,6 @@ delete from seller_synthesis_links where project_id = ':dossier' and agency_id =
 delete from project_market_update_links where project_id = ':dossier' and agency_id = ':agence';
 delete from market_study_links where project_id = ':dossier' and agency_id = ':agence';
 delete from project_market_updates where project_id = ':dossier' and agency_id = ':agence';
-delete from address_dossiers where project_id = ':dossier' and agency_id = ':agence';
--- Avant `comparables` : les fiches de ses concurrents se retrouvent par leur clé.
-delete from living_here_sheets where agency_id = ':agence'
-  and (property_key = 'project:' || ':dossier'
-       or property_key in (select 'competitor:' || id from comparables where project_id = ':dossier'));
 delete from comparables where project_id = ':dossier' and agency_id = ':agence';
 delete from subject_properties where project_id = ':dossier' and agency_id = ':agence';
 delete from projects where id = ':dossier' and agency_id = ':agence';
@@ -147,7 +138,17 @@ ni rendez-vous, ni mandat, ni « pas intéressé » — est effacée avec sa pos
 reste retenu, l'annonce reste, et le Localisateur n'est plus interrogé pour lui
 (`locator_purged_at`). Mission 120 — même règle, deux minutes plus tard, pour l'adresse d'un bien
 démarché depuis une recherche acquéreur (`purge_stale_buyer_prospect_addresses`, tâche
-`purge-stale-buyer-prospect-addresses`). La liste « Ne plus solliciter » n'est jamais purgée.
+`purge-stale-buyer-prospect-addresses`). Mission 152 — à 3 h 28, la copie de l'annonce d'un
+concurrent (prix, dates, photos, caractéristiques, jamais le texte) part quand rien ne s'est passé
+depuis 3 ans, la copie comprise (`purge_stale_listing_copies`, tâche `purge-stale-listing-copies`).
+Mission 152 (partie B) — à 3 h 30, le texte des annonces gardé pour le conseiller seul
+(`purge_stale_listing_texts`, tâche `purge-stale-listing-texts`) : un bien d'une sélection
+d'acquéreur perd, 3 ans après sa date dans la sélection, la description, le titre, l'adresse lue sur
+l'annonce et les adresses des photos d'origine ; le résultat payé gardé sur un dossier
+(`stream_estate_results`) part 3 ans après sa dernière mise à jour ; le texte et le titre de
+l'annonce d'un concurrent (`comparables.listing_description`, `comparables.title`) sont vidés,
+avec leurs pastilles « À vérifier », quand rien ne s'est passé depuis 3 ans.
+La liste « Ne plus solliciter » n'est jamais purgée.
 Vérifier les tâches : `select jobname, schedule, active from cron.job;`.
 
 ### 1. Retrouver son bien, dans tous les dossiers
@@ -176,6 +177,8 @@ select
      and (address is not null or locator_address is not null
           or locator_latitude is not null)) as avec_adresse,
   (select count(*) from competitor_prospecting_files where comparable_id in (:liste)) as dossiers_prospection,
+  -- Mission 152 : la copie de son annonce (prix, dates, photos, caractéristiques ; jamais le texte).
+  (select count(*) from competitor_listing_copies where comparable_id in (:liste)) as copies_annonces,
   (select count(*) from comparables where id in (:liste) and is_selected) as retenus,
   -- Mission 120 — les courriers d'une recherche acquéreur qui visent ce bien : par son concurrent,
   -- ou par son annonce (un bien démarché sans concurrent, `buyer_prospects`).
@@ -251,6 +254,8 @@ prévient l'agence.
 ```sql
 begin;
 delete from competitor_prospecting_files where comparable_id in (:liste);
+-- Mission 152 : la copie de l'annonce part aussi ; la base n'en modifie jamais une, elle se supprime.
+delete from competitor_listing_copies where comparable_id in (:liste);
 update comparables set
   address = null,
   locator_address = null, locator_latitude = null, locator_longitude = null,
@@ -329,21 +334,6 @@ Prospection de l'agence, et que sa clé d'adresse est dans `prospecting_oppositi
   photos, lien), jamais une adresse ; comme l'annonce publique, ils restent, et partent avec la
   fiche de l'acquéreur (cascade). À compter, s'il faut les citer :
   `select count(*) from buyer_watch_runs where finds::text ilike '%IDENTIFIANT_ANNONCE%';`
-
-### B bis. Sa fiche « Vivre ici » (mission 142)
-
-La fiche « Vivre ici » d'un bien concurrent ne porte que des données publiques autour du quartier,
-jamais son adresse, et aucune donnée d'acquéreur ; elle n'a pas de lien en base. Elle s'efface quand
-même, par sa clé : celle du concurrent et celle de son annonce.
-
-```sql
-select count(*) from living_here_sheets
- where agency_id = ':agence'
-   and property_key in ('competitor:' || ':concurrent', 'listing:' || ':portail' || ':' || ':numero');
-delete from living_here_sheets
- where agency_id = ':agence'
-   and property_key in ('competitor:' || ':concurrent', 'listing:' || ':portail' || ':' || ':numero');
-```
 
 ## C. Les documents signés (bon de visite ; offre d'achat, mission 137 B)
 

@@ -11,7 +11,6 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 import { detachBuyerOrigins } from '@/features/buyer-prospecting/services/detach-buyer-origins';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
-import { deleteLivingHereSheets } from '@/features/comparables/services/delete-living-here-sheets';
 
 export type BulkComparableResult = { ok: true; count: number } | { ok: false; error: string };
 
@@ -82,11 +81,6 @@ export async function bulkDeleteComparables(
   const buyerOrigins = await buyerLetterOriginsOf(supabase, profile.agency_id, {
     comparableIds: targets,
   });
-  // Mission 142 — leurs fiches « Vivre ici », par leur clé (aucun lien en base).
-  await deleteLivingHereSheets(
-    profile.agency_id,
-    targets.map((id) => `competitor:${id}`),
-  );
   // Suppression irréversible du bien dans le dossier. competitor_decisions n'est pas
   // touché : l'apprentissage de l'agence reste intact.
   const { error } = await supabase

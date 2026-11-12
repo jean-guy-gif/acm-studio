@@ -377,20 +377,6 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/langue_du_dossier.sql
 
-      # Mission 141 — le dossier d'adresse : lu par l'agence, écrit par le serveur seul, daté par la
-      # base, parti avec son dossier.
-      - name: Le dossier d'adresse (mission 141)
-        run: |
-          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
-            -v ON_ERROR_STOP=1 < supabase/tests/dossier_adresse.sql
-
-      # Mission 142 — Vivre ici : la fiche d'un bien par agence, lue par l'agence, écrite par le
-      # serveur seul ; les ★ du secteur, le lieu de l'acquéreur, le jour de la visite.
-      - name: Vivre ici (mission 142)
-        run: |
-          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
-            -v ON_ERROR_STOP=1 < supabase/tests/vivre_ici.sql
-
       # Mission 145 (partie B) — « Garder la date » : deux colonnes nullables sur la conclusion,
       # ensemble, 1 au moins, écrites par le serveur seul ; le navigateur n'y écrit rien.
       - name: Garder la date (mission 145)
@@ -404,6 +390,20 @@ jobs:
         run: |
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/vivre_ici_academia.sql
+
+      # Mission 152 (partie A) — la copie de l'annonce : lue par l'agence, écrite une fois par le
+      # serveur, jamais modifiée ; la date de la vérification des annonces.
+      - name: Copie de l'annonce (mission 152)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/copie_annonce.sql
+
+      # Mission 152 (partie B) — la purge à 3 ans du texte des annonces : sélections d'acquéreur,
+      # résultats payés gardés, texte des concurrents ; fermée au navigateur.
+      - name: Purge du texte des annonces (mission 152 B)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/purge_texte_annonces.sql
 
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.

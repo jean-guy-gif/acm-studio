@@ -10,6 +10,7 @@ import {
   OPEN_EXAMPLE_LABEL,
   REAL_DOSSIER_CONFIRMATION,
   liveLaunchCheck,
+  LISTINGS_CHECK_NOTICE,
   NO_DECISION_NOTICE,
   pendingImportsNotice,
 } from '@/features/live-seller/services/live-launch';
@@ -60,6 +61,7 @@ export function LiveLaunchActions({
   decisionMissing = false,
   shortlistPending = false,
   pendingImportCount = 0,
+  listingsCheckStale = false,
   proceed = false,
   secondary = false,
   presentationMode = 'interactive',
@@ -76,6 +78,8 @@ export function LiveLaunchActions({
   shortlistPending?: boolean;
   // Mission 112 — concurrents retenus qui attendent leur import : rappelé avant de lancer.
   pendingImportCount?: number;
+  // Mission 152 — annonces non vérifiées depuis 24 h : rappelé avant de lancer, sans bloquer.
+  listingsCheckStale?: boolean;
   // Mission 110 — sur un écran où « Étape suivante » porte déjà le bouton principal.
   secondary?: boolean;
   // Mission 107 — l'étape « Lancer le Live » (onglet « Live », bandeau « prêt ») : ce qui n'a
@@ -96,6 +100,7 @@ export function LiveLaunchActions({
     decisionOutdated,
     decisionMissing,
     pendingImportCount,
+    listingsCheckStale,
   });
   const href = `/live/${projectId}`;
   const resumeIndex = resume.started ? resumeIndexFor(resume, stored) : 0;
@@ -215,6 +220,15 @@ export function LiveLaunchActions({
             {notice} :{' '}
             <Link href={`/builder/${projectId}/avant-rendez-vous`} className={link}>
               Avant le rendez-vous
+            </Link>
+            .
+          </p>
+        ) : notice === LISTINGS_CHECK_NOTICE ? (
+          // Mission 152 — la vérification se fait sur « Avant le rendez-vous » ; rien n'est bloqué.
+          <p key={notice} data-testid="launch-listings-check">
+            {notice} :{' '}
+            <Link href={`/builder/${projectId}/avant-rendez-vous`} className={link}>
+              vérifier les annonces
             </Link>
             .
           </p>

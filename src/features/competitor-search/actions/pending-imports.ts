@@ -9,6 +9,7 @@ import {
   READ_FAILURE_CAUSES,
   type ReadFailureCause,
 } from '@/features/competitor-search/services/import-listing';
+import { writeListingCopy } from '@/features/competitor-listing-copy/services/write-listing-copy';
 import { insertCompetitor } from '@/features/competitor-search/services/insert-competitor';
 import {
   ALWAYS_VERIFY_AFTER_SEARCH_IMPORT,
@@ -198,6 +199,17 @@ export async function createCompetitorFromSearch(
       return { ok: true, retained: false, dismissedExisting: created.id };
     }
     return done(true);
+  }
+  // Mission 152 — la copie de ce que la recherche a dit du bien (prix, photos, faits), une fois.
+  if (created.id) {
+    await writeListingCopy({
+      agencyId,
+      projectId,
+      comparableId: created.id,
+      listingUrl: url.href,
+      origin: 'search',
+      row: { ...input, property_type: snapshotPropertyType(snapshot) },
+    });
   }
   return done(!withdrawn);
 }

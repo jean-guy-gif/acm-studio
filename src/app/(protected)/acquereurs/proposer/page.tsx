@@ -4,7 +4,15 @@ import Link from 'next/link';
 import { textLanguage } from '@/lib/client-texts';
 import { notFound } from 'next/navigation';
 
-import { alertError, backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import {
+  alertError,
+  backLink,
+  kickerLabel,
+  link,
+  pageSubtitle,
+  pageTitle,
+} from '@/components/ui/styles';
+import { PropertySheetButton } from '@/features/property-sheet/components/property-sheet-button';
 import { ProposeSeries, type ProposeCandidate } from '@/features/buyers/components/propose-series';
 import { loadLoopCatalog } from '@/features/buyers/queries/get-loop-properties';
 import { loadAgencyBuyers } from '@/features/buyers/queries/get-property-buyers';
@@ -85,6 +93,16 @@ export default async function ProposePropertyPage({ searchParams }: ProposePageP
         </h1>
         {item ? (
           <p className={pageSubtitle}>{[item.label, LOOP_ORIGIN_NOTES[item.origin]].join(' · ')}</p>
+        ) : null}
+        {/* Mission 152 (partie B) — la fiche complète du mandat, pour le conseiller seul. */}
+        {item?.source === 'project' && item.projectId ? (
+          <PropertySheetButton
+            target={{ kind: 'project', id: item.projectId }}
+            backLabel="Proposer ce bien"
+            className={`${link} self-start text-sm`}
+          >
+            Voir la fiche du bien
+          </PropertySheetButton>
         ) : null}
       </div>
       {gone ? (

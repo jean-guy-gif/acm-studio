@@ -500,6 +500,39 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   Appartements redirige sa page de commune vers l'accueil, Figaro ne donne plus prix ni surface au
   lecteur. Les pages de test (`__fixtures__`) restent vertes : seul un passage dans le vrai
   navigateur le voit.
+- 11/11 · M152 · 0 · La spec `demo` reprend la démo déjà préparée si elle existe : lancée sur une
+  démo préparée la veille, elle échoue sur les dates (« relance prévue le 10/11, en retard d'un
+  jour »), puis, au second passage, sur ce que le premier a laissé (la sélection des Keller). Ce
+  n'est pas un défaut : la remise à zéro par l'écran (`resetDemoByScreen`) se fait AVANT la suite,
+  comme le dit `/mission`. Le chef l'avait sautée.
+- 11/11 · M152 · 0 · En local, 8 fichiers de test échouent au chargement faute de
+  `NEXT_PUBLIC_SUPABASE_URL` (aussi sur `main`) : la CI pose des valeurs factices
+  (`ci.yml`). `npm test` se juge avec ces valeurs (`https://example.supabase.co`,
+  `ci-fake-anon-key`), jamais avec les vraies.
+- 11/11 · M152 · 0 · Les lignes de `.env.e2e.local` commencent par des espaces : `grep '^E2E_…='`
+  ne trouve rien et l'en-tête de contournement de l'essai part vide (302, « Protected by Vercel
+  Authentication »). Lire avec `sed -n 's/^[[:space:]]*E2E_VERCEL_BYPASS=//p'`.
+- 11/11 · M152 · 0 · Une commande de plus de 10 minutes passe en arrière-plan : la suite e2e se
+  joue par groupes de moins de 8 minutes (démo 5,9 min ; parcours 3,1 ; bienvenue, Live tablette,
+  présentation directe, confirmer la visite et photos de la démo ensemble 10,4, trop long ; langues
+  2,4 ; Live d'un coup d'œil et Live sans trou 6,4). Relecteur : 2,5 min.
+- 11/11 · M152 A · Un bouton ajouté sur un écran du Live se mesure en 1280 × 720 aussi : le test
+  `demo` l'a trouvé (« + Ajouter un commentaire » passé sous la barre du bas), pas le test de la
+  mission, joué en 1280 × 800 ; une place sur une ligne existante plutôt qu'une ligne de plus. Le
+  panneau du prix s'anime avec `transform` (`both`) : un élément `fixed` qu'il contient reste
+  enfermé dedans, la couche passe par un portail vers la racine `[data-stage]`. Un test qui ne
+  remet la démo à zéro que si elle est vide rejoue sur l'état laissé par son échec : remettre à
+  zéro par l'écran avant le second passage, sinon l'aléa et le défaut se confondent. Les relevés
+  d'annonce sont communs à l'agence : une date de constat peut venir d'un autre dossier (« constaté
+  il y a 5 jours ») ; un test n'attend pas « aujourd'hui ». Durées : e2e complet ≈ 25 min par
+  groupes, relecteur 4 min puis 0,5 min sur le delta.
+- 11/11 · M152 B · Un fichier `'use server'` n'exporte que des fonctions asynchrones : une
+  constante exportée passe le typage et Vitest, et ne casse qu'au `npm run build` (Turbopack) ; les
+  messages vont dans un module à part. Un texte validé par la juriste prime sur le test de
+  vocabulaire : l'exception s'écrit dans le test, pour cette seule phrase et cette seule page. La
+  suite e2e complète (23 specs) a pris 29,8 min, la spec `demo` 6 min ; un échec de la remise à zéro
+  de la démo (« la connexion a été perdue ») était un aléa, vert au second passage. Relecteur
+  4 min.
 
 ## La base
 
@@ -558,6 +591,37 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
 - 09/11 · M147 A · Jean-Guy a resserré la contrainte d'un lien avant l'application : `[^\s]+`
   laissait passer « ? », « # » et un « / » de plus ; le jeton seul (`[A-Za-z0-9._~-]+`). Une règle
   sur une adresse web se juge sur ce qu'elle laisse passer, pas seulement sur ce qu'elle refuse.
+- 11/11 · M152 · 0 · Supprimer une table que le code de production écrit encore se fait en deux
+  mises en production : d'abord le code sans elle, puis la migration. Avant, lire en base ce qui
+  la relie au reste (`pg_constraint` pour les clés et leur `confdeltype`, `pg_trigger`, et les
+  fonctions qui la citent par `pg_get_functiondef`, filtrées sur `prokind = 'f'` : la fonction
+  échoue sur un agrégat). Les 4 fiches « Vivre ici » restantes étaient des clés `listing:` : aucun
+  concurrent ne les touchait.
+- 11/11 · M152 · 0 · La migration de suppression : `db push --remote --yes` est passé sans refus de
+  la garde de permissions, cette fois. La base locale était en retard (37 tables contre 50) : la
+  migration n'y a pas été jouée et les types ont été corrigés à la main ; la CI SQL, qui rejoue tout
+  sur une base neuve, a fait la preuve. Le comptage du gardien-sql (une requête valable avant et
+  après) s'est vérifié point par point. Une sauvegarde garde aussi le journal d'erreurs : le nom
+  d'une table supprimée y reste dans les messages (16 lignes du 07/11), sans son contenu, jusqu'à la
+  purge des 90 jours. Durées : architecte 1,7 min, gardien-sql 3,6 min, relecteur 1,6 min, e2e
+  complet 27 min par groupes.
+- 11/11 · M152 A · Le fake Supabase des tests (`fakeSupabase`) ne distingue pas deux requêtes
+  lancées ensemble (`Promise.all`) : la réponse suit le dernier `from` ; deux lectures qui se
+  suivent dans une action testée se font l'une après l'autre. Une date posée par le navigateur et
+  lue pour un rappel (`listings_checked_at`) se fait poser par la base (déclencheur), sinon une date
+  dans l'avenir cache le rappel (gardien-sql). Un `cron.job` se lit en `reset role` dans un test SQL
+  joué sous `service_role`. Un retrait sans date propre (`listing_withdrawn`) n'a pas de date :
+  `updated_at` n'est jamais une date de retrait (bloquant du relecteur). Gardien-sql 3 min puis
+  0,7 min sur la correction ; sauvegarde 2,5 min.
+
+- 11/11 · M152 B · En SQL, `-` se lie avant `#-` : `snapshot #- '{a,b}' - 'title'` se lit
+  `snapshot #- ('{a,b}' - 'title')` (« operator is not unique: unknown - unknown ») ; parenthéser et
+  typer (`::text[]`, `::text`). La base locale était en retard de vingt migrations : la compter, puis
+  `db reset --local` avant de jouer un test SQL neuf. Une lecture sur la vraie base passe par
+  `db query --remote --read-only` (sans lui, la CLI refuse en mode agent) ; `db push --remote` exige
+  `--yes`, à ne passer qu'après l'accord de Jean-Guy. `npm run gen:types` a rendu un fichier de 1 590
+  lignes au lieu de 3 825 : remis tel quel, cause à trouver avant la prochaine migration. Gardien-sql
+  2,6 min puis 1,3 min sur le delta ; architecte 3,5 min ; sauvegarde 2 min.
 
 ## Les rendus
 

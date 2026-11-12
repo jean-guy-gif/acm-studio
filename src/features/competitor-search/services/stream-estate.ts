@@ -114,12 +114,16 @@ export function baseStreamEstateQuery(
 }
 
 // La réponse de l'API, lue au plus juste : seuls les champs utilisés sont décrits, tout le
-// reste (contacts, descriptions…) est ignoré et ne quitte jamais le serveur.
+// reste (contacts…) est ignoré et ne quitte jamais le serveur. Mission 152 (partie B) — la
+// description et les photos d'origine sont gardées pour la fiche complète, celle du conseiller seul
+// (Jean-Guy, 11/11) : elles ne classent rien et ne décident de rien.
 const nullableNumber = z.number().nullable().optional();
 const nullableString = z.string().nullable().optional();
 
 const advertSchema = z.object({
   url: z.string(),
+  // Mission 152 (partie B) — le texte de l'annonce, pour la fiche complète du conseiller seul.
+  description: nullableString.catch(null),
   // Mission 129 — la création de l'annonce chez Stream Estate : un nouveau venu se juge sur la plus
   // ancienne date connue du bien, pas sur la seule création du bien.
   createdAt: nullableString,
@@ -166,6 +170,10 @@ const propertySchema = z.object({
   createdAt: nullableString,
   lastCrawledAt: nullableString,
   pictures: z.array(z.string()).nullable().optional(),
+  // Mission 152 (partie B) — les photos d'origine, chez le portail (jusqu'à 20), et le texte du
+  // bien : pour la fiche complète du conseiller seul. Une forme inattendue ne rend rien illisible.
+  picturesRemote: z.array(z.string()).nullable().optional().catch(null),
+  description: nullableString.catch(null),
   city: z.object({ name: nullableString, insee: nullableString }).nullable().optional(),
   // Étape 2 — position, étage, ascenseur du bien (valeurs consolidées par Stream Estate).
   location: z.object({ lat: nullableNumber, lon: nullableNumber }).nullable().optional(),
@@ -414,9 +422,42 @@ export function toCandidate(
       priceChanges: priceChanges(property.adverts),
       inseeCode: property.city?.insee?.trim() || null,
       ...(stale != null ? { staleOriginDays: stale } : {}),
+      ...sheetExtras(property, origin),
     },
     features: readStreamEstateFeatures(property, repeated),
   };
+}
+
+// Mission 152 (partie B) — ce que la fiche complète montre en plus, pour le conseiller seul : le
+// texte (celui de l'annonce d'origine, sinon celui du bien), et les photos d'origine en https, 20
+// au plus. Absents quand l'API ne les donne pas : rien n'est inventé.
+export const SHEET_DESCRIPTION_MAX = 8_000;
+export const SHEET_PHOTOS_MAX = 20;
+function sheetExtras(
+  property: StreamEstateProperty,
+  origin: StreamEstateAdvert,
+): { description?: string; originalPhotos?: string[] } {
+  const text = (origin.description ?? property.description ?? '').trim();
+  const photos = [
+    ...new Set(
+      (property.picturesRemote ?? []).filter(
+        (picture) => typeof picture === 'string' && picture.startsWith('https://'),
+      ),
+    ),
+  ].slice(0, SHEET_PHOTOS_MAX);
+  return {
+    ...(text !== '' ? { description: text.slice(0, SHEET_DESCRIPTION_MAX) } : {}),
+    ...(photos.length > 0 ? { originalPhotos: photos } : {}),
+  };
+}
+
+// Retire ce qui ne sert qu'à la fiche complète (préparation vendeur, nouveaux venus). Pur.
+export function withoutSheetExtras(candidate: CompetitorCandidate): CompetitorCandidate {
+  if (!candidate.streamEstate) return candidate;
+  const facts = { ...candidate.streamEstate };
+  delete facts.description;
+  delete facts.originalPhotos;
+  return { ...candidate, streamEstate: facts };
 }
 
 // Toute la réponse : chaque bien devient un candidat, dédupliqué par son identifiant Stream

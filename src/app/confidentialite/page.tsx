@@ -79,7 +79,13 @@ export default function ConfidentialitePage() {
               Les concurrents retenus : les informations publiées dans l’annonce (prix, surface,
               pièces, description, photos, adresse de l’annonce) et la date à laquelle elles ont été
               relevées. La page lue par l’extension n’est pas conservée : seules ces informations en
-              sont extraites.
+              sont extraites. La description et le titre de l’annonce sont effacés quand rien ne
+              s’est passé pour ce concurrent depuis 3 ans.
+            </li>
+            <li>
+              Les biens retenus pour un acquéreur : ACM Studio garde aussi le texte des annonces
+              trouvées par la recherche, pour le conseiller seul ; il n’est jamais montré à
+              l’acquéreur, et il est effacé au bout de 3 ans.
             </li>
             <li>
               Les adresses des biens concurrents : si le conseiller a installé le Localisateur
@@ -283,36 +289,24 @@ export default function ConfidentialitePage() {
               d’expiration.
             </li>
             <li>
-              Le dossier d’adresse, pour le conseiller seul : à sa demande, ACM Studio lit, à partir
-              de l’adresse du bien vendeur, des données publiques et gratuites — les ventes réelles
-              enregistrées autour (date, prix, surface, pièces, jamais le nom d’un vendeur ou d’un
-              acheteur, ni l’adresse d’une vente), le diagnostic de performance énergétique publié
-              par l’ADEME à cette adresse, les risques de la commune et du terrain (Géorisques), la
-              zone d’urbanisme, la parcelle cadastrale et la copropriété immatriculée à cette
-              adresse (sans le nom d’un syndic bénévole). Pour cela, la position de l’adresse, son
-              identifiant et le code de la commune partent vers ces services publics, jamais le nom
-              du vendeur. Le dossier est gardé avec le dossier du vendeur, daté, et part avec lui ;
-              il n’est jamais montré au vendeur ni à un acquéreur. Aucune intelligence artificielle
-              n’intervient, et l’outil n’en tire aucun prix pour le bien.
-            </li>
-            <li>
-              « Vivre ici » : pour un bien qu’un acquéreur va visiter, ACM Studio lit des données
-              publiques et gratuites autour de lui — les commerces, les médecins, les arrêts et les
-              espaces verts d’OpenStreetMap, les écoles de l’annuaire de l’Éducation nationale, les
-              temps de trajet à pied et en voiture des itinéraires de l’IGN, les risques de la
-              commune (Géorisques). Les distances partent de l’adresse d’un bien dont l’agence a le
-              mandat, sinon du quartier (une position arrondie à environ 500 mètres) ou du centre de
-              la commune : l’adresse d’un bien qui n’est pas de l’agence n’est jamais montrée.
-              Chaque lieu est dit par sa catégorie, son nom public et le temps pour y aller, jamais
-              par son adresse. La fiche ne contient aucune donnée de l’acquéreur ; elle est gardée
-              par l’agence, datée, et l’acquéreur la lit sur le lien de sa sélection. Si l’acquéreur
-              l’a donné, « Un lieu qui compte pour vous » (son travail, l’école de ses enfants) est
-              gardé sur sa fiche, et seul ce texte part vers la Base Adresse Nationale pour en
-              connaître la position ; le temps en voiture depuis le bien visité est gardé sur sa
-              visite, sans ce lieu ni sa position. La fiche acquéreur peut aussi dire ce qui compte
-              pour lui autour du bien (le calme, des écoles, des commerces à pied), et le jour et
-              l’heure de sa visite quand le conseiller la confirme. Aucune intelligence artificielle
-              n’intervient.
+              Le dossier d’adresse et « Vivre ici » : pour le bien vendeur, le conseiller peut
+              ouvrir dans Academia (app.myacademia.ai), un service distinct d’ACM Studio, le dossier
+              d’adresse du bien et sa fiche « Vivre ici ». ACM Studio copie l’adresse du bien dans
+              le presse-papiers du conseiller, qui la colle lui-même dans Academia : ACM Studio
+              n’envoie rien à Academia. Pour un bien dont l’agence a le mandat, le conseiller peut
+              enregistrer le lien « Vivre ici » qu’Academia lui donne pour ce bien. ACM Studio garde
+              ce lien avec le dossier du vendeur, et le montre à l’acquéreur qui va visiter ce bien
+              : sur le lien de sa sélection, et dans le message qui confirme sa visite. En ouvrant
+              ce lien, l’acquéreur quitte ACM Studio pour Academia. Aucune donnée de l’acquéreur
+              n’est envoyée à Academia. Quand le conseiller confirme une visite, la fiche de
+              l’acquéreur garde le jour et l’heure de cette visite.
+              <span className="mt-2 block">
+                Jusqu’au 9 novembre 2026, ACM Studio préparait lui-même ces deux documents à partir
+                de données publiques. Ces dossiers et ces fiches ne sont plus lus ni montrés, et ils
+                seront effacés au plus tard le 23 novembre 2026. Il en va de même pour le lieu qu’un
+                acquéreur avait pu indiquer comme important (son travail, l’école de ses enfants),
+                le temps de trajet calculé jusqu’à ce lieu et ses priorités autour du bien.
+              </span>
             </li>
             <li>
               Le dossier acquéreur : pour un acquéreur, le conseiller retient jusqu’à trois biens et

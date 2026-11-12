@@ -5,12 +5,16 @@ import { fakeSupabase } from '@/test-fixtures/fake-supabase';
 const state = vi.hoisted(() => ({
   competitor: null as Record<string, unknown> | null,
   status: 'meeting_completed',
+  liveStartedAt: null as string | null,
+  answers: 0,
   observed: [] as unknown[],
 }));
 
 const server = fakeSupabase((calls) => {
   const table = [...calls].reverse().find((call) => call.method === 'from')?.args[0];
-  if (table === 'projects') return { data: { id: PROJECT, status: state.status } };
+  if (table === 'projects')
+    return { data: { id: PROJECT, status: state.status, live_started_at: state.liveStartedAt } };
+  if (table === 'live_seller_responses') return { count: state.answers };
   if (table === 'comparables') return { data: state.competitor };
   return {};
 });
@@ -43,7 +47,10 @@ vi.mock('@/features/comparable-import/services/record-listing-observation', () =
   },
 }));
 
-import { refreshCompetitorPrice } from '@/features/competitor-refresh/actions/refresh-competitor-price';
+import {
+  finishListingsCheck,
+  refreshCompetitorPrice,
+} from '@/features/competitor-refresh/actions/refresh-competitor-price';
 import { listingPayload } from '@/features/competitor-search/services/listing-payload';
 
 const PROJECT = '33333333-3333-4333-8333-333333333333';
@@ -57,6 +64,8 @@ beforeEach(() => {
   server.reset();
   state.observed = [];
   state.status = 'meeting_completed';
+  state.liveStartedAt = null;
+  state.answers = 0;
   state.competitor = { id: COMPETITOR, price: 300_000, listing_url: URL, listing_gone_at: null };
 });
 
@@ -112,7 +121,7 @@ describe('relire le prix d’un concurrent retenu (mission 105)', () => {
     expect(await refreshCompetitorPrice(PROJECT, COMPETITOR, payload)).toEqual({ status: 'gone' });
   });
 
-  it('refuse une autre annonce que celle du concurrent, et un dossier hors du Suivi', async () => {
+  it('refuse une autre annonce que celle du concurrent, et un dossier archivé', async () => {
     expect(
       await refreshCompetitorPrice(
         PROJECT,
@@ -120,10 +129,50 @@ describe('relire le prix d’un concurrent retenu (mission 105)', () => {
         listingPayload('https://www.seloger.com/annonces/autre.htm', listingPage(1), null),
       ),
     ).toEqual({ status: 'unreadable' });
-    state.status = 'ready_for_meeting';
+    state.status = 'archived';
     expect(
       await refreshCompetitorPrice(PROJECT, COMPETITOR, listingPayload(URL, listingPage(1), null)),
     ).toEqual({ status: 'unreadable' });
+    expect(server.writes()).toEqual([]);
+  });
+
+  // Mission 152 — « Vérifier les annonces », sur « Avant le rendez-vous » : un dossier en
+  // préparation ou prêt se relit, tant que son Live n'a pas commencé.
+  it('relit un dossier prêt avant son Live, jamais après le début du Live', async () => {
+    state.status = 'ready_for_meeting';
+    expect(
+      await refreshCompetitorPrice(
+        PROJECT,
+        COMPETITOR,
+        listingPayload(URL, listingPage(285_000), null),
+      ),
+    ).toEqual({ status: 'changed', previous: 300_000, price: 285_000 });
+    server.reset();
+    state.liveStartedAt = '2026-11-11T10:00:00Z';
+    expect(
+      await refreshCompetitorPrice(PROJECT, COMPETITOR, listingPayload(URL, listingPage(1), null)),
+    ).toEqual({ status: 'unreadable' });
+    state.liveStartedAt = null;
+    state.answers = 1;
+    state.status = 'draft';
+    expect(
+      await refreshCompetitorPrice(PROJECT, COMPETITOR, listingPayload(URL, listingPage(1), null)),
+    ).toEqual({ status: 'unreadable' });
+    expect(server.writes()).toEqual([]);
+  });
+
+  it('« Vérifier les annonces » se date sur un dossier prêt, jamais après le début du Live ni archivé', async () => {
+    state.status = 'ready_for_meeting';
+    expect(await finishListingsCheck(PROJECT)).toEqual({ ok: true });
+    expect(updates()).toHaveLength(1);
+    // Jamais `updated_at` : « ce qui dort » et l'ordre des listes ne bougent pas.
+    expect(Object.keys(updates()[0] as object)).toEqual(['listings_checked_at']);
+    server.reset();
+    state.liveStartedAt = '2026-11-11T10:00:00Z';
+    expect(await finishListingsCheck(PROJECT)).toEqual({ ok: false });
+    state.liveStartedAt = null;
+    state.status = 'archived';
+    expect(await finishListingsCheck(PROJECT)).toEqual({ ok: false });
     expect(server.writes()).toEqual([]);
   });
 });

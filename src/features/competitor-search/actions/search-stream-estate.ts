@@ -9,7 +9,10 @@ import { geoProvider } from '@/features/competitor-search/services/geo-provider'
 import { DEMO_LISTINGS } from '@/features/demo/data/scenarios';
 import { demoStreamEstatePage } from '@/features/demo/services/demo-stream-estate';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
-import { baseStreamEstateQuery } from '@/features/competitor-search/services/stream-estate';
+import {
+  baseStreamEstateQuery,
+  withoutSheetExtras,
+} from '@/features/competitor-search/services/stream-estate';
 import { liveStreamEstatePage } from '@/features/competitor-search/services/stream-estate-fetch';
 import {
   describeSearchCriteria,
@@ -323,7 +326,10 @@ export async function searchStreamEstate(
     };
   }
 
-  const { candidates } = outcome;
+  // Mission 152 (partie B) — le texte et les photos d'origine ne servent qu'à la fiche complète
+  // des écrans acquéreur : la préparation vendeur ne les reçoit ni ne les garde (le navigateur
+  // renvoie tous les candidats au classement, M101 / correctif du 12/10 : rien de trop lourd).
+  const candidates = outcome.candidates.map(withoutSheetExtras);
   const answer: StreamEstateSearchResult & { ok: true } = {
     ok: true,
     portal: {

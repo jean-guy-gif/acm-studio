@@ -19,6 +19,7 @@ import { LiveComparableHeader } from '@/features/live-seller/components/live-com
 import { LiveCommentField } from '@/features/live-seller/components/live-comment-field';
 import { LiveGallery } from '@/features/live-seller/components/live-gallery';
 import { LiveGuessGap } from '@/features/live-seller/components/live-guess-gap';
+import { LiveListingButton } from '@/features/live-seller/components/live-listing';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { PRICE_COHERENCE_VALUES } from '@/features/live-seller/constants';
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
@@ -89,9 +90,13 @@ export function LivePagePriceRevealPilot({ entry }: { entry: AuthorizedSellerCom
 
         <div className={answerColumn}>
           <div className={`${panel} live-reveal-pop flex flex-col gap-3`}>
-            <div>
-              <div className={statLabel}>{t.listed}</div>
-              <div className={revealValue}>{euro(reveal.currentPrice)}</div>
+            {/* Mission 152 — « Voir l'annonce » sur la ligne du prix : aucune hauteur de plus (M148). */}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className={statLabel}>{t.listed}</div>
+                <div className={revealValue}>{euro(reveal.currentPrice)}</div>
+              </div>
+              <LiveListingButton entry={entry} />
             </div>
             <LiveGuessGap guess={savedEstimate} listedPrice={reveal.currentPrice} />
             <div className="grid grid-cols-2 gap-3">
