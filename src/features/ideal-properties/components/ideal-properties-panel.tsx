@@ -45,6 +45,9 @@ import {
   type CategorizedCandidate,
 } from '@/features/ideal-properties/services/categorize-ideal';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
+import { SoftBanner, SoftWhy } from '@/features/soft-ranking/components/soft-why';
+import { orderBySoftScore, softScore } from '@/features/soft-ranking/services/judgments';
+import type { SimpleReason, SoftReasons, SoftRanking } from '@/features/soft-ranking/types';
 import { idealPageLayout, selectionKey } from '@/features/ideal-properties/services/ideal-page';
 import type { SelectionItemInput } from '@/features/ideal-properties/services/ideal-selection';
 import {
@@ -90,6 +93,9 @@ export const RETAIN_BUTTON = 'Retenir la sélection';
 type Market = IdealSearchResult & { ok: true };
 
 const keyOf = selectionKey;
+
+const softScoreOfReasons = (reasons: SoftReasons | undefined): number =>
+  reasons && 'judgments' in reasons ? softScore(reasons.judgments) : 0;
 
 // Mission 152 (partie B) — un toucher sur le libellé ou la photo ouvre la fiche complète.
 const openSheetLink =
@@ -151,7 +157,19 @@ export function IdealPropertiesPanel({
   buyerName = null,
   budgetMax = null,
   savedItemIds = {},
+  softLabels = [],
+  softOpen = false,
+  agencyMentions = {},
+  watchReasons = {},
 }: {
+  // Mission 151 (partie B) — ce qui compte pour eux (planches 4 et 4 b) : les critères doux de la
+  // fiche, en mots ; vide, rien ne change. `softOpen` : la lecture par l'IA est ouverte pour
+  // l'agence ; `agencyMentions` : les mots trouvés dans les biens de l'agence avant la recherche
+  // (classement simplifié) ; `watchReasons` : ce que la veille a jugé la nuit.
+  softLabels?: string[];
+  softOpen?: boolean;
+  agencyMentions?: Record<string, string[]>;
+  watchReasons?: Record<string, SoftReasons>;
   buyerId: string;
   // Mission 152 (partie B) — pour la barre de la fiche complète (« Pour M. et Mme Arnaud ») et
   // l'écart au budget.
@@ -183,6 +201,12 @@ export function IdealPropertiesPanel({
   const [confirming, setConfirming] = useState(false);
   const [searching, setSearching] = useState(false);
   const [market, setMarket] = useState<Market | null>(null);
+  // Mission 151 (partie B) — le classement reçu avec la recherche : son état (complet ou
+  // simplifié, et pourquoi) et, par bien, ses raisons.
+  const [rankState, setRankState] = useState<
+    { mode: 'full' } | { mode: 'simple'; reason: SimpleReason }
+  >({ mode: 'simple', reason: softOpen ? 'before' : 'closed' });
+  const [reasons, setReasons] = useState<Record<string, SoftReasons>>({});
   const [error, setError] = useState<string | null>(null);
   const [extensionIssue, setExtensionIssue] = useState<ExtensionIssue | null>(null);
   const [selected, setSelected] = useState<Map<string, SelectionItemInput>>(
@@ -271,7 +295,12 @@ export function IdealPropertiesPanel({
         more && market?.cursor
           ? { cursor: market.cursor, memory: resumeMemory(market.portal.candidates, null) }
           : null;
-      const outcome = await runPaidSearch(detect, () => searchIdealProperties(buyerId, resume));
+      const agencyKeys = resume
+        ? []
+        : BUYER_GROUPS.flatMap((group) => agency.matches[group].map((hit) => hit.candidate.key));
+      const outcome = await runPaidSearch(detect, () =>
+        searchIdealProperties(buyerId, resume, agencyKeys),
+      );
       if (!outcome.ran) {
         setExtensionIssue(missingExtensionIssue());
         return;
@@ -281,6 +310,7 @@ export function IdealPropertiesPanel({
         setError(result.error);
         return;
       }
+      absorbRanking(result.ranking, more);
       if (more && market) {
         // « Chercher encore » : les biens de plus s'ajoutent, le coût se cumule.
         const candidates = [...market.portal.candidates, ...result.portal.candidates];
@@ -316,6 +346,31 @@ export function IdealPropertiesPanel({
     } finally {
       setSearching(false);
     }
+  };
+
+  const absorbRanking = (ranking: SoftRanking | null, more: boolean) => {
+    if (ranking == null) return;
+    const received: Record<string, SoftReasons> = Object.fromEntries(
+      ranking.mode === 'full'
+        ? Object.entries(ranking.byKey).map(([key, judgments]) => [key, { judgments }])
+        : Object.entries(ranking.byKey).map(([key, mentions]) => [key, { mentions }]),
+    );
+    setReasons((current) => (more ? { ...current, ...received } : received));
+    if (!more) {
+      setRankState(
+        ranking.mode === 'full' ? { mode: 'full' } : { mode: 'simple', reason: ranking.reason },
+      );
+    }
+  };
+  // Les raisons d'un bien : celles du classement ; en classement complet, un bien sans texte
+  // « ne dit rien » ; avant la recherche, les mots trouvés au chargement (agence) ou par la veille.
+  const reasonsOf = (key: string, before?: SoftReasons): SoftReasons | undefined => {
+    if (softLabels.length === 0) return undefined;
+    return reasons[key] ?? (rankState.mode === 'full' ? { judgments: [] } : before);
+  };
+  const scoreOf = (key: string): number => {
+    const found = reasons[key];
+    return found && 'judgments' in found ? softScore(found.judgments) : 0;
   };
 
   const toggle = (item: SelectionItemInput) => {
@@ -450,7 +505,12 @@ export function IdealPropertiesPanel({
   const watchUrls = new Set(watchEntries.map((entry) => entry.candidate.url));
 
   // Une annonce du marché : sa photo, son libellé neutre, son prix « affiché le », ses critères.
-  const hitRow = (entry: CategorizedCandidate, seenOn: string, testId = 'ideal-market-hit') => {
+  const hitRow = (
+    entry: CategorizedCandidate,
+    seenOn: string,
+    rank: number,
+    testId = 'ideal-market-hit',
+  ) => {
     const item = marketItem(entry, seenOn);
     const photo = entry.candidate.photoUrls[0];
     const rankLine = [
@@ -507,6 +567,14 @@ export function IdealPropertiesPanel({
           ) : null}
         </div>
         {actions(item)}
+        {softLabels.length > 0 ? (
+          <div className="basis-full">
+            <SoftWhy
+              reasons={reasonsOf(entry.candidate.url, watchReasons[entry.candidate.url])}
+              rank={rank}
+            />
+          </div>
+        ) : null}
       </li>
     );
   };
@@ -655,6 +723,8 @@ export function IdealPropertiesPanel({
           </ul>
         </section>
       ) : null}
+      {/* Mission 151 (partie B) — comment les biens sont rangés (planches 4 et 4 b). */}
+      {softLabels.length > 0 ? <SoftBanner state={rankState} labels={softLabels} /> : null}
       {/* Mission 136 — « Nouveau cette semaine » : la veille de la nuit, en tête, prêt à retenir. */}
       {watchEntries.length > 0 && watch ? (
         <section
@@ -670,7 +740,12 @@ export function IdealPropertiesPanel({
             </p>
           </div>
           <ul className="flex flex-col gap-2">
-            {watchEntries.map((entry) => hitRow(entry, watch.seenOn, 'ideal-watch-hit'))}
+            {orderBySoftScore(
+              watchEntries,
+              (entry) =>
+                scoreOf(entry.candidate.url) ||
+                softScoreOfReasons(watchReasons[entry.candidate.url]),
+            ).map((entry, index) => hitRow(entry, watch.seenOn, index + 1, 'ideal-watch-hit'))}
           </ul>
         </section>
       ) : null}
@@ -701,44 +776,56 @@ export function IdealPropertiesPanel({
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {agencyHits.map(({ group, hit }) => {
-              const item = agencyItem(hit);
-              const rankLine = [BUYER_GROUP_LABELS[group], hit.note, hit.condominiumNote]
-                .filter((part): part is string => part != null)
-                .join(' · ');
-              return (
-                <li
-                  key={hit.candidate.key}
-                  data-testid="ideal-agency-hit"
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 stage:border-white/10"
-                >
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        className={openSheetLink}
-                        data-testid="open-property-sheet"
-                        onClick={() => openAgencySheet(item, rankLine)}
-                      >
-                        {item.label}
-                      </button>
-                      <span className={badgeNeutral}>{BUYER_GROUP_LABELS[group]}</span>
+            {orderBySoftScore(agencyHits, ({ hit }) => scoreOf(hit.candidate.key)).map(
+              ({ group, hit }, index) => {
+                const item = agencyItem(hit);
+                const rankLine = [BUYER_GROUP_LABELS[group], hit.note, hit.condominiumNote]
+                  .filter((part): part is string => part != null)
+                  .join(' · ');
+                return (
+                  <li
+                    key={hit.candidate.key}
+                    data-testid="ideal-agency-hit"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 stage:border-white/10"
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          className={openSheetLink}
+                          data-testid="open-property-sheet"
+                          onClick={() => openAgencySheet(item, rankLine)}
+                        >
+                          {item.label}
+                        </button>
+                        <span className={badgeNeutral}>{BUYER_GROUP_LABELS[group]}</span>
+                      </div>
+                      <span className="text-sm text-zinc-600 stage:text-white/70">
+                        {[
+                          hit.candidate.price != null ? formatEuro(hit.candidate.price) : null,
+                          `Pour : ${hit.candidate.sellerName}`,
+                          hit.note,
+                          hit.condominiumNote,
+                        ]
+                          .filter((part): part is string => part != null)
+                          .join(' · ')}
+                      </span>
                     </div>
-                    <span className="text-sm text-zinc-600 stage:text-white/70">
-                      {[
-                        hit.candidate.price != null ? formatEuro(hit.candidate.price) : null,
-                        `Pour : ${hit.candidate.sellerName}`,
-                        hit.note,
-                        hit.condominiumNote,
-                      ]
-                        .filter((part): part is string => part != null)
-                        .join(' · ')}
-                    </span>
-                  </div>
-                  {actions(item)}
-                </li>
-              );
-            })}
+                    {actions(item)}
+                    {softLabels.length > 0 ? (
+                      <div className="basis-full">
+                        <SoftWhy
+                          reasons={reasonsOf(hit.candidate.key, {
+                            mentions: agencyMentions[hit.candidate.key] ?? [],
+                          })}
+                          rank={index + 1}
+                        />
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              },
+            )}
           </ul>
         )}
       </section>
@@ -757,6 +844,25 @@ export function IdealPropertiesPanel({
             reason={extensionIssue}
             onRetry={async () => setExtensionIssue(null)}
           />
+        ) : null}
+        {/* Mission 151 (partie B) — l'attente pendant la recherche (planche 4 b). */}
+        {searching && softLabels.length > 0 && softOpen ? (
+          <div
+            className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 px-4 py-5 text-center stage:border-white/10"
+            role="status"
+            data-testid="soft-waiting"
+          >
+            <span className="font-semibold text-brand-deep stage:text-brand">
+              Recherche du marché…
+            </span>
+            <span className="text-sm text-zinc-700 stage:text-white/80">
+              Puis lecture des annonces pour ce qui compte pour eux : {softLabels.join(', ')}.
+            </span>
+            <span className={hintText}>
+              Jusqu’à 30 secondes. Si la lecture tarde, les biens s’affichent en classement
+              simplifié.
+            </span>
+          </div>
         ) : null}
         {!marketReady ? (
           <p role="alert" className={alertError}>
@@ -836,7 +942,7 @@ export function IdealPropertiesPanel({
                     </p>
                   ) : (
                     <ul className="flex flex-col gap-2">
-                      {entries.map((entry) => hitRow(entry, market.seenOn))}
+                      {entries.map((entry, index) => hitRow(entry, market.seenOn, index + 1))}
                     </ul>
                   )}
                 </div>

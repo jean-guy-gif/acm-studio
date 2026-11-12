@@ -249,6 +249,17 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
 6. **Sans budget d'IA** : la liste de mots de la mesure, qui ne dit que « l'annonce mentionne
    « calme » », et le dit : « Classement simplifié : budget de lecture du mois atteint ».
 
+**Codée le 12/11** (planche 4 b validée par Jean-Guy), selon ses décisions du 12/11 : le marché et
+« Ce que l'agence a déjà » se classent pendant la recherche, avant d'afficher, 30 s au plus pour la
+lecture, puis classement simplifié sans rien bloquer ; avant la recherche, classement simplifié (les
+mots trouvés, sans IA ni dépense) ; le score (clairement 2, avec réserve 1, rien ou non lu 0, le
+contraire −2) ne range qu'à l'intérieur d'une catégorie ; la lecture des notes et le classement
+s'ouvrent ensemble, agence par agence, par le plafond d'IA posé par un opérateur (sans plafond posé ou
+à 0 € : fermés ; aucune agence n'en avait le 12/11) ; la veille de nuit juge de même, sous la moitié
+du plafond, et ne garde que les jugements et leurs citations ; démo : les Lambert (au calme, une vue,
+de plain-pied), cinq textes de Vence enrichis, la lecture simulée par les mêmes gardes. **Non mesurés
+encore** : les huit critères autres que le calme et le cachet ; leur consigne suit la même forme.
+
 ## Critères d'acceptation (testables à l'écran)
 
 1. Une photo de notes inventées donne une fiche proposée où chaque champ porte « À vérifier » et sa

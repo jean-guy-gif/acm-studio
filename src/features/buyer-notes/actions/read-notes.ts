@@ -12,6 +12,7 @@ import {
 } from '@/features/buyer-notes/model-request';
 import { guardProposal, proposedFieldNames } from '@/features/buyer-notes/services/guard-proposal';
 import { parseNoteInput } from '@/features/buyer-notes/services/note-input';
+import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
 import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { proposedCities, verifyCommunes } from '@/features/buyer-notes/services/verify-communes';
 import type { NoteProposal, NoteReadingCause } from '@/features/buyer-notes/types';
@@ -48,7 +49,14 @@ export async function readBuyerNotes(formData: FormData): Promise<ReadNotesResul
   if (!input.ok) return { ok: false, cause: input.cause, ...(input.heic ? { heic: true } : {}) };
 
   const isDemo = await isDemoAgency(profile.agency_id);
-  if (!notesReadingOpen({ isDemo, email: profile.email })) return { ok: false, cause: 'closed' };
+  if (
+    !notesReadingOpen({
+      isDemo,
+      email: profile.email,
+      agencyCapCents: await getPosedAiCap(profile.agency_id),
+    })
+  )
+    return { ok: false, cause: 'closed' };
 
   const finish = async (
     raw: unknown,

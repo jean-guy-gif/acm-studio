@@ -67,6 +67,8 @@ export async function callStructured(input: {
   schema: Record<string, unknown>;
   maxTokens: number;
   model?: string;
+  // Le classement des annonces a un délai (planche 4 b) : au-delà, la lecture est abandonnée.
+  timeoutMs?: number;
 }): Promise<AiCallResult> {
   const model = input.model ?? aiModel();
   const keys = credentials();
@@ -75,8 +77,8 @@ export async function callStructured(input: {
   const common = {
     awsAccessKey: keys.accessKey,
     awsRegion: keys.region,
-    maxRetries: 1,
-    timeout: 90_000,
+    maxRetries: input.timeoutMs != null ? 0 : 1,
+    timeout: input.timeoutMs ?? 90_000,
   };
   // Les deux clients ne nomment pas le secret de la même façon.
   const client = isGeneration4(model)

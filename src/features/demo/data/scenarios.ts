@@ -694,7 +694,8 @@ const venceListings = seed(
     publishedDaysAgo: 45,
     priceChanges: [],
     seller: sold('Collines & Vallons Immobilier', 'no'),
-    description: 'Maison de 130 m² sur 800 m², quatre chambres, garage, exposition sud.',
+    description:
+      'Maison de 130 m² sur 800 m², quatre chambres, garage, exposition sud. Au calme absolu, en fond d’impasse.',
     priceAfterMeeting: 699000,
   },
   {
@@ -819,7 +820,8 @@ const venceListings = seed(
     publishedDaysAgo: 110,
     priceChanges: [drop(35, 790000, 760000)],
     seller: sold('Collines & Vallons Immobilier', 'yes'),
-    description: 'Maison de 150 m² avec piscine sur 1 000 m², quatre chambres, garage.',
+    description:
+      'Maison de 150 m² avec piscine sur 1 000 m², quatre chambres, garage. Vue panoramique sur la mer et les collines.',
     priceAfterMeeting: null,
   },
   {
@@ -882,7 +884,8 @@ const venceListings = seed(
     publishedDaysAgo: 35,
     priceChanges: [],
     seller: sold('Vallier & Associés', 'no'),
-    description: 'Maison de 1999 de 135 m² sur 900 m², quatre chambres, terrasse, garage.',
+    description:
+      'Maison de 1999 de 135 m² sur 900 m², quatre chambres, terrasse, garage. Quartier résidentiel calme, à deux pas de la route départementale.',
     priceAfterMeeting: 725000,
   },
   {
@@ -913,7 +916,8 @@ const venceListings = seed(
     publishedDaysAgo: 90,
     priceChanges: [],
     seller: sold('Agence Littoral & Pins', 'yes'),
-    description: 'Maison de 2004 de 132 m² avec piscine, terrain de 1 200 m², garage.',
+    description:
+      'Maison de 2004 de 132 m² avec piscine, terrain de 1 200 m², garage. Entièrement de plain-pied.',
     priceAfterMeeting: null,
   },
   {

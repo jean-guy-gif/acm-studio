@@ -10,7 +10,7 @@ import {
   buyerLetterOriginsOf,
   removeBuyerLetterPhotos,
 } from '@/features/buyer-prospecting/services/remove-buyer-letter-photos';
-import { buyerColumns } from '@/features/buyers/services/buyer-row';
+import { buyerColumns, sanitizeSoftCriteria } from '@/features/buyers/services/buyer-row';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
@@ -697,6 +697,10 @@ async function insertDemoBuyers(
           ...buyerColumns(buyer),
           // Mission 139 — la langue sur chaque ligne (la même raison que les deux dates).
           language: buyer.language ?? 'fr',
+          // Mission 151 — les critères doux sur chaque ligne aussi (la colonne n'admet pas NULL),
+          // et la copropriété, qui n'est dite que pour les Lambert.
+          soft_criteria: sanitizeSoftCriteria(buyer.softCriteria ?? []),
+          condominium_accepted: buyer.condominiumAccepted ?? null,
           created_at: createdAt,
           status_changed_at: createdAt,
           agency_id: closer.agencyId,

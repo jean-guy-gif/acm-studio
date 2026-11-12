@@ -6,6 +6,7 @@ import { alertOk, backLink, badgeBrand, btnSecondary, card, link } from '@/compo
 import { BuyerAnswers } from '@/features/buyer-deck/components/buyer-answers';
 import { BuyerSoftCriteria } from '@/features/buyer-notes/components/buyer-soft-criteria';
 import { VerifyAllBadge } from '@/features/buyer-notes/components/verify-all-badge';
+import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
 import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { getBuyerLoopProposals } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerAnswers } from '@/features/buyer-deck/queries/get-buyer-answers';
@@ -211,6 +212,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const readingOpen = notesReadingOpen({
     isDemo: saleSeller ? saleDemo : await isDemoAgency(profile?.agency_id),
     email: profile?.email,
+    agencyCapCents: await getPosedAiCap(profile?.agency_id),
   });
   const salePhoto = saleVisit
     ? deck?.items.find((item) => item.item.itemId === saleVisit.itemId)?.photos[0]

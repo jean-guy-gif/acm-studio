@@ -9,7 +9,18 @@ import { toBuyer } from '@/features/buyers/services/buyer-row';
 import type { Buyer } from '@/features/buyers/types';
 import { readBuyerKnownKeys } from '@/features/buyer-watch/queries/known-keys';
 import { findsForBuyer } from '@/features/buyer-watch/services/watch-criteria';
-import { filterWatchFinds } from '@/features/buyer-watch/services/watch-finds';
+import {
+  filterWatchFinds,
+  withSoftReasons,
+  type WatchFind,
+} from '@/features/buyer-watch/services/watch-finds';
+import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
+import { nightRankingRoom } from '@/features/ai-budget/services/ai-budget';
+import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
+import type { CompetitorCandidate } from '@/features/competitor-search/types';
+import { rankingCriteria } from '@/features/soft-ranking/ranking-request';
+import { RANKING_DEADLINE_MS, rankListings } from '@/features/soft-ranking/server/rank-listings';
+import { reasonsOfRanking } from '@/features/soft-ranking/services/judgments';
 import {
   dueWatchBuyers,
   WATCH_ADVERTS,
@@ -244,10 +255,14 @@ async function watchOneBuyer(
     return { ok: false, billed, found: 0 };
   }
   // Les nouveaux biens qui ne contredisent aucun indispensable de la fiche (M118).
-  const finds = findsForBuyer(
+  const kept = findsForBuyer(
     buyer,
     filterWatchFinds(search.candidates, { seenSince, knownKeys }).finds,
   );
+  // Mission 151 (partie B) — la veille juge de même ce qui compte pour lui, avec le texte qu'elle a
+  // encore (B.5) ; ne garde que les jugements et leurs citations, jamais le texte ; la moitié du
+  // budget d'IA au plus ; fermée ou sans place : les seuls mots trouvés.
+  const finds = await withNightRanking(buyer, kept, search.candidates, agencyId, now, deadline);
   const { error: updateError } = await admin
     .from('buyer_watch_runs')
     .update({
@@ -259,4 +274,37 @@ async function watchOneBuyer(
     .eq('id', row.run_id);
   if (updateError) await reportServerError('buyerWatch', updateError);
   return { ok: updateError == null, billed, found: finds.length };
+}
+
+async function withNightRanking(
+  buyer: Buyer,
+  finds: WatchFind[],
+  candidates: readonly CompetitorCandidate[],
+  agencyId: string,
+  now: Date,
+  deadline: number,
+): Promise<WatchFind[]> {
+  const criteria = rankingCriteria(buyer.softCriteria.map((soft) => soft.key));
+  if (criteria.length === 0 || finds.length === 0) return finds;
+  const texts = new Map(
+    candidates.map((candidate) => [candidate.url, candidate.streamEstate?.description ?? '']),
+  );
+  const listings = finds
+    .map((find) => ({ key: find.url, text: texts.get(find.url) ?? '', tags: [] }))
+    .filter((listing) => listing.text);
+  if (listings.length === 0) return finds;
+  const capCents = await getPosedAiCap(agencyId);
+  const ranking = await rankListings({
+    agencyId,
+    userId: null,
+    criteria,
+    listings,
+    demo: false,
+    open: notesReadingOpen({ isDemo: false, email: null, agencyCapCents: capCents }),
+    deadlineMs: Math.max(0, Math.min(RANKING_DEADLINE_MS, deadline - Date.now())),
+    now,
+    mayReserve: (wantedMillicents) =>
+      nightRankingRoom({ agencyId, capCents: capCents ?? 0, wantedMillicents, now }),
+  });
+  return ranking ? withSoftReasons(finds, reasonsOfRanking(ranking)) : finds;
 }

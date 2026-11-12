@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
+import { BUYER_SOFT_CRITERIA } from '@/features/buyers/types';
 import type { CompetitorCandidate } from '@/features/competitor-search/types';
+import { QUOTE_MAX } from '@/features/soft-ranking/services/judgments';
+import type { SoftReasons } from '@/features/soft-ranking/types';
 
 // Mission 136 — ce que la veille ramène pour un acquéreur, et ce qu'elle en garde. Pur.
 //   • seuls les biens VUS sur le marché depuis le passage précédent : la plus ancienne date connue
@@ -23,6 +26,21 @@ const shortText = z.string().max(200).nullable();
 const count = z.number().int().min(0).max(100_000).nullable();
 const area = z.number().min(0).max(1_000_000).nullable();
 const isoDate = z.string().max(40).nullable();
+
+// Mission 151 (partie B) — ce que la veille a jugé de ce qui compte pour lui, gardé avec le passage
+// (fiche, B.5) : les jugements et leurs citations courtes, ou les seuls mots trouvés (classement
+// simplifié) ; jamais le texte de l'annonce.
+const judgmentSchema = z.object({
+  key: z.enum(BUYER_SOFT_CRITERIA),
+  verdict: z.enum(['clearly', 'reserve', 'nothing', 'contrary', 'unread']),
+  quote: z.string().max(QUOTE_MAX).nullable(),
+  counterQuote: z.string().max(QUOTE_MAX).nullable(),
+  toVerify: z.boolean(),
+});
+const softSchema = z.union([
+  z.object({ judgments: z.array(judgmentSchema).max(BUYER_SOFT_CRITERIA.length) }),
+  z.object({ mentions: z.array(z.string().max(60)).max(BUYER_SOFT_CRITERIA.length) }),
+]);
 
 const findSchema = z.object({
   key: z.string().max(200).nullable(),
@@ -66,6 +84,7 @@ const findSchema = z.object({
       constructionYear: z.number().int().min(1000).max(3000).nullable(),
     })
     .optional(),
+  soft: softSchema.optional(),
 });
 
 export type WatchFind = z.infer<typeof findSchema>;
@@ -207,4 +226,22 @@ export function filterWatchFinds(
     if (find && outcome.finds.length < MAX_WATCH_FINDS) outcome.finds.push(find);
   }
   return outcome;
+}
+
+// Mission 151 (partie B) — les raisons gardées par la veille, par lien d'annonce, pour l'écran.
+export function watchReasonsOf(finds: readonly WatchFind[]): Record<string, SoftReasons> {
+  return Object.fromEntries(
+    finds.flatMap((find) => (find.soft ? [[find.url, find.soft as SoftReasons]] : [])),
+  );
+}
+
+// Les raisons posées sur les biens gardés (par lien d'annonce), relues par la même liste.
+export function withSoftReasons(
+  finds: readonly WatchFind[],
+  reasons: Readonly<Record<string, SoftReasons>>,
+): WatchFind[] {
+  return finds.map((find) => {
+    const soft = softSchema.safeParse(reasons[find.url]);
+    return soft.success ? { ...find, soft: soft.data } : find;
+  });
 }

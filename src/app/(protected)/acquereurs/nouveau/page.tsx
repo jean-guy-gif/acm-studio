@@ -7,6 +7,7 @@ import { BuyerQuickForm } from '@/features/buyers/components/buyer-quick-form';
 import { getAgencyCities } from '@/features/buyers/queries/get-agency-cities';
 import { criteriaToBuyerDraft } from '@/features/buyers/services/buyer-criteria';
 import { NotesFlow } from '@/features/buyer-notes/components/notes-flow';
+import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
 import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { DEMO_NOTES_PHOTO, DEMO_NOTES_TEXT } from '@/features/demo/data/notes-arnaud';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -39,7 +40,11 @@ export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) 
   // Mission 151 — la lecture des notes n'apparaît que là où elle est ouverte (`reading-gate.ts`).
   const profile = await getProfile();
   const isDemo = await isDemoAgency(profile?.agency_id);
-  const readingOpen = notesReadingOpen({ isDemo, email: profile?.email });
+  const readingOpen = notesReadingOpen({
+    isDemo,
+    email: profile?.email,
+    agencyCapCents: await getPosedAiCap(profile?.agency_id),
+  });
   const fromSearch = Object.values(params).some((value) => value != null && value !== '');
   const draft = fromSearch
     ? criteriaToBuyerDraft({

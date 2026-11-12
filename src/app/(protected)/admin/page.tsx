@@ -4,7 +4,8 @@ import { card, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styl
 import { getUnknownCommuneOppositions } from '@/features/prospecting/queries/get-unknown-commune-oppositions';
 import { UnknownCommuneAlerts } from '@/features/prospecting/components/unknown-commune-alerts';
 import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
-import { getAgencyAiBudget } from '@/features/ai-budget/queries/get-ai-budgets';
+import { aiBudgetOpen, getAgencyAiBudget } from '@/features/ai-budget/queries/get-ai-budgets';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { formatEuro } from '@/lib/format';
 import {
   BUDGET_REACHED_HINT,
@@ -27,6 +28,7 @@ export default async function AdminPage() {
   const budgetRead = profile && isManager ? await getSearchBudget(profile.agency_id) : null;
   // Mission 151 — la lecture par l'IA : le manager la lit, l'opérateur règle le plafond (M55).
   const aiBudget = profile && isManager ? await getAgencyAiBudget(profile.agency_id) : undefined;
+  const aiOpen = aiBudget != null && aiBudgetOpen(aiBudget, await isDemoAgency(profile?.agency_id));
   // Mission 105 — les oppositions dont la commune est restée inconnue après la revérification.
   const unknownCommunes =
     profile && isManager ? await getUnknownCommuneOppositions(profile.agency_id) : [];
@@ -85,9 +87,11 @@ export default async function AdminPage() {
         <div className={`${card} flex flex-col gap-1.5 p-5`} data-testid="admin-ai-budget">
           <span className={kickerLabel}>Lecture par l’IA · ce mois-ci</span>
           <p className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
-            {aiBudget
-              ? `${formatEuro(aiBudget.spentCents / 100)} sur ${formatEuro(aiBudget.capCents / 100)}`
-              : 'Le budget n’a pas pu être lu : rechargez la page.'}
+            {!aiBudget
+              ? 'Le budget n’a pas pu être lu : rechargez la page.'
+              : aiOpen
+                ? `${formatEuro(aiBudget.spentCents / 100)} sur ${formatEuro(aiBudget.capCents / 100)}`
+                : 'Pas encore ouverte pour votre agence : l’équipe ACM Studio l’ouvre à votre demande.'}
           </p>
         </div>
       ) : null}

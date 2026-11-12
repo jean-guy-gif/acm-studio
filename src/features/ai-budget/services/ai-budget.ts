@@ -111,3 +111,33 @@ export async function closeAiReading(input: {
     return false;
   }
 }
+
+// Mission 151 (partie B) — la veille de nuit ne prend que la moitié du plafond d'IA de l'agence
+// (Jean-Guy, 12/11) : ce que le classement de nuit (sans auteur) a déjà coûté ce mois, plus ce
+// qu'il veut réserver, reste sous la moitié. Une lecture en échec ne laisse aucune place (M98). La
+// veille passe un acquéreur après l'autre : la vérification suffit sans verrou.
+export async function nightRankingRoom(input: {
+  agencyId: string;
+  capCents: number;
+  wantedMillicents: number;
+  now?: Date;
+}): Promise<boolean> {
+  try {
+    const { data, error } = await createServiceRoleClient()
+      .from('ai_usage')
+      .select('cost_millicents')
+      .eq('agency_id', input.agencyId)
+      .eq('purpose', 'ranking')
+      .is('user_id', null)
+      .gte('created_at', startOfParisMonth(input.now ?? new Date()).toISOString());
+    if (error) {
+      await reportServerError('nightRankingRoom', error);
+      return false;
+    }
+    const spent = (data ?? []).reduce((sum, row) => sum + row.cost_millicents, 0);
+    return spent + input.wantedMillicents <= (input.capCents * 1000) / 2;
+  } catch (error) {
+    await reportServerError('nightRankingRoom', error);
+    return false;
+  }
+}

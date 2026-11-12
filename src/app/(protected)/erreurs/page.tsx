@@ -12,7 +12,11 @@ import {
 import { setAgencyDemo } from '@/features/operations/actions/set-agency-demo';
 import { setAgencySearchCap } from '@/features/operations/actions/set-agency-search-cap';
 import { setAgencyAiCap } from '@/features/operations/actions/set-agency-ai-cap';
-import { aiBudgetOf, getAiBudgets } from '@/features/ai-budget/queries/get-ai-budgets';
+import {
+  aiBudgetOf,
+  aiBudgetOpen,
+  getAiBudgets,
+} from '@/features/ai-budget/queries/get-ai-budgets';
 import { formatEuro } from '@/lib/format';
 import { AgencyCapForm } from '@/features/operations/components/agency-cap-form';
 import { AgencyDemoToggle } from '@/features/operations/components/agency-demo-toggle';
@@ -180,9 +184,11 @@ export default async function ErrorsPage() {
                 {/* Mission 151 — la lecture par l'IA : ce qui a été dépensé ce mois-ci et le plafond.
                     Une lecture en échec le dit, jamais « rien dépensé » (M98). */}
                 <span className="text-sm text-zinc-600 stage:text-white/65" data-testid="ai-budget">
-                  {aiBudgets
-                    ? `Lecture par l’IA ce mois-ci : ${formatEuro(aiBudgetOf(aiBudgets, agencyId).spentCents / 100)} sur ${formatEuro(aiBudgetOf(aiBudgets, agencyId).capCents / 100)}`
-                    : 'Lecture par l’IA : le budget n’a pas pu être lu.'}
+                  {!aiBudgets
+                    ? 'Lecture par l’IA : le budget n’a pas pu être lu.'
+                    : aiBudgetOpen(aiBudgetOf(aiBudgets, agencyId), isDemo)
+                      ? `Lecture par l’IA ce mois-ci : ${formatEuro(aiBudgetOf(aiBudgets, agencyId).spentCents / 100)} sur ${formatEuro(aiBudgetOf(aiBudgets, agencyId).capCents / 100)}`
+                      : 'Lecture par l’IA : fermée — posez un plafond pour l’ouvrir.'}
                 </span>
               </div>
               <div className="flex flex-col items-end gap-2">
@@ -194,7 +200,11 @@ export default async function ErrorsPage() {
                 {aiBudgets ? (
                   <AgencyCapForm
                     agencyName={`${agencyName}, lecture par l’IA`}
-                    initialEuros={aiBudgetOf(aiBudgets, agencyId).capCents / 100}
+                    initialEuros={
+                      aiBudgetOf(aiBudgets, agencyId).posed
+                        ? aiBudgetOf(aiBudgets, agencyId).capCents / 100
+                        : 0
+                    }
                     saveAction={setAgencyAiCap.bind(null, agencyId)}
                   />
                 ) : null}
