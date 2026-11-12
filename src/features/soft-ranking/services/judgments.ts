@@ -119,6 +119,22 @@ export function orderBySoftScore<T>(items: readonly T[], scoreOf: (item: T) => n
     .map(({ item }) => item);
 }
 
+// Une liste déjà rangée par groupes (les catégories de la M118, les groupes du rapprochement :
+// mandats, vendeurs à relancer, concurrents) : le score ne range qu'à l'intérieur de chaque groupe,
+// les groupes gardent leur ordre et aucun bien ne change de groupe (Jean-Guy, 12/11).
+export function orderWithinGroups<T>(
+  items: readonly T[],
+  groupOf: (item: T) => string,
+  scoreOf: (item: T) => number,
+): T[] {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const group = groupOf(item);
+    groups.set(group, [...(groups.get(group) ?? []), item]);
+  }
+  return [...groups.values()].flatMap((members) => orderBySoftScore(members, scoreOf));
+}
+
 // --- le classement simplifié : les mots trouvés, sans jugement --------------------------------
 
 const fold = (value: string): string =>
@@ -234,4 +250,16 @@ export function reasonsOfRanking(ranking: SoftRanking): Record<string, SoftReaso
     : Object.fromEntries(
         Object.entries(ranking.byKey).map(([key, mentions]) => [key, { mentions }]),
       );
+}
+
+// La raison du rang en une ligne, pour la fiche complète (M152 B) : « Ce qui compte pour eux :
+// ✓ Au calme, ? Une vue ».
+export function whySummary(reasons: SoftReasons | undefined): string | null {
+  if (reasons == null) return null;
+  if ('noText' in reasons) return 'Ce qui compte pour eux : aucun texte d’annonce à lire';
+  if ('mentions' in reasons) return `Ce qui compte pour eux : ${mentionsLine(reasons.mentions)}`;
+  if (reasons.judgments.length === 0) return null;
+  return `Ce qui compte pour eux : ${whyRows(reasons.judgments)
+    .map((row) => `${row.mark} ${row.label}`)
+    .join(', ')}`;
 }

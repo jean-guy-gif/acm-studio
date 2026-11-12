@@ -120,6 +120,8 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
 
   const model = aiModel();
   if (!aiConfigured() || modelPrice(model) == null) return simple('failed', listings, criteria);
+  // Plus le temps d'un appel : rien n'est réservé (la nuit comme le jour).
+  if (deadline - Date.now() < MIN_CALL_MS) return simple('failed', listings, criteria);
   // Le pire cas : chaque lot, plus la relance d'un lot.
   const perBatch = all.map((batch) => batchWorstCase(model, criteria, batch));
   const wanted = perBatch.reduce((sum, cost) => sum + cost, 0) + Math.max(...perBatch);
@@ -158,11 +160,19 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
       judged.set(key, judgments);
   };
 
-  await Promise.all(all.map(run));
-  // Une annonce absente de la réponse est relancée une fois, s'il reste du temps.
+  await inPool(all, run);
+  // Une annonce absente de la réponse est relancée une fois, s'il reste du temps — et seulement
+  // dans ce que la réservation couvre encore (M105 : jamais plus que la réservation).
   const missing = listings.filter((listing) => !judged.has(listing.key));
   if (missing.length > 0 && missing.length < listings.length) {
-    await Promise.all(batchesOf(missing, listings.length).map(run));
+    let room = wanted - spent;
+    const retries = batchesOf(missing, listings.length).filter((batch) => {
+      const worst = batchWorstCase(model, criteria, batch);
+      if (worst > room) return false;
+      room -= worst;
+      return true;
+    });
+    await inPool(retries, run);
   }
 
   const answered = judged.size > 0;
@@ -174,6 +184,17 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
   });
   if (!answered) return simple('failed', listings, criteria);
   return full(listings, criteria, judged);
+}
+
+// Trois appels à la fois au plus : Bedrock étrangle les rafales.
+const POOL = 3;
+async function inPool<T>(items: readonly T[], work: (item: T) => Promise<void>): Promise<void> {
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(POOL, items.length) }, async () => {
+      while (next < items.length) await work(items[next++]!);
+    }),
+  );
 }
 
 function full(

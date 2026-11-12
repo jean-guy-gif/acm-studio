@@ -7,6 +7,7 @@ import {
   guardJudgments,
   mentionsLine,
   orderBySoftScore,
+  orderWithinGroups,
   reasonsOfRanking,
   softMentions,
   softScore,
@@ -230,5 +231,43 @@ describe('la lecture simulée de la démo', () => {
     expect(verdicts('ven-05')).toEqual(['nothing', 'clearly', 'nothing']);
     expect(verdicts('ven-08')).toEqual(['nothing', 'nothing', 'clearly']);
     expect(verdicts('ven-12')).toEqual(['nothing', 'nothing', 'nothing']);
+  });
+});
+
+describe('le score ne range qu’à l’intérieur d’un groupe (Jean-Guy, 12/11)', () => {
+  it('les groupes gardent leur ordre, aucun bien ne change de groupe', () => {
+    const items = [
+      { group: 'mandats', key: 'm1', score: 0 },
+      { group: 'mandats', key: 'm2', score: 2 },
+      { group: 'concurrents', key: 'c1', score: 0 },
+      { group: 'concurrents', key: 'c2', score: 4 },
+    ];
+    expect(
+      orderWithinGroups(
+        items,
+        (item) => item.group,
+        (item) => item.score,
+      ).map((item) => item.key),
+    ).toEqual(['m2', 'm1', 'c2', 'c1']);
+  });
+});
+
+describe('le bandeau (planches 4 et 4 b)', () => {
+  it('dit comment les biens sont rangés, et pourquoi le classement est simplifié', async () => {
+    const { softBanner } = await import('@/features/soft-ranking/components/soft-why');
+    const labels = ['au calme', 'une vue'];
+    expect(softBanner({ mode: 'full' }, labels).text).toBe(
+      ' — au calme, une vue —, puis par ressemblance, puis par prix. Aucun bien n’est écarté pour ces critères.',
+    );
+    expect(softBanner({ mode: 'simple', reason: 'before' }, labels).text).toContain(
+      'jusqu’à la recherche du marché',
+    );
+    expect(softBanner({ mode: 'simple', reason: 'budget' }, labels).text).toBe(
+      ' : budget de lecture du mois atteint.',
+    );
+    expect(softBanner({ mode: 'simple', reason: 'closed' }, labels)).toEqual({
+      strong: 'Classement simplifié',
+      text: '',
+    });
   });
 });

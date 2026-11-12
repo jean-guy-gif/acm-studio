@@ -13,6 +13,7 @@ const state = vi.hoisted(() => ({
   calls: [] as { system: string; text: string; timeoutMs?: number }[],
   answer: (_text: string): unknown => ({ annonces: [] }),
   fail: false,
+  noUsage: false,
 }));
 
 vi.mock('@/features/ai-budget/services/ai-budget', () => ({
@@ -39,7 +40,7 @@ vi.mock('@/lib/ai/bedrock', () => ({
       ok: true,
       json: state.answer(text),
       model: 'eu.anthropic.claude-sonnet-4-6',
-      usage: { input_tokens: 2000, output_tokens: 300 },
+      usage: state.noUsage ? null : { input_tokens: 2000, output_tokens: 300 },
     };
   },
 }));
@@ -90,6 +91,7 @@ beforeEach(() => {
   state.calls = [];
   state.answer = answerAll;
   state.fail = false;
+  state.noUsage = false;
 });
 
 describe('rankListings', () => {
@@ -179,5 +181,42 @@ describe('rankListings', () => {
     const ranking = await rankListings({ ...base, deadlineMs: 0 });
     expect(ranking).toMatchObject({ mode: 'simple', reason: 'failed' });
     expect(state.calls).toEqual([]);
+    // Rien n'est réservé : aucune ligne « échouée » à 0 € la nuit.
+    expect(state.reserved).toEqual([]);
+  });
+
+  it('jamais plus que la réservation (M105) : la relance s’arrête à ce qu’elle couvre', async () => {
+    // 20 annonces, trois lots ; le modèle ne répond qu'à la première de chaque lot.
+    const many: RankingListing[] = Array.from({ length: 20 }, (_, index) => ({
+      key: `https://x.fr/${index + 1}`,
+      text: `Annonce numéro ${index + 1}, au calme.`,
+      tags: [],
+    }));
+    state.answer = (text) => {
+      const first = /<annonce id="(a\d+)">/.exec(text)![1];
+      return {
+        annonces: [
+          {
+            id: first,
+            jugements: [
+              {
+                critere: 'calme',
+                verdict: 'rien',
+                citation: null,
+                contre_citation: null,
+                a_verifier: false,
+              },
+            ],
+          },
+        ],
+      };
+    };
+    // Sans relevé de coût, chaque appel compte au pire : la réservation ne couvre plus qu'un lot.
+    state.noUsage = true;
+    await rankListings({ ...base, listings: many });
+    const reserved = Number(state.reserved[0]!.wantedMillicents);
+    expect(Number(state.settled[0]!.costMillicents)).toBeLessThanOrEqual(reserved);
+    // Trois lots, puis la relance de ce que la réservation couvre encore : un lot.
+    expect(state.calls).toHaveLength(4);
   });
 });

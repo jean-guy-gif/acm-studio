@@ -17,7 +17,16 @@ const MARK_TONE: Record<string, string> = {
   '✗': 'text-red-700 stage:text-red-300',
 };
 
-export function SoftWhy({ reasons, rank }: { reasons: SoftReasons | undefined; rank: number }) {
+export function SoftWhy({
+  reasons,
+  rank,
+  onOpen,
+}: {
+  reasons: SoftReasons | undefined;
+  rank: number;
+  // « Voir » : la fiche complète du bien (planche 4, sur la ligne qui ne dit rien).
+  onOpen?: () => void;
+}) {
   const box =
     'flex flex-col gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 stage:border-white/10 stage:bg-white/5';
   const title = 'text-xs font-extrabold uppercase tracking-wider text-brand-deep stage:text-brand';
@@ -32,12 +41,26 @@ export function SoftWhy({ reasons, rank }: { reasons: SoftReasons | undefined; r
       </div>
     );
   }
-  if (saysNothing(reasons.judgments)) {
+  if ('noText' in reasons || saysNothing(reasons.judgments)) {
     return (
       <div className={`${box} sm:flex-row sm:items-baseline sm:gap-3`} data-testid="soft-why">
         <span className={title}>{whyTitle(rank)}</span>
         <span className="text-sm text-zinc-600 stage:text-white/70">
-          L’annonce ne dit rien de ce qui compte pour eux
+          {'noText' in reasons
+            ? 'Aucun texte d’annonce à lire pour ce qui compte pour eux'
+            : 'L’annonce ne dit rien de ce qui compte pour eux'}
+          {onOpen ? (
+            <>
+              {' · '}
+              <button
+                type="button"
+                className="font-semibold text-brand-deep underline stage:text-brand"
+                onClick={onOpen}
+              >
+                Voir
+              </button>
+            </>
+          ) : null}
         </span>
       </div>
     );

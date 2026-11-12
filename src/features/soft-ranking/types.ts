@@ -23,7 +23,8 @@ export type RankingListing = { key: string; text: string; tags: string[] };
 
 // Ce que l'écran reçoit pour un bien : les jugements, en mode complet ; les mots trouvés, en mode
 // simplifié (« l'annonce mentionne « calme » »).
-export type SoftReasons = { judgments: SoftJudgment[] } | { mentions: string[] };
+// Un bien sans texte ni étiquette n'a rien été lu : il ne « dit » rien, il n'a rien à lire (M98).
+export type SoftReasons = { judgments: SoftJudgment[] } | { mentions: string[] } | { noText: true };
 
 // Pourquoi le classement est simplifié (planche 4 b).
 export type SimpleReason = 'before' | 'failed' | 'budget' | 'closed';

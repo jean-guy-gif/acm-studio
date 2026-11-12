@@ -184,6 +184,8 @@ export type StreamEstateFacts = {
   // d'avant.
   description?: string;
   originalPhotos?: string[];
+  // Mission 151 (partie B) — les étiquettes de l'annonce, lues pour le classement seulement.
+  tags?: string[];
 };
 
 // Mission 71 — les crans de la recherche Stream Estate, dans l'ordre (décision de Laurent, 06/10) :

@@ -286,12 +286,14 @@ async function withNightRanking(
 ): Promise<WatchFind[]> {
   const criteria = rankingCriteria(buyer.softCriteria.map((soft) => soft.key));
   if (criteria.length === 0 || finds.length === 0) return finds;
-  const texts = new Map(
-    candidates.map((candidate) => [candidate.url, candidate.streamEstate?.description ?? '']),
-  );
+  const byUrl = new Map(candidates.map((candidate) => [candidate.url, candidate.streamEstate]));
   const listings = finds
-    .map((find) => ({ key: find.url, text: texts.get(find.url) ?? '', tags: [] }))
-    .filter((listing) => listing.text);
+    .map((find) => ({
+      key: find.url,
+      text: byUrl.get(find.url)?.description ?? '',
+      tags: byUrl.get(find.url)?.tags ?? [],
+    }))
+    .filter((listing) => listing.text || listing.tags.length > 0);
   if (listings.length === 0) return finds;
   const capCents = await getPosedAiCap(agencyId);
   const ranking = await rankListings({

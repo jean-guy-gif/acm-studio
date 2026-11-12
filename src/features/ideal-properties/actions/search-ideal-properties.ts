@@ -52,7 +52,7 @@ import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { rankingCriteria } from '@/features/soft-ranking/ranking-request';
 import { agencyRankingListings } from '@/features/soft-ranking/server/agency-listings';
 import { rankListings } from '@/features/soft-ranking/server/rank-listings';
-import { orderBySoftScore, softScore } from '@/features/soft-ranking/services/judgments';
+import { rankCategorized } from '@/features/ideal-properties/services/rank-categorized';
 import type { RankingListing, SoftRanking } from '@/features/soft-ranking/types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -95,6 +95,10 @@ const resumeSchema = z.object({
 });
 export type IdealSearchResume = { cursor: TierCursor; memory: TieredSearchMemory };
 
+// Mission 151 (partie B) — les biens de l'agence affichés, revalidés (M43) : des clés du
+// rapprochement, 60 au plus ; leurs textes sont relus dans l'agence (`agency-listings.ts`).
+const agencyKeysSchema = z.array(z.string().regex(/^(dossier|competitor):[0-9a-f-]{36}$/i)).max(60);
+
 const GENERIC_ERROR = 'La recherche du marché a échoué. Réessayez.';
 const NOT_FOUND = 'Cette fiche acquéreur n’existe plus.';
 
@@ -126,6 +130,8 @@ export async function searchIdealProperties(
 ): Promise<IdealSearchResult> {
   const parsedResume = resume == null ? null : resumeSchema.safeParse(resume);
   if (parsedResume != null && !parsedResume.success) return { ok: false, error: GENERIC_ERROR };
+  const parsedKeys = agencyKeysSchema.safeParse(agencyKeys);
+  if (!parsedKeys.success) return { ok: false, error: GENERIC_ERROR };
 
   const profile = await getProfile();
   if (!profile || profile.removed_at) return { ok: false, error: 'Vous devez être connecté.' };
@@ -235,11 +241,11 @@ export async function searchIdealProperties(
     const market: RankingListing[] = kept.map(({ candidate }) => ({
       key: candidate.url,
       text: candidate.streamEstate?.description ?? '',
-      tags: [],
+      tags: candidate.streamEstate?.tags ?? [],
     }));
     const agency =
-      resumeFrom == null && agencyKeys.length > 0
-        ? await agencyRankingListings(profile.agency_id, agencyKeys)
+      resumeFrom == null && parsedKeys.data.length > 0
+        ? await agencyRankingListings(profile.agency_id, parsedKeys.data)
         : [];
     ranking = await rankListings({
       agencyId: profile.agency_id,
@@ -254,15 +260,7 @@ export async function searchIdealProperties(
       }),
       now,
     });
-    if (ranking?.mode === 'full') {
-      const byKey = ranking.byKey;
-      for (const category of IDEAL_CATEGORIES) {
-        categorized.byCategory[category] = orderBySoftScore(
-          categorized.byCategory[category],
-          (entry) => softScore(byKey[entry.candidate.url]),
-        );
-      }
-    }
+    if (ranking?.mode === 'full') rankCategorized(categorized, ranking.byKey);
   }
 
   return {
