@@ -377,6 +377,30 @@ renotée dessus, sans aucun appel.
 Le classement n'est pas renoté (pas de nouvel appel) : 71 / 72, une annonce absente, et le rang 58
 que la règle 1 vise.
 
+## La stabilité du classement, à température 0 (12/11)
+
+Deux passes identiques du classement des 73 annonces sur Sonnet 4.6, température 0 (comme le code),
+SDK 0.36, consigne et corrigés des dernières règles du 12/11 (accord de Jean-Guy, ≈ 0,59 $ ; coût
+réel 0,595 $). Bilan brut : `M151-essais/resultats/` (le plus récent).
+
+| | Passe 1 | Passe 2 |
+|---|---|---|
+| Calme conformes | 73 / 73 | 73 / 73 |
+| Calme par l'étiquette seule, « à vérifier » | 6 / 6 | 6 / 6 |
+| Cachet conformes | 12 / 12 | 12 / 12 |
+| Citations mot pour mot | 69 / 69 | 68 / 69 |
+| Annonces absentes de la réponse | 0 | 0 |
+
+**2 annonces sur 73 (2,7 %) changent de jugement d'une passe à l'autre**, contre 4 sur 72 (≈ 6 %)
+entre deux mesures sans température :
+- rang 25 : calme « clairement » → « avec réserve » ; les deux sont acceptés par le corrigé ;
+- rang 70 : calme « clairement » → « rien » ; les deux sont acceptés (la tranquillité de la région,
+  décision de Jean-Guy du 12/11).
+
+Aucun changement ne fait passer une annonce d'un jugement juste à un jugement faux. La citation
+manquée de la passe 2 (rang 25) recolle deux passages avec « … » : la vérification au serveur la
+refuse et le jugement tombe à « rien », comme prévu.
+
 ## Ce que la mesure valide
 
 - **Le dossier d'essais et le barème tiennent** : trois mesures se comparent, renotées sans appel ;
