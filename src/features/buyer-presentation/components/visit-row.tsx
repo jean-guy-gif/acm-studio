@@ -8,7 +8,10 @@ import type { OfferAnswer } from '@/features/purchase-offer/queries/get-offer-an
 import { AVAILABILITY_LABELS } from '@/features/buyer-deck/types';
 import { VisitActions } from '@/features/buyer-presentation/components/visit-actions';
 import type { VisitLine } from '@/features/buyer-presentation/queries/get-visit-requests';
-import { visitNextStep } from '@/features/buyer-presentation/services/visit-next-step';
+import {
+  outsideMandateNote,
+  visitNextStep,
+} from '@/features/buyer-presentation/services/visit-next-step';
 import {
   VISIT_OUTCOME_LABELS,
   VISIT_REQUEST_DURING_LABELS,
@@ -124,6 +127,14 @@ export function VisitRow({
         >
           Bon de visite signé le {buyerDateLabel(voucher.signedAt)}
         </Link>
+      ) : null}
+      {outsideMandateNote(line.itemSource, next) ? (
+        <p
+          className="text-xs text-zinc-500 stage:text-white/60"
+          data-testid="visit-outside-mandate"
+        >
+          {outsideMandateNote(line.itemSource, next)}
+        </p>
       ) : null}
       <VisitActions
         visitId={line.id}
