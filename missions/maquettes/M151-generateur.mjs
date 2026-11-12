@@ -201,6 +201,7 @@ const soft = (label, words, verify = true) =>
 const proposal = (device) => `
   <a class="back">← Acquéreurs</a>
   <div class="ph"><h1 class="h1">Vérifiez la fiche proposée</h1><span class="count">15 champs proposés · tous à vérifier</span></div>
+  <p class="keep"><span class="ki">i</span>Cette proposition n’est pas gardée : si vous quittez ou rechargez la page, elle sera perdue.</p>
   <div class="two">
     <aside class="src">${device === 'phone' ? '<button class="btn ghost wide">Voir vos notes</button>' : `${notesPhoto('s')}<p class="muted sm">Vos notes · la photo n’est pas gardée</p>`}</aside>
     <div class="form">
@@ -244,6 +245,11 @@ const proposal = (device) => `
 const proposalBar = `<div class="bar"><span class="bstate">Rien n’est enregistré avant votre accord</span><button class="btn link">Annuler</button><button class="btn ghost">Recommencer la lecture</button><button class="btn fill">Créer la fiche</button></div>`;
 const proposalBarPhone = `<div class="bar"><button class="btn link">Annuler</button><button class="btn fill">Créer la fiche</button></div>`;
 
+// La confirmation avant de quitter (Jean-Guy, 12/11), par-dessus la proposition.
+const leaveDialog = `<div class="ovl"><div class="dlg" role="dialog"><h2 class="dt">Quitter sans créer la fiche ?</h2><p class="dx">La proposition sera perdue : rien n’a été enregistré. Pour la retrouver, il faudra relancer la lecture de vos notes.</p><div class="da"><button class="btn focus">Rester</button><button class="btn danger">Quitter</button></div></div></div>`;
+const withDialog = (device) =>
+  frame(device, proposal(device), { bar: (device === 'phone' ? proposalBarPhone : proposalBar) + leaveDialog });
+
 const sheet2 = {
   title: 'M151 · 2 — La fiche pré-remplie à vérifier',
   sub: 'Ce que l’outil a lu dans les notes de la planche 1. Chaque champ porte « À vérifier » et la ligne des notes d’où il vient ; « Ce qui compte pour eux » garde leurs mots ; ce qui touche la vie privée n’est pas relevé, et l’écran le dit sans le répéter.',
@@ -252,6 +258,10 @@ const sheet2 = {
     [
       titled('tab', frame('tab', proposal('tab'), { bar: proposalBar })),
       titled('phone', frame('phone', proposal('phone'), { bar: proposalBarPhone })),
+    ],
+    [
+      titled('desk', withDialog('desk'), ' · un lien du menu touché'),
+      titled('phone', withDialog('phone'), ' · « Annuler » touché'),
     ],
   ],
   notes: [
@@ -278,6 +288,14 @@ const sheet2 = {
     [
       'Valider',
       '« Créer la fiche », le seul plein (M146), dans une barre fixée à la fenêtre (comme la fiche du bien, M77). Après : les champs gardent « À vérifier » sur la fiche jusqu’à ce que le conseiller les touche ou dise « Tout est juste » (M97). « Recommencer la lecture » refait l’appel (budget). Sur une fiche existante, une valeur différente se lit « 650 000 € → 750 000 € », décochée par défaut (Jean-Guy, 10/11).',
+    ],
+    [
+      'Nouveau (12/11) — l’avertissement',
+      'Rien de la proposition n’est gardé, sources comprises (principe 2, Jean-Guy, 12/11) : sous le titre, une ligne discrète, toujours visible à l’arrivée, « Cette proposition n’est pas gardée : si vous quittez ou rechargez la page, elle sera perdue. » La barre garde « Rien n’est enregistré avant votre accord ».',
+    ],
+    [
+      'Nouveau (12/11) — quitter',
+      'Tout départ sans « Créer la fiche » demande confirmation : un lien de l’application (menu compris), « ← Acquéreurs » et « Annuler » ouvrent la confirmation dans l’écran (`confirm-dialog`, M146 A, jamais la boîte du navigateur) — « Quitter sans créer la fiche ? », « La proposition sera perdue : rien n’a été enregistré. Pour la retrouver, il faudra relancer la lecture de vos notes. », <b>Rester</b> (le focus, Échap) et <b>Quitter</b> en contour rouge, aucun plein. L’actualisation et la fermeture de l’onglet passent par la confirmation du navigateur, la seule possible (M93) ; le bouton « Précédent » du navigateur n’est pas couvert (M93). « Créer la fiche » ne demande rien. <b>À valider</b> : la fiche du 12/11 disait que « Annuler » ne demandait pas ; je propose qu’il demande aussi, puisqu’il fait perdre la proposition et qu’une nouvelle lecture se repaie.',
     ],
     [
       'Téléphone et tablette',
@@ -529,6 +547,12 @@ nav{display:flex;flex-direction:column;gap:4px;flex:1}.grp{display:flex;flex-dir
 .bar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid ${C.z200};display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 24px;box-shadow:0 -4px 12px rgba(0,0,0,.05)}
 .desk .bar{left:256px}.tab .bar{left:220px}.phone .bar{padding:10px 14px}.phone .bar .btn.fill{flex:1}
 .bstate{margin-right:auto;font-size:13px;color:${C.z500}}
+.keep{display:flex;gap:10px;align-items:center;font-size:13.5px;line-height:1.4;color:${C.z700};background:${C.z100};border-radius:10px;padding:9px 12px;margin:-4px 0 2px}
+.ki{flex:none;width:20px;height:20px;border-radius:99px;border:1.5px solid ${C.z500};color:${C.z600};font:italic 700 12px/17px Georgia,serif;text-align:center}
+.ovl{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
+.dlg{background:#fff;border-radius:18px;padding:24px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.dt{font-family:Rajdhani,Montserrat;font-size:22px;font-weight:700;color:${C.deep};line-height:1.15}.dx{font-size:14px;line-height:1.45;color:${C.z600}}
+.da{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}.btn.focus{box-shadow:0 0 0 3px #fff,0 0 0 5px ${C.deep}}.btn.danger{border-color:#b91c1c;color:#b91c1c}
 .head{gap:10px}.hl1{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .badge{font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px}.badge.g{background:${C.greenSoft};color:${C.green}}.badge.y{background:${C.verifySoft};color:${C.verify}}.badge u{margin-left:6px}
 .said{font-size:16px;line-height:1.45;color:${C.z700}}.said b{color:${C.deep}}
