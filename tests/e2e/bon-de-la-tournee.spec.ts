@@ -75,7 +75,9 @@ test('le bon de la tournée : trois titres sur un seul bon', async ({ page }) =>
   });
 
   await test.step('Signé : le document de la tournée', async () => {
-    await expect(form.getByTestId('voucher-visitor-1')).not.toHaveValue('');
+    // Le visiteur du dernier bon des Keller, prénom et nom séparés.
+    await expect(form.getByTestId('voucher-visitor-first-1')).toHaveValue('Paul');
+    await expect(form.getByTestId('voucher-visitor-last-1')).toHaveValue('Keller');
     await form.getByTestId('voucher-approved').check();
     await draw(page, 'voucher-signature-1');
     await form.getByTestId('voucher-sign').click();

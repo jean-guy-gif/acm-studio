@@ -74,7 +74,12 @@ export type OfferContext = {
   // Mission 154 — sans offre précédente, le visiteur et son adresse du dernier bon de la fiche : son
   // nom n'est qu'une suggestion à confirmer (le bon ne sépare pas nom et prénoms).
   lastVoucher: {
-    visitors: { civility: 'M.' | 'Mme'; name: string }[];
+    visitors: {
+      civility: 'M.' | 'Mme';
+      name: string;
+      firstName?: string;
+      lastName?: string;
+    }[];
     address: string;
   } | null;
 };

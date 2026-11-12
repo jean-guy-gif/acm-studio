@@ -648,7 +648,8 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
     }
     // Le n° de mandat du bon précédent est repris ; le visiteur aussi.
     await expect(form.getByTestId('voucher-mandate').first()).toHaveValue('M-2026-0142');
-    await expect(form.getByTestId('voucher-visitor-1')).toHaveValue('Paul Keller');
+    await expect(form.getByTestId('voucher-visitor-first-1')).toHaveValue('Paul');
+    await expect(form.getByTestId('voucher-visitor-last-1')).toHaveValue('Keller');
     await expect(form.getByTestId('voucher-sign')).toBeDisabled();
     await form.getByTestId('voucher-approved').check();
     const canvas = form.getByTestId('voucher-signature-1');

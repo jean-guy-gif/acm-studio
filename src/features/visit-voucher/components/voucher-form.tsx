@@ -26,13 +26,16 @@ import { VoucherShare } from '@/features/visit-voucher/components/voucher-share'
 import type { VoucherContext } from '@/features/visit-voucher/queries/get-voucher-context';
 import {
   OUTSIDE_COLLEAGUE_ONE,
+  OUTSIDE_ONE_SEARCH,
   OUTSIDE_TITLE_MIXED,
-  titleKey,
+  severalSearches,
+  tourVersion,
   VOUCHER_TOUR_COMMITMENTS,
   voucherSaleLine,
   voucherOutsideLine,
   withBuyer,
 } from '@/features/visit-voucher/services/outside-mandate';
+import { nameFromBuyer } from '@/features/visit-voucher/services/buyer-name';
 import {
   parisDateLabel,
   VISITOR_CIVILITIES,
@@ -44,7 +47,19 @@ import {
   type VisitorPiece,
 } from '@/features/visit-voucher/services/voucher-text';
 
-type Visitor = { civility: VisitorCivility; name: string };
+// Mission 154 — la civilité, le prénom et le nom, chacun à remplir ; la civilité peut rester vide,
+// signalée à compléter (jamais choisie d'office pour un nom repris de la fiche).
+type Visitor = { civility: VisitorCivility | ''; firstName: string; lastName: string };
+const EMPTY_VISITOR: Visitor = { civility: '', firstName: '', lastName: '' };
+const complete = (visitor: Visitor): boolean =>
+  visitor.civility !== '' && visitor.firstName.trim() !== '' && visitor.lastName.trim() !== '';
+// Un bon plus ancien n'a que le nom entier : son découpage se propose, montré, jamais en silence.
+const splitName = (name: string): { firstName: string; lastName: string } => {
+  const words = name.trim().split(/\s+/);
+  return words.length > 1
+    ? { firstName: words.slice(0, -1).join(' '), lastName: words[words.length - 1]! }
+    : { firstName: '', lastName: words[0] ?? '' };
+};
 
 // Le jour de la visite, à Paris (une visite tard le soir n'est pas datée de la veille).
 const dayLabel = (iso: string): string => parisDateLabel(new Date(iso));
@@ -69,8 +84,17 @@ export function VoucherForm({
   preselected: string | null;
 }) {
   const [visitors, setVisitors] = useState<Visitor[]>(
-    context.lastVisitor?.visitors ?? [{ civility: 'M.', name: '' }],
+    context.lastVisitor?.visitors.map((entry) =>
+      entry.firstName && entry.lastName
+        ? { civility: entry.civility, firstName: entry.firstName, lastName: entry.lastName }
+        : { ...EMPTY_VISITOR },
+    ) ?? [{ ...EMPTY_VISITOR }],
   );
+  const setVisitor = (index: number, patch: Partial<Visitor>) =>
+    setVisitors((current) =>
+      current.map((entry, at) => (at === index ? { ...entry, ...patch } : entry)),
+    );
+  const fromBuyer = nameFromBuyer(context.buyer.name);
   const [address, setAddress] = useState(context.lastVisitor?.address ?? '');
   const [piece, setPiece] = useState<VisitorPiece>(context.lastVisitor?.piece ?? 'cni');
   const [city, setCity] = useState(context.city);
@@ -167,7 +191,8 @@ export function VoucherForm({
   const missingTitles = tour
     ? chosen.filter((visit, index) => visit.outside && tourTitles[index] == null)
     : [];
-  const severalTitles = tour && new Set(tourTitles.map(titleKey)).size > 1;
+  const severalTitles = tour && tourVersion(tourTitles);
+  const searchConflict = tour && severalSearches(tourTitles);
   const searchHint =
     context.lastSearchTitle &&
     title.searchNumber === context.lastSearchTitle.number &&
@@ -187,7 +212,11 @@ export function VoucherForm({
         startTransition(async () => {
           const result = await signVisitVoucher({
             buyerId: context.buyer.id,
-            visitors,
+            visitors: visitors.map((entry) => ({
+              civility: entry.civility,
+              firstName: entry.firstName,
+              lastName: entry.lastName,
+            })),
             visitorAddress: address,
             piece,
             city,
@@ -413,69 +442,107 @@ export function VoucherForm({
 
       <section className={`${card} flex flex-col gap-3 p-5`}>
         <h2 className={sectionTitle}>Le visiteur</h2>
-        {/* Mission 154 — le nom de la fiche, jamais rempli d'office ni découpé : une suggestion à
-            confirmer d'un geste, tant que le premier visiteur n'a pas de nom. */}
-        {visitors[0] && !visitors[0].name.trim() && context.buyer.name.trim() ? (
+        {/* Mission 154 — le nom de la fiche : une suggestion à confirmer d'un geste, qui dit ce
+            qu'elle écrit — le NOM seul, sans « Famille », « M. et Mme »… ; la civilité et le prénom
+            restent à compléter (jamais « M. Famille Keller », Jean-Guy, 12/11). */}
+        {visitors[0] && !visitors[0].lastName.trim() && fromBuyer ? (
           <button
             type="button"
             className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
             data-testid="voucher-take-buyer-name"
-            onClick={() =>
-              setVisitors((current) =>
-                current.map((entry, at) =>
-                  at === 0 ? { ...entry, name: context.buyer.name.trim() } : entry,
-                ),
-              )
-            }
+            onClick={() => setVisitor(0, { lastName: fromBuyer })}
           >
-            Reprendre « {context.buyer.name.trim()} »
+            Reprendre « {context.buyer.name.trim()} » : nom « {fromBuyer} », civilité et prénom à
+            compléter
           </button>
         ) : null}
-        {visitors.map((visitor, index) => (
-          <div key={index} className="grid grid-cols-[auto_1fr] gap-2">
-            <select
-              className={inputBase}
-              value={visitor.civility}
-              aria-label={`Civilité du visiteur ${index + 1}`}
-              onChange={(event) =>
-                setVisitors((current) =>
-                  current.map((entry, at) =>
-                    at === index
-                      ? { ...entry, civility: event.target.value as VisitorCivility }
-                      : entry,
-                  ),
-                )
-              }
-            >
-              {VISITOR_CIVILITIES.map((civility) => (
-                <option key={civility} value={civility}>
-                  {civility}
-                </option>
-              ))}
-            </select>
-            <input
-              className={inputBase}
-              value={visitor.name}
-              placeholder="Prénom et nom"
-              maxLength={120}
-              required
-              aria-label={`Prénom et nom du visiteur ${index + 1}`}
+        {visitors.map((visitor, index) => {
+          // Un bon plus ancien de la fiche : son visiteur, découpé à la demande.
+          const old = context.lastVisitor?.visitors[index];
+          const oldSplit =
+            old && !old.firstName && !visitor.firstName.trim() && !visitor.lastName.trim()
+              ? splitName(old.name)
+              : null;
+          return (
+            <div
+              key={index}
+              className="flex flex-col gap-2"
               data-testid={`voucher-visitor-${index + 1}`}
-              onChange={(event) =>
-                setVisitors((current) =>
-                  current.map((entry, at) =>
-                    at === index ? { ...entry, name: event.target.value } : entry,
-                  ),
-                )
-              }
-            />
-          </div>
-        ))}
+            >
+              {oldSplit && old ? (
+                <button
+                  type="button"
+                  className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
+                  data-testid={`voucher-take-last-visitor-${index + 1}`}
+                  onClick={() => setVisitor(index, { civility: old.civility, ...oldSplit })}
+                >
+                  Reprendre « {old.civility} {old.name} » du dernier bon : prénom «{' '}
+                  {oldSplit.firstName} », nom « {oldSplit.lastName} »
+                </button>
+              ) : null}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_1fr]">
+                <select
+                  className={`${inputBase} ${visitor.civility ? '' : 'border-amber-600'}`}
+                  value={visitor.civility}
+                  aria-label={`Civilité du visiteur ${index + 1}`}
+                  data-testid={`voucher-visitor-civility-${index + 1}`}
+                  onChange={(event) =>
+                    setVisitor(index, { civility: event.target.value as Visitor['civility'] })
+                  }
+                >
+                  <option value="">Civilité</option>
+                  {VISITOR_CIVILITIES.map((civility) => (
+                    <option key={civility} value={civility}>
+                      {civility}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className={`${inputBase} ${visitor.firstName.trim() ? '' : 'border-amber-600'}`}
+                  value={visitor.firstName}
+                  placeholder="Prénom"
+                  maxLength={80}
+                  required
+                  aria-label={`Prénom du visiteur ${index + 1}`}
+                  data-testid={`voucher-visitor-first-${index + 1}`}
+                  onChange={(event) => setVisitor(index, { firstName: event.target.value })}
+                />
+                <input
+                  className={`${inputBase} ${visitor.lastName.trim() ? '' : 'border-amber-600'}`}
+                  value={visitor.lastName}
+                  placeholder="Nom"
+                  maxLength={80}
+                  required
+                  aria-label={`Nom du visiteur ${index + 1}`}
+                  data-testid={`voucher-visitor-last-${index + 1}`}
+                  onChange={(event) => setVisitor(index, { lastName: event.target.value })}
+                />
+              </div>
+              {complete(visitor) ? null : (
+                <span
+                  className="text-sm text-amber-800"
+                  data-testid={`voucher-visitor-missing-${index + 1}`}
+                >
+                  {[
+                    visitor.civility ? null : 'la civilité',
+                    visitor.firstName.trim() ? null : 'le prénom',
+                    visitor.lastName.trim() ? null : 'le nom',
+                  ]
+                    .filter((part): part is string => part != null)
+                    .join(', ')
+                    .replace(/, ([^,]*)$/, ' et $1')
+                    .replace(/^./, (letter) => letter.toUpperCase())}{' '}
+                  à compléter.
+                </span>
+              )}
+            </div>
+          );
+        })}
         {visitors.length < 2 ? (
           <button
             type="button"
             className={`${btnSecondary} self-start`}
-            onClick={() => setVisitors((current) => [...current, { civility: 'Mme', name: '' }])}
+            onClick={() => setVisitors((current) => [...current, { ...EMPTY_VISITOR }])}
           >
             Ajouter un second visiteur
           </button>
@@ -542,7 +609,7 @@ export function VoucherForm({
         {visitors.map((visitor, index) => (
           <SignaturePad
             key={index}
-            label={`Signature de ${visitor.name.trim() || `visiteur ${index + 1}`}`}
+            label={`Signature de ${`${visitor.firstName} ${visitor.lastName}`.trim() || `visiteur ${index + 1}`}`}
             testId={`voucher-signature-${index + 1}`}
             onChange={(value) =>
               setSignatures((current) => current.map((entry, at) => (at === index ? value : entry)))
@@ -557,14 +624,21 @@ export function VoucherForm({
             pending ||
             !approved ||
             chosen.length === 0 ||
+            !visitors.every(complete) ||
             (!tour && outside === true && validTitle == null) ||
             missingTitles.length > 0 ||
+            searchConflict ||
             colleagueTooMany ||
             signatures.slice(0, visitors.length).some((value) => value == null)
           }
         >
           {pending ? 'Signature…' : 'Signer le bon de visite'}
         </button>
+        {searchConflict ? (
+          <p className="text-sm font-semibold text-amber-800" data-testid="voucher-one-search">
+            {OUTSIDE_ONE_SEARCH}
+          </p>
+        ) : null}
         {missingTitles.length > 0 ? (
           <p className="text-sm font-semibold text-amber-800" data-testid="voucher-missing-titles">
             Il manque : le titre pour{' '}

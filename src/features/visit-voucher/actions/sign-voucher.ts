@@ -27,8 +27,10 @@ import {
 import {
   OUTSIDE_COLLEAGUE_ONE,
   OUTSIDE_TITLE_MISSING,
+  OUTSIDE_ONE_SEARCH,
   OUTSIDE_TITLE_MIXED,
-  titleKey,
+  severalSearches,
+  tourVersion,
   type OutsideTitle,
 } from '@/features/visit-voucher/services/outside-mandate';
 import { SIGNATURE_BUCKET, voucherPath } from '@/features/visit-voucher/services/voucher-link';
@@ -60,7 +62,8 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   if (!parsed.success) {
     return {
       ok: false,
-      error: 'Le bon est incomplet : vérifiez le visiteur, les biens et la signature.',
+      error:
+        'Le bon est incomplet : vérifiez la civilité, le prénom et le nom du visiteur, les biens et la signature.',
     };
   }
   const input = parsed.data;
@@ -101,8 +104,8 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     if (input.biens.some((bien, index) => !outside[index] && (bien.title || input.title))) {
       return { ok: false, error: FAILED };
     }
-    const keys = new Set(bienTitles.map(titleKey));
-    tour = keys.size > 1;
+    if (severalSearches(bienTitles)) return { ok: false, error: OUTSIDE_ONE_SEARCH };
+    tour = tourVersion(bienTitles);
     title = !tour && outside[0] ? bienTitles[0]! : null;
   } else {
     if (outside.some(Boolean) && !outside.every(Boolean)) {
@@ -145,7 +148,12 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   const now = new Date();
   const fields: StoredVoucherFields = {
     agency: context.agency,
-    visitors: input.visitors,
+    visitors: input.visitors.map((entry) => ({
+      civility: entry.civility,
+      name: `${entry.firstName} ${entry.lastName}`,
+      firstName: entry.firstName,
+      lastName: entry.lastName,
+    })),
     visitorAddress: input.visitorAddress,
     piece: input.piece,
     // Ce qu'ACM sait se remplit seul (§ 7) : le prix et l'adresse connus du serveur l'emportent sur

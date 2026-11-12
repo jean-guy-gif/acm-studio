@@ -64,7 +64,14 @@ export type VoucherContext = {
   advisorName: string;
   city: string;
   lastVisitor: {
-    visitors: { civility: VisitorCivility; name: string }[];
+    // Mission 154 — prénom et nom séparés quand le document les garde (bon récent, offre) ; un bon
+    // plus ancien n'a que le nom entier.
+    visitors: {
+      civility: VisitorCivility;
+      name: string;
+      firstName: string | null;
+      lastName: string | null;
+    }[];
     address: string;
     // Mission 154 — inconnu quand le visiteur vient d'une offre (elle ne dit pas la pièce).
     piece: VisitorPiece | null;
@@ -119,7 +126,8 @@ export async function getVoucherContext(
     .eq('buyer_id', buyerId)
     .order('signed_at', { ascending: false })
     .limit(20);
-  if (!legal.ok || branding.error || visitRead.failed) {
+  // Une lecture en échec n'est jamais lue comme « aucun bon » (M98, relecteur).
+  if (!legal.ok || branding.error || visitRead.failed || lastDocument.error) {
     return { ok: false, error: 'Le bon de visite n’a pas pu être préparé : rechargez la page.' };
   }
   const mentions = {
@@ -327,12 +335,23 @@ export async function getVoucherContext(
       // fiche ; sinon le conseiller la saisit.
       city: cityOfAddress(mentions.postalAddress) || last?.city || '',
       lastVisitor: last
-        ? { visitors: last.visitors, address: last.visitorAddress, piece: last.piece }
+        ? {
+            visitors: last.visitors.map((entry) => ({
+              civility: entry.civility,
+              name: entry.name,
+              firstName: entry.firstName ?? null,
+              lastName: entry.lastName ?? null,
+            })),
+            address: last.visitorAddress,
+            piece: last.piece,
+          }
         : lastOffer
           ? {
               visitors: lastOffer.offrants.map((offrant) => ({
                 civility: offrant.civility,
                 name: `${offrant.firstNames} ${offrant.lastName}`.trim(),
+                firstName: offrant.firstNames,
+                lastName: offrant.lastName,
               })),
               address: lastOffer.address,
               piece: null,

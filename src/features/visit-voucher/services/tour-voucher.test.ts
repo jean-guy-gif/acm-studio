@@ -7,6 +7,8 @@ describe('tourVoucherOpen', () => {
   it('fermé en production, et quand une production ne dit pas son environnement', () => {
     expect(tourVoucherOpen({ VERCEL_ENV: 'production', NODE_ENV: 'production' })).toBe(false);
     expect(tourVoucherOpen({ NODE_ENV: 'production' })).toBe(false);
+    expect(tourVoucherOpen({})).toBe(false);
+    expect(tourVoucherOpen({ NODE_ENV: 'staging' })).toBe(false);
   });
 
   it('ouvert sur l’essai (prévisualisation), en local et dans les tests', () => {

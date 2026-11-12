@@ -23,24 +23,21 @@ describe('initiallyChecked', () => {
     expect([...checked].sort()).toEqual(['a', 'b']);
   });
 
-  it('sans visite à venir sous mandat : toutes celles hors mandat', () => {
-    const checked = initiallyChecked(
-      [
-        visit('a', { outside: true }),
-        visit('b', { outside: true }),
-        visit('c', { eligible: false }),
-      ],
-      null,
-    );
-    expect([...checked].sort()).toEqual(['a', 'b']);
+  it('tournée éteinte, hors mandat : la seule visite à venir, jamais plusieurs d’office', () => {
+    expect([
+      ...initiallyChecked([visit('a', { outside: true }), visit('c', { eligible: false })], null),
+    ]).toEqual(['a']);
+    expect(
+      initiallyChecked([visit('a', { outside: true }), visit('b', { outside: true })], null).size,
+    ).toBe(0);
   });
 
-  it('la visite d’où l’on vient décide du régime, et reste cochée même faite', () => {
+  it('tournée éteinte : la visite d’où l’on vient, seule si elle est hors mandat', () => {
     const checked = initiallyChecked(
       [visit('a'), visit('b', { outside: true }), visit('c', { outside: true, visited: true })],
       'c',
     );
-    expect([...checked].sort()).toEqual(['b', 'c']);
+    expect([...checked]).toEqual(['c']);
   });
 
   it('toutes faites : la seule qui a droit au bon, sinon rien', () => {
