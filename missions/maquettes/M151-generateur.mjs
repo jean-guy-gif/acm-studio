@@ -465,6 +465,51 @@ const sheet4 = {
   ],
 };
 
+// Planche 4 b — les états du classement (décisions de Jean-Guy, 12/11) : simplifié avant la
+// recherche du marché, l'attente pendant la recherche, simplifié après un échec ou un délai.
+
+const simpleCard = ({ rank, img, title, price, priceNote, crit, group, words }) => `
+  <article class="ic">
+    <div class="ich"><span class="rank">${rank}</span><img src="${photos}/${img}" alt=""><div class="it2"><b>${title}</b><small>${crit} · ${group}</small></div><div class="pr"><b>${price}</b><small class="${priceNote[0]}">${priceNote[1]}</small></div><label class="cb"><i></i>Retenir</label></div>
+    <div class="whyb short"><span class="wt">Ce qui compte pour eux</span><span class="muted sm">${words}</span></div>
+  </article>`;
+
+const head4b = `
+  <a class="back">← M. et Mme Arnaud</a>
+  <div class="ph"><h1 class="h1">Leurs biens idéaux</h1><span class="count">Maison · Vence, Saint-Paul-de-Vence, Tourrettes-sur-Loup · jusqu’à 750 000 €</span></div>`;
+
+const before4b = `${head4b}
+  <div class="order simple"><b>Classement simplifié</b> jusqu’à la recherche du marché : les biens de l’agence sont rangés par ressemblance, puis par prix. Au lancement de la recherche, leurs annonces sont lues pour ce qui compte pour eux, avec celles du marché.</div>
+  <h2 class="cat ag">Ce que l’agence a déjà · 2</h2>
+  ${simpleCard({ rank: '1', img: 'maison-03.jpg', title: 'Maison · 5 pièces · 150 m² · Vence', price: '713 000 €', priceNote: ['g', '37 000 € sous le budget'], crit: '7 critères sur 8', group: 'Mes mandats', words: 'L’annonce mentionne « calme », « plain-pied »' })}
+  ${simpleCard({ rank: '2', img: 'maison-06.jpg', title: 'Maison · 4 pièces · 128 m² · Vence', price: '740 000 €', priceNote: ['g', '10 000 € sous le budget'], crit: '6 critères sur 8', group: 'Concurrent à prospecter', words: 'L’annonce ne mentionne aucun de leurs mots' })}
+  <div class="mk4"><span class="btn">Trouver sur le marché</span><span class="muted sm">Recherche payante, jusqu’à 0,60 €</span></div>`;
+
+const waiting4b = `${head4b}
+  <div class="card center"><span class="big">Recherche du marché…</span><span class="lead">Puis lecture des annonces pour ce qui compte pour eux : au calme, sans vis-à-vis, du cachet, de plain-pied, prêt à vivre.</span><div class="progress"><span></span></div><span class="muted sm">Jusqu’à 30 secondes. Si la lecture tarde, les biens s’affichent en classement simplifié.</span></div>`;
+
+const failed4b = `${head4b}
+  <div class="order simple"><b>Classement simplifié</b> : la lecture des annonces n’a pas abouti à temps. Les biens sont rangés par ressemblance, puis par prix ; aucun n’est écarté.</div>
+  <h2 class="cat">Correspondance forte · 3</h2>
+  ${simpleCard({ rank: '1', img: 'maison-02.jpg', title: 'Maison · 4 pièces · 135 m² · Vence', price: '745 000 €', priceNote: ['g', '5 000 € sous le budget'], crit: '8 critères sur 8', group: 'Marché', words: 'L’annonce mentionne « calme »' })}
+  <div class="stubc"></div>`;
+
+const sheet4b = {
+  title: 'M151 · 4 b — Les états du classement',
+  sub: 'Ce que la planche 4 ne montrait pas, d’après les décisions de Jean-Guy du 12/11 : le classement se fait pendant la recherche du marché, avant d’afficher ; avant elle, et si la lecture échoue ou tarde, le classement est simplifié, sans rien bloquer. La carte classée (« Pourquoi 1er ») ne change pas. Annonces et mots inventés pour la maquette.',
+  rows: [
+    [titled('desk', frame('desk', before4b), ' · avant la recherche du marché')],
+    [titled('tab', frame('tab', waiting4b), ' · pendant la recherche'), titled('phone', frame('phone', failed4b), ' · après un échec ou un délai')],
+  ],
+  notes: [
+    ['Avant la recherche', '« Ce que l’agence a déjà » est en <b>classement simplifié</b>, et le bandeau le dit : rangés par ressemblance, puis par prix ; la ligne « Ce qui compte pour eux » dit seulement les mots trouvés (« l’annonce mentionne « calme » »), jamais ✓ ≈ ✗. Rien n’est lu par l’IA à l’ouverture de la page : rien n’est dépensé.'],
+    ['Pendant', 'Un seul message d’attente, à la place des résultats : la recherche, puis la lecture des annonces, celles du marché et celles de l’agence ensemble. Au plus 30 secondes pour la lecture ; ensuite, les biens s’affichent sans elle.'],
+    ['Après', 'Lecture réussie : la planche 4, inchangée — « Pourquoi 1er », les mots exacts, le bandeau « Rangés par ce qui compte pour eux ». Échec ou délai : le bandeau « Classement simplifié : la lecture des annonces n’a pas abouti à temps », les biens affichés quand même, aucun écarté.'],
+    ['Le rang', 'Le score de ce qui compte pour eux (clairement 2, avec réserve 1, rien ou non lu 0, le contraire −2) ne range qu’à l’intérieur d’une catégorie : il ne change jamais un bien de catégorie et n’en écarte aucun (Jean-Guy, 12/11).'],
+    ['Budget atteint ou lecture fermée', 'Même forme simplifiée, la raison dans le bandeau : « Classement simplifié : budget de lecture du mois atteint » ; pour une agence où la lecture n’est pas ouverte, « Classement simplifié » seul, sans raison technique.'],
+  ],
+};
+
 // ---------------------------------------------------------------------------------------------
 
 const css = `
@@ -584,6 +629,7 @@ nav{display:flex;flex-direction:column;gap:4px;flex:1}.grp{display:flex;flex-dir
 .why .mk{font-weight:800;text-align:center;border-radius:6px}.why b{font-weight:700}
 .why .y .mk{color:${C.green}}.why .r .mk{color:${C.orange}}.why .n .mk{color:${C.z500}}.why .x .mk{color:#b91c1c}
 .why .n span:last-child{color:${C.z500}}
+.order.simple{border-left-color:#a1a1aa}.cat.ag{color:${C.deep}}.mk4{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .stubc{height:60px;border-radius:16px;background:#fff;border:1px dashed ${C.z200}}
 `;
 
@@ -597,6 +643,7 @@ const SHEETS = {
   'M151-2-la-fiche-a-verifier.html': sheet2,
   'M151-3-ce-qui-compte-pour-eux.html': sheet3,
   'M151-4-la-raison-du-rang.html': sheet4,
+  'M151-4b-les-etats-du-classement.html': sheet4b,
 };
 
 for (const [name, def] of Object.entries(SHEETS)) writeFileSync(join(here, name), sheetHtml(def));
