@@ -49,4 +49,13 @@ describe('initiallyChecked', () => {
       initiallyChecked([visit('a', { visited: true }), visit('b', { visited: true })], null).size,
     ).toBe(0);
   });
+
+  it('le bon de la tournée ouvert : toutes les visites à venir, quel que soit leur titre', () => {
+    const checked = initiallyChecked(
+      [visit('a'), visit('b', { outside: true }), visit('c', { visited: true })],
+      null,
+      true,
+    );
+    expect([...checked].sort()).toEqual(['a', 'b']);
+  });
 });

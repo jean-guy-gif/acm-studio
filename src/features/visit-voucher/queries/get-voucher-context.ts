@@ -12,6 +12,7 @@ import {
 import { readVoucherFields } from '@/features/visit-voucher/services/voucher-input';
 import { readOfferFields } from '@/features/purchase-offer/services/offer-input';
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
+import { tourVoucherOpen } from '@/features/visit-voucher/services/tour-voucher';
 import {
   HORS_MANDAT_OUVERT,
   readOutsideTitle,
@@ -71,6 +72,8 @@ export type VoucherContext = {
   // Mission 153 — le mandat de recherche du dernier bon ou de la dernière offre de la fiche (jamais
   // gardé sur la fiche, M137 A).
   lastSearchTitle: Extract<OutsideTitle, { kind: 'search' }> | null;
+  // Mission 154 (point 3) — le bon de la tournée (plusieurs titres), éteint en production.
+  tourOpen: boolean;
 };
 
 export async function getVoucherContext(
@@ -208,13 +211,14 @@ export async function getVoucherContext(
   for (const row of previous.data ?? []) {
     const fields = readVoucherFields(row.fields);
     for (const bien of fields?.biens ?? []) {
-      if (fields?.title) {
+      const bienTitle = bien.title ?? fields?.title ?? null;
+      if (bienTitle) {
         if (
-          fields.title.kind === 'colleague' &&
+          bienTitle.kind === 'colleague' &&
           bien.reference &&
           !knownColleague.has(bien.reference)
         ) {
-          knownColleague.set(bien.reference, fields.title);
+          knownColleague.set(bien.reference, bienTitle);
         }
       } else if (bien.reference && !knownMandate.has(bien.reference)) {
         knownMandate.set(bien.reference, bien.mandate);
@@ -223,7 +227,11 @@ export async function getVoucherContext(
   }
   const lastSearchTitle =
     (buyerDocuments.data ?? [])
-      .map((row) => readOutsideTitle((row.fields as { title?: unknown } | null)?.title))
+      .flatMap((row) => {
+        const raw = row.fields as { title?: unknown; biens?: { title?: unknown }[] } | null;
+        return [raw?.title, ...(Array.isArray(raw?.biens) ? raw.biens.map((b) => b?.title) : [])];
+      })
+      .map((title) => readOutsideTitle(title))
       .find(
         (title): title is Extract<OutsideTitle, { kind: 'search' }> => title?.kind === 'search',
       ) ?? null;
@@ -331,6 +339,7 @@ export async function getVoucherContext(
             }
           : null,
       lastSearchTitle,
+      tourOpen: tourVoucherOpen(),
     },
   };
 }

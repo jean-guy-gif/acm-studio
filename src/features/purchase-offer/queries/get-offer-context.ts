@@ -233,13 +233,15 @@ export async function getOfferContext(
   for (const row of buyerDocuments.data ?? []) {
     const title = readOutsideTitle((row.fields as { title?: unknown } | null)?.title);
     if (title?.kind === 'search' && !lastSearchTitle) lastSearchTitle = title;
-    if (row.kind === 'visit_voucher' && !lastVoucherFields) {
-      lastVoucherFields = readVoucherFields(row.fields);
-    }
-    if (row.kind === 'visit_voucher' && title) {
-      for (const bien of readVoucherFields(row.fields)?.biens ?? []) {
-        if (!voucherTitleOf.has(bien.visitId)) voucherTitleOf.set(bien.visitId, title);
-      }
+    if (row.kind !== 'visit_voucher') continue;
+    const voucher = readVoucherFields(row.fields);
+    if (!lastVoucherFields) lastVoucherFields = voucher;
+    // Mission 154 — dans un bon de la tournée, chaque bien porte son titre.
+    for (const bien of voucher?.biens ?? []) {
+      const bienTitle = bien.title ?? title;
+      if (bienTitle?.kind === 'search' && !lastSearchTitle) lastSearchTitle = bienTitle;
+      if (bienTitle && !voucherTitleOf.has(bien.visitId))
+        voucherTitleOf.set(bien.visitId, bienTitle);
     }
   }
 

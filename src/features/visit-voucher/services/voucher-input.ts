@@ -30,6 +30,8 @@ export const voucherInputSchema = z.object({
         mandate: z.string().trim().max(40),
         price: z.number().int().min(1).max(999_999_999),
         address: trimmed(5, 300),
+        // Mission 154 (point 3) — le bon de la tournée : le titre de CE bien hors mandat.
+        title: outsideTitleSchema.nullable().default(null),
       }),
     )
     .min(1)
@@ -82,6 +84,8 @@ export const storedVoucherFieldsSchema = z.object({
         mandate: z.string().max(40),
         price: z.number(),
         address: z.string().max(300),
+        // Mission 154 — le titre de ce bien, dans un bon de la tournée.
+        title: outsideTitleSchema.nullable().optional(),
       }),
     )
     .min(1)
