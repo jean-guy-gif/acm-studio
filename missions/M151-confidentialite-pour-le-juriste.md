@@ -2,8 +2,9 @@
 
 
 Préparé le 10/11/2026, **mis à jour le 12/11/2026** pour la relecture (régions lues chez AWS, ligne
-de consommation de chaque lecture, sources jamais gardées). La page `/confidentialite`, validée le
-07/11, ne change pas avant votre accord. La fonction reste fermée aux agences avant cet accord : elle
+de consommation de chaque lecture, sources jamais gardées). **Validé par la juriste** (Jean-Guy,
+12/11) : les trois textes de `/confidentialite` et l'avertissement à l'écran sont publiés tels
+quels, sans la mention « Texte à faire relire par un juriste ». La fonction reste fermée aux agences avant cet accord : elle
 n'est ouverte qu'à l'agence de démonstration, où rien n'est lu pour de vrai, et aux comptes
 d'exploitation d'ACM Studio pour un essai sur des notes inventées (décision de Jean-Guy, 12/11).
 

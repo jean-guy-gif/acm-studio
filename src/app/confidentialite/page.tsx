@@ -204,6 +204,26 @@ export default function ConfidentialitePage() {
               d’annonces, Stream Estate, dans la limite d’un budget mensuel réglé par l’agence ;
               l’agence garde la date de chaque passage et les biens trouvés, tels que les annonces
               les publient, jamais une adresse. Rien n’est envoyé à l’acquéreur sans le conseiller.
+              Pour créer ou compléter une fiche, le conseiller peut photographier ses notes, déposer
+              la fiche exportée de son logiciel ou coller un texte : ce contenu est envoyé une fois
+              à un service d’intelligence artificielle, Claude, d’Anthropic, utilisé par Amazon Web
+              Services, qui le lit uniquement dans l’Union européenne, et propose une fiche ; le
+              conseiller la vérifie, et seul ce qu’il valide est enregistré. La photo, le fichier ou
+              le texte ne sont pas gardés par ACM Studio, ni les extraits des notes montrés au
+              conseiller pour vérifier. Le service ne relève aucune donnée sur la santé, la
+              religion, les origines, les opinions ou la vie privée, ni aucun jugement sur la
+              personne ; dans les notes de la fiche, il ne propose que des faits pratiques
+              (disponibilités pour visiter, contraintes), que le conseiller vérifie. Pour chaque
+              lecture, ACM Studio garde la date, le conseiller qui l’a faite, le modèle utilisé, son
+              coût, son issue (fiche créée ou complétée, lecture annulée) et le nom des champs
+              proposés, jamais leur contenu ; cette ligne reste à l’agence, comme la consommation
+              des recherches. Quand l’outil cherche des biens pour l’acquéreur, ce qui compte pour
+              lui (le calme, l’absence de vis-à-vis, le caractère du bien…) est comparé aux
+              descriptions publiques des annonces par le même service, sans son nom ni ses
+              coordonnées ; l’outil range les biens et cite l’annonce au conseiller, il n’en écarte
+              aucun. Pour la veille de la nuit, ce jugement et sa citation courte sont gardés avec
+              le passage, et la citation est effacée au bout de 3 ans ; une citation qui contient
+              une adresse n’est jamais gardée.
             </li>
             <li>
               Le bon de visite : quand un acquéreur visite un bien de l’agence, il signe au doigt,
@@ -365,7 +385,8 @@ export default function ConfidentialitePage() {
             L’agence immobilière qui utilise ACM Studio est responsable du traitement des données de
             ses dossiers : vendeurs, biens, concurrents et prospection. {PUBLISHER_NAME}, éditeur
             d’ACM Studio, est son sous-traitant : il héberge et traite ces données pour le compte de
-            l’agence.
+            l’agence. Pour lire les notes d’un conseiller, {PUBLISHER_NAME} fait appel à Amazon Web
+            Services, son propre sous-traitant.
           </p>
         </section>
 
@@ -374,6 +395,11 @@ export default function ConfidentialitePage() {
           <ul className={list}>
             <li>Supabase : la base de données, les comptes et les photos des dossiers.</li>
             <li>Vercel : l’hébergement de l’application.</li>
+            <li>
+              Amazon Web Services (Amazon Bedrock), avec le modèle Claude d’Anthropic : la lecture
+              des notes d’un conseiller et des descriptions d’annonces, uniquement dans l’Union
+              européenne ; le service ne garde pas ce qu’il lit.
+            </li>
             <li>
               Pour chercher des concurrents, ACM Studio transmet les critères de la recherche
               (commune, type de bien, surface, pièces, fourchette de prix, et la position du bien
