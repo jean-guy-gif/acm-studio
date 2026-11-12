@@ -37,24 +37,35 @@ create function pg_temp.find(p_url text, p_soft boolean) returns jsonb language 
          jsonb_build_object('key', 'calme', 'verdict', 'reserve', 'quote', 'Quartier calme',
                             'counterQuote', 'à deux pas de la route', 'toVerify', false),
          jsonb_build_object('key', 'vue', 'verdict', 'nothing', 'quote', null,
-                            'counterQuote', null, 'toVerify', false))))
+                            'counterQuote', null, 'toVerify', false),
+         -- Un jugement sans clé `counterQuote` (une forme plus ancienne ou partielle).
+         jsonb_build_object('key', 'plain_pied', 'verdict', 'clearly', 'quote', 'Entièrement de plain-pied',
+                            'toVerify', false))))
        else '{}'::jsonb end
 $$;
+-- Un bien en classement simplifié : les seuls mots trouvés, jamais touchés par la purge.
+create function pg_temp.mentions(p_url text) returns jsonb language sql as $$
+  select jsonb_build_object('url', p_url, 'price', 729000,
+    'soft', jsonb_build_object('mentions', jsonb_build_array('calme')))
+$$;
 
-insert into public.buyer_watch_runs (id, agency_id, buyer_id, ran_at, status, seen_since, finds) values
+insert into public.buyer_watch_runs (id, agency_id, buyer_id, ran_at, status, seen_since, adverts, found_count, finds) values
   ('151bbbbb-0000-0000-0000-000000000001', '151baaaa-0000-0000-0000-000000000000',
-   '151baaaa-3333-0000-0000-000000000000', now() - interval '4 years', 'done',
-   now() - interval '4 years 7 days',
-   jsonb_build_array(pg_temp.find('https://a.fr/1', true), pg_temp.find('https://a.fr/2', false))),
+   '151baaaa-3333-0000-0000-000000000000', '2021-06-01 02:17:00+00', 'done',
+   '2021-05-25 02:17:00+00', 20, 3,
+   jsonb_build_array(pg_temp.find('https://a.fr/1', true), pg_temp.find('https://a.fr/2', false),
+                     pg_temp.mentions('https://a.fr/5'))),
   ('151bbbbb-0000-0000-0000-000000000002', '151baaaa-0000-0000-0000-000000000000',
    '151baaaa-3333-0000-0000-000000000000', now() - interval '1 year', 'done',
-   now() - interval '1 year 7 days', jsonb_build_array(pg_temp.find('https://a.fr/3', true))),
+   now() - interval '1 year 7 days', 0, 0, jsonb_build_array(pg_temp.find('https://a.fr/3', true))),
   ('151bbbbb-0000-0000-0000-000000000003', '151baaaa-0000-0000-0000-000000000000',
    '151baaaa-3333-0000-0000-000000000000', now() - interval '5 years', 'done',
-   now() - interval '5 years 7 days', jsonb_build_array(pg_temp.find('https://a.fr/4', false)));
+   now() - interval '5 years 7 days', 0, 0, jsonb_build_array(pg_temp.find('https://a.fr/4', false)));
 
--- Seules les lignes de cette agence comptent : la base de test peut en porter d'autres.
-create temp table counted as select public.purge_stale_listing_texts() as purged;
+-- Le premier appel compte au moins ce passage ; le second, plus rien (§3).
+create temp table counted as select public.purge_stale_listing_texts() as first_pass;
+select pg_temp.expect('§1 le premier appel compte le passage ancien',
+  (select (first_pass >= 1)::text from counted), 'true');
 
 -- §1 — le passage ancien perd ses citations ; le jugement et le reste restent.
 select pg_temp.expect('§1 citation vidée',
@@ -69,10 +80,22 @@ select pg_temp.expect('§1 le jugement reste',
 select pg_temp.expect('§1 le bien et l''ordre restent',
   (select string_agg(f ->> 'url', ',' order by o) from public.buyer_watch_runs w,
      jsonb_array_elements(w.finds) with ordinality as e(f, o)
-    where w.id = '151bbbbb-0000-0000-0000-000000000001'), 'https://a.fr/1,https://a.fr/2');
-select pg_temp.expect('§1 la date du passage reste',
-  (select (ran_at < now() - interval '3 years')::text from public.buyer_watch_runs
-    where id = '151bbbbb-0000-0000-0000-000000000001'), 'true');
+    where w.id = '151bbbbb-0000-0000-0000-000000000001'), 'https://a.fr/1,https://a.fr/2,https://a.fr/5');
+select pg_temp.expect('§1 le jugement sans contre-citation : citation vidée, verdict gardé',
+  (select (finds #>> '{0,soft,judgments,2,quote}') is null
+          and finds #>> '{0,soft,judgments,2,verdict}' = 'clearly'
+     from public.buyer_watch_runs where id = '151bbbbb-0000-0000-0000-000000000001')::text, 'true');
+select pg_temp.expect('§1 le bien sans jugement reste à l''identique',
+  (select (finds -> 1)::text from public.buyer_watch_runs
+    where id = '151bbbbb-0000-0000-0000-000000000001'), pg_temp.find('https://a.fr/2', false)::text);
+select pg_temp.expect('§1 les mots trouvés restent à l''identique',
+  (select (finds -> 2)::text from public.buyer_watch_runs
+    where id = '151bbbbb-0000-0000-0000-000000000001'), pg_temp.mentions('https://a.fr/5')::text);
+select pg_temp.expect('§1 le reste du passage ne bouge pas',
+  (select concat_ws('|', ran_at, seen_since, status, adverts, found_count) from public.buyer_watch_runs
+    where id = '151bbbbb-0000-0000-0000-000000000001'),
+  concat_ws('|', '2021-06-01 02:17:00+00'::timestamptz, '2021-05-25 02:17:00+00'::timestamptz,
+            'done', 20, 3));
 
 -- §2 — le passage récent garde ses citations ; l'ancien sans jugement n'est pas touché.
 select pg_temp.expect('§2 citation récente gardée',
@@ -84,12 +107,8 @@ select pg_temp.expect('§2 passage ancien sans jugement intact',
 
 -- §3 — une seconde passe ne compte plus ce passage ; la fiche supprimée emporte ses passages ;
 -- la fonction reste fermée au navigateur.
-select pg_temp.expect('§3 seconde passe : rien de plus pour cette agence',
-  (select count(*)::text from public.buyer_watch_runs w
-    where w.agency_id = '151baaaa-0000-0000-0000-000000000000'
-      and w.ran_at < now() - interval '3 years'
-      and jsonb_path_exists(w.finds,
-            '$[*].soft.judgments[*] ? (@.quote != null || @.counterQuote != null)')), '0');
+select pg_temp.expect('§3 une seconde passe ne compte plus rien',
+  public.purge_stale_listing_texts()::text, '0');
 select pg_temp.expect('§3 fermée au navigateur',
   has_function_privilege('authenticated', 'public.purge_stale_listing_texts()', 'execute')::text,
   'false');
