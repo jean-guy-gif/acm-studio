@@ -8,6 +8,8 @@ import {
   readWatchFinds,
   toWatchFind,
   watchKey,
+  watchReasonsOf,
+  withSoftReasons,
 } from '@/features/buyer-watch/services/watch-finds';
 import {
   dueWatchBuyers,
@@ -191,6 +193,37 @@ describe('ce que la veille garde', () => {
     expect(readWatchFinds([find, { url: 'http://x' }, 'n’importe quoi'])).toHaveLength(1);
     expect(readWatchFinds({})).toEqual([]);
     expect(findAsCandidate(find).title).toBeNull();
+  });
+
+  // Mission 151 (partie B) — la veille garde le jugement et ses citations, jamais le texte.
+  it('garde le jugement de ce qui compte pour lui, jamais le texte de l’annonce', () => {
+    const find = toWatchFind({
+      ...candidate('100000008'),
+      streamEstate: {
+        ...candidate('100000008').streamEstate!,
+        description: 'Au calme absolu, aucun passage. Texte complet de l’annonce.',
+      },
+    })!;
+    expect(JSON.stringify(find)).not.toContain('Texte complet');
+    const judged = withSoftReasons([find], {
+      [find.url]: {
+        judgments: [
+          {
+            key: 'calme',
+            verdict: 'clearly',
+            quote: 'Au calme absolu',
+            counterQuote: null,
+            toVerify: false,
+          },
+        ],
+      },
+    });
+    const reread = readWatchFinds(JSON.parse(JSON.stringify(judged)));
+    expect(watchReasonsOf(reread)).toEqual({ [find.url]: judged[0]!.soft });
+    // Une forme hors liste n'est pas gardée.
+    expect(
+      withSoftReasons([find], { [find.url]: { judgments: [{ key: 'inconnu' }] } } as never)[0],
+    ).not.toHaveProperty('soft');
   });
 });
 

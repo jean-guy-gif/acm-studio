@@ -72,7 +72,7 @@ const WORKS_NUANCE =
 // Mission 151 — une ★ veut une ligne qui la dit ferme (Jean-Guy, 12/11) : un mot qui l'exige,
 // « +++ », « !! », ou un mot écrit en MAJUSCULES (hors sigles : RDC, DPE, T3, FAI, ASL…).
 const FIRM =
-  /indispensable|obligatoire|imperati|absolument|exige|ferme|uniquement|seulement|pas un euro|!!|\+\+\+/;
+  /indispensable|obligatoire|oblige|imperati|absolu|non[ -]negociable|exige|exigence|il (le )?faut|faut absolument|necessaire|essentiel|incontournable|primordial|a tout prix|sine qua non|ferme|uniquement|seulement|pas un euro|!!|\+\+\+/;
 const ACRONYMS = /\b(RDC|DPE|GES|FAI|ASL|CRM|SDB|OK|T\d|F\d)\b/g;
 export function saysFirm(line: string): boolean {
   return FIRM.test(fold(line)) || /\b[A-ZÀ-Ý]{3,}\b/.test(line.replace(ACRONYMS, ''));
@@ -164,6 +164,7 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     condominiumAccepted: out.condominium_accepted,
   };
   const modelName = Object.fromEntries(Object.entries(SOURCE_FIELDS).map(([k, v]) => [v, k]));
+  const nuances: string[] = [];
   for (const field of NO_FIELDS) {
     const value = bool(flags[field]);
     if (value === true) values[field] = true;
@@ -173,6 +174,9 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
       // OK ») n'en est pas un ; il reste inconnu (N6, 12/11).
       const nuanced = field === 'worksAccepted' && line != null && WORKS_NUANCE.test(fold(line));
       if (line && NEGATION.test(fold(line)) && !nuanced) values[field] = false;
+      // La nuance ne se perd pas : elle va dans Notes, « (à vérifier) », comme une condition
+      // (Jean-Guy, 12/11).
+      if (nuanced && line) nuances.push(`${line} (à vérifier)`);
     }
   }
 
@@ -182,6 +186,13 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
   if (notes) {
     if (refusedWordIn(notes)) skipped += 1;
     else values.notes = notes;
+  }
+  for (const nuance of nuances) {
+    if (refusedWordIn(nuance) || fold(values.notes ?? '').includes(fold(nuance.slice(0, 30)))) {
+      continue;
+    }
+    const joined = values.notes ? `${values.notes} ${nuance}` : nuance;
+    if (joined.length <= BUYER_TEXT_MAX) values.notes = joined;
   }
   const softCriteria: NoteProposal['softCriteria'] = [];
   for (const item of Array.isArray(out.soft_criteria) ? out.soft_criteria : []) {
@@ -203,11 +214,23 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
 
   // 1. Les ★ : sa ligne d'origine, deux au plus, parmi ceux de l'écran ; le budget ★ veut un plafond.
   const mustHave: NoteProposal['mustHave'] = [];
+  const unfirmSources: Partial<Record<(typeof STAR_EQUIPMENTS)[number], string>> = {};
   for (const key of Array.isArray(out.must_have) ? out.must_have : []) {
     const star = oneOf<NoteStar>(NOTE_STAR_CRITERIA, key);
     if (!star || mustHave.some((kept) => kept.key === star)) continue;
     const line = sourceOf.get(`must_have:${star}`);
-    if (!line || !saysFirm(line)) continue;
+    if (!line) continue;
+    // Sans ligne ferme, pas de ★ ; mais l'équipement voulu reste proposé « oui » (Jean-Guy, 12/11).
+    if (!saysFirm(line)) {
+      if ((STAR_EQUIPMENTS as readonly string[]).includes(star)) {
+        const field = star as (typeof STAR_EQUIPMENTS)[number];
+        if (values[field] === undefined) {
+          values[field] = true;
+          unfirmSources[field] = line;
+        }
+      }
+      continue;
+    }
     if (star === 'budget' && values.budgetMax == null) continue;
     // La copropriété ★ veut un « non » gardé (dit en toutes lettres, sa source comprise).
     if (star === 'condominium' && values.condominiumAccepted !== false) continue;
@@ -226,6 +249,13 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
   for (const [modelField, field] of Object.entries(SOURCE_FIELDS)) {
     const line = sourceOf.get(modelField);
     if (line && values[field] !== undefined) sources[field] = line;
+  }
+  for (const [field, line] of Object.entries(unfirmSources)) {
+    const key = field as (typeof STAR_EQUIPMENTS)[number];
+    if (sources[key] === undefined && values[key] === true) sources[key] = line;
+  }
+  if (sources.notes === undefined && values.notes !== undefined && nuances.length > 0) {
+    sources.notes = nuances[0]!.replace(/ \(à vérifier\)$/, '');
   }
   // Une ★ sur un équipement le dit voulu : le champ est « oui », avec la ligne de la ★ pour
   // source, et sa carte le montre (sinon la ★ écrivait « oui » sans carte à vérifier, C5 du 12/11) ;

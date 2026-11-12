@@ -25,6 +25,13 @@ import { getSearchBudget } from '@/features/search-budget/queries/get-search-bud
 import { budgetWarningLabel } from '@/features/search-budget/services/budget';
 import { isManagerRole } from '@/features/team/services/role';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
+import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
+import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
+import { BUYER_GROUPS } from '@/features/meeting-conclusion/services/buyer-reconciliation';
+import { rankingCriteria } from '@/features/soft-ranking/ranking-request';
+import { agencyRankingListings } from '@/features/soft-ranking/server/agency-listings';
+import { SOFT_SHORT_LABELS, softMentions } from '@/features/soft-ranking/services/judgments';
+import { watchReasonsOf } from '@/features/buyer-watch/services/watch-finds';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 import { getBuyerWatchFinds } from '@/features/buyer-watch/queries/get-watch';
@@ -117,6 +124,28 @@ export default async function IdealPropertiesPage({ params }: Props) {
     !demo && isManagerRole(profile.role) ? await getSearchBudget(profile.agency_id) : null;
   const budgetWarning = budget?.ok ? budgetWarningLabel(budget.budget) : null;
 
+  // Mission 151 (partie B) — ce qui compte pour eux : les critères doux de la fiche ; la porte de
+  // la lecture par l'IA (le plafond posé de l'agence) ; avant la recherche, les mots trouvés dans
+  // les biens de l'agence, sans IA ni dépense (planche 4 b).
+  const softCriteria = rankingCriteria(buyer.softCriteria.map((soft) => soft.key));
+  const softOpen = notesReadingOpen({
+    isDemo: demo,
+    email: profile.email,
+    agencyCapCents: await getPosedAiCap(profile.agency_id),
+  });
+  const agencyKeys = BUYER_GROUPS.flatMap((group) =>
+    agency.matches[group].map((hit) => hit.candidate.key),
+  );
+  const agencyMentions =
+    softCriteria.length > 0
+      ? Object.fromEntries(
+          (await agencyRankingListings(profile.agency_id, agencyKeys)).map((listing) => [
+            listing.key,
+            softMentions(listing, softCriteria),
+          ]),
+        )
+      : {};
+
   return (
     <div className="flex max-w-4xl flex-col gap-6 md:gap-8">
       <div className="flex flex-col gap-2">
@@ -148,6 +177,10 @@ export default async function IdealPropertiesPage({ params }: Props) {
         savedItemIds={Object.fromEntries(
           (selection?.items ?? []).map((item) => [selectionKey(item), item.id]),
         )}
+        softLabels={softCriteria.map((key) => SOFT_SHORT_LABELS[key])}
+        softOpen={softOpen}
+        agencyMentions={agencyMentions}
+        watchReasons={watchRun != null ? watchReasonsOf(watchRun.finds) : {}}
       />
     </div>
   );

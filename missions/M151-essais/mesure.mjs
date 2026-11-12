@@ -236,7 +236,7 @@ const NEGATION = /(^|[^a-z])(pas|sans|non|aucun|aucune|ni|jamais|refus|refuse|re
 // Les deux gardes du 12/11, copiées de `guard-proposal.ts` : un « non » nuancé aux travaux, et une
 // ★ dont la ligne ne dit pas que c'est ferme (refusée au serveur, comptée à part).
 const WORKS_NUANCE = /(^|[^a-z])(gros|ok|ca va|accept\w*|sauf|mais|refaire|rafraich\w*|peinture|petits?|legers?|coup de)([^a-z]|$)/;
-const FIRM = /indispensable|obligatoire|imperati|absolument|exige|ferme|uniquement|seulement|pas un euro|!!|\+\+\+/;
+const FIRM = /indispensable|obligatoire|oblige|imperati|absolu|non[ -]negociable|exige|exigence|il (le )?faut|faut absolument|necessaire|essentiel|incontournable|primordial|a tout prix|sine qua non|ferme|uniquement|seulement|pas un euro|!!|\+\+\+/;
 const ACRONYMS = /\b(RDC|DPE|GES|FAI|ASL|CRM|SDB|OK|T\d|F\d)\b/g;
 const saysFirm = (line) => FIRM.test(fold(line)) || /\b[A-ZÀ-Ý]{3,}\b/.test(String(line).replace(ACRONYMS, ''));
 function serverGuard(raw) {
@@ -250,6 +250,12 @@ function serverGuard(raw) {
     if (said.some((q) => NEGATION.test(q)) && !nuanced) continue;
     out[f] = null;
     unsupportedNo.push(f);
+  }
+  // Sans ligne ferme, pas de ★, mais l'équipement voulu reste proposé « oui » (garde du 12/11).
+  for (const m of out.must_have ?? []) {
+    if (!['outdoor', 'parking', 'pool', 'elevator'].includes(m) || out[m] != null) continue;
+    const line = (out.sources ?? []).find((x) => x.field === `must_have:${m}`);
+    if (line && String(line.quote ?? '').trim() && !saysFirm(String(line.quote))) out[m] = true;
   }
   return { out, unsupportedNo };
 }

@@ -121,6 +121,13 @@ export const DEMO_BUYERS: DemoBuyer[] = [
     // Mission 151 — pas de copropriété, sans ★ : rien n'est écarté, la carte d'une annonce le
     // dit « Copropriété : à vérifier » ; les maisons sous mandat sont déclarées hors copropriété.
     condominiumAccepted: false,
+    // Mission 151 (partie B) — ce qui compte pour eux, avec leurs mots : leurs biens idéaux se
+    // rangent par là (décision de Jean-Guy, 12/11 : les Arnaud naissent de la photo, pas semés).
+    softCriteria: [
+      { key: 'calme', words: 'au calme, loin des routes' },
+      { key: 'vue', words: 'une belle vue' },
+      { key: 'plain_pied', words: 'de plain-pied si possible' },
+    ],
     // Mission 135 — le contact précède la sélection partagée il y a 3 jours.
     contactedDaysAgo: 4,
   }),

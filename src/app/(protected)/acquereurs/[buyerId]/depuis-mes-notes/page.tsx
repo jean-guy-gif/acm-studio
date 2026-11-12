@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { NotesFlow } from '@/features/buyer-notes/components/notes-flow';
+import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
 import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { DEMO_NOTES_PHOTO, DEMO_NOTES_TEXT } from '@/features/demo/data/notes-arnaud';
@@ -23,7 +24,14 @@ export default async function CompleteFromNotesPage({
   const [profile, buyer] = await Promise.all([getProfile(), getBuyer(buyerId)]);
   if (!profile || !buyer || buyer.archivedAt) notFound();
   const isDemo = await isDemoAgency(profile.agency_id);
-  if (!notesReadingOpen({ isDemo, email: profile.email })) notFound();
+  if (
+    !notesReadingOpen({
+      isDemo,
+      email: profile.email,
+      agencyCapCents: await getPosedAiCap(profile.agency_id),
+    })
+  )
+    notFound();
 
   return (
     <div className="flex max-w-6xl flex-col gap-6 md:gap-8">

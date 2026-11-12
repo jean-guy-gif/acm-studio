@@ -174,17 +174,23 @@ describe('refusedWordIn', () => {
 });
 
 describe('notesReadingOpen', () => {
-  it('reste fermée sauf pour la démo (simulée) et les opérateurs', () => {
-    const operators = 'jean-guy@exemple.fr';
+  // Jean-Guy, 12/11 : ouverte agence par agence, par le plafond posé par un opérateur.
+  it('fermée sans plafond posé ou à 0 € ; ouverte au-dessus, pour la démo et les opérateurs', () => {
     const env = process.env.ACM_OPERATOR_EMAILS;
-    process.env.ACM_OPERATOR_EMAILS = operators;
+    process.env.ACM_OPERATOR_EMAILS = 'jean-guy@exemple.fr';
     try {
-      expect(notesReadingOpen({ isDemo: false, email: 'conseiller@agence.fr' })).toBe(false);
-      expect(notesReadingOpen({ isDemo: true, email: 'conseiller@agence.fr' })).toBe(true);
-      expect(notesReadingOpen({ isDemo: false, email: 'Jean-Guy@exemple.fr' })).toBe(true);
-      expect(notesReadingOpen({ isDemo: false, email: 'conseiller@agence.fr', open: true })).toBe(
-        true,
-      );
+      const open = (over: { isDemo?: boolean; email?: string; agencyCapCents?: number | null }) =>
+        notesReadingOpen({
+          isDemo: false,
+          email: 'conseiller@agence.fr',
+          agencyCapCents: null,
+          ...over,
+        });
+      expect(open({})).toBe(false);
+      expect(open({ agencyCapCents: 0 })).toBe(false);
+      expect(open({ agencyCapCents: 1000 })).toBe(true);
+      expect(open({ isDemo: true })).toBe(true);
+      expect(open({ email: 'Jean-Guy@exemple.fr' })).toBe(true);
     } finally {
       process.env.ACM_OPERATOR_EMAILS = env;
     }
