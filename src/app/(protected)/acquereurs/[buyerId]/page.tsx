@@ -4,6 +4,10 @@ import { notFound } from 'next/navigation';
 
 import { alertOk, backLink, badgeBrand, btnSecondary, card, link } from '@/components/ui/styles';
 import { BuyerAnswers } from '@/features/buyer-deck/components/buyer-answers';
+import { BuyerSoftCriteria } from '@/features/buyer-notes/components/buyer-soft-criteria';
+import { VerifyAllBadge } from '@/features/buyer-notes/components/verify-all-badge';
+import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
+import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { getBuyerLoopProposals } from '@/features/buyers/queries/get-loop-properties';
 import { getBuyerAnswers } from '@/features/buyer-deck/queries/get-buyer-answers';
 import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
@@ -56,6 +60,7 @@ import {
 } from '@/features/meeting-conclusion/services/buyer-reconciliation';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
+import { getMandateCondominiums } from '@/features/buyers/queries/get-mandate-condominiums';
 import { getProfile } from '@/lib/auth/get-profile';
 import { academiaLinkView } from '@/lib/academia';
 import { getBuyerLastWatch } from '@/features/buyer-watch/queries/get-watch';
@@ -122,28 +127,50 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   ]);
   const supabase = await createClient();
   const counted = withoutExamples(dossiers);
-  const [loadedDeck, answers, progress, prospecting, history, lastWatch, loopProposals] =
-    await Promise.all([
-      selection ? loadDeck(buyer.id) : Promise.resolve(null),
-      profile
-        ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
-        : Promise.resolve({ lines: [], forSuggestions: [] }),
-      profile
-        ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
-        : Promise.resolve(new Map()),
-      // Mission 130 B — si la prospection ne se lit pas (« Ne plus solliciter » illisible, M98), la
-      // fiche s'affiche quand même : seules les correspondances le disent.
-      getAgencyProspecting(counted).catch(() => null),
-      profile
-        ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
-        : Promise.resolve({ selections: [], letters: [], proposals: [], events: [], failed: true }),
-      // Mission 136 — son dernier passage de veille.
-      profile
-        ? getBuyerLastWatch(profile.agency_id, buyer.id)
-        : Promise.resolve({ ok: false as const }),
-      // Mission 145 (partie A, I2) — les mandats signés à lui proposer.
-      profile ? getBuyerLoopProposals(profile.agency_id, new Date()) : null,
-    ]);
+  const [
+    loadedDeck,
+    answers,
+    progress,
+    prospecting,
+    history,
+    lastWatch,
+    loopProposals,
+    condominiums,
+  ] = await Promise.all([
+    selection ? loadDeck(buyer.id) : Promise.resolve(null),
+    profile
+      ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
+      : Promise.resolve({ lines: [], forSuggestions: [] }),
+    profile
+      ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
+      : Promise.resolve(new Map()),
+    // Mission 130 B — si la prospection ne se lit pas (« Ne plus solliciter » illisible, M98), la
+    // fiche s'affiche quand même : seules les correspondances le disent.
+    getAgencyProspecting(counted).catch(() => null),
+    profile
+      ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
+      : Promise.resolve({
+          selections: [],
+          letters: [],
+          proposals: [],
+          events: [],
+          readings: [],
+          failed: true,
+        }),
+    // Mission 136 — son dernier passage de veille.
+    profile
+      ? getBuyerLastWatch(profile.agency_id, buyer.id)
+      : Promise.resolve({ ok: false as const }),
+    // Mission 145 (partie A, I2) — les mandats signés à lui proposer.
+    profile ? getBuyerLoopProposals(profile.agency_id, new Date()) : null,
+    // Mission 151 — la copropriété connue des mandats, seulement s'il n'en veut pas.
+    profile && buyer.condominiumAccepted === false
+      ? getMandateCondominiums(
+          profile.agency_id,
+          counted.map((dossier) => dossier.project.id),
+        )
+      : Promise.resolve(new Map<string, boolean>()),
+  ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
   // Mission 120 — ses visites demandées, chacune avec l'action qui convient et l'état du courrier.
@@ -182,6 +209,11 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       : null;
   // Mission 147 (partie A) — dans l'agence de démonstration, Academia s'ouvre sur sa présentation.
   const saleDemo = saleSeller ? await isDemoAgency(profile?.agency_id) : false;
+  const readingOpen = notesReadingOpen({
+    isDemo: saleSeller ? saleDemo : await isDemoAgency(profile?.agency_id),
+    email: profile?.email,
+    agencyCapCents: await getPosedAiCap(profile?.agency_id),
+  });
   const salePhoto = saleVisit
     ? deck?.items.find((item) => item.item.itemId === saleVisit.itemId)?.photos[0]
     : undefined;
@@ -197,6 +229,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           prospecting.cards
             .filter((cardItem) => cardItem.row.opposedOn == null)
             .map(({ row, seller }) => ({ row, seller })),
+          condominiums,
         ),
       ).matchCount
     : null;
@@ -206,6 +239,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     letters: history.letters,
     proposals: history.proposals,
     events: history.events,
+    readings: history.readings,
     presentedAt: facts.presentedAt,
     linkAt: facts.linkAt ?? null,
     answeredAt: facts.answeredAt ?? null,
@@ -330,6 +364,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 {RECONTACT_LABEL}
               </span>
             ) : null}
+            {/* Mission 151 — une fiche née d'une lecture : ses champs « À vérifier » (M97). */}
+            <VerifyAllBadge buyerId={buyer.id} count={buyer.fieldsToVerify.length} />
           </div>
           {words ? (
             <p className="text-lg text-zinc-800 stage:text-white/85" data-testid="buyer-words">
@@ -364,6 +400,16 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             >
               Modifier
             </Link>
+            {/* Mission 151 — « Compléter depuis mes notes », là où la lecture est ouverte. */}
+            {readingOpen ? (
+              <Link
+                href={`/acquereurs/${buyer.id}/depuis-mes-notes`}
+                className="rounded-md px-2.5 py-1 text-sm font-semibold text-brand-deep underline underline-offset-2"
+                data-testid="buyer-complete-from-notes"
+              >
+                Compléter depuis mes notes
+              </Link>
+            ) : null}
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 md:items-end">
@@ -777,6 +823,12 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             </section>
           ) : null}
 
+          {/* Mission 151 — « Ce qui compte pour eux », leurs mots (planche 3). */}
+          <BuyerSoftCriteria
+            buyerId={buyer.id}
+            criteria={buyer.softCriteria}
+            toVerify={buyer.fieldsToVerify.includes('soft_criteria')}
+          />
           {/* Ce qui s'est passé : lu dans les tables, rien de plus. */}
           <section className={`${card} flex flex-col gap-2 p-5`} data-testid="buyer-timeline">
             <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">

@@ -6,8 +6,11 @@ import {
   BUYER_PURPOSES,
   BUYER_STATUSES,
   BUYER_TIMELINES,
+  BUYER_SOFT_CRITERIA,
+  BUYER_SOFT_WORDS_MAX,
   ENERGY_RATINGS,
   type Buyer,
+  type BuyerSoftCriterion,
   type BuyerCriterion,
   type BuyerInput,
   type BuyerPropertyType,
@@ -25,6 +28,23 @@ const number = (value: number | string | null): number | null => {
   const parsed = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 };
+
+// Mission 151 — « Ce qui compte pour eux », relu par liste d'autorisation à l'écriture comme à la
+// lecture : une clé hors liste ou en double est absente, les mots sont bornés.
+export function sanitizeSoftCriteria(raw: unknown): BuyerSoftCriterion[] {
+  if (!Array.isArray(raw)) return [];
+  const kept: BuyerSoftCriterion[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'object' || item == null) continue;
+    const { key, words } = item as { key?: unknown; words?: unknown };
+    if (typeof key !== 'string' || !(BUYER_SOFT_CRITERIA as readonly string[]).includes(key))
+      continue;
+    if (kept.some((criterion) => criterion.key === key)) continue;
+    const text = typeof words === 'string' ? words.trim().slice(0, BUYER_SOFT_WORDS_MAX) : '';
+    kept.push({ key: key as BuyerSoftCriterion['key'], words: text });
+  }
+  return kept.slice(0, BUYER_SOFT_CRITERIA.length);
+}
 
 // La ligne de la base, relue par liste d'autorisation : une valeur hors liste est absente.
 export function toBuyer(row: BuyerRow): Buyer {
@@ -65,6 +85,10 @@ export function toBuyer(row: BuyerRow): Buyer {
     worksAccepted: row.works_accepted,
     mustHave: allOf<BuyerCriterion>(BUYER_CRITERIA, row.must_have),
     dealBreakers: row.deal_breakers,
+    condominiumAccepted: row.condominium_accepted ?? null,
+    condominiumMustHave: row.condominium_must_have ?? false,
+    softCriteria: sanitizeSoftCriteria(row.soft_criteria),
+    fieldsToVerify: row.fields_to_verify ?? [],
   };
 }
 
@@ -95,5 +119,15 @@ export function buyerColumns(input: BuyerInput) {
     works_accepted: input.worksAccepted,
     must_have: input.mustHave,
     deal_breakers: input.dealBreakers,
+    // Mission 151 — seulement quand la saisie les donne.
+    ...(input.condominiumAccepted !== undefined
+      ? { condominium_accepted: input.condominiumAccepted }
+      : {}),
+    ...(input.condominiumMustHave !== undefined
+      ? { condominium_must_have: input.condominiumMustHave }
+      : {}),
+    ...(input.softCriteria !== undefined
+      ? { soft_criteria: sanitizeSoftCriteria(input.softCriteria) }
+      : {}),
   };
 }

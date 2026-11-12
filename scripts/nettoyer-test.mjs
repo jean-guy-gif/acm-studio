@@ -78,6 +78,10 @@ const KEPT = [
   'agency_legal_identities',
   'agency_invitations',
   'agency_search_budgets',
+  // Mission 151 — le plafond d'IA de l'agence, et sa consommation, qui reste comme celle de la
+  // recherche (M100) : la ligne garde qui, quand, le modèle, le coût et l'issue, jamais un contenu.
+  'agency_ai_budgets',
+  'ai_usage',
   'app_errors',
   'profiles',
   'stream_estate_usage',

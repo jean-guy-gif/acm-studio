@@ -11,6 +11,13 @@ import {
 } from '@/components/ui/styles';
 import { setAgencyDemo } from '@/features/operations/actions/set-agency-demo';
 import { setAgencySearchCap } from '@/features/operations/actions/set-agency-search-cap';
+import { setAgencyAiCap } from '@/features/operations/actions/set-agency-ai-cap';
+import {
+  aiBudgetOf,
+  aiBudgetOpen,
+  getAiBudgets,
+} from '@/features/ai-budget/queries/get-ai-budgets';
+import { formatEuro } from '@/lib/format';
 import { AgencyCapForm } from '@/features/operations/components/agency-cap-form';
 import { AgencyDemoToggle } from '@/features/operations/components/agency-demo-toggle';
 import { getAgencyBudgets } from '@/features/operations/queries/get-agency-budgets';
@@ -36,10 +43,12 @@ export default async function ErrorsPage() {
     notFound();
   }
 
-  const [report, budgets, importFailures] = await Promise.all([
+  const [report, budgets, importFailures, aiBudgets] = await Promise.all([
     getErrorReport(),
     getAgencyBudgets(),
     getImportFailureReport(),
+    // Mission 151 — le budget d'IA de chaque agence (lecture des notes, classement des annonces).
+    getAiBudgets(),
   ]);
 
   return (
@@ -172,6 +181,15 @@ export default async function ErrorsPage() {
                   {budget.reached ? ` · ${BUDGET_REACHED_LABEL}` : ''}
                   {budget.warning ? ` · ${budgetWarningLabel(budget)}` : ''}
                 </span>
+                {/* Mission 151 — la lecture par l'IA : ce qui a été dépensé ce mois-ci et le plafond.
+                    Une lecture en échec le dit, jamais « rien dépensé » (M98). */}
+                <span className="text-sm text-zinc-600 stage:text-white/65" data-testid="ai-budget">
+                  {!aiBudgets
+                    ? 'Lecture par l’IA : le budget n’a pas pu être lu.'
+                    : aiBudgetOpen(aiBudgetOf(aiBudgets, agencyId), isDemo)
+                      ? `Lecture par l’IA ce mois-ci : ${formatEuro(aiBudgetOf(aiBudgets, agencyId).spentCents / 100)} sur ${formatEuro(aiBudgetOf(aiBudgets, agencyId).capCents / 100)}`
+                      : 'Lecture par l’IA : fermée — posez un plafond pour l’ouvrir.'}
+                </span>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <AgencyCapForm
@@ -179,6 +197,17 @@ export default async function ErrorsPage() {
                   initialEuros={budget.capCents / 100}
                   saveAction={setAgencySearchCap.bind(null, agencyId)}
                 />
+                {aiBudgets ? (
+                  <AgencyCapForm
+                    agencyName={`${agencyName}, lecture par l’IA`}
+                    initialEuros={
+                      aiBudgetOf(aiBudgets, agencyId).posed
+                        ? aiBudgetOf(aiBudgets, agencyId).capCents / 100
+                        : 0
+                    }
+                    saveAction={setAgencyAiCap.bind(null, agencyId)}
+                  />
+                ) : null}
                 {/* Mission 114 — le repère de l'agence de démonstration, réservé aux opérateurs. */}
                 <AgencyDemoToggle
                   agencyName={agencyName}

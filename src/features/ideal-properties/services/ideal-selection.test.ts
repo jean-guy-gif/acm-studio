@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  oneToVerifyForm,
   readSelectionInput,
   seenOnLabel,
   SELECTION_EMPTY,
@@ -132,5 +133,14 @@ describe('la sélection de biens idéaux', () => {
       },
     ]);
     expect(withRemoved.items.map((entry) => entry.id)).toEqual(['i1']);
+  });
+});
+
+// Mission 151 — une seule forme dans le dossier remis (Jean-Guy, 12/11).
+describe('oneToVerifyForm', () => {
+  it('« À vérifier : Piscine » se lit « Piscine : à vérifier » ; le reste ne change pas', () => {
+    expect(oneToVerifyForm('À vérifier : Piscine')).toBe('Piscine : à vérifier');
+    expect(oneToVerifyForm('Copropriété : à vérifier')).toBe('Copropriété : à vérifier');
+    expect(oneToVerifyForm('Pas de parking')).toBe('Pas de parking');
   });
 });

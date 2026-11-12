@@ -1,0 +1,3 @@
+# INVENTÉ — export de test de la mission 151, aucun client réel
+nom;prenom;tel;email;type_bien;villes;budget_min;budget_max;pieces_min;surface_min;exterieur;stationnement;commentaire;statut
+Garnier-Huet;Lou;06 39 98 47 03;lou.gh@example.com;Appartement;Nice|Villefranche-sur-Mer;;290000;2;40;oui;non;"cherche calme, dernier étage idéalement, lumineux, à 5 min à pied des commerces. Premier achat, prêt en cours chez courtier. Très gentille.";Actif

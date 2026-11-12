@@ -11,6 +11,7 @@ import {
   type BuyerLoopProperty,
   type PropertyBuyers,
 } from '@/features/buyers/services/property-buyers';
+import { knownCondominium, type CondominiumEmbed } from '@/features/buyers/services/condominium';
 import type { Buyer } from '@/features/buyers/types';
 import { toNumber } from '@/lib/format/to-number';
 import { createClient } from '@/lib/supabase/server';
@@ -41,7 +42,7 @@ export async function loadAgencyBuyers(agencyId: string): Promise<AgencyBuyers> 
 
 // Les colonnes du bien vendeur que la boucle lit : ses faits, jamais son adresse.
 export const LOOP_PROPERTY_COLUMNS =
-  'project_id, property_type, rooms_count, surface_area, city, bedrooms_count, floor, has_elevator, has_pool, outdoor_spaces, parking_types, energy_rating, general_condition, advisor_price_max';
+  'project_id, property_type, rooms_count, surface_area, city, bedrooms_count, floor, has_elevator, has_pool, outdoor_spaces, parking_types, energy_rating, general_condition, advisor_price_max, subject_property_condominiums(is_condominium)';
 
 export type LoopPropertyRow = {
   project_id: string;
@@ -58,6 +59,8 @@ export type LoopPropertyRow = {
   energy_rating: string | null;
   general_condition: string | null;
   advisor_price_max: number | null;
+  // Mission 151 — le bloc « Copropriété » de la fiche, joint (absent : inconnue).
+  subject_property_condominiums?: CondominiumEmbed;
 };
 
 // Une colonne `numeric` revient en texte de l'API : `toNumber` (M134, déplacé par la M145).
@@ -77,6 +80,7 @@ export function loopProperty(row: LoopPropertyRow): BuyerLoopProperty {
     parkingTypes: row.parking_types ?? [],
     energyRating: row.energy_rating,
     generalCondition: row.general_condition,
+    isCondominium: knownCondominium(row.subject_property_condominiums),
   };
 }
 

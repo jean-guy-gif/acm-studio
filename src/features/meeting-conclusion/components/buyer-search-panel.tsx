@@ -149,6 +149,9 @@ function HitAction({ candidate }: { candidate: BuyerCandidate }) {
   );
 }
 
+// Une référence stable : un objet neuf à chaque rendu relancerait le rapprochement.
+const NO_CONDOMINIUMS: Record<string, boolean> = {};
+
 function HitLine({ hit, showGroup = false }: { hit: BuyerHit; showGroup?: boolean }) {
   const { candidate } = hit;
   const facts = candidateFacts(candidate);
@@ -188,6 +191,11 @@ function HitLine({ hit, showGroup = false }: { hit: BuyerHit; showGroup?: boolea
         {hit.note ? (
           <span className="text-xs font-medium text-amber-700 stage:text-amber-300">
             {hit.note}
+          </span>
+        ) : null}
+        {hit.condominiumNote ? (
+          <span className="text-xs font-medium text-amber-700 stage:text-amber-300">
+            {hit.condominiumNote}
           </span>
         ) : null}
         {hit.gaps.length > 0 ? (
@@ -312,15 +320,21 @@ function Results({ result }: { result: BuyerReconciliation }) {
 export function BuyerSearchPanel({
   dossiers,
   entries,
+  condominiums = NO_CONDOMINIUMS,
   initialCriteria = null,
   buyerName = null,
 }: {
   dossiers: SuiviDossier[];
   entries: ProspectingEntry[];
+  // Mission 151 — la copropriété connue des mandats, par dossier (absente : inconnue).
+  condominiums?: Record<string, boolean>;
   initialCriteria?: BuyerCriteria | null;
   buyerName?: string | null;
 }) {
-  const candidates = useMemo(() => buyerCandidates(dossiers, entries), [dossiers, entries]);
+  const candidates = useMemo(
+    () => buyerCandidates(dossiers, entries, new Map(Object.entries(condominiums))),
+    [dossiers, entries, condominiums],
+  );
   const [criteria, setCriteria] = useState<BuyerCriteria | null>(initialCriteria);
   // Recalculé si les listes changent (une issue modifiée plus bas) : jamais un résultat périmé.
   const result = useMemo(
@@ -375,6 +389,10 @@ export function BuyerSearchPanel({
             budgetMin: num(formData.get('budgetMin')),
             budgetMax: num(formData.get('budgetMax')),
             city: text(formData.get('city')),
+            // Mission 151 — la copropriété de la fiche suit le rapprochement relancé : le
+            // formulaire n'a pas de champ pour elle (une recherche tapée n'en a pas).
+            condominiumAccepted: initialCriteria?.condominiumAccepted ?? null,
+            condominiumMustHave: initialCriteria?.condominiumMustHave === true,
           });
         }}
       >

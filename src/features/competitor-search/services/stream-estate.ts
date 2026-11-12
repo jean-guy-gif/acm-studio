@@ -436,8 +436,18 @@ export const SHEET_PHOTOS_MAX = 20;
 function sheetExtras(
   property: StreamEstateProperty,
   origin: StreamEstateAdvert,
-): { description?: string; originalPhotos?: string[] } {
+): { description?: string; originalPhotos?: string[]; tags?: string[] } {
   const text = (origin.description ?? property.description ?? '').trim();
+  // Mission 151 (partie B) — les étiquettes de l'annonce d'origine (« Calme », « Terrasse »), lues
+  // avec le texte pour ce qui compte pour l'acquéreur, jamais gardées ailleurs.
+  const tags = [
+    ...new Set(
+      (origin.features ?? [])
+        .filter((tag): tag is string => typeof tag === 'string')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag !== '' && tag.length <= 60),
+    ),
+  ].slice(0, 40);
   const photos = [
     ...new Set(
       (property.picturesRemote ?? []).filter(
@@ -448,6 +458,7 @@ function sheetExtras(
   return {
     ...(text !== '' ? { description: text.slice(0, SHEET_DESCRIPTION_MAX) } : {}),
     ...(photos.length > 0 ? { originalPhotos: photos } : {}),
+    ...(tags.length > 0 ? { tags } : {}),
   };
 }
 
@@ -457,6 +468,7 @@ export function withoutSheetExtras(candidate: CompetitorCandidate): CompetitorCa
   const facts = { ...candidate.streamEstate };
   delete facts.description;
   delete facts.originalPhotos;
+  delete facts.tags;
   return { ...candidate, streamEstate: facts };
 }
 

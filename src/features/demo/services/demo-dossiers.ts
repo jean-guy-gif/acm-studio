@@ -10,7 +10,7 @@ import {
   buyerLetterOriginsOf,
   removeBuyerLetterPhotos,
 } from '@/features/buyer-prospecting/services/remove-buyer-letter-photos';
-import { buyerColumns } from '@/features/buyers/services/buyer-row';
+import { buyerColumns, sanitizeSoftCriteria } from '@/features/buyers/services/buyer-row';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
@@ -697,6 +697,10 @@ async function insertDemoBuyers(
           ...buyerColumns(buyer),
           // Mission 139 — la langue sur chaque ligne (la même raison que les deux dates).
           language: buyer.language ?? 'fr',
+          // Mission 151 — les critères doux sur chaque ligne aussi (la colonne n'admet pas NULL),
+          // et la copropriété, qui n'est dite que pour les Lambert.
+          soft_criteria: sanitizeSoftCriteria(buyer.softCriteria ?? []),
+          condominium_accepted: buyer.condominiumAccepted ?? null,
           created_at: createdAt,
           status_changed_at: createdAt,
           agency_id: closer.agencyId,
@@ -1008,13 +1012,29 @@ export async function seedDemoDossier(
 
   // Le bien vendeur, avec ses photos déposées dans le stockage de l'agence (M37).
   const photos = await depositDemoPhotos(supabase, closer, projectId, plan.photoFiles);
-  const { error: propertyError } = await supabase.from('subject_properties').insert({
-    ...(plan.property as Database['public']['Tables']['subject_properties']['Insert']),
-    project_id: projectId,
-    agency_id: closer.agencyId,
-    photo_urls: photos,
-  });
-  if (propertyError) return failed();
+  const { data: subjectRow, error: propertyError } = await supabase
+    .from('subject_properties')
+    .insert({
+      ...(plan.property as Database['public']['Tables']['subject_properties']['Insert']),
+      project_id: projectId,
+      agency_id: closer.agencyId,
+      photo_urls: photos,
+    })
+    .select('id')
+    .single();
+  if (propertyError || !subjectRow) return failed();
+  // Mission 151 — le bloc « Copropriété » de la fiche, que lisent les biens idéaux et la boucle.
+  if (plan.isCondominium != null) {
+    const { error } = await supabase.from('subject_property_condominiums').insert({
+      subject_property_id: subjectRow.id,
+      agency_id: closer.agencyId,
+      is_condominium: plan.isCondominium,
+      // Une copropriété complète, comme un conseiller la renseigne : sans lots ni charges,
+      // « Avant le rendez-vous » dirait « copropriété incomplète ».
+      ...(plan.isCondominium ? demoCondominiumFacts(plan.property) : {}),
+    });
+    if (error) return failed();
+  }
 
   // Les concurrents, comme un import les crée (M83, M101) ; relus sans pastille « À vérifier ».
   for (const competitor of plan.competitors) {
@@ -1237,6 +1257,21 @@ export async function seedDemoDossier(
 
 // Le dossier à moitié créé est retiré ; si ce retrait échoue, il reste, et la vérification finale
 // le comptera (« 7 dossiers au lieu de 6 ») : l'échec entre au journal.
+// L'immeuble inventé de l'appartement d'Antibes : 24 lots dont 18 d'habitation, les charges de
+// la fiche sur l'année.
+function demoCondominiumFacts(property: Record<string, unknown> | null): {
+  total_lots: number;
+  residential_lots: number;
+  annual_charges: number | null;
+} {
+  const monthly = property?.monthly_charges;
+  return {
+    total_lots: 24,
+    residential_lots: 18,
+    annual_charges: typeof monthly === 'number' ? monthly * 12 : null,
+  };
+}
+
 async function deleteOne(supabase: Client, closer: Closer, projectId: string): Promise<void> {
   for (const table of [
     'live_seller_responses',

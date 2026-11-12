@@ -46,6 +46,14 @@ import {
   reserveSearchBudget,
   settleSearchBudget,
 } from '@/features/search-budget/services/reserve-budget';
+import { IDEAL_CATEGORIES } from '@/features/ideal-properties/types';
+import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
+import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
+import { rankingCriteria } from '@/features/soft-ranking/ranking-request';
+import { agencyRankingListings } from '@/features/soft-ranking/server/agency-listings';
+import { rankListings } from '@/features/soft-ranking/server/rank-listings';
+import { rankCategorized } from '@/features/ideal-properties/services/rank-categorized';
+import type { RankingListing, SoftRanking } from '@/features/soft-ranking/types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
@@ -62,6 +70,9 @@ export type IdealSearchResult =
       communes: string[];
       // Le jour de la recherche : « affiché le », jamais « disponible » (M118).
       seenOn: string;
+      // Mission 151 (partie B) — ce qui compte pour eux, pour le marché (clé : le lien de l'annonce)
+      // et pour les biens de l'agence (clé du rapprochement) ; null sans critère doux sur la fiche.
+      ranking: SoftRanking | null;
     }
   | { ok: false; error: string };
 
@@ -83,6 +94,10 @@ const resumeSchema = z.object({
   }),
 });
 export type IdealSearchResume = { cursor: TierCursor; memory: TieredSearchMemory };
+
+// Mission 151 (partie B) — les biens de l'agence affichés, revalidés (M43) : des clés du
+// rapprochement, 60 au plus ; leurs textes sont relus dans l'agence (`agency-listings.ts`).
+const agencyKeysSchema = z.array(z.string().regex(/^(dossier|competitor):[0-9a-f-]{36}$/i)).max(60);
 
 const GENERIC_ERROR = 'La recherche du marché a échoué. Réessayez.';
 const NOT_FOUND = 'Cette fiche acquéreur n’existe plus.';
@@ -109,9 +124,14 @@ async function activeBuyer(buyerId: string, agencyId: string): Promise<Buyer | n
 export async function searchIdealProperties(
   buyerId: string,
   resume?: IdealSearchResume | null,
+  // Mission 151 (partie B) — les biens de l'agence affichés, classés avec le marché à la première
+  // recherche (Jean-Guy, 12/11) ; leurs textes sont relus au serveur, dans l'agence.
+  agencyKeys: readonly string[] = [],
 ): Promise<IdealSearchResult> {
   const parsedResume = resume == null ? null : resumeSchema.safeParse(resume);
   if (parsedResume != null && !parsedResume.success) return { ok: false, error: GENERIC_ERROR };
+  const parsedKeys = agencyKeysSchema.safeParse(agencyKeys);
+  if (!parsedKeys.success) return { ok: false, error: GENERIC_ERROR };
 
   const profile = await getProfile();
   if (!profile || profile.removed_at) return { ok: false, error: 'Vous devez être connecté.' };
@@ -209,6 +229,40 @@ export async function searchIdealProperties(
   }
 
   const { candidates } = outcome;
+  const categorized = categorizeIdeal(buyer, candidates, criteria);
+
+  // Mission 151 (partie B) — le classement par ce qui compte pour eux, avant d'afficher (planche
+  // 4 b) : les biens gardés du marché, et ceux de l'agence à la première recherche. Il ne range qu'à
+  // l'intérieur d'une catégorie ; échec ou délai : classement simplifié, rien n'est bloqué.
+  const softCriteria = rankingCriteria(buyer.softCriteria.map((soft) => soft.key));
+  let ranking: SoftRanking | null = null;
+  if (softCriteria.length > 0) {
+    const kept = IDEAL_CATEGORIES.flatMap((category) => categorized.byCategory[category]);
+    const market: RankingListing[] = kept.map(({ candidate }) => ({
+      key: candidate.url,
+      text: candidate.streamEstate?.description ?? '',
+      tags: candidate.streamEstate?.tags ?? [],
+    }));
+    const agency =
+      resumeFrom == null && parsedKeys.data.length > 0
+        ? await agencyRankingListings(profile.agency_id, parsedKeys.data)
+        : [];
+    ranking = await rankListings({
+      agencyId: profile.agency_id,
+      userId: profile.id,
+      criteria: softCriteria,
+      listings: [...market, ...agency].filter((listing) => listing.text || listing.tags.length),
+      demo,
+      open: notesReadingOpen({
+        isDemo: demo,
+        email: profile.email,
+        agencyCapCents: await getPosedAiCap(profile.agency_id),
+      }),
+      now,
+    });
+    if (ranking?.mode === 'full') rankCategorized(categorized, ranking.byKey);
+  }
+
   return {
     ok: true,
     portal: {
@@ -220,7 +274,7 @@ export async function searchIdealProperties(
         candidates.length > 0 ? null : 'Stream Estate ne renvoie aucun bien pour ces critères.',
       candidates,
     },
-    categorized: categorizeIdeal(buyer, candidates, criteria),
+    categorized,
     billed: demo ? 0 : outcome.billed,
     stop: outcome.stop,
     cursor: outcome.cursor,
@@ -228,5 +282,6 @@ export async function searchIdealProperties(
     counts: outcome.counts,
     communes: names,
     seenOn: now.toISOString().slice(0, 10),
+    ranking,
   };
 }

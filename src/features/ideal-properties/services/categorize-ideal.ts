@@ -39,6 +39,9 @@ export type IdealVerdict =
       category: IdealCategory;
       gaps: string[];
       toCheck: string[];
+      // Mission 151 — à vérifier sans changer la catégorie : une préférence que l'annonce ne dit
+      // pas et qu'une carte doit nommer quand même (« Copropriété : à vérifier »).
+      toVerify: string[];
       percent: number | null;
       // Essai de Jean-Guy (26/10) : « N critères sur M » remplace le % de correspondance — les
       // critères renseignés de la fiche que l'annonce satisfait, sur tous les critères renseignés
@@ -53,6 +56,7 @@ export type CategorizedCandidate = {
   category: IdealCategory;
   gaps: string[];
   toCheck: string[];
+  toVerify: string[];
   percent: number | null;
   criteriaOk: number;
   criteriaTotal: number;
@@ -200,6 +204,22 @@ export function judgeCriterion(
   }
 }
 
+// Mission 151 — « Copropriété acceptée » (Jean-Guy, 10/11) : seul un « non » juge quelque chose.
+// Une copropriété connue le contredit ; une copropriété inconnue n'écarte jamais un bien.
+export const CONDOMINIUM_LABEL = 'Copropriété';
+export const IN_CONDOMINIUM = 'En copropriété';
+export const CONDOMINIUM_TO_VERIFY = `${CONDOMINIUM_LABEL} : à vérifier`;
+export const OUT_OF_CONDOMINIUM = 'Hors copropriété';
+
+export function judgeCondominium(
+  buyer: Pick<BuyerInput, 'condominiumAccepted'>,
+  isCondominium: boolean | null | undefined,
+): CriterionVerdict | null {
+  if (buyer.condominiumAccepted !== false) return null;
+  if (isCondominium == null) return { kind: 'unknown' };
+  return isCondominium ? { kind: 'gap', label: IN_CONDOMINIUM } : { kind: 'ok' };
+}
+
 const CRITERIA_ORDER: BuyerCriterion[] = [
   'property_types',
   'cities',
@@ -244,6 +264,19 @@ export function judgeCandidate(
       toCheck.push(BUYER_CRITERION_LABELS[criterion]);
     }
   }
+  // Mission 151 — la copropriété, à part des indispensables de `mustHave` (sa ★ a sa colonne) :
+  // connue, elle écarte avec la ★, sinon elle est un écart nommé du « Bon compromis » ; inconnue,
+  // elle met le bien « À explorer » avec la ★, sinon elle se dit seulement sur la carte.
+  const toVerify: string[] = [];
+  const condominium = judgeCondominium(buyer, candidate.features?.isCondominium);
+  if (condominium != null) {
+    criteriaTotal += 1;
+    const essential = buyer.condominiumMustHave === true;
+    if (condominium.kind === 'ok') criteriaOk += 1;
+    else if (condominium.kind === 'gap') (essential ? reasons : gaps).push(condominium.label);
+    else if (essential) toCheck.push(CONDOMINIUM_LABEL);
+    else toVerify.push(CONDOMINIUM_LABEL);
+  }
   if (reasons.length > 0) return { kind: 'excluded', reasons };
   const category: IdealCategory =
     toCheck.length > 0 ? 'explore' : gaps.length > 0 ? 'compromise' : 'strong';
@@ -252,6 +285,7 @@ export function judgeCandidate(
     category,
     gaps,
     toCheck,
+    toVerify,
     percent: percentOf(criteria, buyer, candidate),
     criteriaOk,
     criteriaTotal,
@@ -337,6 +371,16 @@ export function categorizeIdeal(
         .map(([label, count]) => ({ label, count })),
     },
   };
+}
+
+// Ce que la carte et le dossier remis disent « à vérifier » : les indispensables que l'annonce ne
+// dit pas, puis les préférences à vérifier sans changer la catégorie. Une seule écriture pour la
+// forme pour tous, celle d'un bien de l'agence : « Extérieur : à vérifier », « Copropriété : à
+// vérifier » (Jean-Guy, 12/11).
+export function toVerifyLabels(
+  entry: Pick<CategorizedCandidate, 'toCheck' | 'toVerify'>,
+): string[] {
+  return [...entry.toCheck, ...entry.toVerify].map((label) => `${label} : à vérifier`);
 }
 
 // « 7 écartés : budget dépassé (4), pas d'extérieur (3) »

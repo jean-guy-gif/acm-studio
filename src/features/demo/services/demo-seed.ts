@@ -166,6 +166,9 @@ export type DemoSeedPlan = {
   // Le bien vendeur, tel que l'import d'annonce le remplit (M38 : jamais le prix), plus la
   // fourchette du conseiller, les atouts et les montants de la fiche.
   property: Record<string, unknown> | null;
+  // Mission 151 — le bloc « Copropriété » de la fiche (M77), posé comme le conseiller le ferait :
+  // l'appartement d'Antibes en copropriété, les maisons hors copropriété ; null : rien d'écrit.
+  isCondominium: boolean | null;
   photoFiles: string[];
   competitors: DemoSeedCompetitor[];
   live: DemoSeedLive | null;
@@ -226,6 +229,7 @@ export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
       sellerName: scenario.sellerName,
       language: 'fr',
       property: null,
+      isCondominium: null,
       photoFiles: [],
       competitors: [],
       live: null,
@@ -284,6 +288,7 @@ export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
             : scenario.sellerName,
     language: stage === 'direct' ? DEMO_DIRECT_LANGUAGE : 'fr',
     property,
+    isCondominium: subject.propertyType === 'apartment',
     photoFiles: subject.photos.slice(0, 3),
     competitors,
     live,
@@ -385,7 +390,7 @@ export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
     fromListing('mou-02', 'compromise', [
       `${formatEuro(orange.price - budgetMax)} au-dessus du budget, à négocier`,
     ]),
-    fromListing('mou-07', 'explore', [`À vérifier : ${BUYER_CRITERION_LABELS.pool}`]),
+    fromListing('mou-07', 'explore', [`${BUYER_CRITERION_LABELS.pool} : à vérifier`]),
   ];
 }
 
