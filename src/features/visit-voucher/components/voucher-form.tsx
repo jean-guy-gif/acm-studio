@@ -21,14 +21,21 @@ import {
   type TitleDraft,
 } from '@/features/visit-voucher/components/outside-title-fields';
 import { SignaturePad } from '@/features/visit-voucher/components/signature-pad';
+import { initiallyChecked } from '@/features/visit-voucher/services/voucher-defaults';
 import { VoucherShare } from '@/features/visit-voucher/components/voucher-share';
 import type { VoucherContext } from '@/features/visit-voucher/queries/get-voucher-context';
 import {
   OUTSIDE_COLLEAGUE_ONE,
+  OUTSIDE_ONE_SEARCH,
   OUTSIDE_TITLE_MIXED,
+  severalSearches,
+  tourVersion,
+  VOUCHER_TOUR_COMMITMENTS,
+  voucherSaleLine,
   voucherOutsideLine,
   withBuyer,
 } from '@/features/visit-voucher/services/outside-mandate';
+import { nameFromBuyer } from '@/features/visit-voucher/services/buyer-name';
 import {
   parisDateLabel,
   VISITOR_CIVILITIES,
@@ -40,7 +47,19 @@ import {
   type VisitorPiece,
 } from '@/features/visit-voucher/services/voucher-text';
 
-type Visitor = { civility: VisitorCivility; name: string };
+// Mission 154 — la civilité, le prénom et le nom, chacun à remplir ; la civilité peut rester vide,
+// signalée à compléter (jamais choisie d'office pour un nom repris de la fiche).
+type Visitor = { civility: VisitorCivility | ''; firstName: string; lastName: string };
+const EMPTY_VISITOR: Visitor = { civility: '', firstName: '', lastName: '' };
+const complete = (visitor: Visitor): boolean =>
+  visitor.civility !== '' && visitor.firstName.trim() !== '' && visitor.lastName.trim() !== '';
+// Un bon plus ancien n'a que le nom entier : son découpage se propose, montré, jamais en silence.
+const splitName = (name: string): { firstName: string; lastName: string } => {
+  const words = name.trim().split(/\s+/);
+  return words.length > 1
+    ? { firstName: words.slice(0, -1).join(' '), lastName: words[words.length - 1]! }
+    : { firstName: '', lastName: words[0] ?? '' };
+};
 
 // Le jour de la visite, à Paris (une visite tard le soir n'est pas datée de la veille).
 const dayLabel = (iso: string): string => parisDateLabel(new Date(iso));
@@ -65,31 +84,34 @@ export function VoucherForm({
   preselected: string | null;
 }) {
   const [visitors, setVisitors] = useState<Visitor[]>(
-    context.lastVisitor?.visitors ?? [{ civility: 'M.', name: '' }],
+    context.lastVisitor?.visitors.map((entry) =>
+      entry.firstName && entry.lastName
+        ? { civility: entry.civility, firstName: entry.firstName, lastName: entry.lastName }
+        : { ...EMPTY_VISITOR },
+    ) ?? [{ ...EMPTY_VISITOR }],
   );
+  const setVisitor = (index: number, patch: Partial<Visitor>) =>
+    setVisitors((current) =>
+      current.map((entry, at) => (at === index ? { ...entry, ...patch } : entry)),
+    );
+  const fromBuyer = nameFromBuyer(context.buyer.name);
   const [address, setAddress] = useState(context.lastVisitor?.address ?? '');
   const [piece, setPiece] = useState<VisitorPiece>(context.lastVisitor?.piece ?? 'cni');
   const [city, setCity] = useState(context.city);
-  // Sans visite d'où l'on vient : la seule visite d'un bien sous mandat qui a droit au bon, sinon la
-  // seule hors mandat (Mission 153 : un bon ne réunit jamais les deux).
-  const eligibleMandate = context.visits.filter((visit) => visit.eligible && !visit.outside);
-  const eligibleOutside = context.visits.filter((visit) => visit.eligible && visit.outside);
-  const onlyCandidate =
-    eligibleMandate.length === 1
-      ? eligibleMandate[0]!.visitId
-      : eligibleMandate.length === 0 && eligibleOutside.length === 1
-        ? eligibleOutside[0]!.visitId
-        : null;
+  // Mission 154 — les biens de la tournée cochés d'office : toutes les visites demandées ou
+  // confirmées (pas encore faites) qui ont droit au bon, sous un même régime (Mission 153 : un bon
+  // ne réunit jamais un bien sous mandat et un bien hors mandat) — celui de la visite d'où l'on vient,
+  // sinon les biens sous mandat d'abord. Sans visite à venir : la seule qui a droit au bon.
+  // Mission 154 (point 3) — le bon de la tournée ouvert : tous les biens à venir, quel que soit leur
+  // titre.
+  const tour = context.tourOpen;
+  const defaultChecked = initiallyChecked(context.visits, preselected, tour);
   const [biens, setBiens] = useState<Record<string, BienDraft>>(() =>
     Object.fromEntries(
       context.visits.map((visit) => [
         visit.visitId,
         {
-          // Les biens visités le même jour (§ 6) : rien n'est coché d'office, sauf la visite d'où
-          // l'on vient, ou la seule qui a droit au bon.
-          checked:
-            visit.eligible &&
-            (preselected != null ? preselected === visit.visitId : onlyCandidate === visit.visitId),
+          checked: defaultChecked.has(visit.visitId),
           mandate: visit.mandate ?? '',
           price: visit.price != null ? String(visit.price) : '',
           address: visit.address ?? '',
@@ -105,6 +127,29 @@ export function VoucherForm({
     );
     return initialTitleDraft(first?.suggestion ?? null, context.lastSearchTitle);
   });
+  // Mission 154 (point 3) — le bon de la tournée : un titre par bien hors mandat.
+  const [titles, setTitles] = useState<Record<string, TitleDraft>>(() =>
+    Object.fromEntries(
+      context.visits
+        .filter((visit) => visit.outside)
+        .map((visit) => [
+          visit.visitId,
+          initialTitleDraft(visit.suggestion ?? null, context.lastSearchTitle),
+        ]),
+    ),
+  );
+  // Un seul mandat de recherche par acquéreur : choisi sur un bien, il se propose sur les autres.
+  const setTitleFor = (visitId: string, next: TitleDraft) =>
+    setTitles((current) => {
+      const shared = Object.entries(current).find(
+        ([id, draft]) => id !== visitId && draft.kind === 'search' && draftTitle(draft) != null,
+      )?.[1];
+      const copied =
+        next.kind === 'search' && current[visitId]?.kind !== 'search' && shared
+          ? { ...next, searchNumber: shared.searchNumber, signedOn: shared.signedOn }
+          : next;
+      return { ...current, [visitId]: copied };
+    });
   const [signatures, setSignatures] = useState<(string | null)[]>([null, null]);
   const [approved, setApproved] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -136,8 +181,18 @@ export function VoucherForm({
   // Un bon est sous mandat OU hors mandat : le premier bien coché décide (Mission 153).
   const outside = chosen[0]?.outside ?? null;
   const firstOutside = chosen.find((visit) => visit.outside) ?? null;
-  const validTitle = outside ? draftTitle(title) : null;
-  const colleagueTooMany = validTitle?.kind === 'colleague' && chosen.length > 1;
+  const validTitle = !tour && outside ? draftTitle(title) : null;
+  const colleagueTooMany = !tour && validTitle?.kind === 'colleague' && chosen.length > 1;
+  // La tournée : le titre de chaque bien coché (null : sous mandat de l'agence), ceux qui manquent,
+  // et si le bon réunit plusieurs titres.
+  const tourTitles = chosen.map((visit) =>
+    visit.outside ? draftTitle(titles[visit.visitId]!) : null,
+  );
+  const missingTitles = tour
+    ? chosen.filter((visit, index) => visit.outside && tourTitles[index] == null)
+    : [];
+  const severalTitles = tour && tourVersion(tourTitles);
+  const searchConflict = tour && severalSearches(tourTitles);
   const searchHint =
     context.lastSearchTitle &&
     title.searchNumber === context.lastSearchTitle.number &&
@@ -157,21 +212,26 @@ export function VoucherForm({
         startTransition(async () => {
           const result = await signVisitVoucher({
             buyerId: context.buyer.id,
-            visitors,
+            visitors: visitors.map((entry) => ({
+              civility: entry.civility,
+              firstName: entry.firstName,
+              lastName: entry.lastName,
+            })),
             visitorAddress: address,
             piece,
             city,
-            biens: chosen.map((visit) => {
+            biens: chosen.map((visit, index) => {
               const draft = biens[visit.visitId]!;
               return {
                 visitId: visit.visitId,
                 mandate: draft.mandate,
                 price: euros(draft.price) ?? 0,
                 address: draft.address,
+                title: tour ? tourTitles[index] : null,
               };
             }),
             signatures: signatures.slice(0, visitors.length),
-            title: validTitle,
+            title: tour ? null : validTitle,
             approved,
           }).catch(() => ({ ok: false as const, error: 'Connexion perdue : réessayez.' }));
           if (!result.ok) {
@@ -187,7 +247,7 @@ export function VoucherForm({
         <ul className="flex flex-col gap-3">
           {context.visits.map((visit) => {
             const draft = biens[visit.visitId]!;
-            const mixed = outside != null && visit.outside !== outside;
+            const mixed = !tour && outside != null && visit.outside !== outside;
             return (
               <li
                 key={visit.visitId}
@@ -218,7 +278,24 @@ export function VoucherForm({
                     {OUTSIDE_TITLE_MIXED}
                   </span>
                 ) : null}
-                {draft.checked && visit.outside ? (
+                {draft.checked && visit.outside && tour ? (
+                  <OutsideTitleFields
+                    draft={titles[visit.visitId]!}
+                    onChange={(next) => setTitleFor(visit.visitId, next)}
+                    missingText="Choisissez à quel titre vous intervenez pour ce bien : sans lui, le bon ne se signe pas."
+                    searchHint={
+                      titles[visit.visitId]!.kind === 'search' &&
+                      draftTitle(titles[visit.visitId]!) != null
+                        ? 'Le même mandat de recherche pour tous ses biens.'
+                        : null
+                    }
+                    colleagueHint={
+                      visit.suggestion?.kind === 'colleague'
+                        ? 'Collaboration obtenue, sur sa carte de Prospection.'
+                        : null
+                    }
+                  />
+                ) : draft.checked && visit.outside ? (
                   firstOutside?.visitId === visit.visitId ? (
                     <OutsideTitleFields
                       draft={title}
@@ -288,6 +365,55 @@ export function VoucherForm({
             {OUTSIDE_COLLEAGUE_ONE}
           </p>
         ) : null}
+        {tour &&
+        chosen.length > 0 &&
+        missingTitles.length === 0 &&
+        chosen.some((v) => v.outside) ? (
+          <div
+            className="flex flex-col gap-1 rounded-lg border border-l-4 border-zinc-200 border-l-brand-deep bg-white px-3 py-2 stage:border-white/10 stage:bg-white/5"
+            data-testid="voucher-outside-preview"
+          >
+            <span className="text-xs font-bold text-brand-deep stage:text-brand">Sur le bon</span>
+            {chosen.map((visit, index) => {
+              const draft = biens[visit.visitId]!;
+              const bien = {
+                price: voucherPrice(euros(draft.price) ?? 0),
+                address: draft.address.trim() || '…',
+              };
+              const line = tourTitles[index]
+                ? voucherOutsideLine(tourTitles[index]!, bien)
+                : severalTitles
+                  ? voucherSaleLine(draft.mandate.trim() || '…', bien)
+                  : `Numéro du mandat : ${draft.mandate.trim() || '…'} · Prix de commercialisation : ${bien.price} € · Adresse du bien : ${bien.address}`;
+              return (
+                <p
+                  key={visit.visitId}
+                  className="font-serif text-sm text-zinc-700 stage:text-white/80"
+                >
+                  « {line} »
+                </p>
+              );
+            })}
+            {severalTitles ? (
+              <>
+                <span className="mt-1 text-xs font-bold text-zinc-600 stage:text-white/70">
+                  Et, une fois chacune, les phrases des titres présents
+                </span>
+                {(['sale', 'search', 'colleague'] as const)
+                  .filter((kind) => tourTitles.some((entry) => (entry?.kind ?? 'sale') === kind))
+                  .map((kind) => (
+                    <p
+                      key={kind}
+                      className="text-xs text-zinc-600 stage:text-white/70"
+                      data-testid={`voucher-tour-phrase-${kind}`}
+                    >
+                      « {VOUCHER_TOUR_COMMITMENTS[kind]} »
+                    </p>
+                  ))}
+              </>
+            ) : null}
+          </div>
+        ) : null}
         {validTitle ? (
           <div
             className="flex flex-col gap-1 rounded-lg border border-l-4 border-zinc-200 border-l-brand-deep bg-white px-3 py-2 stage:border-white/10 stage:bg-white/5"
@@ -316,51 +442,107 @@ export function VoucherForm({
 
       <section className={`${card} flex flex-col gap-3 p-5`}>
         <h2 className={sectionTitle}>Le visiteur</h2>
-        {visitors.map((visitor, index) => (
-          <div key={index} className="grid grid-cols-[auto_1fr] gap-2">
-            <select
-              className={inputBase}
-              value={visitor.civility}
-              aria-label={`Civilité du visiteur ${index + 1}`}
-              onChange={(event) =>
-                setVisitors((current) =>
-                  current.map((entry, at) =>
-                    at === index
-                      ? { ...entry, civility: event.target.value as VisitorCivility }
-                      : entry,
-                  ),
-                )
-              }
-            >
-              {VISITOR_CIVILITIES.map((civility) => (
-                <option key={civility} value={civility}>
-                  {civility}
-                </option>
-              ))}
-            </select>
-            <input
-              className={inputBase}
-              value={visitor.name}
-              placeholder="Prénom et nom"
-              maxLength={120}
-              required
-              aria-label={`Prénom et nom du visiteur ${index + 1}`}
+        {/* Mission 154 — le nom de la fiche : une suggestion à confirmer d'un geste, qui dit ce
+            qu'elle écrit — le NOM seul, sans « Famille », « M. et Mme »… ; la civilité et le prénom
+            restent à compléter (jamais « M. Famille Keller », Jean-Guy, 12/11). */}
+        {visitors[0] && !visitors[0].lastName.trim() && fromBuyer ? (
+          <button
+            type="button"
+            className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
+            data-testid="voucher-take-buyer-name"
+            onClick={() => setVisitor(0, { lastName: fromBuyer })}
+          >
+            Reprendre « {context.buyer.name.trim()} » : nom « {fromBuyer} », civilité et prénom à
+            compléter
+          </button>
+        ) : null}
+        {visitors.map((visitor, index) => {
+          // Un bon plus ancien de la fiche : son visiteur, découpé à la demande.
+          const old = context.lastVisitor?.visitors[index];
+          const oldSplit =
+            old && !old.firstName && !visitor.firstName.trim() && !visitor.lastName.trim()
+              ? splitName(old.name)
+              : null;
+          return (
+            <div
+              key={index}
+              className="flex flex-col gap-2"
               data-testid={`voucher-visitor-${index + 1}`}
-              onChange={(event) =>
-                setVisitors((current) =>
-                  current.map((entry, at) =>
-                    at === index ? { ...entry, name: event.target.value } : entry,
-                  ),
-                )
-              }
-            />
-          </div>
-        ))}
+            >
+              {oldSplit && old ? (
+                <button
+                  type="button"
+                  className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
+                  data-testid={`voucher-take-last-visitor-${index + 1}`}
+                  onClick={() => setVisitor(index, { civility: old.civility, ...oldSplit })}
+                >
+                  Reprendre « {old.civility} {old.name} » du dernier bon : prénom «{' '}
+                  {oldSplit.firstName} », nom « {oldSplit.lastName} »
+                </button>
+              ) : null}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_1fr]">
+                <select
+                  className={`${inputBase} ${visitor.civility ? '' : 'border-amber-600'}`}
+                  value={visitor.civility}
+                  aria-label={`Civilité du visiteur ${index + 1}`}
+                  data-testid={`voucher-visitor-civility-${index + 1}`}
+                  onChange={(event) =>
+                    setVisitor(index, { civility: event.target.value as Visitor['civility'] })
+                  }
+                >
+                  <option value="">Civilité</option>
+                  {VISITOR_CIVILITIES.map((civility) => (
+                    <option key={civility} value={civility}>
+                      {civility}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className={`${inputBase} ${visitor.firstName.trim() ? '' : 'border-amber-600'}`}
+                  value={visitor.firstName}
+                  placeholder="Prénom"
+                  maxLength={80}
+                  required
+                  aria-label={`Prénom du visiteur ${index + 1}`}
+                  data-testid={`voucher-visitor-first-${index + 1}`}
+                  onChange={(event) => setVisitor(index, { firstName: event.target.value })}
+                />
+                <input
+                  className={`${inputBase} ${visitor.lastName.trim() ? '' : 'border-amber-600'}`}
+                  value={visitor.lastName}
+                  placeholder="Nom"
+                  maxLength={80}
+                  required
+                  aria-label={`Nom du visiteur ${index + 1}`}
+                  data-testid={`voucher-visitor-last-${index + 1}`}
+                  onChange={(event) => setVisitor(index, { lastName: event.target.value })}
+                />
+              </div>
+              {complete(visitor) ? null : (
+                <span
+                  className="text-sm text-amber-800"
+                  data-testid={`voucher-visitor-missing-${index + 1}`}
+                >
+                  {[
+                    visitor.civility ? null : 'la civilité',
+                    visitor.firstName.trim() ? null : 'le prénom',
+                    visitor.lastName.trim() ? null : 'le nom',
+                  ]
+                    .filter((part): part is string => part != null)
+                    .join(', ')
+                    .replace(/, ([^,]*)$/, ' et $1')
+                    .replace(/^./, (letter) => letter.toUpperCase())}{' '}
+                  à compléter.
+                </span>
+              )}
+            </div>
+          );
+        })}
         {visitors.length < 2 ? (
           <button
             type="button"
             className={`${btnSecondary} self-start`}
-            onClick={() => setVisitors((current) => [...current, { civility: 'Mme', name: '' }])}
+            onClick={() => setVisitors((current) => [...current, { ...EMPTY_VISITOR }])}
           >
             Ajouter un second visiteur
           </button>
@@ -427,7 +609,7 @@ export function VoucherForm({
         {visitors.map((visitor, index) => (
           <SignaturePad
             key={index}
-            label={`Signature de ${visitor.name.trim() || `visiteur ${index + 1}`}`}
+            label={`Signature de ${`${visitor.firstName} ${visitor.lastName}`.trim() || `visiteur ${index + 1}`}`}
             testId={`voucher-signature-${index + 1}`}
             onChange={(value) =>
               setSignatures((current) => current.map((entry, at) => (at === index ? value : entry)))
@@ -442,13 +624,27 @@ export function VoucherForm({
             pending ||
             !approved ||
             chosen.length === 0 ||
-            (outside === true && validTitle == null) ||
+            !visitors.every(complete) ||
+            (!tour && outside === true && validTitle == null) ||
+            missingTitles.length > 0 ||
+            searchConflict ||
             colleagueTooMany ||
             signatures.slice(0, visitors.length).some((value) => value == null)
           }
         >
           {pending ? 'Signature…' : 'Signer le bon de visite'}
         </button>
+        {searchConflict ? (
+          <p className="text-sm font-semibold text-amber-800" data-testid="voucher-one-search">
+            {OUTSIDE_ONE_SEARCH}
+          </p>
+        ) : null}
+        {missingTitles.length > 0 ? (
+          <p className="text-sm font-semibold text-amber-800" data-testid="voucher-missing-titles">
+            Il manque : le titre pour{' '}
+            {missingTitles.map((visit) => `« ${visit.label} »`).join(', ')}
+          </p>
+        ) : null}
         {error ? (
           <p role="alert" className={errorText}>
             {error}

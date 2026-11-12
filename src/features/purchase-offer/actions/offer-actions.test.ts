@@ -149,6 +149,7 @@ const context = (over: Partial<OfferContext> = {}): OfferContext => ({
   advisorFirstName: 'Carl',
   last: null,
   lastSearchTitle: null,
+  lastVoucher: null,
   ...over,
 });
 

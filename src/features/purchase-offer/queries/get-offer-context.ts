@@ -71,6 +71,17 @@ export type OfferContext = {
   last: StoredOfferFields | null;
   // Mission 153 — le mandat de recherche du dernier bon ou de la dernière offre de la fiche.
   lastSearchTitle: Extract<OutsideTitle, { kind: 'search' }> | null;
+  // Mission 154 — sans offre précédente, le visiteur et son adresse du dernier bon de la fiche : son
+  // nom n'est qu'une suggestion à confirmer (le bon ne sépare pas nom et prénoms).
+  lastVoucher: {
+    visitors: {
+      civility: 'M.' | 'Mme';
+      name: string;
+      firstName?: string;
+      lastName?: string;
+    }[];
+    address: string;
+  } | null;
 };
 
 const number = (value: unknown): number | null => {
@@ -223,13 +234,19 @@ export async function getOfferContext(
   // Le titre du bon déjà signé pour une visite, et le mandat de recherche de la fiche.
   const voucherTitleOf = new Map<string, OutsideTitle>();
   let lastSearchTitle: Extract<OutsideTitle, { kind: 'search' }> | null = null;
+  let lastVoucherFields: ReturnType<typeof readVoucherFields> = null;
   for (const row of buyerDocuments.data ?? []) {
     const title = readOutsideTitle((row.fields as { title?: unknown } | null)?.title);
     if (title?.kind === 'search' && !lastSearchTitle) lastSearchTitle = title;
-    if (row.kind === 'visit_voucher' && title) {
-      for (const bien of readVoucherFields(row.fields)?.biens ?? []) {
-        if (!voucherTitleOf.has(bien.visitId)) voucherTitleOf.set(bien.visitId, title);
-      }
+    if (row.kind !== 'visit_voucher') continue;
+    const voucher = readVoucherFields(row.fields);
+    if (!lastVoucherFields) lastVoucherFields = voucher;
+    // Mission 154 — dans un bon de la tournée, chaque bien porte son titre.
+    for (const bien of voucher?.biens ?? []) {
+      const bienTitle = bien.title ?? title;
+      if (bienTitle?.kind === 'search' && !lastSearchTitle) lastSearchTitle = bienTitle;
+      if (bienTitle && !voucherTitleOf.has(bien.visitId))
+        voucherTitleOf.set(bien.visitId, bienTitle);
     }
   }
 
@@ -338,6 +355,9 @@ export async function getOfferContext(
       advisorFirstName: profile.first_name ?? null,
       last: readOfferFields(lastOffer.data?.fields),
       lastSearchTitle,
+      lastVoucher: lastVoucherFields
+        ? { visitors: lastVoucherFields.visitors, address: lastVoucherFields.visitorAddress }
+        : null,
     },
   };
 }

@@ -10,14 +10,27 @@ import { VISITOR_PIECES, type VoucherAgency } from '@/features/visit-voucher/ser
 
 const trimmed = (min: number, max: number) => z.string().trim().min(min).max(max);
 const piece = z.enum(Object.keys(VISITOR_PIECES) as [keyof typeof VISITOR_PIECES]);
-const visitor = z.object({ civility: z.enum(VISITOR_CIVILITIES), name: trimmed(2, 120) });
+// Mission 154 — le visiteur saisi : sa civilité, son prénom et son nom, chacun exigé (jamais « M.
+// Famille Keller ») ; gardé aussi en un nom (`name`) pour le texte figé.
+const visitorInput = z.object({
+  civility: z.enum(VISITOR_CIVILITIES),
+  firstName: trimmed(1, 80),
+  lastName: trimmed(1, 80),
+});
+// Un bon signé avant la mission n'a que `name`.
+const visitor = z.object({
+  civility: z.enum(VISITOR_CIVILITIES),
+  name: trimmed(2, 120),
+  firstName: z.string().max(80).optional(),
+  lastName: z.string().max(80).optional(),
+});
 
 export const MAX_VOUCHER_BIENS = 5;
 export const MAX_SIGNATURE_BYTES = 256 * 1024;
 
 export const voucherInputSchema = z.object({
   buyerId: z.uuid(),
-  visitors: z.array(visitor).min(1).max(2),
+  visitors: z.array(visitorInput).min(1).max(2),
   visitorAddress: trimmed(5, 300),
   piece,
   city: trimmed(1, 80),
@@ -30,6 +43,8 @@ export const voucherInputSchema = z.object({
         mandate: z.string().trim().max(40),
         price: z.number().int().min(1).max(999_999_999),
         address: trimmed(5, 300),
+        // Mission 154 (point 3) — le bon de la tournée : le titre de CE bien hors mandat.
+        title: outsideTitleSchema.nullable().default(null),
       }),
     )
     .min(1)
@@ -82,6 +97,8 @@ export const storedVoucherFieldsSchema = z.object({
         mandate: z.string().max(40),
         price: z.number(),
         address: z.string().max(300),
+        // Mission 154 — le titre de ce bien, dans un bon de la tournée.
+        title: outsideTitleSchema.nullable().optional(),
       }),
     )
     .min(1)

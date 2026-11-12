@@ -71,6 +71,29 @@ const parisDay = (offset: number): string => {
   return `${year}-${month}-${day}`;
 };
 
+// Le découpage que le bouton annonce, puis écrit : le dernier mot pour le nom, le reste pour les
+// prénoms ; le conseiller le voit avant de toucher et le corrige ensuite (relecteur).
+const splitName = (name: string): { firstNames: string; lastName: string } => {
+  const words = name.trim().split(/\s+/);
+  return words.length > 1
+    ? { firstNames: words.slice(0, -1).join(' '), lastName: words[words.length - 1]! }
+    : { firstNames: '', lastName: words[0] ?? '' };
+};
+
+// Mission 154 — un bon récent garde prénom et nom séparés : repris tels quels ; un bon plus ancien
+// n'a que le nom entier, découpé comme le bouton l'annonce.
+const voucherVisitorName = (entry: {
+  name: string;
+  firstName?: string;
+  lastName?: string;
+}): { firstNames: string; lastName: string } =>
+  entry.firstName && entry.lastName
+    ? { firstNames: entry.firstName, lastName: entry.lastName }
+    : splitName(entry.name);
+
+const visitor = (entry: { civility: string; name: string }): string =>
+  `${entry.civility} ${entry.name.trim()}`;
+
 const inWords = (value: number): string =>
   value >= 1 && value <= 9_999_999 ? `${numberInWords(value)} euros` : '';
 
@@ -97,7 +120,10 @@ export function OfferForm({
   const [offrants, setOffrants] = useState<Offrant[]>(
     context.last?.offrants.map((offrant) => ({ ...offrant })) ?? [{ ...EMPTY_OFFRANT }],
   );
-  const [address, setAddress] = useState(context.last?.address ?? '');
+  // Mission 154 — l'adresse des offrants : celle de la dernière offre, sinon du dernier bon.
+  const [address, setAddress] = useState(
+    context.last?.address ?? context.lastVoucher?.address ?? '',
+  );
   const [matrimonial, setMatrimonial] = useState(context.last?.matrimonial ?? '');
   const [fiscalFrance, setFiscalFrance] = useState(context.last?.fiscalResidenceFrance ?? true);
   const [mandateNumber, setMandateNumber] = useState(visit?.mandateNumber ?? '');
@@ -396,6 +422,28 @@ export function OfferForm({
             <legend className="px-1 text-sm font-semibold text-zinc-800">
               Offrant {index + 1}
             </legend>
+            {/* Mission 154 — le visiteur du dernier bon : une suggestion à confirmer d'un geste,
+                jamais découpée en silence (le bon ne sépare pas nom et prénoms). */}
+            {!context.last &&
+            !offrant.lastName.trim() &&
+            !offrant.firstNames.trim() &&
+            context.lastVoucher?.visitors[index] ? (
+              <button
+                type="button"
+                className={`${btnSecondary} self-start px-3 py-1.5 text-sm sm:col-span-2`}
+                data-testid={`offer-take-visitor-${index + 1}`}
+                onClick={() =>
+                  setOffrant(index, {
+                    civility: context.lastVoucher!.visitors[index]!.civility,
+                    ...voucherVisitorName(context.lastVoucher!.visitors[index]!),
+                  })
+                }
+              >
+                Reprendre « {visitor(context.lastVoucher.visitors[index]!)} » du bon de visite :
+                prénoms « {voucherVisitorName(context.lastVoucher.visitors[index]!).firstNames} »,
+                nom « {voucherVisitorName(context.lastVoucher.visitors[index]!).lastName} »
+              </button>
+            ) : null}
             <label className="flex flex-col gap-1">
               <span className={fieldLabel}>Civilité</span>
               <select

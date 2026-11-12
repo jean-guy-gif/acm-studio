@@ -106,3 +106,53 @@ export function withBuyer(name: string): string {
 export function outsideNote(buyerName: string): string {
   return `Hors mandat de l’agence : le bon de visite et l’offre d’achat demandent votre mandat de recherche avec ${withBuyer(buyerName)}, ou la collaboration du confrère.`;
 }
+
+// --- Mission 154 (point 3) — le bon de la tournée --------------------------------------------
+// Un bon réunit les biens d'une tournée, quel que soit leur titre (mandat de vente de l'agence,
+// mandat de recherche, collaboration avec un ou plusieurs confrères) ; chaque bien garde sa ligne
+// et son titre. Un bon qui n'a qu'un titre garde mot pour mot ses textes (07/11, M153) ; un bon à
+// plusieurs titres imprime, une fois chacune, les seules phrases des titres présents (validées par
+// Jean-Guy le 12/11, `missions/M154-…`).
+
+export type TourTitleKind = 'sale' | OutsideTitle['kind'];
+
+export const VOUCHER_TOUR_COMMITMENTS: Record<TourTitleKind, string> = {
+  sale: "Pour les biens que l'Agence a en mandat de vente, je suis informé(e) que le vendeur s'est engagé, dans le cadre du mandat de vente qu'il a confié à l'Agence, à ne pas traiter la vente de ces biens directement avec un acquéreur présenté par l'Agence ou ayant visité le bien avec l'Agence.",
+  search:
+    "Pour les biens présentés au titre de mon mandat de recherche, je reconnais avoir confié à l'Agence un mandat de recherche, et que ces biens m'ont été présentés dans le cadre de ce mandat.",
+  colleague:
+    "Pour chaque bien présenté en collaboration, je suis informé(e) que le vendeur a confié un mandat de vente à l'agence indiquée sur sa ligne, avec laquelle l'Agence collabore, et qu'il s'est engagé à ne pas traiter la vente de ce bien directement avec un acquéreur présenté par l'Agence.",
+};
+
+export function voucherSaleLine(mandate: string, bien: { price: string; address: string }): string {
+  return `Mandat de vente de l'Agence n° ${mandate.trim()} · Prix de commercialisation : ${bien.price} € · Adresse du bien : ${bien.address}`;
+}
+
+// La clé d'un titre : deux biens au même titre la partagent (le même mandat de recherche, le même
+// mandat de vente d'un confrère — son agence ET son n°, relecteur).
+export function titleKey(title: OutsideTitle | null): string {
+  if (title == null) return 'sale';
+  const norm = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
+  return title.kind === 'search'
+    ? `search:${norm(title.number)}:${title.signedOn}`
+    : `colleague:${norm(title.agency)}:${norm(title.number)}`;
+}
+
+// Le bon prend la version de la tournée dès qu'il réunit plusieurs titres — ou plusieurs biens en
+// collaboration : la phrase à un seul confrère ne vaut que pour un bien (M153). Le même calcul à
+// l'écran et au serveur. Pur.
+export function tourVersion(titles: (OutsideTitle | null)[]): boolean {
+  const keys = new Set(titles.map(titleKey));
+  const colleagues = titles.filter((title) => title?.kind === 'colleague').length;
+  return keys.size > 1 || colleagues > 1;
+}
+
+// Un seul mandat de recherche par bon : la phrase dit « mon mandat de recherche » (relecteur).
+export function severalSearches(titles: (OutsideTitle | null)[]): boolean {
+  return (
+    new Set(titles.filter((title) => title?.kind === 'search').map((title) => titleKey(title)))
+      .size > 1
+  );
+}
+export const OUTSIDE_ONE_SEARCH =
+  'Un seul mandat de recherche par bon : le même numéro et la même date pour tous ses biens.';
