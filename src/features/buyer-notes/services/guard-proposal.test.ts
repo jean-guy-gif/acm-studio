@@ -291,4 +291,46 @@ describe('guardProposal', () => {
     expect(works('Pas de travaux — un coup de peinture ne le gêne pas')).toBeUndefined();
     expect(works('aucun travaux')).toBe(false);
   });
+
+  // Jean-Guy, 12/11 : la liste des mots fermes s'élargit ; sans ligne ferme, pas de ★, mais le
+  // « oui » reste proposé ; un « non » nuancé aux travaux laisse sa nuance dans Notes.
+  it('les mots fermes, le « oui » gardé sans ★, la nuance des travaux dans Notes', () => {
+    for (const line of [
+      'terrasse impérative',
+      'garage absolument',
+      'piscine non négociable',
+      'ascenseur exigé',
+      'il faut un parking',
+      'jardin nécessaire',
+      'balcon essentiel',
+    ]) {
+      expect(saysFirm(line), line).toBe(true);
+    }
+    expect(saysFirm('un jardin si possible')).toBe(false);
+    const wished = guardProposal({
+      ...empty,
+      must_have: ['pool'],
+      sources: [{ field: 'must_have:pool', quote: 'piscine souhaitée' }],
+    });
+    expect(wished.mustHave).toEqual([]);
+    expect(wished.values.pool).toBe(true);
+    expect(wished.sources.pool).toBe('piscine souhaitée');
+    const works = guardProposal({
+      ...empty,
+      works_accepted: false,
+      notes: 'Visites le vendredi après-midi.',
+      sources: [{ field: 'works_accepted', quote: 'gros travaux non, cuisine à refaire OK' }],
+    });
+    expect(works.values.worksAccepted).toBeUndefined();
+    expect(works.values.notes).toBe(
+      'Visites le vendredi après-midi. gros travaux non, cuisine à refaire OK (à vérifier)',
+    );
+    const alone = guardProposal({
+      ...empty,
+      works_accepted: false,
+      sources: [{ field: 'works_accepted', quote: 'gros travaux non, cuisine à refaire OK' }],
+    });
+    expect(alone.values.notes).toBe('gros travaux non, cuisine à refaire OK (à vérifier)');
+    expect(alone.sources.notes).toBe('gros travaux non, cuisine à refaire OK');
+  });
 });

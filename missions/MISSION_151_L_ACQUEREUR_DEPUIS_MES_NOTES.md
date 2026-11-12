@@ -184,7 +184,13 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
    donne « Prêt à vivre » ; « Travaux acceptés : non » (qui écarte avec un ★) n'est proposé que si
    les notes le disent sans nuance.
 6. **« Notes »** : seulement des faits pratiques — disponibilités pour visiter, contraintes —,
-   « À vérifier », jamais une remarque sur la personne (Jean-Guy, 10/11).
+   « À vérifier », jamais une remarque sur la personne (Jean-Guy, 10/11). Une condition (« RDC ok
+   si jardinet ») et un « non » nuancé aux travaux (« gros travaux non, cuisine à refaire OK »),
+   restés inconnus, y vont, « (à vérifier) » ; une ★ veut une ligne qui la dise ferme
+   (« indispensable », « obligatoire », « impératif », « absolument », « non négociable », « exigé »,
+   « il faut », « nécessaire », « essentiel », « +++ », « !! », un mot en MAJUSCULES hors sigles) ;
+   sans elle, pas de ★, mais l'équipement voulu reste proposé « oui » ; la copropriété refusée peut
+   porter une ★, sept critères, deux au plus (Jean-Guy, 12/11).
 7. **Ce qui n'a pas été relevé** : une ligne grise, sans le contenu — « 2 mentions personnelles
    n'ont pas été relevées ».
 8. **Valider.** « Créer la fiche » (le seul plein, M146) ; « Recommencer la lecture » ; « Annuler »,
@@ -289,6 +295,13 @@ par mots (tant que l'API l'ignore) ; la raison du rang dite à l'acquéreur (apr
 - **Le coût réel d'une lecture au-delà de sa réservation** (Jean-Guy, 12/11) : la trace garde le
   coût réel ; la réservation prend une marge de 25 % pour que le dépassement reste rare. À relever
   sur les premières lectures (`ai_usage`, coût face à la réservation).
+- **La part des champs proposés que le conseiller retire à la validation** (Jean-Guy, 12/11),
+  calculée depuis la trace, sans rien stocker de plus : `ai_usage` garde les noms des champs
+  proposés (`fields_proposed`) et ceux gardés (`fields_kept`) ; la différence est ce qu'il a
+  décoché, champ par champ, par lecture et par agence. Ce qu'il corrige après la création ne se lit
+  pas dans la trace : la pastille « À vérifier » part autant quand il modifie le champ que par
+  « Tout est juste » (M97) ; le distinguer demanderait d'enregistrer plus, à décider si la part
+  retirée ne suffit pas.
 
 ## Essai (interne, l'e2e)
 
