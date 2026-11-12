@@ -21,6 +21,7 @@ import {
   type TitleDraft,
 } from '@/features/visit-voucher/components/outside-title-fields';
 import { SignaturePad } from '@/features/visit-voucher/components/signature-pad';
+import { initiallyChecked } from '@/features/visit-voucher/services/voucher-defaults';
 import { VoucherShare } from '@/features/visit-voucher/components/voucher-share';
 import type { VoucherContext } from '@/features/visit-voucher/queries/get-voucher-context';
 import {
@@ -70,26 +71,17 @@ export function VoucherForm({
   const [address, setAddress] = useState(context.lastVisitor?.address ?? '');
   const [piece, setPiece] = useState<VisitorPiece>(context.lastVisitor?.piece ?? 'cni');
   const [city, setCity] = useState(context.city);
-  // Sans visite d'où l'on vient : la seule visite d'un bien sous mandat qui a droit au bon, sinon la
-  // seule hors mandat (Mission 153 : un bon ne réunit jamais les deux).
-  const eligibleMandate = context.visits.filter((visit) => visit.eligible && !visit.outside);
-  const eligibleOutside = context.visits.filter((visit) => visit.eligible && visit.outside);
-  const onlyCandidate =
-    eligibleMandate.length === 1
-      ? eligibleMandate[0]!.visitId
-      : eligibleMandate.length === 0 && eligibleOutside.length === 1
-        ? eligibleOutside[0]!.visitId
-        : null;
+  // Mission 154 — les biens de la tournée cochés d'office : toutes les visites demandées ou
+  // confirmées (pas encore faites) qui ont droit au bon, sous un même régime (Mission 153 : un bon
+  // ne réunit jamais un bien sous mandat et un bien hors mandat) — celui de la visite d'où l'on vient,
+  // sinon les biens sous mandat d'abord. Sans visite à venir : la seule qui a droit au bon.
+  const defaultChecked = initiallyChecked(context.visits, preselected);
   const [biens, setBiens] = useState<Record<string, BienDraft>>(() =>
     Object.fromEntries(
       context.visits.map((visit) => [
         visit.visitId,
         {
-          // Les biens visités le même jour (§ 6) : rien n'est coché d'office, sauf la visite d'où
-          // l'on vient, ou la seule qui a droit au bon.
-          checked:
-            visit.eligible &&
-            (preselected != null ? preselected === visit.visitId : onlyCandidate === visit.visitId),
+          checked: defaultChecked.has(visit.visitId),
           mandate: visit.mandate ?? '',
           price: visit.price != null ? String(visit.price) : '',
           address: visit.address ?? '',
@@ -316,6 +308,24 @@ export function VoucherForm({
 
       <section className={`${card} flex flex-col gap-3 p-5`}>
         <h2 className={sectionTitle}>Le visiteur</h2>
+        {/* Mission 154 — le nom de la fiche, jamais rempli d'office ni découpé : une suggestion à
+            confirmer d'un geste, tant que le premier visiteur n'a pas de nom. */}
+        {visitors[0] && !visitors[0].name.trim() && context.buyer.name.trim() ? (
+          <button
+            type="button"
+            className={`${btnSecondary} self-start px-3 py-1.5 text-sm`}
+            data-testid="voucher-take-buyer-name"
+            onClick={() =>
+              setVisitors((current) =>
+                current.map((entry, at) =>
+                  at === 0 ? { ...entry, name: context.buyer.name.trim() } : entry,
+                ),
+              )
+            }
+          >
+            Reprendre « {context.buyer.name.trim()} »
+          </button>
+        ) : null}
         {visitors.map((visitor, index) => (
           <div key={index} className="grid grid-cols-[auto_1fr] gap-2">
             <select

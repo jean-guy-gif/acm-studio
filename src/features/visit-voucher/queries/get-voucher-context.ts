@@ -10,6 +10,8 @@ import {
   type VisitorCivility,
 } from '@/features/visit-voucher/services/voucher-fields';
 import { readVoucherFields } from '@/features/visit-voucher/services/voucher-input';
+import { readOfferFields } from '@/features/purchase-offer/services/offer-input';
+import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import {
   HORS_MANDAT_OUVERT,
   readOutsideTitle,
@@ -63,7 +65,8 @@ export type VoucherContext = {
   lastVisitor: {
     visitors: { civility: VisitorCivility; name: string }[];
     address: string;
-    piece: VisitorPiece;
+    // Mission 154 — inconnu quand le visiteur vient d'une offre (elle ne dit pas la pièce).
+    piece: VisitorPiece | null;
   } | null;
   // Mission 153 — le mandat de recherche du dernier bon ou de la dernière offre de la fiche (jamais
   // gardé sur la fiche, M137 A).
@@ -108,7 +111,7 @@ export async function getVoucherContext(
   // Mission 153 — le mandat de recherche de la fiche, s'il a déjà été saisi (bon ou offre).
   const buyerDocuments = await supabase
     .from('buyer_documents')
-    .select('fields')
+    .select('kind, fields')
     .eq('agency_id', agencyId)
     .eq('buyer_id', buyerId)
     .order('signed_at', { ascending: false })
@@ -134,7 +137,16 @@ export async function getVoucherContext(
       lines.filter((line) => line.itemSource === 'competitor').map((l) => l.itemReference),
     ),
   ];
-  const [conclusions, subjects, competitors, previous] = await Promise.all([
+  // Mission 154 — l'adresse d'une annonce démarchée, confirmée sur sa carte de Prospection.
+  const listingKeys = [
+    ...new Set(
+      lines
+        .filter((line) => line.itemSource === 'listing')
+        .map((line) => listingIdentityKey(line.itemReference))
+        .filter((key): key is string => key != null),
+    ),
+  ];
+  const [conclusions, subjects, competitors, previous, prospects] = await Promise.all([
     projectIds.length > 0
       ? supabase
           .from('project_meeting_conclusions')
@@ -164,12 +176,20 @@ export async function getVoucherContext(
       .eq('kind', 'visit_voucher')
       .order('signed_at', { ascending: false })
       .limit(200),
+    listingKeys.length > 0
+      ? supabase
+          .from('buyer_prospects')
+          .select('listing_key, locator_address, locator_confirmed')
+          .eq('agency_id', agencyId)
+          .in('listing_key', listingKeys)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (
     conclusions.error ||
     subjects.error ||
     competitors.error ||
     previous.error ||
+    prospects.error ||
     buyerDocuments.error
   ) {
     return { ok: false, error: 'Le bon de visite n’a pas pu être préparé : rechargez la page.' };
@@ -177,6 +197,11 @@ export async function getVoucherContext(
   const conclusionOf = new Map((conclusions.data ?? []).map((row) => [row.project_id, row]));
   const subjectOf = new Map((subjects.data ?? []).map((row) => [row.project_id, row]));
   const competitorOf = new Map((competitors.data ?? []).map((row) => [row.id, row]));
+  const confirmedProspectAddress = new Map(
+    (prospects.data ?? [])
+      .filter((row) => row.locator_confirmed === true && row.locator_address?.trim())
+      .map((row) => [row.listing_key, row.locator_address!.trim()]),
+  );
   const knownMandate = new Map<string, string>();
   // Mission 153 — le confrère d'un bien hors mandat, une fois saisi sur un bon.
   const knownColleague = new Map<string, Extract<OutsideTitle, { kind: 'colleague' }>>();
@@ -229,6 +254,9 @@ export async function getVoucherContext(
       if (line.itemSource === 'competitor') {
         const competitor = competitorOf.get(line.itemReference);
         address = competitor?.locator_address ?? competitor?.address ?? null;
+      } else {
+        const key = listingIdentityKey(line.itemReference);
+        address = (key ? confirmedProspectAddress.get(key) : null) ?? null;
       }
       // Mission 153 — hors mandat : le bon se signe au titre du mandat de recherche ou de la
       // collaboration ; seul un mandat rentré met le bien sous mandat de l'agence. Un propriétaire
@@ -267,6 +295,13 @@ export async function getVoucherContext(
   });
 
   const last = readVoucherFields(lastDocument.data?.fields);
+  // Mission 154 — sans bon, les offrants et l'adresse de la dernière offre de la fiche (prénoms et
+  // nom) ; la pièce d'identité, que l'offre ne dit pas, reste à choisir.
+  const lastOffer = last
+    ? null
+    : readOfferFields(
+        (buyerDocuments.data ?? []).find((row) => row.kind === 'purchase_offer')?.fields,
+      );
   const identityAgency = voucherAgency({
     identity: legal.identity,
     branding: mentions,
@@ -285,7 +320,16 @@ export async function getVoucherContext(
       city: cityOfAddress(mentions.postalAddress) || last?.city || '',
       lastVisitor: last
         ? { visitors: last.visitors, address: last.visitorAddress, piece: last.piece }
-        : null,
+        : lastOffer
+          ? {
+              visitors: lastOffer.offrants.map((offrant) => ({
+                civility: offrant.civility,
+                name: `${offrant.firstNames} ${offrant.lastName}`.trim(),
+              })),
+              address: lastOffer.address,
+              piece: null,
+            }
+          : null,
       lastSearchTitle,
     },
   };
