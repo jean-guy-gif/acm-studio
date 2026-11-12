@@ -6,6 +6,11 @@ import { BuyerForm } from '@/features/buyers/components/buyer-form';
 import { BuyerQuickForm } from '@/features/buyers/components/buyer-quick-form';
 import { getAgencyCities } from '@/features/buyers/queries/get-agency-cities';
 import { criteriaToBuyerDraft } from '@/features/buyers/services/buyer-criteria';
+import { NotesFlow } from '@/features/buyer-notes/components/notes-flow';
+import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
+import { DEMO_NOTES_TEXT } from '@/features/demo/data/notes-arnaud';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
+import { getProfile } from '@/lib/auth/get-profile';
 
 export const metadata: Metadata = { title: 'Nouvel acquéreur — ACM Studio' };
 
@@ -31,6 +36,10 @@ const num = (value: string | undefined): number | null => {
 // sur la fiche. Le rapprochement garde le formulaire complet (ses pièces et sa surface).
 export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) {
   const params = await searchParams;
+  // Mission 151 — la lecture des notes n'apparaît que là où elle est ouverte (`reading-gate.ts`).
+  const profile = await getProfile();
+  const isDemo = await isDemoAgency(profile?.agency_id);
+  const readingOpen = notesReadingOpen({ isDemo, email: profile?.email });
   const fromSearch = Object.values(params).some((value) => value != null && value !== '');
   const draft = fromSearch
     ? criteriaToBuyerDraft({
@@ -44,7 +53,9 @@ export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) 
     : undefined;
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6 md:gap-8">
+    <div
+      className={`flex ${readingOpen && !fromSearch ? 'max-w-6xl' : 'max-w-3xl'} flex-col gap-6 md:gap-8`}
+    >
       <div className="flex flex-col gap-2">
         <Link href="/acquereurs" className={backLink}>
           ← Acquéreurs
@@ -59,6 +70,11 @@ export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) 
       </div>
       {fromSearch ? (
         <BuyerForm buyer={null} draft={draft} />
+      ) : readingOpen ? (
+        // Mission 151 — « Depuis mes notes » en tête (planche 1), la saisie rapide dessous.
+        <NotesFlow existing={null} demoText={isDemo ? DEMO_NOTES_TEXT : null}>
+          <BuyerQuickForm cities={await getAgencyCities()} />
+        </NotesFlow>
       ) : (
         <BuyerQuickForm cities={await getAgencyCities()} />
       )}

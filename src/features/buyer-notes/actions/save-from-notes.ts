@@ -10,6 +10,7 @@ import {
 } from '@/features/buyers/schemas/buyer-input';
 import { buyerColumns, sanitizeSoftCriteria } from '@/features/buyers/services/buyer-row';
 import { sanitizeBuyerFieldsToVerify } from '@/features/buyer-notes/services/fields-to-verify';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
@@ -86,6 +87,8 @@ export async function saveBuyerFromNotes(formData: FormData): Promise<SaveFromNo
         fields_to_verify: toVerify,
         agency_id: profile.agency_id,
         advisor_id: profile.id,
+        // Dans l'agence de démonstration, la fiche est marquée : la remise à zéro la retire (M114).
+        ...((await isDemoAgency(profile.agency_id)) ? { demo: true } : {}),
       })
       .select('id')
       .single();

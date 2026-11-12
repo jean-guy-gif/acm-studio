@@ -13,11 +13,14 @@ export function ConfirmDialog({
   text,
   onCancel,
   children,
+  cancelLabel = 'Annuler',
 }: {
   title: ReactNode;
   text?: ReactNode;
   onCancel: () => void;
   children: ReactNode;
+  // Mission 151 — « Rester » quand le geste est de quitter (planche M151-2).
+  cancelLabel?: string;
 }) {
   const titleId = useId();
   useEffect(() => {
@@ -41,7 +44,7 @@ export function ConfirmDialog({
         {text ? <p className="text-sm text-zinc-600">{text}</p> : null}
         <div className="flex flex-wrap items-center justify-end gap-2">
           <button type="button" autoFocus className={btnSecondary} onClick={onCancel}>
-            Annuler
+            {cancelLabel}
           </button>
           {children}
         </div>

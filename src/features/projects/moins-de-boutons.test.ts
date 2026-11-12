@@ -60,9 +60,12 @@ describe('le menu « … »', () => {
   });
 
   it('la confirmation dans l’écran met le focus sur « Annuler »', () => {
-    expect(read('src/components/ui/confirm-dialog.tsx')).toMatch(
-      /<button type="button" autoFocus className=\{btnSecondary\} onClick=\{onCancel\}>\s*Annuler/,
+    const source = read('src/components/ui/confirm-dialog.tsx');
+    // Mission 151 — le libellé se règle (« Rester » pour quitter) ; « Annuler » par défaut.
+    expect(source).toMatch(
+      /<button type="button" autoFocus className=\{btnSecondary\} onClick=\{onCancel\}>\s*\{cancelLabel\}/,
     );
+    expect(source).toMatch(/cancelLabel = 'Annuler'/);
   });
 
   it('une entrée « danger » passe en bas, en rouge ; une précision suit le libellé', () => {
