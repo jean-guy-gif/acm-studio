@@ -71,10 +71,16 @@ M151_MODELES=eu.anthropic.claude-sonnet-4-6,eu.anthropic.claude-haiku-4-5-202510
 node missions/M151-essais/mesure.mjs --fiches --classement
 ```
 
-**La même mesure sur Claude 5.5**, dès le compte débloqué (Irlande seule, sans « eu. », décision du
-11/11 ; ce sont les modèles par défaut) :
+**La même mesure sur Claude 5.5**, dès le compte débloqué : `eu.anthropic.claude-sonnet-5-5` et
+`eu.anthropic.claude-haiku-5-5`, le profil « EU » appelé depuis l'Irlande (décision de Jean-Guy du
+11/11 au soir) ; ce sont les modèles par défaut. Lire d'abord leurs régions de destination par l'API
+(`GetInferenceProfile`), comme pour le plan B :
 
 ```sh
 M151_SDK_DIR=… M151_CORPUS=… M151_TITRE="Mesure de l'étape 0" \
 node missions/M151-essais/mesure.mjs --fiches --classement
 ```
+
+`M151_RENOTER=<horodatage>` renote sans aucun appel les fiches déjà gardées dans `M151_SORTIE` sous
+cet horodatage, sur les corrigés du jour (le bilan porte `-renote`). Le score principal est « champs
+justes en tout » : les 22 champs de chaque fiche, attendus remplis comme attendus vides.

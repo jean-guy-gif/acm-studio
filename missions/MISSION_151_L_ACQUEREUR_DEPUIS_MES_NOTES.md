@@ -46,7 +46,7 @@ sert à ranger les biens trouvés, en disant pourquoi.
 
 ## Étape 0 — avant le code
 
-1. **Jean-Guy** ouvre le compte AWS et l'accès aux modèles, en Irlande seulement (eu-west-1), en suivant
+1. **Jean-Guy** ouvre le compte AWS et l'accès aux modèles, depuis l'Irlande (eu-west-1), en suivant
    `missions/M151-etapes-aws.md` (SIRET et TVA dans « Tax settings », « Model invocation logging »
    désactivé, une clé limitée à Bedrock), et pose la clé dans `.env.local` et dans Vercel
    (production et essai) ; Claude Code ne touche ni à AWS ni à Vercel.
@@ -54,7 +54,7 @@ sert à ranger les biens trouvés, en disant pourquoi.
    inventés (noms de fiction, téléphones en 06 39 98, e-mails en example.com), et exporte de son CRM
    les fiches de 5 acquéreurs inventés. Elles sont rangées hors du dépôt, sauf celles choisies pour
    la démo et les tests.
-3. **Le chef mesure** : Sonnet 5.5 et Haiku 5.5, en Irlande, sur ces notes et ces fiches —
+3. **Le chef mesure** : Sonnet 5.5 et Haiku 5.5, par leur profil « EU », sur ces notes et ces fiches —
    champs justes, champs faux, champs inventés, mentions personnelles relevées par erreur, coût réel
    par fiche — et sur les 73 descriptions de la mesure pour le classement. Le modèle de chaque
    lecture se choisit sur ce résultat (moins de 1 €). Un champ inventé ou une mention personnelle
@@ -78,6 +78,16 @@ répond « not available for this account » (vérification du compte ou formula
 cours) ; Sonnet 5.5 et Haiku 5.5 répondent « does not exist » en Irlande, à revérifier une fois
 l'accès ouvert. La mesure attend ; rien n'a été lu ni facturé.
 
+**Décision de Jean-Guy (11/11 au soir, sur preuve, notée le 12/11)** : les modèles 5.5 se lisent par
+leur **profil « EU »**, `eu.anthropic.claude-sonnet-5-5` et `eu.anthropic.claude-haiku-5-5`,
+appelés depuis l'Irlande (eu-west-1) ; ce n'est pas l'Irlande seule (remplace le choix du 11/11).
+Les régions de destination de ces deux profils se lisent par l'API (`GetInferenceProfile`) dès le
+compte débloqué ; le texte de confidentialité ne change qu'après cette vérification.
+
+**Plan B (12/11)** : en attendant le support AWS (cas 179439470000287), l'étape 0 tourne sur Sonnet
+4.6 et Haiku 4.5 par leurs profils « EU », pour valider le dossier d'essais et la méthode, pas pour
+choisir le modèle : `missions/M151-mesure-provisoire-plan-b.md`.
+
 ## Maquettes
 
 `missions/maquettes/M151-1` à `M151-4` (`.png`, source `M151-generateur.mjs --png`), chacune sur
@@ -96,8 +106,9 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
 1. **Entrée.** « Nouvel acquéreur » (M132) gagne en tête « Depuis mes notes » : **Prendre une
    photo**, **Déposer un fichier** (PDF, image, capture d'écran), **Coller un texte**. La saisie
    rapide reste dessous, inchangée. Sur une fiche existante, « Compléter depuis mes notes ».
-2. **La lecture** : « Lecture de vos notes… », un seul appel, par Claude sur Amazon Bedrock, **lu
-   uniquement en Irlande, dans l'Union européenne** (eu-west-1, sans profil réparti) ; le coût est
+2. **La lecture** : « Lecture de vos notes… », un seul appel, par Claude sur Amazon Bedrock, par le
+   **profil « EU »**, appelé depuis l'Irlande (eu-west-1 ; régions de destination à vérifier par
+   l'API, décision du 11/11 au soir) ; le coût est
    réservé avant, réglé après (point 10).
 3. **La proposition** (planche 2) : chaque champ de la fiche (M117) avec « À vérifier » et la ligne
    des notes d'où il vient ; un champ que les notes ne disent pas reste vide, jamais deviné (M38) ;
@@ -202,9 +213,9 @@ test court de Jean-Guy en production, avec ses propres notes inventées.
 
 ## Réponses de Jean-Guy (10/11)
 
-1. **Fournisseur** : Claude par Amazon Bedrock, **lu uniquement en Irlande, dans l'Union
-   européenne** (eu-west-1 ; le 11/11, le profil « EU », qui inclut Zurich et Londres, est écarté ;
-   remplace « profil d'inférence UE » du 10/11). D'accord pour le SDK. Jean-Guy crée lui-même le compte AWS et ouvre l'accès au modèle.
+1. **Fournisseur** : Claude par Amazon Bedrock, par le **profil « EU »**, appelé depuis l'Irlande
+   (eu-west-1) : décision du 11/11 au soir, sur preuve, qui remplace « l'Irlande seule » du 11/11 ;
+   les régions de destination se vérifient par l'API au déblocage du compte. D'accord pour le SDK. Jean-Guy crée lui-même le compte AWS et ouvre l'accès au modèle.
 2. **Critères doux** : la liste du point A.5. « Pas de copropriété » devient un vrai critère (A.4).
 3. **La description** est lue seulement pour juger et citer une courte phrase.
 4. **Plafond** : 10 € par mois et par agence, réglé par l'opérateur.

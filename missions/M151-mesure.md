@@ -139,8 +139,9 @@ annonces), ≈ 4,5 € tout en Sonnet. À comparer aux 0,60 € d'une seule rech
 Aucun de ces services n'entraîne ses modèles sur les données envoyées par API (conditions
 commerciales, à faire confirmer pour le contrat retenu).
 
-**Décidé par Jean-Guy** : Claude par Amazon Bedrock (10/11), **lu uniquement en Irlande, dans l'Union
-européenne** (11/11 : le profil « EU », qui inclut Zurich et Londres, est écarté).
+**Décidé par Jean-Guy** : Claude par Amazon Bedrock (10/11), par le **profil « EU »** appelé depuis
+l'Irlande (11/11 au soir, sur preuve ; remplace « l'Irlande seule » du 11/11) ; ses régions de
+destination se vérifient par l'API au déblocage du compte.
 La recommandation d'origine disait : Claude par **Amazon Bedrock, en région Paris**, si les deux modèles y sont ;
 Sonnet 5.5 pour lire les notes (rare, une erreur coûte une fiche fausse), Haiku 5.5 pour classer les
 annonces (volume, textes publics). C'est le seul choix qui laisse les notes en Europe sans

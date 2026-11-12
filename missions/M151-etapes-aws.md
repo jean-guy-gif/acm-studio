@@ -22,10 +22,13 @@ conversation.
    formulaire de cas d'usage, une fois par compte (« Lecture de notes d'agents immobiliers pour
    pré-remplir une fiche client, vérifiée par l'agent »). Si une page « Model access » s'affiche, y
    demander l'accès aux deux modèles.
-7. **Où la lecture se fait** — **décidé le 11/11 : l'Irlande seule.** Le profil « EU » de Claude sur Bedrock
+7. **Où la lecture se fait** — **décidé le 11/11 au soir, sur preuve : le profil « EU »**,
+   `eu.anthropic.claude-sonnet-5-5` / `eu.anthropic.claude-haiku-5-5`, appelé depuis eu-west-1 (remplace
+   « l'Irlande seule », ci-dessous) ; ses régions de destination se lisent par l'API
+   (`GetInferenceProfile`) dès le compte débloqué. Le 11/11 au matin : le profil « EU » de Claude sur Bedrock
    répartit les lectures entre les régions européennes d'AWS, **Zurich (Suisse) et Londres
    (Royaume-Uni) comprises**, hors de l'Union (doc « Claude in Amazon Bedrock », Regions). L'autre
-   choix, retenu, est l'Irlande seule (« In-region only ») : le modèle s'appelle alors
+   choix, d'abord retenu, était l'Irlande seule (« In-region only ») : le modèle s'appelle alors
    `anthropic.claude-sonnet-5-5` / `anthropic.claude-haiku-5-5`, sans `eu.`, depuis eu-west-1.
 8. **Vérifier que « Model invocation logging » est désactivé** : Bedrock → Settings → « Model
    invocation logging » doit être éteint (c'est le réglage par défaut). Allumé, AWS garderait dans
@@ -74,8 +77,8 @@ conversation.
       `eu-*` couvre aussi Zurich (`eu-central-2`) et Londres (`eu-west-2`), hors de l'Union ; c'est
       le profil qui décide où va la lecture, et ses régions de destination se lisent par l'API
       (`GetInferenceProfile`) avant tout appel.
-    - `ClaudeIrlandeSeulement` : le service `bedrock-mantle`, seul valable pour Claude 5.5, en
-      Irlande seulement (décision du 11/11). Sans lui, AWS refusait l'appel (403 : « not authorized
+    - `ClaudeIrlandeSeulement` : le service `bedrock-mantle`, seul valable pour Claude 5.5, appelé
+      depuis l'Irlande (son nom date du choix du 11/11 au matin). Sans lui, AWS refusait l'appel (403 : « not authorized
       to perform: bedrock-mantle:CreateInference on resource: …:project/default »).
     - `LireLesProfils` : lire les profils et leurs régions de destination.
 

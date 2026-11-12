@@ -1,5 +1,5 @@
 {
- "_lire": "Corrigé du classement (partie B), écrit le 11/11/2026 AVANT tout appel aux modèles, sur les 73 annonces réelles de la mesure du 10/11 (concurrents de la sauvegarde du 09/11, repérés par leur identifiant ; leur texte ne va pas dans le dépôt). Pour chaque annonce, les jugements acceptés : « calme » toujours ; « cachet » seulement pour les 12 annonces relues à la main le 10/11 (6 de caractère, 3 récentes ou contemporaines, 3 pièges de mots : un collège Pierre…, le centre ancien, « charmant T3 »). Les autres jugements ne sont pas notés ; toute citation doit se trouver mot pour mot dans la description.",
+ "_lire": "Corrigé du classement (partie B), écrit le 11/11/2026 AVANT tout appel aux modèles, sur les 73 annonces réelles de la mesure du 10/11 (concurrents de la sauvegarde du 09/11, repérés par leur identifiant ; leur texte ne va pas dans le dépôt). Pour chaque annonce, les jugements acceptés : « calme » toujours ; « cachet » seulement pour les 12 annonces relues à la main le 10/11 (6 de caractère, 3 récentes ou contemporaines, 3 pièges de mots : un collège Pierre…, le centre ancien, « charmant T3 »). Les autres jugements ne sont pas notés ; toute citation doit se trouver mot pour mot dans la description. — Règle de Jean-Guy du 12/11 : une étiquette « Calme » du portail compte pour le calme, marquée « à vérifier » ; « calme_a_verifier » marque les 6 annonces où seule l'étiquette le dit (aucun « calme », « paisible » ni « tranquill… » dans la description).",
  "annonces": {
   "9bab9493-2dc9-425b-8899-cccf5f41df17": {
    "rang": 0,
@@ -111,7 +111,8 @@
    "calme": [
     "clairement",
     "reserve"
-   ]
+   ],
+   "calme_a_verifier": true
   },
   "a1a1d229-bc27-499a-9d78-5299e799def7": {
    "rang": 17,
@@ -160,7 +161,8 @@
     "rien",
     "reserve",
     "contraire"
-   ]
+   ],
+   "calme_a_verifier": true
   },
   "636a6719-9223-439d-af89-b87365f04b0c": {
    "rang": 23,
@@ -196,7 +198,8 @@
    "calme": [
     "clairement",
     "reserve"
-   ]
+   ],
+   "calme_a_verifier": true
   },
   "a5da1131-2818-4e4f-b397-9d58bffcd213": {
    "rang": 28,
@@ -387,13 +390,15 @@
     "rien",
     "reserve",
     "contraire"
-   ]
+   ],
+   "calme_a_verifier": true
   },
   "fc706c49-e952-4153-b788-cfb5dbae876f": {
    "rang": 56,
    "calme": [
     "clairement"
-   ]
+   ],
+   "calme_a_verifier": true
   },
   "1c0934ab-bfeb-4382-857c-7627039de382": {
    "rang": 57,
@@ -507,7 +512,8 @@
    "calme": [
     "clairement",
     "reserve"
-   ]
+   ],
+   "calme_a_verifier": true
   }
  }
 }

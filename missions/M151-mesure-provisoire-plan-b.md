@@ -5,8 +5,11 @@
 sur une génération plus ancienne, pour valider le dossier d'essais, le barème et la méthode
 (décision de Jean-Guy, 12/11). La fiche et le texte pour le juriste restent écrits pour Claude 5.5.
 
-Bilan brut : `M151-essais/resultats/bilan-2026-11-12-06-24.md`. Réponses brutes et 73 annonces
-hors du dépôt.
+Deux mesures sur Sonnet 4.6 : la première (06 h 24), puis, après les règles de Jean-Guy du 12/11,
+la seconde (08 h 15). Bilans bruts dans `M151-essais/resultats/` : `bilan-2026-11-12-06-24.md`,
+`bilan-2026-11-12-08-15.md` (fiches et classement), et les deux mêmes renotées sans appel sur les
+corrigés du 12/11 (`…-renote.md`, celles qui font foi pour les fiches). Réponses brutes et 73
+annonces hors du dépôt.
 
 ## Les conditions
 
@@ -15,7 +18,7 @@ hors du dépôt.
 - **Où va la lecture** : lu par l'API (`GetInferenceProfile`, 12/11). Les deux profils envoient
   vers les six mêmes régions, **toutes dans l'Union** : Stockholm (eu-north-1), Paris (eu-west-3),
   Milan (eu-south-1), Espagne (eu-south-2), Irlande (eu-west-1), Francfort (eu-central-1). Ni
-  Zurich ni Londres, contrairement au profil « EU » de Claude 5.5 (11/11).
+  Zurich ni Londres. Celles du profil « EU » de Claude 5.5 restent à lire par l'API.
 - **Droits** : la politique en place, sans changement (`M151-etapes-aws.md`, étape 10).
 - **Le dossier** : les 11 cas inventés (N1 à N6, C1 à C5), deux passes par modèle, sans photo
   (`photos/` est vide), contre les corrigés écrits avant ; le classement des 73 annonces réelles,
@@ -32,8 +35,8 @@ hors du dépôt.
   disent désormais « ou rien » par `null` dans la liste, au lieu d'un `anyOf`. Le sens ne change
   pas, et le barème se vérifie toujours lui-même (`--essai-notation`). **À reprendre dans la
   fiche du code** : la limite vaudra aussi dans l'application.
-- Modèles par défaut : Sonnet 5.5 et Haiku 5.5 **sans « eu. »**, en Irlande seule (décision du
-  11/11 ; le script gardait encore les profils « eu. »). La commande des 5.5 est dans
+- Modèles par défaut : `eu.anthropic.claude-sonnet-5-5` et `eu.anthropic.claude-haiku-5-5`, le profil
+  « EU » appelé depuis l'Irlande (décision du 11/11 au soir). La commande des 5.5 est dans
   `M151-essais/README.md`.
 
 ## Haiku 4.5 : refusé
@@ -54,7 +57,7 @@ le compte administrateur, attendre 5 minutes, puis relancer la mesure de Haiku s
 (`M151_MODELES=eu.anthropic.claude-haiku-4-5-20251001-v1:0`). Le même abonnement attendra Claude
 5.5 au déblocage du compte.
 
-## Sonnet 4.6 : les fiches
+## Sonnet 4.6, première mesure (avant les règles) : les fiches
 
 | | Passe 1 | Passe 2 |
 |---|---|---|
@@ -92,7 +95,7 @@ devra rattraper :
    deux passes). La commune reconnue au serveur par geo.api.gouv.fr (M103) le rattrapera.
 5. **Une case non cochée lue comme un refus** : parking « non » sur C4, à la passe 1 seulement.
 
-## Sonnet 4.6 : le classement des 73 annonces
+## Sonnet 4.6, première mesure : le classement des 73 annonces
 
 - **Cachet : 12 / 12 conformes**, y compris les faux amis (le charme du village, le collège
   « Pierre » Bertone, la villa de 2025 « au charme provençal »).
@@ -109,17 +112,140 @@ devra rattraper :
   serait tombé : la garde prévue marche.
 - **Coût : 0,271 $ pour 73 annonces, ≈ 0,004 $ l'annonce.**
 
+## « Résidence principale » : noté, mais caché par le score (question du 12/11)
+
+Le motif (`purpose`) **est noté** : il est dans la liste des champs du barème. Quand le corrigé ne
+l'attend pas et ne le tolère pas, il doit rester vide, et « résidence principale » y compte comme
+**inventé** : ce sont 12 des 21 « inventés » de la première mesure. Mais le score affiché, 208 / 210,
+ne comptait que les champs **attendus remplis** ; un champ attendu vide n'y entrait pas, juste ou
+faux. Rien n'est donc à ajouter aux corrigés : c'est le score qui trompait. Il dit désormais
+**« champs justes en tout »**, les 22 champs de chaque fiche, remplis et vides (22 × 11 cas × 2
+passes = 484) : la première mesure fait **467 / 484** sur le barème du 11/11.
+
+## Les règles du 12/11, appliquées à la consigne et aux corrigés
+
+1. Un champ dont les notes ne disent rien reste vide, sans valeur par défaut, motif et délai
+   compris.
+2. Un achat comptant va dans Financement, « comptant, à vérifier » (`cash_to_verify`), sans
+   l'origine des fonds ; une contrainte pratique de visite (pas de voiture le week-end) peut aller
+   en Notes, suivie de « (à vérifier) » ; aucune autre mention sur la personne, sources comprises.
+3. Deux ★ au plus, seulement parmi Communes, Budget, Extérieur, Parking, Piscine, Ascenseur ; jamais
+   le type de bien ; le budget seulement s'il est dit ferme, jamais tiré d'une colonne d'export.
+4. Une étiquette « Calme » du portail vaut le calme, marquée « à vérifier ».
+
+Corrigés modifiés en conséquence, **après** la première mesure (ils avaient été écrits avant ; la
+modification suit des règles nouvelles, pas les réponses du modèle) : N4 attend `cash_to_verify` ;
+N5 permet « voiture » dans les seules Notes, suivi de « à vérifier » ; l'étage (N1, C1) et la
+copropriété (N6) ne sont plus des ★ tolérés ; les 6 annonces où seule l'étiquette dit le calme
+portent `calme_a_verifier`. Le barème refuse aussi plus de deux ★.
+
+**À reporter dans la fiche du code** (elle n'est pas modifiée) : `buyers.financing` n'a que validé,
+en cours, inconnu ; « comptant, à vérifier » serait une proposition à l'écran, que le conseiller
+transforme en « Validé » ou non, sans colonne nouvelle.
+
+## Avant et après les règles : les fiches (Sonnet 4.6)
+
+| | Avant, barème du 11/11 | Avant, corrigés du 12/11 | **Après les règles** |
+|---|---|---|---|
+| Champs justes en tout (sur 484) | 467 | 465 | **482** |
+| Champs attendus remplis justes | 208 / 210 | 208 / 212 | **211 / 212** |
+| Champs faux | 3 | 9 | **2** |
+| Inventés (champs et ★) | 21 | 25 | **2** |
+| Mentions personnelles | 4 | 4 | **1** |
+| Coût de la fiche | 0,020 $ | — | 0,020 $ |
+
+La colonne du milieu renote, sans appel, les réponses de la première mesure sur les corrigés du
+12/11 : c'est elle qu'il faut comparer à la dernière. Ce qu'il reste :
+
+- **« vente Stockholm » recopié une fois sur deux** (N4, passe 2), dans la source du financement,
+  alors que le financement lui-même est juste (« comptant, à vérifier »). La consigne ne suffit pas :
+  la garde au serveur sur les sources reste nécessaire.
+- **La commune ★ de N6**, aux deux passes, sans source : « maison plain-pied obligatoire » en fait
+  encore un indispensable (le type ★ a disparu).
+- **« Châteauneuf-de-Grasse »** au lieu de Châteauneuf-Grasse (N4, passe 2) : voir la vérification
+  des communes ci-dessous.
+- **Une case non cochée lue comme un refus** (C4, parking, passe 1).
+
+Disparus : le motif inventé (12 fois), le délai déduit, les ★ du budget tirés d'un export, l'étage
+★, « pas de voiture » hors des Notes (désormais « Pas de voiture le week-end (à vérifier). » en
+Notes, aux deux passes), le financement comptant posé en « validé ».
+
+Une correction de **mon barème** en route : la source de la note permise (`notes : « pas de voiture
+le w-e »`) était comptée comme une mention ; elle suit désormais la règle des Notes. Les deux
+mesures sont renotées avec ce barème.
+
+## Avant et après les règles : le classement (Sonnet 4.6)
+
+| | Avant | **Après** |
+|---|---|---|
+| Calme conformes | 63 / 73 | **69 / 73** |
+| Calme par l'étiquette seule, marqué « à vérifier » | — | **6 / 6** |
+| Cachet conformes | 12 / 12 | 12 / 12 |
+| Citations mot pour mot | 65 / 66 | 67 / 68 |
+| Coût pour 73 annonces | 0,271 $ | 0,290 $ |
+
+## Les 6 autres écarts du calme
+
+Hors des 4 étiquettes, la première mesure avait 6 écarts ; 2 ont disparu d'eux-mêmes, 4 restent.
+
+| Rang | L'annonce dit | Corrigé | Lu avant → après | Pourquoi |
+|---|---|---|---|---|
+| 17 | Cannes, « proche gare », « à 10 minutes à pied de la gare » | rien | contraire → **rien** | La proximité d'une gare, sans un mot sur le calme, n'est pas le contraire du calme. Corrigé sans changer la consigne : c'est l'écart d'une passe à l'autre. |
+| 57 | Antibes, « à proximité immédiate du Port Vauban, de la gare, du centre-ville » | rien | contraire → **rien** | Le même cas. |
+| 5 | Antibes, « un environnement calme », « entre calme résidentiel et proximité des commodités », mais « à quelques minutes … des principaux axes de circulation » | réserve | clairement → clairement | Le contre-signal est écrit comme un atout : le modèle ne le lit pas comme une nuance. |
+| 58 | Le Thoronet, « une vie confortable … dans un cadre récent et serein » | clairement ou réserve | rien → rien | « Serein » n'est pas dans les exemples de la consigne. |
+| 64 | Roquefort-les-Pins, « une véritable sensation de quiétude » sur le terrain, et « à proximité … des grands axes » | clairement ou réserve | rien → rien | « Quiétude » non plus. |
+| 70 | Opio, « une région prisée pour sa tranquillité » | clairement ou réserve | rien → rien | C'est la région, pas le bien : la règle du cachet (« le charme du village n'est pas le cachet du bien ») donne raison au modèle. **Le corrigé est à revoir.** |
+
+Propositions, à trancher par Jean-Guy avant la mesure sur 5.5 :
+- **Consigne** : ajouter « serein, sérénité du cadre, quiétude » aux exemples du calme ; « la
+  proximité d'une gare ou du centre, sans un mot sur le calme, vaut "rien", jamais "contraire" » ;
+  « la proximité de grands axes nuance le calme, même présentée comme un atout ».
+- **Corrigé** : rang 70, accepter « rien » (la tranquillité d'une région n'est pas celle du bien).
+
+La citation du rang 13 (« au calme absolu, au calme et sans nuisance ») colle encore deux passages
+de l'annonce : la vérification mot pour mot au serveur la refuse, et le jugement tombe, comme prévu.
+
+## Les communes : la vérification proposée (pas codée)
+
+Le modèle écrit « Châteauneuf-de-Grasse » ; la commune officielle est Châteauneuf-Grasse (06038).
+Mesuré le 12/11 : la recherche par nom de geo.api.gouv.fr ne la trouve pas (aucun résultat pour
+« Châteauneuf-de-Grasse » ni pour « St-Laurent-du-Var »). La recherche floue ne suffit donc pas.
+
+**La vérification, au serveur, pour chaque commune lue :**
+1. **La liste officielle du département**, par la porte qui existe déjà
+   (`geoProvider(isDemo).fetchDepartmentCommunes`, M114 ; table locale des Alpes-Maritimes pour
+   l'agence de démo) : les départements de l'agence (son adresse, ceux de ses dossiers et de ses
+   acquéreurs).
+2. **La comparaison** : le nom normalisé comme partout (`normalizeCommuneName`, M71 : accents,
+   tirets, St / Ste), puis sans les petits mots (de, du, la, le, les, sur). Essayé hors du dépôt sur
+   les 163 communes du 06 : « Châteauneuf-de-Grasse » → Châteauneuf-Grasse, « St-Laurent-du-Var » →
+   Saint-Laurent-du-Var, « Opio » → Opio.
+3. **Le nom d'usage** (Juan-les-Pins, Golfe-Juan, Cros-de-Cagnes, M86) est gardé tel que lu, comme
+   l'acquéreur l'a dit (M117), reconnu par la liste des alias ; un arrondissement par M99.
+4. **Le résultat** : une seule commune trouvée, elle est proposée sous son nom officiel avec la
+   pastille « À vérifier » et « lu : Châteauneuf-de-Grasse » ; aucune ou plusieurs (« Cagnes »,
+   « Châteauneuf » seul), le champ reste à la main du conseiller, jamais deviné (M38, M103) ; le
+   service en panne, la commune reste telle que lue, marquée « commune non vérifiée » (M104), jamais
+   lue comme « aucune commune » (M98).
+5. **Les tests** : les cas N1 à C5 (Juan, St-Laurent, Châteauneuf), un nom absent, deux homonymes,
+   le service en panne, l'agence de démo sans appel réseau.
+
 ## Ce que la mesure valide
 
-- **Le dossier d'essais et le barème tiennent** : ils séparent ce qui est juste, inventé, faux et
-  personnel, cas par cas, et la mesure se rejoue d'une commande. Une seule réserve : le ★ de N6.
-- **Le coût est dans l'ordre prévu.** Sur Sonnet 4.6, plus cher que Sonnet 5.5 (2 / 10 $), une fiche
-  coûte 0,02 $ (la mesure du 10/11 l'estimait à 0,02 € pour Sonnet 5.5) et une annonce 0,004 $.
-- **Rien ne choisit encore entre Sonnet et Haiku** : Haiku n'a pas répondu.
+- **Le dossier d'essais et le barème tiennent**, avec le score « en tout », qui ne cache plus les
+  champs attendus vides. Restent à relire : le corrigé du rang 70.
+- **Les règles du 12/11 marchent sur Sonnet 4.6** : 482 / 484, inventés de 25 à 2, mentions de 4 à
+  1, calme de 63 à 69 sur 73, l'étiquette « à vérifier » 6 fois sur 6, au même coût.
+- **Deux gardes au serveur restent nécessaires**, quoi que dise la consigne : les mentions
+  personnelles dans les sources et les mots, et les citations mot pour mot.
+- **Rien ne choisit encore entre Sonnet et Haiku** : Haiku n'a pas été relancé (pas encore ouvert).
 
 ## La suite
 
-1. Jean-Guy ouvre Haiku 4.5 une fois dans le Playground (compte administrateur), puis je relance
+1. Jean-Guy tranche les trois propositions du calme et le corrigé du rang 70.
+2. Jean-Guy ouvre Haiku 4.5 une fois dans le Playground (compte administrateur), puis je relance
    Haiku seul.
-2. Dès que le compte a accès à Claude 5.5 : la même mesure, d'une commande
-   (`M151-essais/README.md`), qui choisit le modèle.
+3. Dès que le compte a accès à Claude 5.5 : lire par l'API les régions des profils
+   `eu.anthropic.claude-sonnet-5-5` et `eu.anthropic.claude-haiku-5-5`, puis la même mesure, d'une
+   commande (`M151-essais/README.md`), qui choisit le modèle.
