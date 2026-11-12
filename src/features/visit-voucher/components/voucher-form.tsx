@@ -26,8 +26,10 @@ import { VoucherShare } from '@/features/visit-voucher/components/voucher-share'
 import type { VoucherContext } from '@/features/visit-voucher/queries/get-voucher-context';
 import {
   OUTSIDE_COLLEAGUE_ONE,
+  OUTSIDE_ONE_SEARCH,
   OUTSIDE_TITLE_MIXED,
-  titleKey,
+  severalSearches,
+  tourVersion,
   VOUCHER_TOUR_COMMITMENTS,
   voucherSaleLine,
   voucherOutsideLine,
@@ -167,7 +169,8 @@ export function VoucherForm({
   const missingTitles = tour
     ? chosen.filter((visit, index) => visit.outside && tourTitles[index] == null)
     : [];
-  const severalTitles = tour && new Set(tourTitles.map(titleKey)).size > 1;
+  const severalTitles = tour && tourVersion(tourTitles);
+  const searchConflict = tour && severalSearches(tourTitles);
   const searchHint =
     context.lastSearchTitle &&
     title.searchNumber === context.lastSearchTitle.number &&
@@ -559,12 +562,18 @@ export function VoucherForm({
             chosen.length === 0 ||
             (!tour && outside === true && validTitle == null) ||
             missingTitles.length > 0 ||
+            searchConflict ||
             colleagueTooMany ||
             signatures.slice(0, visitors.length).some((value) => value == null)
           }
         >
           {pending ? 'Signature…' : 'Signer le bon de visite'}
         </button>
+        {searchConflict ? (
+          <p className="text-sm font-semibold text-amber-800" data-testid="voucher-one-search">
+            {OUTSIDE_ONE_SEARCH}
+          </p>
+        ) : null}
         {missingTitles.length > 0 ? (
           <p className="text-sm font-semibold text-amber-800" data-testid="voucher-missing-titles">
             Il manque : le titre pour{' '}

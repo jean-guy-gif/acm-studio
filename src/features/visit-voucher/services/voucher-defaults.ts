@@ -18,8 +18,19 @@ export function initiallyChecked(
     : pending.some((visit) => !visit.outside)
       ? false
       : pending.length > 0;
+  // Tournée éteinte (la production) : hors mandat, un bon par titre — seule la visite d'où l'on
+  // vient, ou la seule visite hors mandat à venir, est cochée (relecteur).
+  const outsidePending = pending.filter((visit) => visit.outside);
   const chosen = new Set(
-    pending.filter((visit) => anyRegime || visit.outside === outside).map((visit) => visit.visitId),
+    anyRegime
+      ? pending.map((visit) => visit.visitId)
+      : !outside
+        ? pending.filter((visit) => !visit.outside).map((visit) => visit.visitId)
+        : from
+          ? []
+          : outsidePending.length === 1
+            ? [outsidePending[0]!.visitId]
+            : [],
   );
   if (from) chosen.add(from.visitId);
   if (chosen.size === 0) {

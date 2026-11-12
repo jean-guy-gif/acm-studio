@@ -128,12 +128,31 @@ export function voucherSaleLine(mandate: string, bien: { price: string; address:
   return `Mandat de vente de l'Agence n° ${mandate.trim()} · Prix de commercialisation : ${bien.price} € · Adresse du bien : ${bien.address}`;
 }
 
-// La clé d'un titre : deux biens au même titre la partagent (un seul mandat de recherche, une
-// agence de confrère).
+// La clé d'un titre : deux biens au même titre la partagent (le même mandat de recherche, le même
+// mandat de vente d'un confrère — son agence ET son n°, relecteur).
 export function titleKey(title: OutsideTitle | null): string {
   if (title == null) return 'sale';
   const norm = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
   return title.kind === 'search'
     ? `search:${norm(title.number)}:${title.signedOn}`
-    : `colleague:${norm(title.agency)}`;
+    : `colleague:${norm(title.agency)}:${norm(title.number)}`;
 }
+
+// Le bon prend la version de la tournée dès qu'il réunit plusieurs titres — ou plusieurs biens en
+// collaboration : la phrase à un seul confrère ne vaut que pour un bien (M153). Le même calcul à
+// l'écran et au serveur. Pur.
+export function tourVersion(titles: (OutsideTitle | null)[]): boolean {
+  const keys = new Set(titles.map(titleKey));
+  const colleagues = titles.filter((title) => title?.kind === 'colleague').length;
+  return keys.size > 1 || colleagues > 1;
+}
+
+// Un seul mandat de recherche par bon : la phrase dit « mon mandat de recherche » (relecteur).
+export function severalSearches(titles: (OutsideTitle | null)[]): boolean {
+  return (
+    new Set(titles.filter((title) => title?.kind === 'search').map((title) => titleKey(title)))
+      .size > 1
+  );
+}
+export const OUTSIDE_ONE_SEARCH =
+  'Un seul mandat de recherche par bon : le même numéro et la même date pour tous ses biens.';

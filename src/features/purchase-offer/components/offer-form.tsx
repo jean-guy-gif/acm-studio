@@ -71,6 +71,15 @@ const parisDay = (offset: number): string => {
   return `${year}-${month}-${day}`;
 };
 
+// Le découpage que le bouton annonce, puis écrit : le dernier mot pour le nom, le reste pour les
+// prénoms ; le conseiller le voit avant de toucher et le corrige ensuite (relecteur).
+const splitName = (name: string): { firstNames: string; lastName: string } => {
+  const words = name.trim().split(/\s+/);
+  return words.length > 1
+    ? { firstNames: words.slice(0, -1).join(' '), lastName: words[words.length - 1]! }
+    : { firstNames: '', lastName: words[0] ?? '' };
+};
+
 const visitor = (entry: { civility: string; name: string }): string =>
   `${entry.civility} ${entry.name.trim()}`;
 
@@ -412,17 +421,16 @@ export function OfferForm({
                 type="button"
                 className={`${btnSecondary} self-start px-3 py-1.5 text-sm sm:col-span-2`}
                 data-testid={`offer-take-visitor-${index + 1}`}
-                onClick={() => {
-                  const visitor = context.lastVoucher!.visitors[index]!;
-                  const words = visitor.name.trim().split(/\s+/);
+                onClick={() =>
                   setOffrant(index, {
-                    civility: visitor.civility,
-                    lastName: words.length > 1 ? words[words.length - 1]! : words[0]!,
-                    firstNames: words.length > 1 ? words.slice(0, -1).join(' ') : '',
-                  });
-                }}
+                    civility: context.lastVoucher!.visitors[index]!.civility,
+                    ...splitName(context.lastVoucher!.visitors[index]!.name),
+                  })
+                }
               >
-                Reprendre « {visitor(context.lastVoucher.visitors[index]!)} » du bon de visite
+                Reprendre « {visitor(context.lastVoucher.visitors[index]!)} » du bon de visite :
+                prénoms « {splitName(context.lastVoucher.visitors[index]!.name).firstNames} », nom «{' '}
+                {splitName(context.lastVoucher.visitors[index]!.name).lastName} »
               </button>
             ) : null}
             <label className="flex flex-col gap-1">

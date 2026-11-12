@@ -497,4 +497,57 @@ describe('le bon de la tournée', () => {
     ).toBe(false);
     expect(state.writes).toEqual([]);
   });
+
+  it('le même confrère sous deux n° de mandat : la tournée, chaque bien son n° (relecteur)', async () => {
+    state.context = context({
+      tourOpen: true,
+      visits: [
+        context().visits[2]!,
+        { ...context().visits[2]!, visitId: SECOND, label: 'Maison · 220 m² · Mougins' },
+      ],
+    });
+    await signVisitVoucher(
+      input({
+        biens: [
+          {
+            ...searchBien,
+            title: { kind: 'colleague', agency: 'Agence Littoral & Pins', number: 'V-1' },
+          },
+          {
+            ...colleagueBien,
+            title: { kind: 'colleague', agency: 'Agence Littoral & Pins', number: 'V-2' },
+          },
+        ],
+      }),
+    );
+    const document = state.writes[0]![1] as { rendered_text: string; template_version: string };
+    expect(document.template_version).toBe('bon-de-visite-tournee-2026-11-12');
+    expect(document.rendered_text).toContain('mandat de vente n° V-1');
+    expect(document.rendered_text).toContain('mandat de vente n° V-2');
+    expect(document.rendered_text).toContain("l'agence indiquée sur sa ligne");
+  });
+
+  it('deux mandats de recherche différents sur un bon : refusé', async () => {
+    state.context = context({
+      tourOpen: true,
+      visits: [
+        context().visits[2]!,
+        { ...context().visits[2]!, visitId: SECOND, label: 'Maison · 220 m² · Mougins' },
+      ],
+    });
+    const result = await signVisitVoucher(
+      input({
+        biens: [
+          searchBien,
+          { ...colleagueBien, title: { kind: 'search', number: 'R-9', signedOn: '2026-11-04' } },
+        ],
+      }),
+    );
+    expect(result).toEqual({
+      ok: false,
+      error:
+        'Un seul mandat de recherche par bon : le même numéro et la même date pour tous ses biens.',
+    });
+    expect(state.writes).toEqual([]);
+  });
 });

@@ -119,7 +119,8 @@ export async function getVoucherContext(
     .eq('buyer_id', buyerId)
     .order('signed_at', { ascending: false })
     .limit(20);
-  if (!legal.ok || branding.error || visitRead.failed) {
+  // Une lecture en échec n'est jamais lue comme « aucun bon » (M98, relecteur).
+  if (!legal.ok || branding.error || visitRead.failed || lastDocument.error) {
     return { ok: false, error: 'Le bon de visite n’a pas pu être préparé : rechargez la page.' };
   }
   const mentions = {

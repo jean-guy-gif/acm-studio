@@ -27,8 +27,10 @@ import {
 import {
   OUTSIDE_COLLEAGUE_ONE,
   OUTSIDE_TITLE_MISSING,
+  OUTSIDE_ONE_SEARCH,
   OUTSIDE_TITLE_MIXED,
-  titleKey,
+  severalSearches,
+  tourVersion,
   type OutsideTitle,
 } from '@/features/visit-voucher/services/outside-mandate';
 import { SIGNATURE_BUCKET, voucherPath } from '@/features/visit-voucher/services/voucher-link';
@@ -101,8 +103,8 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     if (input.biens.some((bien, index) => !outside[index] && (bien.title || input.title))) {
       return { ok: false, error: FAILED };
     }
-    const keys = new Set(bienTitles.map(titleKey));
-    tour = keys.size > 1;
+    if (severalSearches(bienTitles)) return { ok: false, error: OUTSIDE_ONE_SEARCH };
+    tour = tourVersion(bienTitles);
     title = !tour && outside[0] ? bienTitles[0]! : null;
   } else {
     if (outside.some(Boolean) && !outside.every(Boolean)) {
