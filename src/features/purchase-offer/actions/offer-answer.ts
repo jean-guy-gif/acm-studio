@@ -96,6 +96,8 @@ async function propertyOf(
   propertyAddress: string,
   language: TextLanguage = 'fr',
 ): Promise<string> {
+  // Mission 153 — une offre hors mandat n'a pas de dossier vendeur : l'adresse de l'offre.
+  if (!projectId) return clientTexts(language).buyer.messages.propertyAt(propertyAddress);
   const { data } = await admin
     .from('subject_properties')
     .select('property_type, city')

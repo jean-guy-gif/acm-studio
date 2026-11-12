@@ -8,6 +8,8 @@ import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting
 import type { VisitLine } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { listingIdentityKey } from '@/features/comparable-import/utils/extract-listing-key';
 import { getProspectingCards } from '@/features/prospecting/queries/prospecting-card-store';
+import { getOppositions } from '@/features/prospecting/queries/get-oppositions';
+import { opposedOn, type Oppositions } from '@/features/prospecting/services/opposition';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -95,6 +97,32 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
     );
   };
 
+  // Mission 153 (relecteur) — sans courrier préparé, l'opposition se lit quand même : un bien hors
+  // mandat « Ne plus solliciter » n'a ni bon ni offre. Une liste illisible n'est jamais lue comme
+  // vide (M98) : le bien est fermé, l'écran le dit.
+  let oppositions: Oppositions | null = null;
+  if (lines.some((line) => line.itemSource !== 'project')) {
+    oppositions = await getOppositions(supabase, profile.agency_id).catch(() => null);
+  }
+  const closedWithoutLetter = (line: VisitLine): VisitLetterState | null => {
+    if (line.itemSource === 'project') return null;
+    if (oppositions == null) {
+      return { kind: 'closed', label: 'Liste « Ne plus solliciter » illisible, rechargez la page' };
+    }
+    if (line.itemSource === 'competitor') {
+      const card = cards.find((candidate) =>
+        candidate.copies.some((copy) => copy.row.id === line.itemReference),
+      );
+      if (card?.row.opposedOn) return { kind: 'closed', label: 'Ne plus solliciter' };
+      return null;
+    }
+    const date = opposedOn(
+      { address: null, listingKey: listingIdentityKey(line.itemReference) },
+      oppositions,
+    );
+    return date ? { kind: 'closed', label: 'Ne plus solliciter' } : null;
+  };
+
   return new Map(
     lines.map((line) => {
       const action = visitAction({
@@ -110,7 +138,8 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
       });
       const origin = prospecting.bySelectionItem.get(line.itemId);
       if (!origin) {
-        return [line.id, { ...NONE, action }];
+        const closed = closedWithoutLetter(line);
+        return [line.id, closed ? { ...NONE, action, state: closed } : { ...NONE, action }];
       }
       const row = origin.prospectId
         ? (prospecting.cards.find((card) => card.prospectId === origin.prospectId)?.row ?? null)

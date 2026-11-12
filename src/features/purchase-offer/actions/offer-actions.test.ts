@@ -60,6 +60,7 @@ const { respondToOffer } = await import('@/features/purchase-offer/actions/respo
 
 const BUYER = '11111111-1111-4111-8111-111111111111';
 const VISIT = '22222222-2222-4222-8222-222222222222';
+const OUTSIDE = '44444444-4444-4444-8444-444444444444';
 const PNG = `data:image/png;base64,${Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
   Buffer.alloc(100),
@@ -116,6 +117,30 @@ const context = (over: Partial<OfferContext> = {}): OfferContext => ({
       sellerEmail: null,
       sellerPhone: null,
       acceptedOfferOn: null,
+      outside: false,
+      suggestion: null,
+      soldByAgency: false,
+    },
+    {
+      visitId: OUTSIDE,
+      label: 'Maison · 6 pièces · 220 m² · Mougins',
+      eligible: true,
+      note: 'Offre envisagée · hors mandat de l’agence',
+      projectId: null,
+      price: 1_720_000,
+      propertyAddress: null,
+      condominium: false,
+      mandateNumber: null,
+      fees: null,
+      feesPaidBy: null,
+      photoPath: null,
+      visitedAt: new Date().toISOString(),
+      sellerEmail: null,
+      sellerPhone: null,
+      acceptedOfferOn: null,
+      outside: true,
+      suggestion: null,
+      soldByAgency: true,
     },
   ],
   agency: agency as OfferContext['agency'],
@@ -123,6 +148,7 @@ const context = (over: Partial<OfferContext> = {}): OfferContext => ({
   cover: { site: null },
   advisorFirstName: 'Carl',
   last: null,
+  lastSearchTitle: null,
   ...over,
 });
 
@@ -302,6 +328,88 @@ describe('la réponse du vendeur', () => {
     ).toBe(false);
     state.found = null;
     expect((await respondToOffer('t', { decision: 'refused' })).ok).toBe(false);
+    expect(state.writes).toEqual([]);
+  });
+});
+
+// Mission 153 — l'offre hors mandat : le titre obligatoire, l'adresse saisie, la version validée,
+// rien gardé sur une conclusion (il n'y en a pas).
+describe('l’offre d’achat hors mandat', () => {
+  const outside = (over: Record<string, unknown> = {}) =>
+    input({
+      visitId: OUTSIDE,
+      mandateNumber: '',
+      propertyAddress: '8 allée des Cistes Blancs, 06250 Mougins',
+      ...over,
+    });
+
+  it('sans titre, ou sans adresse du bien : rien n’est écrit', async () => {
+    expect(await signPurchaseOffer(outside())).toEqual({
+      ok: false,
+      error: 'Choisissez à quel titre vous intervenez : sans lui, le document ne se crée pas.',
+    });
+    expect(
+      (
+        await signPurchaseOffer(
+          outside({
+            propertyAddress: null,
+            title: { kind: 'search', number: 'R-1', signedOn: '2026-11-04' },
+          }),
+        )
+      ).ok,
+    ).toBe(false);
+    expect(state.writes).toEqual([]);
+    expect(state.uploads).toEqual([]);
+  });
+
+  it('au mandat de recherche : la phrase validée, aucune conclusion touchée', async () => {
+    const result = await signPurchaseOffer(
+      outside({ title: { kind: 'search', number: 'R-2026-031', signedOn: '2026-11-04' } }),
+    );
+    expect(result.ok).toBe(true);
+    const [, , document] = state.writes.find(([table]) => table === 'buyer_documents')!;
+    const {
+      rendered_text: text,
+      template_version: version,
+      fields,
+    } = document as {
+      rendered_text: string;
+      template_version: string;
+      fields: { projectId: string; propertyAddress: string; title: unknown };
+    };
+    expect(version).toBe('offre-achat-hors-mandat-2026-11-12');
+    expect(text).toContain(
+      "L'OFFRANT reconnait que ces conditions ont été négociées par l'Agence, titulaire d'un mandat de recherche signé par l'OFFRANT le 04/11/2026, régulièrement inscrit sur son Registre des mandats sous le numéro R-2026-031 .",
+    );
+    expect(text).toContain('Ci-après "l\'Agence" ou "le Mandataire",');
+    expect(text).toContain('Adresse postale des biens : 8 allée des Cistes Blancs, 06250 Mougins');
+    expect(fields.projectId).toBe('');
+    expect(state.writes.some(([table]) => table === 'project_meeting_conclusions')).toBe(false);
+  });
+
+  it('en collaboration : ni « le Mandataire » ni « le MANDATAIRE »', async () => {
+    await signPurchaseOffer(
+      outside({ title: { kind: 'colleague', agency: 'Agence Littoral & Pins', number: 'V-4471' } }),
+    );
+    const [, , document] = state.writes.find(([table]) => table === 'buyer_documents')!;
+    const text = (document as { rendered_text: string }).rendered_text;
+    expect(text).toContain(
+      "L'OFFRANT reconnait que ces conditions ont été négociées par l'Agence, en collaboration avec l'agence Agence Littoral & Pins, titulaire d'un mandat de vente inscrit sous le numéro V-4471 .",
+    );
+    expect(text).toContain('Ci-après "l\'Agence",');
+    expect(text).not.toMatch(/Mandataire|MANDATAIRE/);
+    expect(text).toContain("collectées par l'Agence à l'occasion de la présente");
+    expect(text).toContain("aux opérations de prospection de l'Agence dans le respect");
+  });
+
+  it('un titre sur une offre sous mandat est refusé', async () => {
+    expect(
+      (
+        await signPurchaseOffer(
+          input({ title: { kind: 'search', number: 'R', signedOn: '2026-11-04' } }),
+        )
+      ).ok,
+    ).toBe(false);
     expect(state.writes).toEqual([]);
   });
 });

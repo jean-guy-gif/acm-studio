@@ -12,7 +12,12 @@ import {
   type StoredOfferFields,
 } from '@/features/purchase-offer/services/offer-input';
 import { offerPath } from '@/features/purchase-offer/services/offer-link';
-import { OFFER_TEMPLATE_VERSION, renderOffer } from '@/features/purchase-offer/services/offer-text';
+import {
+  OFFER_OUTSIDE_TEMPLATE_VERSION,
+  OFFER_TEMPLATE_VERSION,
+  renderOffer,
+} from '@/features/purchase-offer/services/offer-text';
+import { OUTSIDE_TITLE_MISSING } from '@/features/visit-voucher/services/outside-mandate';
 import { parisDateLabel } from '@/features/visit-voucher/services/voucher-fields';
 import { decodeSignature } from '@/features/visit-voucher/services/voucher-input';
 import { SIGNATURE_BUCKET } from '@/features/visit-voucher/services/voucher-link';
@@ -67,13 +72,31 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
     };
   }
   const visit = context.visits.find((entry) => entry.visitId === input.visitId);
-  if (!visit || !visit.eligible || !visit.projectId) {
+  if (!visit || !visit.eligible || (!visit.outside && !visit.projectId)) {
     return { ok: false, error: visit?.note ?? FAILED };
   }
-  if (!visit.propertyAddress) {
-    return { ok: false, error: 'Adresse du bien vendeur manquante : complétez la fiche du bien.' };
+  // Mission 153 — hors mandat : le titre est obligatoire, et l'adresse du bien se saisit quand ACM
+  // ne la connaît pas ; sous mandat, aucun titre, et le n° de mandat est exigé.
+  const title = visit.outside ? input.title : null;
+  if (visit.outside && !title) return { ok: false, error: OUTSIDE_TITLE_MISSING };
+  if (!visit.outside && input.title) return { ok: false, error: FAILED };
+  if (title?.kind === 'search' && title.signedOn > parisToday()) {
+    return { ok: false, error: 'Le mandat de recherche ne peut pas être signé dans le futur.' };
   }
-  if (visit.condominium && input.lots.length === 0) {
+  const propertyAddress = visit.outside
+    ? visit.propertyAddress?.trim() || input.propertyAddress?.trim() || null
+    : visit.propertyAddress;
+  if (!propertyAddress || propertyAddress.length < 5) {
+    return {
+      ok: false,
+      error: visit.outside
+        ? 'Indiquez l’adresse du bien.'
+        : 'Adresse du bien vendeur manquante : complétez la fiche du bien.',
+    };
+  }
+  // Mission 153 (relecteur) — hors mandat, la copropriété est celle que déclare le conseiller.
+  const condominium = visit.outside ? input.condominium : visit.condominium;
+  if (condominium && input.lots.length === 0) {
     return { ok: false, error: 'Le bien est en copropriété : indiquez au moins un lot.' };
   }
   const signatures = input.signatures.map(decodeSignature);
@@ -81,7 +104,8 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
     return { ok: false, error: 'Une signature n’a pas pu être lue : signez de nouveau.' };
   }
   // Le n° de mandat déjà gardé sur la conclusion l'emporte (il se remplit seul, § 12).
-  const mandateNumber = visit.mandateNumber?.trim() || input.mandateNumber;
+  const mandateNumber = title ? '' : visit.mandateNumber?.trim() || input.mandateNumber;
+  if (!title && !mandateNumber) return { ok: false, error: 'Indiquez le n° de mandat.' };
 
   const text = documentToText(
     renderOffer({
@@ -95,11 +119,11 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
       fiscalResidenceFrance: input.fiscalResidenceFrance,
       mandateNumber,
       agent: input.agent,
-      condominium: visit.condominium,
-      propertyAddress: visit.propertyAddress,
+      condominium,
+      propertyAddress,
       parcels: input.parcels,
       totalArea: input.totalArea,
-      lots: visit.condominium ? input.lots : [],
+      lots: condominium ? input.lots : [],
       price: input.price,
       feesPaidBy: input.feesPaidBy,
       fees: input.fees,
@@ -108,6 +132,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
       validUntil: frenchDay(input.validUntil),
       contractDeadline: frenchDay(input.contractDeadline),
       deposit: input.deposit,
+      title,
     }),
   );
   const fields: StoredOfferFields = {
@@ -117,7 +142,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
     matrimonial: input.matrimonial,
     fiscalResidenceFrance: input.fiscalResidenceFrance,
     mandateNumber,
-    propertyAddress: visit.propertyAddress,
+    propertyAddress,
     price: input.price,
     validUntil: input.validUntil,
     cover: {
@@ -129,7 +154,8 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
       photoPath: visit.photoPath,
     },
     visitId: visit.visitId,
-    projectId: visit.projectId,
+    projectId: visit.projectId ?? '',
+    title,
   };
 
   const admin = createServiceRoleClient();
@@ -152,7 +178,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
     agency_id: profile.agency_id,
     buyer_id: input.buyerId,
     kind: 'purchase_offer',
-    template_version: OFFER_TEMPLATE_VERSION,
+    template_version: title ? OFFER_OUTSIDE_TEMPLATE_VERSION : OFFER_TEMPLATE_VERSION,
     fields: fields as unknown as NonNullable<Json>,
     rendered_text: text,
     content_sha256: '0'.repeat(64),
@@ -187,7 +213,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
     ...(visit.fees == null ? { fees_amount: input.fees } : {}),
     ...(visit.feesPaidBy == null ? { fees_paid_by: input.feesPaidBy } : {}),
   };
-  if (Object.keys(patch).length > 0) {
+  if (visit.projectId && Object.keys(patch).length > 0) {
     const { error } = await admin
       .from('project_meeting_conclusions')
       .update(patch)

@@ -5,6 +5,10 @@ import {
   type VoucherAgency,
 } from '@/features/visit-voucher/services/voucher-text';
 import { formatNumber } from '@/lib/format';
+import {
+  offerOutsideNegotiated,
+  type OutsideTitle,
+} from '@/features/visit-voucher/services/outside-mandate';
 
 // Mission 137 (partie B) — l'offre d'achat ferme : le texte validé juridiquement, repris MOT POUR
 // MOT de la fiche de mission. Seuls changent les champs entre accolades ; les variantes « réseau »
@@ -16,6 +20,10 @@ import { formatNumber } from '@/lib/format';
 // « ### » est un intertitre du modèle.
 
 export const OFFER_TEMPLATE_VERSION = 'offre-achat-2026-11-06';
+// Mission 153 — la version hors mandat, validée par la juriste (12/11) : la phrase du mandat ; en
+// collaboration, « le Mandataire » n'est plus dit (l'Agence n'est mandataire ni du vendeur ni de
+// l'acquéreur).
+export const OFFER_OUTSIDE_TEMPLATE_VERSION = 'offre-achat-hors-mandat-2026-11-12';
 
 // Passe à vrai par Jean-Guy, après la validation du juriste (fiche, décision 3).
 export const OFFRE_AVEC_PRET_VALIDEE = false;
@@ -80,6 +88,9 @@ export type OfferFields = {
   validUntil: string;
   contractDeadline: string;
   deposit: number;
+  // Mission 153 — un bien hors mandat : le titre auquel l'Agence intervient, à la place du n° de
+  // mandat de vente.
+  title?: OutsideTitle | null;
 };
 
 const euros = (value: number): string => formatNumber(Math.round(value), { maxDecimals: 0 });
@@ -125,6 +136,9 @@ export function loanClause(loan: OfferLoan): string[] {
 
 export function renderOffer(fields: OfferFields): RenderedDocument {
   const { agency } = fields;
+  const title = fields.title ?? null;
+  // En collaboration, l'Agence n'est pas « le Mandataire » (décision de Jean-Guy, 12/11).
+  const mandataire = title?.kind === 'colleague' ? "l'Agence" : 'le MANDATAIRE';
   const withLoan = OFFRE_AVEC_PRET_VALIDEE && fields.financing === 'loan' && fields.loan != null;
   return {
     title: "OFFRE D'ACHAT",
@@ -137,7 +151,9 @@ export function renderOffer(fields: OfferFields): RenderedDocument {
           "DECLARANT NE POUVOIR NI RECEVOIR NI DETENIR D'AUTRES FONDS, EFFETS OU VALEURS QUE CEUX REPRESENTATIFS DE SA REMUNERATION.",
           "N'ayant aucun lien capitalistique ou juridique avec une banque ou une société financière,",
           `Représentée par ${agency.representativeName} , agissant en sa qualité de ${agency.representativeTitle} , ayant tous pouvoirs à l'effet des présentes,`,
-          'Ci-après "l\'Agence" ou "le Mandataire",',
+          title?.kind === 'colleague'
+            ? 'Ci-après "l\'Agence",'
+            : 'Ci-après "l\'Agence" ou "le Mandataire",',
         ],
       },
       {
@@ -152,7 +168,9 @@ export function renderOffer(fields: OfferFields): RenderedDocument {
           `${fields.fiscalResidenceFrance ? 'Ayant' : "N'ayant pas"} leur résidence fiscale en France, au sens de la règlementation fiscale.`,
           'Ci-après "l\'OFFRANT"',
           "L'OFFRANT s'engage à acquérir, aux conditions arrêtées ci-après, avec faculté de substitution, les biens immobiliers ci-dessous désignés.",
-          `L'OFFRANT reconnait que ces conditions ont été négociées par l'Agence titulaire d'un mandat de négociation régulièrement inscrit sur son Registre des mandats sous le numéro ${fields.mandateNumber} .`,
+          title
+            ? offerOutsideNegotiated(title)
+            : `L'OFFRANT reconnait que ces conditions ont été négociées par l'Agence titulaire d'un mandat de négociation régulièrement inscrit sur son Registre des mandats sous le numéro ${fields.mandateNumber} .`,
           ...(fields.agent
             ? [
                 `Ce mandat a été apporté par ${fields.agent.name}, agissant en sa qualité d'agent commercial, régulièrement inscrit au Registre spécial des Agents commerciaux sous le numéro ${fields.agent.rsac} .`,
@@ -226,11 +244,11 @@ export function renderOffer(fields: OfferFields): RenderedDocument {
       {
         heading: 'Données personnelles',
         paragraphs: [
-          "L'OFFRANT est informé que les données à caractère personnel le concernant collectées par le MANDATAIRE à l'occasion de la présente feront l'objet de traitements informatiques. Ces traitements se fondent soit sur la présente offre, soit sur le respect d'obligations légales, soit sur la poursuite d'intérêts légitimes.",
+          `L'OFFRANT est informé que les données à caractère personnel le concernant collectées par ${mandataire} à l'occasion de la présente feront l'objet de traitements informatiques. Ces traitements se fondent soit sur la présente offre, soit sur le respect d'obligations légales, soit sur la poursuite d'intérêts légitimes.`,
           "L'Agence est responsable des traitements des données à caractère personnel collectées à l'occasion des présentes.",
           "Ces données sont collectées et traitées aux fins de la réception et de la gestion de la présente offre d'achat, de sa transmission au vendeur, de la réalisation des opérations confiées, du suivi de la relation commerciale et de communication, de la gestion des fichiers clients-prospects, du respect des obligations légales et réglementaires applicables à l'activité de l'agence, notamment en matière de lutte contre le blanchiment de capitaux et le financement du terrorisme et, plus généralement, les finalités décrites dans la Politique générale de protection des données consultable sur le site de l'Agence ou, sur simple demande, auprès de l'Agence.",
           "Les données à caractère personnel sont destinées aux services et personnels habilités des responsables de l'Agence ainsi qu'aux intervenants participant à la réalisation de l'opération ou à l'exécution d'obligations légales ou réglementaires, notamment les notaires, établissements bancaires, assureurs, avocats, commissaires de justice, prestataires de signature électronique, prestataires de lettre recommandée électronique et, le cas échéant, aux professionnels de l'immobilier intervenant dans le cadre d'un partenariat nécessaire à l'exécution de la mission confiée.",
-          "L'OFFRANT est également informé que ces données à caractère personnel pourront également être destinées aux opérations de prospection du MANDATAIRE dans le respect de la règlementation en vigueur.",
+          `L'OFFRANT est également informé que ces données à caractère personnel pourront également être destinées aux opérations de prospection ${title?.kind === 'colleague' ? "de l'Agence" : 'du MANDATAIRE'} dans le respect de la règlementation en vigueur.`,
           "Les données à caractère personnel sont conservées pendant la durée nécessaire à l'exécution des présentes, augmentée des délais légaux de prescription applicables.",
           `L'OFFRANT pourra demander à l'Agence d'accéder aux données à caractère personnel la concernant, de les rectifier, de les modifier, de les supprimer ou de s'opposer à leur exploitation en adressant un courriel en ce sens à ${agency.email} ou un courrier postal à l'adresse suivante : ${agency.address} . Toute réclamation pourra être introduite auprès de la Commission Nationale de l'Informatique et des Libertés (www.cnil.fr).`,
           "Le consommateur est informé que toute sollicitation téléphonique effectuée à des fins commerciales suppose son consentement préalable, sauf si elle intervient dans le cadre autorisé par la réglementation en vigueur et notamment dans le cadre de l'exécution d'un contrat en cours au sens du quatrième alinéa de l'article L223-1 du Code de la consommation.",

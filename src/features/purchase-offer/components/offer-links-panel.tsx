@@ -15,6 +15,8 @@ export function OfferLinksPanel(props: {
   sellerPhone: string | null;
   validUntil: string;
   advisorFirstName: string | null;
+  // Mission 153 — en collaboration, le lien du vendeur se remet au confrère.
+  sellerVia?: string | null;
 }) {
   const [links, setLinks] = useState<{ buyerLinkPath: string; sellerLinkPath: string } | null>(
     null,
@@ -31,6 +33,7 @@ export function OfferLinksPanel(props: {
         sellerPhone={props.sellerPhone}
         validUntil={props.validUntil}
         advisorFirstName={props.advisorFirstName}
+        sellerVia={props.sellerVia ?? null}
       />
     );
   }

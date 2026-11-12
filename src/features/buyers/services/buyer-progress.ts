@@ -101,7 +101,9 @@ function offersOf(rows: readonly BuyerDocumentRow[]): BuyerOfferFacts[] {
         signedAt: row.signed_at,
         validUntil: row.valid_until,
         price: typeof fields.price === 'number' ? fields.price : null,
-        projectId: typeof fields.projectId === 'string' ? fields.projectId : null,
+        // Une offre hors mandat (Mission 153) garde un dossier vide : aucun dossier vendeur.
+        projectId:
+          typeof fields.projectId === 'string' && fields.projectId ? fields.projectId : null,
         visitId: typeof fields.visitId === 'string' ? fields.visitId : null,
         decision,
         decidedAt,

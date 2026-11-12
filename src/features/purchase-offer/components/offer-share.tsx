@@ -21,6 +21,7 @@ export function OfferShare({
   sellerPhone,
   validUntil,
   advisorFirstName,
+  sellerVia = null,
 }: {
   buyerLinkPath: string;
   sellerLinkPath: string;
@@ -29,6 +30,8 @@ export function OfferShare({
   sellerPhone: string | null;
   validUntil: string;
   advisorFirstName: string | null;
+  // Mission 153 — en collaboration, le lien du vendeur est remis au confrère, qui le transmet.
+  sellerVia?: string | null;
 }) {
   const [note, setNote] = useState<string | null>(null);
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
@@ -44,7 +47,9 @@ export function OfferShare({
     },
     {
       key: 'seller',
-      title: 'Le lien du vendeur : il accepte en signant, ou refuse',
+      title: sellerVia
+        ? `Le lien du vendeur, à remettre à ${sellerVia}, qui le transmet au vendeur : il accepte en signant, ou refuse`
+        : 'Le lien du vendeur : il accepte en signant, ou refuse',
       url: `${origin}${sellerLinkPath}`,
       message: offerSellerMessage({
         url: `${origin}${sellerLinkPath}`,

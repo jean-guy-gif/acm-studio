@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { OFFRE_AVEC_PRET_VALIDEE } from '@/features/purchase-offer/services/offer-text';
+import { outsideTitleSchema } from '@/features/visit-voucher/services/outside-mandate';
 
 // Mission 137 (partie B) — ce que l'écran de l'offre d'achat envoie, et ce que l'offre signée garde.
 // Relus au serveur, par liste d'autorisation : deux offrants au plus ; le cadastre exigé (la phrase
@@ -44,7 +45,14 @@ export const offerInputSchema = z
     address: trimmed(5, 300),
     matrimonial: z.string().trim().max(300).nullable(),
     fiscalResidenceFrance: z.boolean(),
-    mandateNumber: trimmed(1, 40),
+    // Sous mandat de l'agence : son n° (exigé au serveur s'il n'est pas déjà connu). Hors mandat :
+    // vide, le titre le remplace (Mission 153).
+    mandateNumber: z.string().trim().max(40),
+    title: outsideTitleSchema.nullable().default(null),
+    // Hors mandat, l'adresse du bien se saisit (sous mandat, celle du dossier vendeur l'emporte).
+    propertyAddress: z.string().trim().max(300).nullable().default(null),
+    // Hors mandat, la copropriété se déclare (sous mandat, la fiche du bien vendeur l'emporte).
+    condominium: z.boolean().default(false),
     agent: z.object({ name: trimmed(2, 160), rsac: trimmed(2, 60) }).nullable(),
     parcels: z.array(parcelSchema).min(1).max(10),
     totalArea: trimmed(1, 40),
@@ -93,7 +101,9 @@ export const storedOfferFieldsSchema = z.object({
     photoPath: z.string().max(400).nullable(),
   }),
   visitId: z.string(),
+  // Vide pour une offre hors mandat (Mission 153) : aucun dossier vendeur de l'agence.
   projectId: z.string(),
+  title: outsideTitleSchema.nullable().optional(),
 });
 export type StoredOfferFields = z.infer<typeof storedOfferFieldsSchema>;
 

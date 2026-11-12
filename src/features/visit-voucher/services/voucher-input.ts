@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { outsideTitleSchema } from '@/features/visit-voucher/services/outside-mandate';
 import { VISITOR_CIVILITIES } from '@/features/visit-voucher/services/voucher-fields';
 import { VISITOR_PIECES, type VoucherAgency } from '@/features/visit-voucher/services/voucher-text';
 
@@ -24,13 +25,17 @@ export const voucherInputSchema = z.object({
     .array(
       z.object({
         visitId: z.uuid(),
-        mandate: trimmed(1, 40),
+        // Un bien sous mandat de l'agence : son n° (exigé au serveur). Hors mandat : vide, le titre
+        // le remplace (Mission 153).
+        mandate: z.string().trim().max(40),
         price: z.number().int().min(1).max(999_999_999),
         address: trimmed(5, 300),
       }),
     )
     .min(1)
     .max(MAX_VOUCHER_BIENS),
+  // Mission 153 — un bon hors mandat : le titre auquel l'Agence intervient, un seul pour le bon.
+  title: outsideTitleSchema.nullable().default(null),
   // Une image PNG par visiteur, tracée au doigt (`data:image/png;base64,…`).
   signatures: z.array(z.string().startsWith('data:image/png;base64,').max(400_000)).min(1).max(2),
   approved: z.literal(true),
@@ -84,6 +89,8 @@ export const storedVoucherFieldsSchema = z.object({
   advisorName: z.string().max(200),
   city: z.string().max(80),
   date: z.string().max(10),
+  // Mission 153 — absent d'un bon signé avant la mission (sous mandat).
+  title: outsideTitleSchema.nullable().optional(),
 });
 export type StoredVoucherFields = z.infer<typeof storedVoucherFieldsSchema>;
 

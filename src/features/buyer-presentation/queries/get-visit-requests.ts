@@ -16,6 +16,8 @@ export type VisitLine = VisitRequest & {
   itemId: string;
   itemReference: string;
   itemExclusivity: string | null;
+  // Mission 153 — « Vendu par » lu à l'import (« agency » : une agence le commercialise).
+  itemSoldBy: string | null;
 };
 
 // Mission 119 — toutes les demandes de visite de l'agence, par acquéreur, avec le bien retenu ;
@@ -43,7 +45,7 @@ export async function readVisitLines(): Promise<{ lines: VisitLine[]; failed: bo
       label: string;
       source: string;
       listed_price: number | null;
-      imported: { exclusivity?: unknown } | null;
+      imported: { exclusivity?: unknown; soldBy?: unknown } | null;
     };
     const source = (['project', 'competitor', 'listing'] as const).includes(
       item.source as SelectionSource,
@@ -61,6 +63,7 @@ export async function readVisitLines(): Promise<{ lines: VisitLine[]; failed: bo
       itemReference: item.reference,
       itemExclusivity:
         typeof item.imported?.exclusivity === 'string' ? item.imported.exclusivity : null,
+      itemSoldBy: typeof item.imported?.soldBy === 'string' ? item.imported.soldBy : null,
     };
   });
   return { lines, failed: error != null };

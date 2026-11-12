@@ -227,6 +227,16 @@ export function VisitActions({
             Signer le bon de visite
           </Link>
         ) : null}
+        {next.links.write ? (
+          <VisitLetterAction
+            visitId={visitId}
+            action={action}
+            letterHref={null}
+            state={letterState}
+            colleague={colleague}
+            asLinks
+          />
+        ) : null}
         {next.links.messages ? (
           <button
             type="button"

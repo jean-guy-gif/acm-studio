@@ -57,6 +57,7 @@ export default async function SignedOfferPage({ params }: Props) {
             sellerPhone={project?.seller_phone ?? null}
             validUntil={frenchDay(offer.validUntil)}
             advisorFirstName={profile.first_name ?? null}
+            sellerVia={offer.fields?.title?.kind === 'colleague' ? offer.fields.title.agency : null}
           />
         ) : null}
       </header>

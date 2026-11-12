@@ -10,6 +10,11 @@ import {
   type VisitorCivility,
 } from '@/features/visit-voucher/services/voucher-fields';
 import { readVoucherFields } from '@/features/visit-voucher/services/voucher-input';
+import {
+  HORS_MANDAT_OUVERT,
+  readOutsideTitle,
+  type OutsideTitle,
+} from '@/features/visit-voucher/services/outside-mandate';
 import type { VisitorPiece, VoucherAgency } from '@/features/visit-voucher/services/voucher-text';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
@@ -20,6 +25,9 @@ import { createClient } from '@/lib/supabase/server';
 // adresse ; l'agence (identité légale complète, sinon ce qui manque) ; le conseiller connecté ; et,
 // pour pré-remplir, ce que le dernier bon de la fiche disait du visiteur. Cadré sur l'agence de
 // l'appelant, côté conseiller seulement.
+
+// Le seul état de carte qui met un bien hors mandat sous mandat de l'agence (M115, M120).
+const MANDATE_IN = 'Mandat rentré';
 
 export const VOUCHER_NOT_AGENCY =
   'Bon de visite : seulement pour un bien de l’agence (mandat signé ou rentré) ou en collaboration obtenue.';
@@ -37,6 +45,12 @@ export type VoucherVisit = {
   visited: boolean;
   // Le jour de la visite si elle est faite, sinon celui de la demande (ISO).
   day: string;
+  // Mission 153 — un bien hors mandat de l'agence (annonce du marché, concurrent) : son bon dit à
+  // quel titre l'Agence intervient, jamais un n° de mandat de vente.
+  outside: boolean;
+  // Le titre proposé d'avance, à vérifier : la collaboration obtenue sur sa carte de Prospection
+  // (l'agence et le n° du confrère, repris d'un bon précédent du même bien s'il y en a un).
+  suggestion: OutsideTitle | { kind: 'colleague'; agency: ''; number: '' } | null;
 };
 
 export type VoucherContext = {
@@ -51,6 +65,9 @@ export type VoucherContext = {
     address: string;
     piece: VisitorPiece;
   } | null;
+  // Mission 153 — le mandat de recherche du dernier bon ou de la dernière offre de la fiche (jamais
+  // gardé sur la fiche, M137 A).
+  lastSearchTitle: Extract<OutsideTitle, { kind: 'search' }> | null;
 };
 
 export async function getVoucherContext(
@@ -88,6 +105,14 @@ export async function getVoucherContext(
       .maybeSingle(),
   ]);
   if (!buyer.data) return { ok: false, error: 'Fiche introuvable.' };
+  // Mission 153 — le mandat de recherche de la fiche, s'il a déjà été saisi (bon ou offre).
+  const buyerDocuments = await supabase
+    .from('buyer_documents')
+    .select('fields')
+    .eq('agency_id', agencyId)
+    .eq('buyer_id', buyerId)
+    .order('signed_at', { ascending: false })
+    .limit(20);
   if (!legal.ok || branding.error || visitRead.failed) {
     return { ok: false, error: 'Le bon de visite n’a pas pu être préparé : rechargez la page.' };
   }
@@ -140,27 +165,51 @@ export async function getVoucherContext(
       .order('signed_at', { ascending: false })
       .limit(200),
   ]);
-  if (conclusions.error || subjects.error || competitors.error || previous.error) {
+  if (
+    conclusions.error ||
+    subjects.error ||
+    competitors.error ||
+    previous.error ||
+    buyerDocuments.error
+  ) {
     return { ok: false, error: 'Le bon de visite n’a pas pu être préparé : rechargez la page.' };
   }
   const conclusionOf = new Map((conclusions.data ?? []).map((row) => [row.project_id, row]));
   const subjectOf = new Map((subjects.data ?? []).map((row) => [row.project_id, row]));
   const competitorOf = new Map((competitors.data ?? []).map((row) => [row.id, row]));
   const knownMandate = new Map<string, string>();
+  // Mission 153 — le confrère d'un bien hors mandat, une fois saisi sur un bon.
+  const knownColleague = new Map<string, Extract<OutsideTitle, { kind: 'colleague' }>>();
   for (const row of previous.data ?? []) {
     const fields = readVoucherFields(row.fields);
     for (const bien of fields?.biens ?? []) {
-      if (bien.reference && !knownMandate.has(bien.reference)) {
+      if (fields?.title) {
+        if (
+          fields.title.kind === 'colleague' &&
+          bien.reference &&
+          !knownColleague.has(bien.reference)
+        ) {
+          knownColleague.set(bien.reference, fields.title);
+        }
+      } else if (bien.reference && !knownMandate.has(bien.reference)) {
         knownMandate.set(bien.reference, bien.mandate);
       }
     }
   }
+  const lastSearchTitle =
+    (buyerDocuments.data ?? [])
+      .map((row) => readOutsideTitle((row.fields as { title?: unknown } | null)?.title))
+      .find(
+        (title): title is Extract<OutsideTitle, { kind: 'search' }> => title?.kind === 'search',
+      ) ?? null;
 
   const visits: VoucherVisit[] = lines.map((line) => {
     let eligible = false;
     let note: string | null = VOUCHER_NOT_AGENCY;
     let price: number | null = line.itemPrice;
     let address: string | null = null;
+    let outside = false;
+    let suggestion: VoucherVisit['suggestion'] = null;
     if (line.itemSource === 'project') {
       const conclusion = conclusionOf.get(line.itemReference);
       eligible = conclusion?.outcome === 'signed';
@@ -181,6 +230,26 @@ export async function getVoucherContext(
         const competitor = competitorOf.get(line.itemReference);
         address = competitor?.locator_address ?? competitor?.address ?? null;
       }
+      // Mission 153 — hors mandat : le bon se signe au titre du mandat de recherche ou de la
+      // collaboration ; seul un mandat rentré met le bien sous mandat de l'agence. Un propriétaire
+      // qui ne veut plus être sollicité, ou pas intéressé, n'a pas de bon.
+      if (HORS_MANDAT_OUVERT && !(state?.kind === 'done' && state.label === MANDATE_IN)) {
+        if (state?.kind === 'closed') {
+          eligible = false;
+          note = `${state.label} : pas de bon de visite pour ce bien.`;
+        } else {
+          eligible = true;
+          outside = true;
+          const collaboration = state?.kind === 'done';
+          const reference = `${line.itemSource}:${line.itemReference}`;
+          note = collaboration
+            ? 'Collaboration obtenue · hors mandat de l’agence'
+            : `${line.itemSource === 'competitor' ? 'Concurrent' : 'Annonce du marché'}, hors mandat de l’agence`;
+          suggestion =
+            knownColleague.get(reference) ??
+            (collaboration ? { kind: 'colleague', agency: '', number: '' } : null);
+        }
+      }
     }
     return {
       visitId: line.id,
@@ -192,6 +261,8 @@ export async function getVoucherContext(
       mandate: knownMandate.get(`${line.itemSource}:${line.itemReference}`) ?? null,
       visited: line.visitedAt != null,
       day: line.visitedAt ?? line.requestedAt,
+      outside,
+      suggestion,
     };
   });
 
@@ -215,6 +286,7 @@ export async function getVoucherContext(
       lastVisitor: last
         ? { visitors: last.visitors, address: last.visitorAddress, piece: last.piece }
         : null,
+      lastSearchTitle,
     },
   };
 }
