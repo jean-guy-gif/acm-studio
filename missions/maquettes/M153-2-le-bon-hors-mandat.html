@@ -1,0 +1,179 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M153 · 2 — Le bon de visite hors mandat : « À quel titre intervenez-vous ? »</title><style>
+@font-face{font-family:Inter;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/inter/inter-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Montserrat;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2') format('woff2');font-weight:600}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2') format('woff2');font-weight:700}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}.sheet-sub{font-size:13px;color:#3f3f46;max-width:1720px;line-height:1.5}
+.layout{display:flex;gap:26px;align-items:flex-start}.rows{display:flex;flex-direction:column;gap:26px}.row{display:flex;gap:22px;align-items:flex-start}
+.col{display:flex;flex-direction:column}
+.ftitle{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff;background:#12875a}.st.before{background:#71717a}
+.notes{width:400px;display:flex;flex-direction:column;gap:12px;position:sticky;top:0}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:#3d3200}.note b.t{color:#5b4a00}
+code{font-size:12px;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+.frame{background:#f7f8fb;border:1px solid #a1a1aa;overflow:hidden;position:relative;display:flex}
+.frame.desk{width:1280px;min-height:760px}.frame.tab{width:820px;min-height:1000px}.frame.phone{width:390px;min-height:844px;flex-direction:column}
+.side{width:256px;flex:none;background:#fff;border-right:1px solid #e4e4e7;padding:22px 18px;display:flex;flex-direction:column;gap:26px}
+.tab .side{width:220px}
+.logo{display:flex;align-items:center;gap:6px;color:#00527a}.logo span{display:flex;flex-direction:column;line-height:1}
+.logo b{font-family:Montserrat;font-size:15px;font-weight:800;letter-spacing:.08em}.logo i{font-style:normal;font-family:Montserrat;font-size:7px;font-weight:600;letter-spacing:.2em;margin-top:2px}
+nav{display:flex;flex-direction:column;gap:4px;flex:1}.grp{display:flex;flex-direction:column;gap:2px}.grp.sep{border-top:1px solid #e4e4e7;margin-top:10px;padding-top:12px}
+.gt{font-family:Montserrat;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#00527a;padding:0 12px 4px}
+.it{display:flex;flex-direction:column;border-radius:12px;padding:7px 12px}.il{display:flex;justify-content:space-between;font-family:Rajdhani,Montserrat;font-size:16px;font-weight:600;color:#52525b}.ih{font-size:11.5px;color:#71717a}
+.it.on{background:#eaf5ff}.it.on .il{color:#00527a}
+.pb{border-radius:999px;background:#ea580c;color:#fff;font-family:Inter;font-size:11px;font-weight:700;padding:1px 7px;align-self:center}
+.acc{display:flex;gap:9px;align-items:center;border:1px solid #e4e4e7;border-radius:12px;padding:9px;font-size:11px;color:#71717a}.acc b{color:#18181b;font-size:12px}
+.av{width:30px;height:30px;border-radius:99px;background:#eaf5ff;color:#00527a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:none}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #e4e4e7;background:#fff}.topbar .logo{flex:1}
+.burger{width:38px;height:38px;border:1px solid #e4e4e7;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.main{flex:1;min-width:0;padding:30px 36px 110px;display:flex;flex-direction:column;gap:16px;container-type:inline-size;overflow:hidden}
+.tab .main{padding:24px 24px 110px}.phone .main{padding:16px 14px 96px;gap:12px}
+.back{font-size:13px;color:#71717a}
+.h1{font-family:Rajdhani,Montserrat;font-weight:700;font-size:36px;line-height:1.05;color:#00527a}.phone .h1{font-size:28px}
+.h2{font-family:Rajdhani,Montserrat;font-weight:700;font-size:23px;color:#00527a}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:12px}.phone .card{padding:14px;border-radius:14px}
+.card.stub{opacity:.7}
+.gh{display:flex;justify-content:space-between;align-items:baseline}.lnk{color:#00527a;font-weight:700;font-size:13.5px}
+.lead{font-size:14.5px;color:#3f3f46;line-height:1.45}
+.visits{list-style:none;display:flex;flex-direction:column;gap:12px}
+.visit{border:1px solid #e4e4e7;border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.vh{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.vt{font-family:Rajdhani,Montserrat;font-size:17px}.price{font-size:14px;color:#52525b}
+.badge{font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;background:#f4f4f5;color:#3f3f46}
+.meta{font-size:12px;color:#71717a}
+.track{list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.track li{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px;background:#f4f4f5;color:#71717a}
+.track li i{width:8px;height:8px;border-radius:99px;background:currentColor}
+.track li.done{background:#e7f6ee;color:#12875a}.track li.now{background:#eaf5ff;color:#00527a}
+.vact{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between}.ph{font-size:13.5px;color:#3f3f46}
+.vlinks{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;font-weight:600;color:#00527a;text-decoration:underline}
+.grey{font-size:12px;color:#71717a;line-height:1.45}
+.ok{font-size:13.5px;font-weight:700;color:#12875a}
+.btn{font-family:inherit;font-size:14.5px;font-weight:700;border-radius:12px;padding:11px 18px;border:1.5px solid #00527a;background:#fff;color:#00527a}
+.btn.sm{font-size:13px;padding:7px 12px;border-radius:10px}
+.btn.fill{background:#00527a;color:#fff}.btn.fill.off{background:#a1a1aa;border-color:#a1a1aa}
+.vbs{list-style:none;display:flex;flex-direction:column;gap:12px}
+.vb{border:1px solid #e4e4e7;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.check{display:flex;align-items:center;gap:10px;font-size:15px}.box{width:22px;height:22px;border:2px solid #00527a;border-radius:6px;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:13px;color:#fff}.box.on{background:#00527a}
+.hint{font-size:12.5px;color:#71717a;line-height:1.45}
+.title-box{border:1.5px solid #00527a;background:#eaf5ff;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.title-box.missing{border-color:#b45309;background:#fff7e6}
+.tl{font-size:13px;font-weight:800;color:#00527a}.tl em{font-style:normal;font-weight:600;color:#71717a;margin-left:6px}
+.radios{display:grid;grid-template-columns:1fr 1fr;gap:8px}.radios.col{grid-template-columns:1fr}
+.radio{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1.5px solid #e4e4e7;border-radius:10px;padding:10px}
+.radio i{flex:none;width:18px;height:18px;border-radius:99px;border:2px solid #71717a;margin-top:2px}
+.radio.on{border-color:#00527a}.radio.on i{border:5px solid #00527a}
+.radio span{display:flex;flex-direction:column}.radio b{font-size:14px}.radio small{font-size:12px;color:#71717a}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@container (max-width:520px){.g2{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:#52525b}
+.in{font-style:normal;font-weight:400;border:1px solid #e4e4e7;border-radius:10px;padding:10px 12px;color:#71717a;font-size:14px;background:#fff}
+.in.on{color:#18181b}.in.ro{background:#f4f4f5;color:#3f3f46}
+.seg{display:flex;gap:8px}.seg b{font-size:13px;font-weight:600;background:#f4f4f5;border-radius:9px;padding:8px 11px;color:#3f3f46}.seg b.on{background:#00527a;color:#fff}
+.err{font-size:13px;font-weight:600;color:#b45309}
+.preview{border-left:4px solid #00527a;background:#fff;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;border:1px solid #e4e4e7;border-left-width:4px;border-left-color:#00527a}
+.preview p{font-size:13px;color:#3f3f46;font-family:Georgia,serif;line-height:1.45}
+.pending{font-size:12.5px;line-height:1.45;color:#b45309;background:#fff7e6;border:1px dashed #b45309;border-radius:10px;padding:8px 10px}
+.bar{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e4e4e7;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 24px;box-shadow:0 -4px 12px rgba(0,0,0,.05)}
+.desk .bar{left:256px}.tab .bar{left:220px}.phone .bar{padding:10px 14px;flex-wrap:wrap}.phone .bar .btn.fill{flex:1}
+.bstate{margin-right:auto;font-size:13px;color:#b45309;font-weight:600}.bstate.ok{color:#71717a;font-weight:400}
+</style></head><body>
+<h1 class="sheet">M153 · 2 — Le bon de visite hors mandat : « À quel titre intervenez-vous ? »</h1><p class="sheet-sub">Dans « Les biens visités » du bon (M137 A), un bien hors mandat de l’agence demande son titre, obligatoire : mon mandat de recherche (n° et date) ou la collaboration avec le confrère (son agence, le n° de son mandat). La phrase imprimée se lit dessous. Sans titre, le bon ne se signe pas, à l’écran comme au serveur.</p>
+<div class="layout"><div class="rows"><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Ordinateur · 1280</div><div class="frame desk"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it on"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <a class="back">← Famille Keller</a>
+  <h1 class="h1">Bon de visite</h1>
+  <section class="card">
+    <h2 class="h2">Les biens visités</h2>
+    <ul class="vbs">
+  <li class="vb">
+    <label class="check"><i class="box on">✓</i><b>Maison · 6 pièces · 220 m² · Mougins</b></label>
+    <span class="hint">Visite demandée il y a 3 jours · Annonce du marché, hors mandat de l’agence</span>
+    
+  <div class="title-box">
+    <span class="tl">À quel titre intervenez-vous ? <em>obligatoire</em></span>
+    <div class="radios">
+      <label class="radio on"><i></i><span><b>Mon mandat de recherche</b><small>signé avec l’acquéreur</small></span></label>
+      <label class="radio"><i></i><span><b>Collaboration avec le confrère</b><small>délégation de son mandat de vente</small></span></label>
+    </div>
+    <div class="g2"><label class="f"><span>N° du mandat de recherche</span><i class="in on">R-2026-031</i></label><label class="f"><span>Signé le</span><i class="in on">04/11/2026</i></label></div><p class="hint">Repris du dernier bon de la famille Keller.</p>
+  </div>
+    <div class="g2"><label class="f"><span>Prix affiché (€)</span><i class="in on">1 720 000</i></label><label class="f"><span>Adresse du bien</span><i class="in">À saisir</i></label></div>
+  </li>
+  <li class="vb">
+    <label class="check"><i class="box">&nbsp;</i><b>Villa · 7 pièces · 240 m² · Mougins</b></label>
+    <span class="hint">Visité il y a 5 jours · Mandat signé</span>
+  </li></ul>
+    <div class="preview"><span class="tl">Sur le bon</span><p>« Mandat de recherche n° R-2026-031 du 04/11/2026 · Prix affiché : 1 720 000 € · Adresse du bien : … »</p></div>
+  </section>
+  <section class="card stub"><h2 class="h2">Le visiteur</h2><p class="hint">Inchangé : civilité, prénom et nom, adresse, pièce d’identité (le type seul), « Fait à ».</p></section></div><div class="bar"><span class="bstate"></span><button class="btn fill">Signer le bon de visite</button></div></div></div></div><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Tablette · 820 · collaboration</div><div class="frame tab"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it on"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <a class="back">← Famille Keller</a>
+  <h1 class="h1">Bon de visite</h1>
+  <section class="card">
+    <h2 class="h2">Les biens visités</h2>
+    <ul class="vbs">
+  <li class="vb">
+    <label class="check"><i class="box on">✓</i><b>Maison · 6 pièces · 220 m² · Mougins</b></label>
+    <span class="hint">Visite demandée il y a 3 jours · Annonce du marché, hors mandat de l’agence</span>
+    
+  <div class="title-box">
+    <span class="tl">À quel titre intervenez-vous ? <em>obligatoire</em></span>
+    <div class="radios">
+      <label class="radio"><i></i><span><b>Mon mandat de recherche</b><small>signé avec l’acquéreur</small></span></label>
+      <label class="radio on"><i></i><span><b>Collaboration avec le confrère</b><small>délégation de son mandat de vente</small></span></label>
+    </div>
+    <div class="g2"><label class="f"><span>Agence du confrère</span><i class="in on">Agence Littoral &amp; Pins</i></label><label class="f"><span>N° de son mandat de vente</span><i class="in on">V-4471</i></label></div><p class="hint">Collaboration obtenue le 10/11, sur sa carte de Prospection.</p>
+  </div>
+    <div class="g2"><label class="f"><span>Prix affiché (€)</span><i class="in on">1 720 000</i></label><label class="f"><span>Adresse du bien</span><i class="in">À saisir</i></label></div>
+  </li>
+  <li class="vb">
+    <label class="check"><i class="box">&nbsp;</i><b>Villa · 7 pièces · 240 m² · Mougins</b></label>
+    <span class="hint">Visité il y a 5 jours · Mandat signé</span>
+  </li></ul>
+    <div class="preview"><span class="tl">Sur le bon</span><p>« En collaboration avec Agence Littoral &amp; Pins, mandat de vente n° V-4471 · Prix affiché : 1 720 000 € · Adresse du bien : … »</p></div>
+  </section>
+  <section class="card stub"><h2 class="h2">Le visiteur</h2><p class="hint">Inchangé : civilité, prénom et nom, adresse, pièce d’identité (le type seul), « Fait à ».</p></section></div><div class="bar"><span class="bstate"></span><button class="btn fill">Signer le bon de visite</button></div></div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390 · pas encore choisi</div><div class="frame phone"><div class="topbar"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><span class="pb">3</span><span class="burger">☰</span></div><div class="main">
+  <a class="back">← Famille Keller</a>
+  <h1 class="h1">Bon de visite</h1>
+  <section class="card">
+    <h2 class="h2">Les biens visités</h2>
+    <ul class="vbs">
+  <li class="vb">
+    <label class="check"><i class="box on">✓</i><b>Maison · 6 pièces · 220 m² · Mougins</b></label>
+    <span class="hint">Visite demandée il y a 3 jours · Annonce du marché, hors mandat de l’agence</span>
+    
+  <div class="title-box missing">
+    <span class="tl">À quel titre intervenez-vous ? <em>obligatoire</em></span>
+    <div class="radios col">
+      <label class="radio"><i></i><span><b>Mon mandat de recherche</b><small>signé avec l’acquéreur</small></span></label>
+      <label class="radio"><i></i><span><b>Collaboration avec le confrère</b><small>délégation de son mandat de vente</small></span></label>
+    </div>
+    <p class="err">Choisissez à quel titre vous intervenez : sans lui, le bon ne se signe pas.</p>
+  </div>
+    <div class="g2"><label class="f"><span>Prix affiché (€)</span><i class="in on">1 720 000</i></label><label class="f"><span>Adresse du bien</span><i class="in">À saisir</i></label></div>
+  </li></ul>
+    
+  </section>
+  <section class="card stub"><h2 class="h2">Le visiteur</h2><p class="hint">Inchangé : civilité, prénom et nom, adresse, pièce d’identité (le type seul), « Fait à ».</p></section></div><div class="bar"><span class="bstate">Il manque : le titre pour la maison de Mougins</span><button class="btn fill off">Signer le bon de visite</button></div></div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390 · mandat de recherche</div><div class="frame phone"><div class="topbar"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><span class="pb">3</span><span class="burger">☰</span></div><div class="main">
+  <a class="back">← Famille Keller</a>
+  <h1 class="h1">Bon de visite</h1>
+  <section class="card">
+    <h2 class="h2">Les biens visités</h2>
+    <ul class="vbs">
+  <li class="vb">
+    <label class="check"><i class="box on">✓</i><b>Maison · 6 pièces · 220 m² · Mougins</b></label>
+    <span class="hint">Visite demandée il y a 3 jours · Annonce du marché, hors mandat de l’agence</span>
+    
+  <div class="title-box">
+    <span class="tl">À quel titre intervenez-vous ? <em>obligatoire</em></span>
+    <div class="radios col">
+      <label class="radio on"><i></i><span><b>Mon mandat de recherche</b><small>signé avec l’acquéreur</small></span></label>
+      <label class="radio"><i></i><span><b>Collaboration avec le confrère</b><small>délégation de son mandat de vente</small></span></label>
+    </div>
+    <div class="g2"><label class="f"><span>N° du mandat de recherche</span><i class="in on">R-2026-031</i></label><label class="f"><span>Signé le</span><i class="in on">04/11/2026</i></label></div><p class="hint">Repris du dernier bon de la famille Keller.</p>
+  </div>
+    <div class="g2"><label class="f"><span>Prix affiché (€)</span><i class="in on">1 720 000</i></label><label class="f"><span>Adresse du bien</span><i class="in">À saisir</i></label></div>
+  </li></ul>
+    <div class="preview"><span class="tl">Sur le bon</span><p>« Mandat de recherche n° R-2026-031 du 04/11/2026 · Prix affiché : 1 720 000 € · Adresse du bien : … »</p></div>
+  </section>
+  <section class="card stub"><h2 class="h2">Le visiteur</h2><p class="hint">Inchangé : civilité, prénom et nom, adresse, pièce d’identité (le type seul), « Fait à ».</p></section></div><div class="bar"><span class="bstate"></span><button class="btn fill">Signer le bon de visite</button></div></div></div></div></div>
+<div class="notes"><div class="note"><b class="t">Avant :</b> Une annonce du marché ne se coche pas (« Bon de visite : seulement pour un bien de l’agence… ») sauf après « Collaboration obtenue » ; elle reçoit alors un « N° de mandat » sans dire lequel, et le bon imprime « Numéro du mandat : … ».</div><div class="note"><b class="t">Le titre :</b> Deux choix, rien de coché d’avance : <b>Mon mandat de recherche</b> (n° et date de signature) ou <b>Collaboration avec le confrère</b> (son agence, le n° de son mandat de vente). Un bien de l’agence (mandat signé, mandat rentré) ne le demande pas : il garde « N° de mandat » comme aujourd’hui.</div><div class="note"><b class="t">Ce qui se remplit seul :</b> Le mandat de recherche se reprend du dernier bon ou de la dernière offre de la fiche (jamais gardé sur la fiche, M137 A). Après « Collaboration obtenue », le choix « Collaboration » est proposé d’avance, à vérifier ; l’agence du confrère et son n° se saisissent une fois.</div><div class="note"><b class="t">Sans titre :</b> La barre dit « Il manque : le titre pour la maison de Mougins » et « Signer le bon de visite » reste grisé ; le serveur refuse de même. Un bon peut réunir un bien de l’agence et une annonce : chacun porte sa ligne.</div><div class="note"><b class="t">Le prix :</b> « Prix affiché » remplace « Prix de commercialisation » pour un bien hors mandat : c’est le prix de l’annonce.</div><div class="note"><b class="t">À valider :</b> Les phrases imprimées attendent la juriste (<code>M153-hors-mandat-pour-le-juriste.md</code>).</div></div></div></body></html>
