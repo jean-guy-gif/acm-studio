@@ -236,4 +236,28 @@ describe('guardProposal', () => {
     });
     expect(three.mustHave.map((star) => star.key)).toEqual(['pool', 'outdoor']);
   });
+
+  // C5 du 12/11 : « Garage indispensable », la ★ lue et le champ laissé vide ; à la création, la
+  // ★ écrivait « oui » sans carte à vérifier. La garde montre le champ, la ligne de la ★ pour source.
+  it('une ★ sur un équipement met le champ à « oui », montré ; un « non » gardé la fait tomber', () => {
+    const garage = guardProposal({
+      ...empty,
+      must_have: ['parking'],
+      sources: [{ field: 'must_have:parking', quote: 'Garage indispensable.' }],
+    });
+    expect(garage.values.parking).toBe(true);
+    expect(garage.sources.parking).toBe('Garage indispensable.');
+    expect(garage.mustHave.map((star) => star.key)).toEqual(['parking']);
+    const contradicted = guardProposal({
+      ...empty,
+      parking: false,
+      must_have: ['parking'],
+      sources: [
+        { field: 'parking', quote: 'sans parking' },
+        { field: 'must_have:parking', quote: 'parking OBLIGATOIRE' },
+      ],
+    });
+    expect(contradicted.values.parking).toBe(false);
+    expect(contradicted.mustHave).toEqual([]);
+  });
 });

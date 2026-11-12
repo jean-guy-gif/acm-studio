@@ -212,6 +212,21 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     const line = sourceOf.get(modelField);
     if (line && values[field] !== undefined) sources[field] = line;
   }
+  // Une ★ sur un équipement le dit voulu : le champ est « oui », avec la ligne de la ★ pour
+  // source, et sa carte le montre (sinon la ★ écrivait « oui » sans carte à vérifier, C5 du 12/11) ;
+  // un « non » gardé contredit la ★, qui tombe.
+  for (const star of [...mustHave]) {
+    if (!(STAR_EQUIPMENTS as readonly string[]).includes(star.key)) continue;
+    const field = star.key as (typeof STAR_EQUIPMENTS)[number];
+    if (values[field] === false) {
+      mustHave.splice(mustHave.indexOf(star), 1);
+      continue;
+    }
+    if (values[field] === undefined) {
+      values[field] = true;
+      sources[field] = star.source;
+    }
+  }
   const financingLine = sourceOf.get('financing');
   const financingSource = (financing || cashSuggestion) && financingLine ? financingLine : null;
 
@@ -226,6 +241,8 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     personalMentionsSkipped: skipped,
   };
 }
+
+const STAR_EQUIPMENTS = ['outdoor', 'parking', 'pool', 'elevator'] as const;
 
 // Les noms des champs proposés, pour la trace : jamais une valeur.
 export function proposedFieldNames(proposal: Omit<NoteProposal, 'communes'>): string[] {
