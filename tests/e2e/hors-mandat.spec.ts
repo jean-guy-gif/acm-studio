@@ -157,6 +157,14 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     await expect(page.getByTestId('offer-link-seller')).toContainText(
       /\/offre\/[A-Za-z0-9_-]{43}$/,
     );
+    // La couverture de l'offre signée dit le titre, jamais « Mandat n° » vide (relecteur).
+    await page.getByRole('link', { name: 'Voir et imprimer l’offre' }).click();
+    await expect(page.getByTestId('offer-cover-mandate')).toHaveText(
+      'Mandat de recherche n° R-2026-031',
+    );
+    await expect(page.getByTestId('offer-document')).toContainText(
+      "titulaire d'un mandat de recherche signé par l'OFFRANT le 04/11/2026",
+    );
   });
 
   await resetDemoByScreen(page);
