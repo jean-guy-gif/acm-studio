@@ -257,7 +257,7 @@ contraire −2) ne range qu'à l'intérieur d'une catégorie ; la lecture des no
 s'ouvrent ensemble, agence par agence, par le plafond d'IA posé par un opérateur (sans plafond posé ou
 à 0 € : fermés ; aucune agence n'en avait le 12/11) ; la veille de nuit juge de même, sous la moitié
 du plafond, et ne garde que les jugements et leurs citations ; démo : les Lambert (au calme, une vue,
-de plain-pied), cinq textes de Vence enrichis, la lecture simulée par les mêmes gardes. **Non mesurés
+de plain-pied), quatre textes de Vence enrichis, la lecture simulée par les mêmes gardes. **Non mesurés
 encore** : les huit critères autres que le calme et le cachet ; leur consigne suit la même forme.
 
 ## Critères d'acceptation (testables à l'écran)
