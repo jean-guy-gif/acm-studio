@@ -6,7 +6,16 @@
 // Ne rien reformater ici : un mot changé est un texte non validé. Les apostrophes sont celles du
 // modèle (droites), les espaces avant les virgules aussi.
 
+import {
+  VOUCHER_OUTSIDE_RECEIVED,
+  voucherOutsideCommitment,
+  voucherOutsideLine,
+  type OutsideTitle,
+} from '@/features/visit-voucher/services/outside-mandate';
+
 export const VOUCHER_TEMPLATE_VERSION = 'bon-de-visite-2026-11-06';
+// Mission 153 — la version hors mandat : trois phrases changent, validées par la juriste (12/11).
+export const VOUCHER_OUTSIDE_TEMPLATE_VERSION = 'bon-de-visite-hors-mandat-2026-11-12';
 
 export type VoucherAgency = {
   name: string;
@@ -46,6 +55,9 @@ export type VoucherFields = {
   city: string;
   // JJ/MM/AAAA.
   date: string;
+  // Mission 153 — un bon hors mandat : le titre auquel l'Agence intervient, le même pour tous ses
+  // biens (un bon ne réunit jamais un bien sous mandat et un bien hors mandat).
+  title?: OutsideTitle | null;
 };
 
 // Le document : un titre, puis des sections ; chaque section a un titre et des paragraphes.
@@ -60,6 +72,7 @@ export function agencyIdentityParagraphs(agency: VoucherAgency): string[] {
 
 export function renderVoucher(fields: VoucherFields): RenderedDocument {
   const { agency } = fields;
+  const title = fields.title ?? null;
   return {
     title: 'BON DE VISITE - BIEN(S) A VENDRE',
     sections: [
@@ -78,10 +91,14 @@ export function renderVoucher(fields: VoucherFields): RenderedDocument {
         paragraphs: [
           `Je soussigné(e) ${fields.visitorName} , demeurant ${fields.visitorAddress} , comme en atteste ${fields.visitorPiece}`,
           'Agissant tant en mon nom personnel que pour le compte de toute autre personne physique ou morale que je jugerai bon de me substituer et pour laquelle je me porte fort, en tant que de besoin.',
-          "Reconnais m'être présenté(e) ce jour à l'Agence, avoir demandé et reçu de celle-ci les renseignements, adresses et conditions de vente des biens ci-dessous désignés, précisés notamment dans le mandat de vente.",
+          title
+            ? VOUCHER_OUTSIDE_RECEIVED
+            : "Reconnais m'être présenté(e) ce jour à l'Agence, avoir demandé et reçu de celle-ci les renseignements, adresses et conditions de vente des biens ci-dessous désignés, précisés notamment dans le mandat de vente.",
           "Ces biens, dont je n'avais aucune connaissance auparavant, m'ont été présentés pour la première fois et uniquement par l'Agence.",
           "Je sais que ces indications ont été fournies selon les dires des vendeurs et qu'elles sont confidentielles. Je m'engage à les garder secrètes.",
-          "Je suis informé(e) que le vendeur s'est engagé, dans le cadre du mandat de vente qu'il a confié à l'Agence, à ne pas traiter la vente de ces biens directement avec un acquéreur présenté par l'Agence ou ayant visité le bien avec l'Agence.",
+          title
+            ? voucherOutsideCommitment(title)
+            : "Je suis informé(e) que le vendeur s'est engagé, dans le cadre du mandat de vente qu'il a confié à l'Agence, à ne pas traiter la vente de ces biens directement avec un acquéreur présenté par l'Agence ou ayant visité le bien avec l'Agence.",
           "Je m'engage à ne pas me présenter chez les vendeurs sans être accompagné(e) d'un représentant de l'Agence ou, à défaut, sans communiquer auxdits vendeurs le présent bon de visite. Je m'engage également à en informer toute personne qui me présenterait les mêmes biens que ceux qui m'ont déjà été présentés.",
           "Je m'engage à ne pas tenter d'évincer l'Agence de la rémunération à laquelle elle pourrait légitimement prétendre.",
           "En cas de manquement à cet engagement, je suis informé(e) que je pourrai être tenu(e) de réparer le préjudice que constituerait l'éviction de l'Agence par le versement d'un dédommagement égal au montant des honoraires auxquels elle aurait pu prétendre.",
@@ -90,9 +107,10 @@ export function renderVoucher(fields: VoucherFields): RenderedDocument {
       {
         heading: 'BIEN(S) PROPOSE(S) A LA VENTE',
         paragraphs: [
-          ...fields.biens.map(
-            (bien) =>
-              `Numéro du mandat : ${bien.mandate} · Prix de commercialisation : ${bien.price} € · Adresse du bien : ${bien.address}`,
+          ...fields.biens.map((bien) =>
+            title
+              ? voucherOutsideLine(title, bien)
+              : `Numéro du mandat : ${bien.mandate} · Prix de commercialisation : ${bien.price} € · Adresse du bien : ${bien.address}`,
           ),
           `Les biens ci-dessus mentionnés ont été présentés par ${fields.advisorName} .`,
         ],

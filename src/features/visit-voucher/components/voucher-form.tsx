@@ -14,12 +14,24 @@ import {
   sectionTitle,
 } from '@/components/ui/styles';
 import { signVisitVoucher } from '@/features/visit-voucher/actions/sign-voucher';
+import {
+  draftTitle,
+  initialTitleDraft,
+  OutsideTitleFields,
+  type TitleDraft,
+} from '@/features/visit-voucher/components/outside-title-fields';
 import { SignaturePad } from '@/features/visit-voucher/components/signature-pad';
 import { VoucherShare } from '@/features/visit-voucher/components/voucher-share';
 import type { VoucherContext } from '@/features/visit-voucher/queries/get-voucher-context';
 import {
+  OUTSIDE_TITLE_MIXED,
+  voucherOutsideLine,
+  withBuyer,
+} from '@/features/visit-voucher/services/outside-mandate';
+import {
   parisDateLabel,
   VISITOR_CIVILITIES,
+  voucherPrice,
   type VisitorCivility,
 } from '@/features/visit-voucher/services/voucher-fields';
 import {
@@ -57,6 +69,16 @@ export function VoucherForm({
   const [address, setAddress] = useState(context.lastVisitor?.address ?? '');
   const [piece, setPiece] = useState<VisitorPiece>(context.lastVisitor?.piece ?? 'cni');
   const [city, setCity] = useState(context.city);
+  // Sans visite d'où l'on vient : la seule visite d'un bien sous mandat qui a droit au bon, sinon la
+  // seule hors mandat (Mission 153 : un bon ne réunit jamais les deux).
+  const eligibleMandate = context.visits.filter((visit) => visit.eligible && !visit.outside);
+  const eligibleOutside = context.visits.filter((visit) => visit.eligible && visit.outside);
+  const onlyCandidate =
+    eligibleMandate.length === 1
+      ? eligibleMandate[0]!.visitId
+      : eligibleMandate.length === 0 && eligibleOutside.length === 1
+        ? eligibleOutside[0]!.visitId
+        : null;
   const [biens, setBiens] = useState<Record<string, BienDraft>>(() =>
     Object.fromEntries(
       context.visits.map((visit) => [
@@ -66,9 +88,7 @@ export function VoucherForm({
           // l'on vient, ou la seule qui a droit au bon.
           checked:
             visit.eligible &&
-            (preselected != null
-              ? preselected === visit.visitId
-              : context.visits.filter((entry) => entry.eligible).length === 1),
+            (preselected != null ? preselected === visit.visitId : onlyCandidate === visit.visitId),
           mandate: visit.mandate ?? '',
           price: visit.price != null ? String(visit.price) : '',
           address: visit.address ?? '',
@@ -76,6 +96,14 @@ export function VoucherForm({
       ]),
     ),
   );
+  // Mission 153 — hors mandat : le titre auquel l'Agence intervient, un seul pour le bon.
+  const [title, setTitle] = useState<TitleDraft>(() => {
+    const first = context.visits.find(
+      (visit) =>
+        visit.outside && visit.eligible && (preselected ?? visit.visitId) === visit.visitId,
+    );
+    return initialTitleDraft(first?.suggestion ?? null, context.lastSearchTitle);
+  });
   const [signatures, setSignatures] = useState<(string | null)[]>([null, null]);
   const [approved, setApproved] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -104,6 +132,16 @@ export function VoucherForm({
   }
 
   const chosen = context.visits.filter((visit) => biens[visit.visitId]?.checked);
+  // Un bon est sous mandat OU hors mandat : le premier bien coché décide (Mission 153).
+  const outside = chosen[0]?.outside ?? null;
+  const firstOutside = chosen.find((visit) => visit.outside) ?? null;
+  const validTitle = outside ? draftTitle(title) : null;
+  const searchHint =
+    context.lastSearchTitle &&
+    title.searchNumber === context.lastSearchTitle.number &&
+    title.signedOn === context.lastSearchTitle.signedOn
+      ? `Repris du dernier document de ${withBuyer(context.buyer.name)}.`
+      : null;
   const update = (visitId: string, patch: Partial<BienDraft>) =>
     setBiens((current) => ({ ...current, [visitId]: { ...current[visitId]!, ...patch } }));
 
@@ -131,6 +169,7 @@ export function VoucherForm({
               };
             }),
             signatures: signatures.slice(0, visitors.length),
+            title: validTitle,
             approved,
           }).catch(() => ({ ok: false as const, error: 'Connexion perdue : réessayez.' }));
           if (!result.ok) {
@@ -146,6 +185,7 @@ export function VoucherForm({
         <ul className="flex flex-col gap-3">
           {context.visits.map((visit) => {
             const draft = biens[visit.visitId]!;
+            const mixed = outside != null && visit.outside !== outside;
             return (
               <li
                 key={visit.visitId}
@@ -157,7 +197,7 @@ export function VoucherForm({
                     type="checkbox"
                     className="h-5 w-5 accent-brand"
                     checked={draft.checked}
-                    disabled={!visit.eligible}
+                    disabled={!visit.eligible || (!draft.checked && mixed)}
                     onChange={(event) => update(visit.visitId, { checked: event.target.checked })}
                   />
                   {visit.label}
@@ -171,21 +211,49 @@ export function VoucherForm({
                     {visit.note}
                   </span>
                 ) : null}
+                {visit.eligible && !draft.checked && mixed ? (
+                  <span className="text-sm text-amber-700" data-testid="voucher-mixed">
+                    {OUTSIDE_TITLE_MIXED}
+                  </span>
+                ) : null}
+                {draft.checked && visit.outside ? (
+                  firstOutside?.visitId === visit.visitId ? (
+                    <OutsideTitleFields
+                      draft={title}
+                      onChange={setTitle}
+                      missingText="Choisissez à quel titre vous intervenez : sans lui, le bon ne se signe pas."
+                      searchHint={searchHint}
+                      colleagueHint={
+                        visit.suggestion?.kind === 'colleague'
+                          ? 'Collaboration obtenue, sur sa carte de Prospection.'
+                          : null
+                      }
+                    />
+                  ) : (
+                    <span className={hintText}>Au même titre que le bien ci-dessus.</span>
+                  )
+                ) : null}
                 {draft.checked ? (
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {visit.outside ? null : (
+                      <label className="flex flex-col gap-1">
+                        <span className={fieldLabel}>N° de mandat</span>
+                        <input
+                          className={inputBase}
+                          value={draft.mandate}
+                          maxLength={40}
+                          required
+                          data-testid="voucher-mandate"
+                          onChange={(event) =>
+                            update(visit.visitId, { mandate: event.target.value })
+                          }
+                        />
+                      </label>
+                    )}
                     <label className="flex flex-col gap-1">
-                      <span className={fieldLabel}>N° de mandat</span>
-                      <input
-                        className={inputBase}
-                        value={draft.mandate}
-                        maxLength={40}
-                        required
-                        data-testid="voucher-mandate"
-                        onChange={(event) => update(visit.visitId, { mandate: event.target.value })}
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1">
-                      <span className={fieldLabel}>Prix de commercialisation (€)</span>
+                      <span className={fieldLabel}>
+                        {visit.outside ? 'Prix affiché (€)' : 'Prix de commercialisation (€)'}
+                      </span>
                       <input
                         className={inputBase}
                         inputMode="numeric"
@@ -213,6 +281,30 @@ export function VoucherForm({
             );
           })}
         </ul>
+        {validTitle ? (
+          <div
+            className="flex flex-col gap-1 rounded-lg border border-l-4 border-zinc-200 border-l-brand-deep bg-white px-3 py-2 stage:border-white/10 stage:bg-white/5"
+            data-testid="voucher-outside-preview"
+          >
+            <span className="text-xs font-bold text-brand-deep stage:text-brand">Sur le bon</span>
+            {chosen.map((visit) => {
+              const draft = biens[visit.visitId]!;
+              return (
+                <p
+                  key={visit.visitId}
+                  className="font-serif text-sm text-zinc-700 stage:text-white/80"
+                >
+                  «{' '}
+                  {voucherOutsideLine(validTitle, {
+                    price: voucherPrice(euros(draft.price) ?? 0),
+                    address: draft.address.trim() || '…',
+                  })}{' '}
+                  »
+                </p>
+              );
+            })}
+          </div>
+        ) : null}
       </section>
 
       <section className={`${card} flex flex-col gap-3 p-5`}>
@@ -343,6 +435,7 @@ export function VoucherForm({
             pending ||
             !approved ||
             chosen.length === 0 ||
+            (outside === true && validTitle == null) ||
             signatures.slice(0, visitors.length).some((value) => value == null)
           }
         >

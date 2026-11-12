@@ -23,7 +23,14 @@ import {
   renderOffer,
 } from '@/features/purchase-offer/services/offer-text';
 import { documentToText } from '@/features/visit-voucher/services/voucher-text';
+import {
+  draftTitle,
+  initialTitleDraft,
+  OutsideTitleFields,
+  type TitleDraft,
+} from '@/features/visit-voucher/components/outside-title-fields';
 import { SignaturePad } from '@/features/visit-voucher/components/signature-pad';
+import { OUTSIDE_FEES_REMINDER } from '@/features/visit-voucher/services/outside-mandate';
 import { parisDateLabel } from '@/features/visit-voucher/services/voucher-fields';
 
 type Offrant = {
@@ -94,6 +101,13 @@ export function OfferForm({
   const [matrimonial, setMatrimonial] = useState(context.last?.matrimonial ?? '');
   const [fiscalFrance, setFiscalFrance] = useState(context.last?.fiscalResidenceFrance ?? true);
   const [mandateNumber, setMandateNumber] = useState(visit?.mandateNumber ?? '');
+  // Mission 153 — un bien hors mandat : le titre (repris du bon de la visite s'il y en a un) et
+  // l'adresse du bien, saisie quand ACM ne la connaît pas.
+  const [title, setTitle] = useState<TitleDraft>(() =>
+    initialTitleDraft(visit?.suggestion ?? null, context.lastSearchTitle),
+  );
+  const [outsideAddress, setOutsideAddress] = useState(visit?.propertyAddress ?? '');
+  const validTitle = visit?.outside ? draftTitle(title) : null;
   const [withAgent, setWithAgent] = useState(false);
   const [agent, setAgent] = useState({ name: '', rsac: '' });
   const [parcels, setParcels] = useState<Parcel[]>([{ ...EMPTY_PARCEL }]);
@@ -128,6 +142,7 @@ export function OfferForm({
             buyerEmail={context.buyer.email}
             sellerEmail={visit?.sellerEmail ?? null}
             sellerPhone={visit?.sellerPhone ?? null}
+            sellerVia={validTitle?.kind === 'colleague' ? validTitle.agency : null}
             validUntil={frenchDay(validUntil)}
             advisorFirstName={context.advisorFirstName}
           />
@@ -147,10 +162,16 @@ export function OfferForm({
   }
 
   const condominium = visit?.condominium === true;
+  const outside = visit?.outside === true;
+  const propertyAddress = outside
+    ? visit?.propertyAddress?.trim() || outsideAddress.trim() || null
+    : (visit?.propertyAddress ?? null);
   // Le texte tel qu'il sera signé : le même rendu que le serveur, relu avant de signer.
   const preview =
     context.agency &&
-    visit?.propertyAddress &&
+    visit &&
+    propertyAddress &&
+    (!outside || validTitle) &&
     euros(price) > 0 &&
     euros(fees) > 0 &&
     euros(deposit) > 0
@@ -164,10 +185,10 @@ export function OfferForm({
             address,
             matrimonial: matrimonial.trim() ? matrimonial : null,
             fiscalResidenceFrance: fiscalFrance,
-            mandateNumber: visit.mandateNumber?.trim() || mandateNumber,
+            mandateNumber: outside ? '' : visit.mandateNumber?.trim() || mandateNumber,
             agent: withAgent ? agent : null,
             condominium,
-            propertyAddress: visit.propertyAddress,
+            propertyAddress,
             parcels,
             totalArea,
             lots: condominium
@@ -186,6 +207,7 @@ export function OfferForm({
             validUntil: frenchDay(validUntil),
             contractDeadline: frenchDay(contractDeadline),
             deposit: Math.min(euros(deposit), 9_999_999),
+            title: validTitle,
           }),
         )
       : null;
@@ -198,6 +220,7 @@ export function OfferForm({
     );
   const ready =
     visit != null &&
+    (!outside || validTitle != null) &&
     approved &&
     signatures.slice(0, offrants.length).every((value) => value != null) &&
     euros(price) > 0 &&
@@ -240,7 +263,9 @@ export function OfferForm({
             address,
             matrimonial: matrimonial.trim() ? matrimonial : null,
             fiscalResidenceFrance: fiscalFrance,
-            mandateNumber,
+            mandateNumber: outside ? '' : mandateNumber,
+            title: validTitle,
+            propertyAddress: outside ? propertyAddress : null,
             agent: withAgent ? agent : null,
             parcels,
             totalArea,
@@ -285,6 +310,8 @@ export function OfferForm({
               setPrice(next?.price != null ? String(Math.round(next.price)) : '');
               setFees(next?.fees != null ? String(Math.round(next.fees)) : '');
               setFeesPaidBy(next?.feesPaidBy ?? 'seller');
+              setTitle(initialTitleDraft(next?.suggestion ?? null, context.lastSearchTitle));
+              setOutsideAddress(next?.propertyAddress ?? '');
             }}
           >
             {eligible.map((entry) => (
@@ -296,7 +323,10 @@ export function OfferForm({
         ) : null}
         {visit ? (
           <p className="text-sm text-zinc-700" data-testid="offer-property">
-            {visit.label} · {visit.propertyAddress ?? 'adresse à compléter sur la fiche du bien'}
+            {visit.label} ·{' '}
+            {outside
+              ? 'hors mandat de l’agence'
+              : (visit.propertyAddress ?? 'adresse à compléter sur la fiche du bien')}
             {condominium ? ' · en copropriété' : ''}
           </p>
         ) : null}
@@ -310,7 +340,32 @@ export function OfferForm({
             Une offre acceptée existe déjà sur ce bien (le {visit.acceptedOfferOn}).
           </p>
         ) : null}
-        {visit?.mandateNumber ? (
+        {outside ? (
+          <>
+            <OutsideTitleFields
+              draft={title}
+              onChange={setTitle}
+              missingText="Choisissez à quel titre vous intervenez : sans lui, l’offre ne se prépare pas."
+              colleagueHint={
+                visit?.suggestion?.kind === 'colleague' && !visit.suggestion.agency
+                  ? 'Collaboration obtenue, sur sa carte de Prospection.'
+                  : visit?.suggestion
+                    ? 'Repris du bon de visite.'
+                    : null
+              }
+              searchHint={visit?.suggestion?.kind === 'search' ? 'Repris du bon de visite.' : null}
+            />
+            {visit?.propertyAddress ? (
+              <p className="text-sm text-zinc-700" data-testid="offer-outside-address-known">
+                Adresse du bien : {visit.propertyAddress}
+              </p>
+            ) : (
+              input('Adresse du bien', outsideAddress, setOutsideAddress, {
+                testId: 'offer-outside-address',
+              })
+            )}
+          </>
+        ) : visit?.mandateNumber ? (
           <p className="text-sm text-zinc-700" data-testid="offer-mandate-known">
             N° de mandat : {visit.mandateNumber}
           </p>
@@ -445,6 +500,16 @@ export function OfferForm({
             Acquéreur
           </label>
         </fieldset>
+        {/* Mission 153 — à l'écran seulement, jamais dans l'offre (Jean-Guy, 12/11). */}
+        {outside && validTitle?.kind === 'search' && visit?.soldByAgency ? (
+          <p
+            className="rounded-lg border border-dashed border-amber-600 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+            role="note"
+            data-testid="offer-fees-reminder"
+          >
+            {OUTSIDE_FEES_REMINDER}
+          </p>
+        ) : null}
         {input('Acompte (€)', deposit, setDeposit, {
           inputMode: 'numeric',
           testId: 'offer-deposit',

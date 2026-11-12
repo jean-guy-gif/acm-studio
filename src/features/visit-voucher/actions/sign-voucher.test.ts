@@ -24,7 +24,12 @@ vi.mock('@/lib/supabase/service-role', () => ({
   createServiceRoleClient: () => ({
     from(table: string) {
       const chain: Record<string, unknown> = {};
-      for (const method of ['select', 'eq', 'in']) chain[method] = () => chain;
+      let ids: string[] = [VISIT];
+      for (const method of ['select', 'eq']) chain[method] = () => chain;
+      chain.in = (_column: string, values: string[]) => {
+        ids = values;
+        return chain;
+      };
       chain.insert = (values: unknown) => {
         state.writes.push([table, values]);
         return Promise.resolve({ error: null });
@@ -33,7 +38,13 @@ vi.mock('@/lib/supabase/service-role', () => ({
         resolve({
           data:
             table === 'buyer_visit_requests'
-              ? [{ id: VISIT, buyer_selection_items: { source: 'project', reference: 'p1' } }]
+              ? ids.map((id) => ({
+                  id,
+                  buyer_selection_items:
+                    id === OUTSIDE
+                      ? { source: 'listing', reference: 'https://annonce.example/1' }
+                      : { source: 'project', reference: 'p1' },
+                }))
               : [],
           error: null,
         });
@@ -59,6 +70,7 @@ const { signVisitVoucher } = await import('@/features/visit-voucher/actions/sign
 const BUYER = '11111111-1111-4111-8111-111111111111';
 const VISIT = '22222222-2222-4222-8222-222222222222';
 const OTHER = '33333333-3333-4333-8333-333333333333';
+const OUTSIDE = '44444444-4444-4444-8444-444444444444';
 const PNG = `data:image/png;base64,${Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
   Buffer.alloc(100),
@@ -103,6 +115,8 @@ const context = (over: Partial<VoucherContext> = {}): VoucherContext => ({
       mandate: null,
       visited: true,
       day: '2026-11-06T10:00:00Z',
+      outside: false,
+      suggestion: null,
     },
     {
       visitId: OTHER,
@@ -114,6 +128,21 @@ const context = (over: Partial<VoucherContext> = {}): VoucherContext => ({
       mandate: null,
       visited: false,
       day: '2026-11-05T10:00:00Z',
+      outside: false,
+      suggestion: null,
+    },
+    {
+      visitId: OUTSIDE,
+      label: 'Maison · 6 pièces · 220 m² · Mougins',
+      eligible: true,
+      note: 'Annonce du marché, hors mandat de l’agence',
+      price: 1_720_000,
+      address: null,
+      mandate: null,
+      visited: false,
+      day: '2026-11-07T10:00:00Z',
+      outside: true,
+      suggestion: null,
     },
   ],
   agency: agency as VoucherContext['agency'],
@@ -121,6 +150,7 @@ const context = (over: Partial<VoucherContext> = {}): VoucherContext => ({
   advisorName: 'Carl Conseiller',
   city: 'Mougins',
   lastVisitor: null,
+  lastSearchTitle: null,
   ...over,
 });
 
@@ -220,5 +250,92 @@ describe('signer le bon de visite', () => {
     expect((await signVisitVoucher(input())).ok).toBe(false);
     expect(state.writes).toEqual([]);
     expect(state.uploads).toEqual([]);
+  });
+
+  // Mission 153 — hors mandat : le titre obligatoire, un bon à part, la version validée.
+  describe('hors mandat', () => {
+    const outsideBien = {
+      visitId: OUTSIDE,
+      mandate: '',
+      price: 1_720_000,
+      address: '8 allée des Cistes Blancs, 06250 Mougins',
+    };
+    const search = { kind: 'search', number: 'R-2026-031', signedOn: '2026-11-04' };
+
+    it('sans titre : rien n’est écrit, l’écran dit pourquoi', async () => {
+      const result = await signVisitVoucher(input({ biens: [outsideBien] }));
+      expect(result).toEqual({
+        ok: false,
+        error: 'Choisissez à quel titre vous intervenez : sans lui, le document ne se crée pas.',
+      });
+      expect(state.writes).toEqual([]);
+      expect(state.uploads).toEqual([]);
+    });
+
+    it('un bien sous mandat et un bien hors mandat ne se réunissent pas', async () => {
+      const result = await signVisitVoucher(
+        input({
+          biens: [input().biens[0], outsideBien],
+          title: search,
+        }),
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: 'Un bien hors mandat se signe sur un bon à part.',
+      });
+      expect(state.writes).toEqual([]);
+    });
+
+    it('un titre sur un bien sous mandat, un mandat de recherche daté du futur : refusés', async () => {
+      expect((await signVisitVoucher(input({ title: search }))).ok).toBe(false);
+      expect(
+        (
+          await signVisitVoucher(
+            input({ biens: [outsideBien], title: { ...search, signedOn: '2099-01-01' } }),
+          )
+        ).ok,
+      ).toBe(false);
+      expect(state.writes).toEqual([]);
+    });
+
+    it('au mandat de recherche : la version hors mandat, les trois phrases validées', async () => {
+      const result = await signVisitVoucher(input({ biens: [outsideBien], title: search }));
+      expect(result.ok).toBe(true);
+      const document = state.writes[0]![1] as {
+        rendered_text: string;
+        template_version: string;
+        fields: { title: unknown; biens: { mandate: string }[] };
+      };
+      expect(document.template_version).toBe('bon-de-visite-hors-mandat-2026-11-12');
+      expect(document.rendered_text).toContain(
+        "que l'Agence me présente en vertu du titre indiqué pour chacun d'eux.",
+      );
+      expect(document.rendered_text).toContain(
+        "Je reconnais avoir confié à l'Agence un mandat de recherche, et que ces biens m'ont été présentés dans le cadre de ce mandat.",
+      );
+      expect(document.rendered_text).toMatch(
+        /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché : 1\s720\s000 € · Adresse du bien : 8 allée des Cistes Blancs, 06250 Mougins/,
+      );
+      expect(document.rendered_text).not.toContain('précisés notamment dans le mandat de vente');
+      expect(document.rendered_text).not.toContain('Numéro du mandat');
+      expect(document.fields.title).toEqual(search);
+      expect(document.fields.biens[0]!.mandate).toBe('');
+    });
+
+    it('en collaboration : l’agence du confrère et le n° de son mandat', async () => {
+      await signVisitVoucher(
+        input({
+          biens: [outsideBien],
+          title: { kind: 'colleague', agency: 'Agence Littoral & Pins', number: 'V-4471' },
+        }),
+      );
+      const document = state.writes[0]![1] as { rendered_text: string };
+      expect(document.rendered_text).toContain(
+        "Je suis informé(e) que le vendeur a confié un mandat de vente à l'agence Agence Littoral & Pins, avec laquelle l'Agence collabore, et qu'il s'est engagé à ne pas traiter la vente de ces biens directement avec un acquéreur présenté par l'Agence.",
+      );
+      expect(document.rendered_text).toContain(
+        'En collaboration avec Agence Littoral & Pins, mandat de vente n° V-4471 · Prix affiché',
+      );
+    });
   });
 });
