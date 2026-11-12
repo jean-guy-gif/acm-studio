@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   readOutsideTitle,
-  sameTitle,
   titleDay,
   voucherOutsideLine,
   withBuyer,
@@ -20,19 +19,8 @@ describe('le titre hors mandat', () => {
     expect(readOutsideTitle({ kind: 'colleague', agency: 'A', number: '1' })).toBeNull();
     expect(readOutsideTitle({ kind: 'sale', number: '1' })).toBeNull();
     expect(readOutsideTitle(null)).toBeNull();
-  });
-
-  it('deux titres pareils : le même mandat de recherche, ou la même agence', () => {
-    const search = { kind: 'search', number: 'R-1', signedOn: '2026-11-04' } as const;
-    expect(sameTitle(search, { ...search, number: ' r-1 ' })).toBe(true);
-    expect(sameTitle(search, { ...search, signedOn: '2026-11-05' })).toBe(false);
-    expect(
-      sameTitle(
-        { kind: 'colleague', agency: 'Agence  Littoral', number: '1' },
-        { kind: 'colleague', agency: 'agence littoral', number: '2' },
-      ),
-    ).toBe(true);
-    expect(sameTitle(search, { kind: 'colleague', agency: 'A', number: 'R-1' })).toBe(false);
+    // Une date qui n'existe pas n'est pas un mandat (relecteur).
+    expect(readOutsideTitle({ kind: 'search', number: 'R-1', signedOn: '2026-02-31' })).toBeNull();
   });
 
   it('la ligne du bien et le nom de la fiche', () => {

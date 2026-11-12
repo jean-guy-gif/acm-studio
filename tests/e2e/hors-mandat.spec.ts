@@ -3,11 +3,12 @@ import { expect, test, type Page } from '@playwright/test';
 import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './support';
 
 // Mission 153 — le bon de visite et l'offre d'achat hors mandat (planches M153-1 à 3), sur l'URL
-// d'essai avec le compte de l'agence de démonstration. La visite des Keller sur l'annonce de
-// Mouans-Sartoux (une annonce du marché, vendue par une agence, sans exclusivité) : le chemin court
-// sur Visites ; le bon qui demande à quel titre l'Agence intervient, refuse de réunir un bien sous
-// mandat, puis se signe au mandat de recherche avec les phrases validées ; l'offre qui reprend ce
-// titre, rappelle la répartition des honoraires à l'écran seulement, et se signe.
+// d'essai avec le compte de l'agence de démonstration. La visite de Mr and Mrs Wilson sur une
+// annonce du marché d'Antibes (vendue par une agence, sans exclusivité) : le chemin court sur
+// Visites ; le bon qui demande à quel titre l'Agence intervient, puis se signe au mandat de recherche
+// avec les phrases validées ; l'offre qui reprend ce titre, rappelle la répartition des honoraires à
+// l'écran seulement, et se signe. Le refus de réunir un bien sous mandat et un bien hors mandat est
+// prouvé par les tests de l'action (la démo n'a pas de fiche avec les deux à visiter).
 
 async function draw(page: Page, testId: string): Promise<void> {
   const canvas = page.getByTestId(testId);
@@ -28,56 +29,39 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
   await login(page, demoCredentials());
   await resetDemoByScreen(page);
 
-  const visitC = () =>
-    page
-      .getByTestId('visits-pending')
-      .getByTestId('visit-line')
-      .filter({ hasText: 'Mouans-Sartoux' });
+  const pending = () =>
+    page.getByTestId('visits-pending').getByTestId('visit-line').filter({ hasText: 'Antibes' });
 
   await test.step('Visites : le chemin court et ce que le bon demandera', async () => {
     await page.goto('/visites');
-    await expect(visitC()).toHaveCount(1);
-    await expect(visitC().getByTestId('visit-actions')).toHaveAttribute('data-step', 'confirm');
-    await expect(visitC().getByTestId('visit-track')).toContainText(
+    await expect(pending()).toHaveCount(1);
+    await expect(pending().getByTestId('visit-actions')).toHaveAttribute('data-step', 'confirm');
+    await expect(pending().getByTestId('visit-track')).toContainText(
       /Confirmer la visite\s*→\s*Bon de visite\s*→\s*Visite faite/,
     );
-    await expect(visitC().getByTestId('visit-prepare-owner-letter')).toHaveText(
+    await expect(pending().getByTestId('visit-prepare-owner-letter')).toHaveText(
       'Écrire au propriétaire',
     );
-    await expect(visitC().getByTestId('visit-outside-mandate')).toHaveText(
-      'Hors mandat de l’agence : le bon de visite et l’offre d’achat demandent votre mandat de recherche avec la famille Keller, ou la collaboration du confrère.',
+    await expect(pending().getByTestId('visit-outside-mandate')).toHaveText(
+      'Hors mandat de l’agence : le bon de visite et l’offre d’achat demandent votre mandat de recherche avec Mr and Mrs Wilson, ou la collaboration du confrère.',
     );
     await expectOneFilled(page, 'Visites — hors mandat');
   });
 
-  let kellerUrl = '';
-  await test.step('Le bon : à quel titre, jamais avec un bien sous mandat', async () => {
+  let wilsonUrl = '';
+  await test.step('Le bon : le titre est obligatoire, puis les phrases validées', async () => {
     await page.goto('/acquereurs?vue=agence');
-    await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
+    await page.getByRole('link', { name: 'Mr and Mrs Wilson', exact: true }).click();
     await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}$/);
-    kellerUrl = new URL(page.url()).pathname;
-    await page.goto(`${kellerUrl}/bon-de-visite`);
+    wilsonUrl = new URL(page.url()).pathname;
+    await page.goto(`${wilsonUrl}/bon-de-visite`);
     const form = page.getByTestId('voucher-form');
     await expect(form).toBeVisible();
-    // Le mandat de l'agence (Mougins) est la seule visite sous mandat : cochée d'office.
-    const mandate = form
-      .getByTestId('voucher-visit')
-      .filter({ has: page.getByRole('checkbox', { checked: true }) });
-    const outside = form.getByTestId('voucher-visit').filter({ hasText: 'Mouans-Sartoux' });
-    // Le mandat de l'agence est coché d'office : l'annonce ne se coche pas avec lui.
-    await expect(mandate).toHaveCount(1);
-    await expect(outside.getByRole('checkbox')).toBeDisabled();
-    await expect(outside.getByTestId('voucher-mixed')).toHaveText(
-      'Un bien hors mandat se signe sur un bon à part.',
-    );
-    const mandateBox = mandate.getByRole('checkbox');
-    const mandateLabel = (await mandate.locator('label').first().innerText()).trim();
-    await mandateBox.uncheck();
-    await outside.getByRole('checkbox').check();
-    await expect(
-      form.getByTestId('voucher-visit').filter({ hasText: mandateLabel }).getByRole('checkbox'),
-    ).toBeDisabled();
-    // Le titre est obligatoire : rien de coché, le bon ne se signe pas.
+    const outside = form.getByTestId('voucher-visit').filter({ hasText: 'Antibes' });
+    // La seule visite qui a droit au bon : cochée d'office.
+    await expect(outside.getByRole('checkbox')).toBeChecked();
+    await expect(outside).toContainText('Annonce du marché, hors mandat de l’agence');
+    // Rien de coché d'avance : le bon ne se signe pas.
     const title = outside.getByTestId('outside-title');
     await expect(title).toHaveAttribute('data-kind', '');
     await expect(title.getByTestId('outside-title-missing')).toBeVisible();
@@ -89,11 +73,15 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     await expect(title.getByTestId('outside-title-missing')).toHaveCount(0);
     const address = outside.getByTestId('voucher-bien-address');
     if ((await address.inputValue()).trim() === '') {
-      await address.fill('8 allée des Cistes Blancs, 06370 Mouans-Sartoux');
+      await address.fill('3 rue du Vieux Pressoir, 06600 Antibes');
     }
     await expect(form.getByTestId('voucher-outside-preview')).toContainText(
-      /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché : [\d\s\u202f]+ €/,
+      /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché : [\d\s ]+ €/,
     );
+    await form.getByTestId('voucher-visitor-1').fill('John Wilson');
+    await form
+      .getByTestId('voucher-visitor-address')
+      .fill('12 chemin des Figurants, 06600 Antibes');
     await form.getByTestId('voucher-approved').check();
     await draw(page, 'voucher-signature-1');
     await form.getByTestId('voucher-sign').click();
@@ -113,8 +101,8 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
   await test.step('Visites : la visite faite, « Offre envisagée »', async () => {
     await page.goto('/visites');
     // Le bon signé : la ligne grise ne s'affiche plus.
-    await expect(visitC().getByTestId('visit-outside-mandate')).toHaveCount(0);
-    await visitC().getByTestId('visit-done-open').click();
+    await expect(pending().getByTestId('visit-outside-mandate')).toHaveCount(0);
+    await pending().getByTestId('visit-done-open').click();
     const doneForm = page.getByTestId('visit-done-form');
     await doneForm.getByTestId('visit-opinion-love').click();
     await doneForm.getByTestId('visit-next-offer').click();
@@ -126,7 +114,7 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     const offerVisit = page
       .getByTestId('visits-done')
       .getByTestId('visit-line')
-      .filter({ hasText: 'Mouans-Sartoux' });
+      .filter({ hasText: 'Antibes' });
     await expect(offerVisit.getByTestId('visit-actions')).toHaveAttribute('data-step', 'offer');
     await offerVisit.getByTestId('visit-offer-open').click();
     const form = page.getByTestId('offer-form');
@@ -142,14 +130,20 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     );
     const address = form.getByTestId('offer-outside-address');
     if ((await address.count()) > 0) {
-      await address.fill('8 allée des Cistes Blancs, 06370 Mouans-Sartoux');
+      await address.fill('3 rue du Vieux Pressoir, 06600 Antibes');
     }
+    await form.getByTestId('offer-lastname-1').fill('Wilson');
+    await form.getByTestId('offer-firstnames-1').fill('John');
+    await form.getByTestId('offer-birthdate-1').fill('1975-03-02');
+    await form.getByTestId('offer-birthplace-1').fill('Londres');
+    await form.getByTestId('offer-profession-1').fill('architecte');
+    await form.getByTestId('offer-address').fill('12 chemin des Figurants, 06600 Antibes');
     await form.getByTestId('offer-parcel-section-1').fill('AB');
     await form.getByTestId('offer-parcel-number-1').fill('214');
     await form.getByTestId('offer-parcel-area-1').fill('18 a 40 ca');
     await form.getByTestId('offer-total-area').fill('18 a 40 ca');
-    await form.getByTestId('offer-fees').fill('60000');
-    await form.getByTestId('offer-deposit').fill('80000');
+    await form.getByTestId('offer-fees').fill('15000');
+    await form.getByTestId('offer-deposit').fill('20000');
     await form.getByTestId('offer-preview').locator('summary').click();
     const preview = form.getByTestId('offer-preview');
     await expect(preview).toContainText(
@@ -157,14 +151,19 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     );
     await expect(preview).not.toContainText('Ce bien est commercialisé par une agence');
     await form.getByTestId('offer-approved').check();
-    const offrants = await form.locator('[data-testid^="offer-signature-"]').count();
-    for (let index = 1; index <= offrants; index += 1) {
-      await draw(page, `offer-signature-${index}`);
-    }
+    await draw(page, 'offer-signature-1');
     await form.getByTestId('offer-sign').click();
     await expect(page.getByTestId('offer-signed')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId('offer-link-seller')).toContainText(
       /\/offre\/[A-Za-z0-9_-]{43}$/,
+    );
+    // La couverture de l'offre signée dit le titre, jamais « Mandat n° » vide (relecteur).
+    await page.getByRole('link', { name: 'Voir et imprimer l’offre' }).click();
+    await expect(page.getByTestId('offer-cover-mandate')).toHaveText(
+      'Mandat de recherche n° R-2026-031',
+    );
+    await expect(page.getByTestId('offer-document')).toContainText(
+      "titulaire d'un mandat de recherche signé par l'OFFRANT le 04/11/2026",
     );
   });
 

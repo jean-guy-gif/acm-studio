@@ -107,6 +107,7 @@ export function OfferForm({
     initialTitleDraft(visit?.suggestion ?? null, context.lastSearchTitle),
   );
   const [outsideAddress, setOutsideAddress] = useState(visit?.propertyAddress ?? '');
+  const [outsideCondominium, setOutsideCondominium] = useState(false);
   const validTitle = visit?.outside ? draftTitle(title) : null;
   const [withAgent, setWithAgent] = useState(false);
   const [agent, setAgent] = useState({ name: '', rsac: '' });
@@ -161,8 +162,8 @@ export function OfferForm({
     );
   }
 
-  const condominium = visit?.condominium === true;
   const outside = visit?.outside === true;
+  const condominium = outside ? outsideCondominium : visit?.condominium === true;
   const propertyAddress = outside
     ? visit?.propertyAddress?.trim() || outsideAddress.trim() || null
     : (visit?.propertyAddress ?? null);
@@ -266,6 +267,7 @@ export function OfferForm({
             mandateNumber: outside ? '' : mandateNumber,
             title: validTitle,
             propertyAddress: outside ? propertyAddress : null,
+            condominium: outside ? outsideCondominium : false,
             agent: withAgent ? agent : null,
             parcels,
             totalArea,
@@ -312,6 +314,7 @@ export function OfferForm({
               setFeesPaidBy(next?.feesPaidBy ?? 'seller');
               setTitle(initialTitleDraft(next?.suggestion ?? null, context.lastSearchTitle));
               setOutsideAddress(next?.propertyAddress ?? '');
+              setOutsideCondominium(false);
             }}
           >
             {eligible.map((entry) => (
@@ -364,6 +367,15 @@ export function OfferForm({
                 testId: 'offer-outside-address',
               })
             )}
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={outsideCondominium}
+                data-testid="offer-outside-condominium"
+                onChange={(event) => setOutsideCondominium(event.target.checked)}
+              />
+              Le bien est en copropriété (les lots se saisissent avec le cadastre)
+            </label>
           </>
         ) : visit?.mandateNumber ? (
           <p className="text-sm text-zinc-700" data-testid="offer-mandate-known">

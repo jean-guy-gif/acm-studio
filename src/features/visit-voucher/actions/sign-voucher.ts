@@ -24,6 +24,7 @@ import {
   VOUCHER_TEMPLATE_VERSION,
 } from '@/features/visit-voucher/services/voucher-text';
 import {
+  OUTSIDE_COLLEAGUE_ONE,
   OUTSIDE_TITLE_MISSING,
   OUTSIDE_TITLE_MIXED,
 } from '@/features/visit-voucher/services/outside-mandate';
@@ -89,6 +90,9 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   }
   const title = outside[0] ? input.title : null;
   if (outside[0] && !title) return { ok: false, error: OUTSIDE_TITLE_MISSING };
+  if (title?.kind === 'colleague' && input.biens.length > 1) {
+    return { ok: false, error: OUTSIDE_COLLEAGUE_ONE };
+  }
   if (!outside[0] && input.title) return { ok: false, error: FAILED };
   if (!outside[0] && input.biens.some((bien) => !bien.mandate)) {
     return { ok: false, error: 'Indiquez le n° de mandat de chaque bien.' };
