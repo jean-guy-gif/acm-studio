@@ -1344,9 +1344,55 @@ export async function seedDemoBuyersStory(
     (await seedKellerRefusals(supabase, closer, keller.id, now)) &&
     (await seedWatchRuns(supabase, closer, buyers, keller.id, now)) &&
     (await seedKellerVoucher(supabase, closer, keller.id, mouginsProjectId, now)) &&
+    (await seedKellerTour(supabase, closer, keller.id, now)) &&
     (await seedLambertDismissals(supabase, closer, lambert.id, now)) &&
     (await seedWilsonVisit(supabase, closer, buyers, now))
   );
+}
+
+// Mission 154 (point 3) — la tournée des Keller : deux visites demandées par le conseiller, sur la
+// maison de Mougins en exclusivité chez un confrère (mou-02) et sur celle de Mouans-Sartoux
+// (mou-07) ; avec le mandat de Mougins, déjà visité, un bon peut réunir trois titres. La démo est le
+// miroir du produit (Jean-Guy, 05/11) : aucun courrier n'est préparé, aucun titre n'est posé.
+export const DEMO_KELLER_TOUR_LISTINGS = ['mou-02', 'mou-07'] as const;
+async function seedKellerTour(
+  supabase: Client,
+  closer: Closer,
+  kellerId: string,
+  now: Date,
+): Promise<boolean> {
+  const references = DEMO_KELLER_TOUR_LISTINGS.map((id) =>
+    demoListingUrl(DEMO_LISTINGS.find((entry) => entry.id === id)!),
+  );
+  // La sélection en cours des Keller (la plus récente), et ses deux biens.
+  const { data: selection, error: selectionError } = await supabase
+    .from('buyer_selections')
+    .select('id')
+    .eq('agency_id', closer.agencyId)
+    .eq('buyer_id', kellerId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (selectionError || !selection) return false;
+  const { data: items, error } = await supabase
+    .from('buyer_selection_items')
+    .select('id, reference')
+    .eq('agency_id', closer.agencyId)
+    .eq('selection_id', selection.id)
+    .in('reference', references);
+  if (error || !items) return false;
+  const itemOf = new Map(items.map((item) => [item.reference, item.id]));
+  if (references.some((reference) => !itemOf.has(reference))) return false;
+  const { error: visitError } = await supabase.from('buyer_visit_requests').insert(
+    references.map((reference) => ({
+      agency_id: closer.agencyId,
+      buyer_id: kellerId,
+      buyer_selection_item_id: itemOf.get(reference)!,
+      requested_during: 'conseiller',
+      requested_at: daysBefore(now, 1),
+    })),
+  );
+  return !visitError;
 }
 
 // Mission 142 — Mr and Mrs Wilson : leur sélection (un appartement d'Antibes) et une visite

@@ -22,11 +22,14 @@ import {
   VISITOR_PIECES,
   VOUCHER_OUTSIDE_TEMPLATE_VERSION,
   VOUCHER_TEMPLATE_VERSION,
+  VOUCHER_TOUR_TEMPLATE_VERSION,
 } from '@/features/visit-voucher/services/voucher-text';
 import {
   OUTSIDE_COLLEAGUE_ONE,
   OUTSIDE_TITLE_MISSING,
   OUTSIDE_TITLE_MIXED,
+  titleKey,
+  type OutsideTitle,
 } from '@/features/visit-voucher/services/outside-mandate';
 import { SIGNATURE_BUCKET, voucherPath } from '@/features/visit-voucher/services/voucher-link';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -83,21 +86,40 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   }
   // Mission 153 — un bon est sous mandat OU hors mandat, jamais les deux (chacun porte exactement un
   // texte validé) ; hors mandat, le titre est obligatoire et vaut pour tous ses biens ; sous mandat,
-  // chaque bien a son n° de mandat.
+  // chaque bien a son n° de mandat. Mission 154 (point 3) — le bon de la tournée, quand il est
+  // ouvert : chaque bien hors mandat a SON titre, un bien sous mandat son n° ; un seul titre en tout
+  // garde les textes d'avant, plusieurs titres prennent la version de la tournée.
   const outside = input.biens.map((bien) => visits.get(bien.visitId)!.outside);
-  if (outside.some(Boolean) && !outside.every(Boolean)) {
-    return { ok: false, error: OUTSIDE_TITLE_MIXED };
+  let title: OutsideTitle | null;
+  let bienTitles: (OutsideTitle | null)[];
+  let tour = false;
+  if (context.tourOpen) {
+    bienTitles = input.biens.map((bien, index) => (outside[index] ? bien.title : null));
+    if (input.biens.some((bien, index) => outside[index] && !bien.title)) {
+      return { ok: false, error: OUTSIDE_TITLE_MISSING };
+    }
+    if (input.biens.some((bien, index) => !outside[index] && (bien.title || input.title))) {
+      return { ok: false, error: FAILED };
+    }
+    const keys = new Set(bienTitles.map(titleKey));
+    tour = keys.size > 1;
+    title = !tour && outside[0] ? bienTitles[0]! : null;
+  } else {
+    if (outside.some(Boolean) && !outside.every(Boolean)) {
+      return { ok: false, error: OUTSIDE_TITLE_MIXED };
+    }
+    title = outside[0] ? input.title : null;
+    if (outside[0] && !title) return { ok: false, error: OUTSIDE_TITLE_MISSING };
+    if (!outside[0] && input.title) return { ok: false, error: FAILED };
+    if (title?.kind === 'colleague' && input.biens.length > 1) {
+      return { ok: false, error: OUTSIDE_COLLEAGUE_ONE };
+    }
+    bienTitles = input.biens.map(() => title);
   }
-  const title = outside[0] ? input.title : null;
-  if (outside[0] && !title) return { ok: false, error: OUTSIDE_TITLE_MISSING };
-  if (title?.kind === 'colleague' && input.biens.length > 1) {
-    return { ok: false, error: OUTSIDE_COLLEAGUE_ONE };
-  }
-  if (!outside[0] && input.title) return { ok: false, error: FAILED };
-  if (!outside[0] && input.biens.some((bien) => !bien.mandate)) {
+  if (input.biens.some((bien, index) => !outside[index] && !bien.mandate)) {
     return { ok: false, error: 'Indiquez le n° de mandat de chaque bien.' };
   }
-  if (title?.kind === 'search' && title.signedOn > parisToday()) {
+  if (bienTitles.some((entry) => entry?.kind === 'search' && entry.signedOn > parisToday())) {
     return { ok: false, error: 'Le mandat de recherche ne peut pas être signé dans le futur.' };
   }
   const signatures = input.signatures.map(decodeSignature);
@@ -128,13 +150,14 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     piece: input.piece,
     // Ce qu'ACM sait se remplit seul (§ 7) : le prix et l'adresse connus du serveur l'emportent sur
     // ce que dit le navigateur ; seul ce qu'il ne sait pas vient de la saisie.
-    biens: input.biens.map((bien) => {
+    biens: input.biens.map((bien, index) => {
       const visit = visits.get(bien.visitId)!;
       return {
         visitId: bien.visitId,
         reference: referenceOf.get(bien.visitId) ?? '',
         label: visit.label,
-        mandate: title ? '' : bien.mandate,
+        mandate: outside[index] ? '' : bien.mandate,
+        ...(tour ? { title: bienTitles[index] ?? null } : {}),
         price: visit.price != null && visit.price > 0 ? Math.round(visit.price) : bien.price,
         address: visit.address?.trim() ? visit.address.trim() : bien.address,
       };
@@ -154,11 +177,13 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
         mandate: bien.mandate,
         price: voucherPrice(bien.price),
         address: bien.address,
+        title: bien.title ?? null,
       })),
       advisorName: fields.advisorName,
       city: fields.city,
       date: fields.date,
       title,
+      tour,
     }),
   );
 
@@ -181,7 +206,11 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     agency_id: profile.agency_id,
     buyer_id: input.buyerId,
     kind: 'visit_voucher',
-    template_version: title ? VOUCHER_OUTSIDE_TEMPLATE_VERSION : VOUCHER_TEMPLATE_VERSION,
+    template_version: tour
+      ? VOUCHER_TOUR_TEMPLATE_VERSION
+      : title
+        ? VOUCHER_OUTSIDE_TEMPLATE_VERSION
+        : VOUCHER_TEMPLATE_VERSION,
     fields: fields as unknown as NonNullable<Json>,
     rendered_text: text,
     // Recalculée par la base sur le texte figé.

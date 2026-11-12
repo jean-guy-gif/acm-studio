@@ -7,6 +7,8 @@
 export function initiallyChecked(
   visits: { visitId: string; eligible: boolean; outside: boolean; visited: boolean }[],
   preselected: string | null,
+  // Mission 154 (point 3) — le bon de la tournée ouvert : tous les régimes ensemble.
+  anyRegime = false,
 ): Set<string> {
   const eligible = visits.filter((visit) => visit.eligible);
   const from = eligible.find((visit) => visit.visitId === preselected) ?? null;
@@ -17,7 +19,7 @@ export function initiallyChecked(
       ? false
       : pending.length > 0;
   const chosen = new Set(
-    pending.filter((visit) => visit.outside === outside).map((visit) => visit.visitId),
+    pending.filter((visit) => anyRegime || visit.outside === outside).map((visit) => visit.visitId),
   );
   if (from) chosen.add(from.visitId);
   if (chosen.size === 0) {
