@@ -5,12 +5,16 @@ import {
   tourVoucherOpen,
 } from '@/features/visit-voucher/services/tour-voucher';
 
-// Mission 154 (point 3) — allumé en production sur l'ordre de Jean-Guy (12/11) ; éteint, il ne
-// s'ouvre que sur l'essai, en local et dans les tests.
+// Mission 154 (point 3) — éteint en production sur l'ordre de Jean-Guy (12/11) ; il ne s'ouvre que
+// sur l'essai, en local et dans les tests.
 describe('tourVoucherOpen', () => {
+  it('éteint : fermé en production par défaut', () => {
+    expect(BON_TOURNEE_OUVERT).toBe(false);
+    expect(tourVoucherOpen({ VERCEL_ENV: 'production', NODE_ENV: 'production' })).toBe(false);
+  });
+
   it('allumé : ouvert en production', () => {
-    expect(BON_TOURNEE_OUVERT).toBe(true);
-    expect(tourVoucherOpen({ VERCEL_ENV: 'production', NODE_ENV: 'production' })).toBe(true);
+    expect(tourVoucherOpen({ VERCEL_ENV: 'production', NODE_ENV: 'production' }, true)).toBe(true);
   });
 
   it('éteint : fermé en production, et quand une production ne dit pas son environnement', () => {
