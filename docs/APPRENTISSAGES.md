@@ -534,6 +534,18 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   de la démo (« la connexion a été perdue ») était un aléa, vert au second passage. Relecteur
   4 min.
 
+- 12/11 · M151 · Dans un shell sans `.env.local` chargé, 8 fichiers de tests échouent à l'import
+  (« Missing required environment variable ») et l'on croit à une régression : `set -a; .
+./.env.local; set +a` avant `npm test` (la CI fournit ces variables). `format:check` en local
+  signale `.impeccable/hook.cache.json`, un cache d'outil exclu de git : sans effet sur la CI.
+- 12/11 · M151 · L'e2e `depuis-mes-notes` laisse dans l'agence de démo une fiche « M. et Mme Arnaud »
+  archivée et marquée démo, jusqu'à la remise à zéro suivante : une fiche de plus au comptage des
+  acquéreurs, attendue, pas une fuite.
+- 12/11 · M151 · Bedrock, sorties structurées : 16 paramètres `anyOf` au plus par schéma ; au-delà,
+  refus avant tout appel. Les mesures sur le vrai modèle (Sonnet 4.6, profil UE, température 0) se
+  jouent hors des tests, par `missions/M151-essais/mesure.mjs`, et ne se renotent qu'avec
+  `M151_MODELES` posé, sinon le bilan est écrasé.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -622,6 +634,11 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   `--yes`, à ne passer qu'après l'accord de Jean-Guy. `npm run gen:types` a rendu un fichier de 1 590
   lignes au lieu de 3 825 : remis tel quel, cause à trouver avant la prochaine migration. Gardien-sql
   2,6 min puis 1,3 min sur le delta ; architecte 3,5 min ; sauvegarde 2 min.
+
+- 12/11 · M151 · Une empreinte de fonction se dit avec sa méthode : `md5(prosrc)` (le corps) et
+  `md5(pg_get_functiondef(…))` (la définition entière) n'ont rien de commun ; la prédiction portait
+  sur le corps, le premier relevé « après » sur la définition, d'où un faux écart, levé en mesurant
+  les deux sur la base locale. Sauvegarde 1 min, vérification par restauration 2 min.
 
 ## Les rendus
 

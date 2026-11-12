@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  OUTSIDE_MANDATE_NOTE,
+  outsideMandateNote,
   visitNextStep,
   type VisitNextStepInput,
 } from '@/features/buyer-presentation/services/visit-next-step';
@@ -175,5 +177,42 @@ describe('visitNextStep — une visite faite', () => {
 
   it('une visite faite sans compte rendu : aucune étape', () => {
     expect(visitNextStep({ ...base, done: true }).step).toBe('none');
+  });
+});
+
+describe('outsideMandateNote — pourquoi pas de bon de visite (Jean-Guy, 12/11)', () => {
+  it('une annonce du marché ou un concurrent pas encore à l’agence : la ligne grise', () => {
+    expect(outsideMandateNote('listing', visitNextStep(base))).toBe(OUTSIDE_MANDATE_NOTE);
+    expect(
+      outsideMandateNote(
+        'competitor',
+        visitNextStep({
+          ...base,
+          letterPrepared: true,
+          letterState: { kind: 'waiting', label: 'Contacté' },
+        }),
+      ),
+    ).toBe(OUTSIDE_MANDATE_NOTE);
+  });
+
+  it('rien pour un bien de l’agence, un dossier vendeur ou un propriétaire opposé', () => {
+    const collaboration = visitNextStep({
+      ...base,
+      letterPrepared: true,
+      letterState: { kind: 'done', label: 'Collaboration obtenue' },
+    });
+    expect(outsideMandateNote('listing', collaboration)).toBeNull();
+    expect(
+      outsideMandateNote(
+        'project',
+        visitNextStep({ ...base, action: { kind: 'call_seller', projectId: 'p-1' } }),
+      ),
+    ).toBeNull();
+    const closed = visitNextStep({
+      ...base,
+      letterPrepared: true,
+      letterState: { kind: 'closed', label: 'Ne plus solliciter' },
+    });
+    expect(outsideMandateNote('competitor', closed)).toBeNull();
   });
 });

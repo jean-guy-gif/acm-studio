@@ -1,7 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 
 import { btnSecondary } from '@/components/ui/styles';
 
@@ -49,6 +57,20 @@ export function isOutside(
   target: Node,
 ): boolean {
   return !container?.contains(target);
+}
+
+// Le décalage qui garde le menu ouvert dans la fenêtre, à 8 px des bords : ancré à droite de son
+// bouton, il sortait par la gauche quand le bouton passe à gauche d'une carte étroite (Prospection
+// sur téléphone, Jean-Guy, 12/11). Pur.
+export const MENU_MARGIN = 8;
+export function menuShift(
+  rect: { left: number; right: number },
+  viewportWidth: number,
+  margin: number = MENU_MARGIN,
+): number {
+  if (rect.left < margin) return margin - rect.left;
+  if (rect.right > viewportWidth - margin) return viewportWidth - margin - rect.right;
+  return 0;
 }
 
 const entry =
@@ -137,6 +159,14 @@ export function MoreMenu({
     document.addEventListener('mousedown', outside);
     return () => document.removeEventListener('mousedown', outside);
   }, [open]);
+  // Avant d'être peint, le menu ouvert est recalé dans la fenêtre.
+  useLayoutEffect(() => {
+    const panel = menu.current;
+    if (!open || !panel) return;
+    panel.style.translate = '';
+    const shift = menuShift(panel.getBoundingClientRect(), window.innerWidth);
+    if (shift !== 0) panel.style.translate = `${shift}px 0`;
+  }, [open]);
   const onMenuKey = (event: KeyboardEvent<HTMLDivElement>) => {
     const intent = menuKeyIntent(event.key);
     if (intent === 'close') {
@@ -189,7 +219,7 @@ export function MoreMenu({
           role="menu"
           aria-label={label}
           onKeyDown={onMenuKey}
-          className="absolute top-full right-0 z-40 mt-1.5 flex w-max max-w-80 min-w-56 flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg stage:border-white/10 stage:bg-[#0b2233]"
+          className="absolute top-full right-0 z-40 mt-1.5 flex w-max max-w-[min(20rem,calc(100vw-1rem))] min-w-56 flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg stage:border-white/10 stage:bg-[#0b2233]"
         >
           <MoreMenuEntries
             items={items}

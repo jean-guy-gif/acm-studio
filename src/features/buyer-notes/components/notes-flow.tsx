@@ -322,7 +322,8 @@ export function NotesFlow({
           <p className={hintText}>
             Vos notes sont lues par un service d’intelligence artificielle, qui propose une fiche :
             vous la vérifiez avant de l’enregistrer. La photo n’est pas gardée. Ne photographiez pas
-            d’information sur la santé, la religion ou la vie privée de vos clients.
+            d’information sur la santé, la religion ou la vie privée de vos clients : l’outil ne la
+            relève pas, mais elle serait envoyée.
           </p>
         </section>
         {children ? (

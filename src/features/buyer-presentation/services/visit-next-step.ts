@@ -192,3 +192,18 @@ export function visitNextStep(input: VisitNextStepInput): VisitNextStep {
   }
   return { agency, track: track(steps, 0), step: 'open_letter', links: links('open_letter') };
 }
+
+// Pourquoi ni bon de visite ni offre d'achat ne sont proposés sur un bien du marché (concurrent ou
+// annonce) qui n'est pas encore à l'agence : une ligne grise, sans bouton, tant que la fonction hors
+// mandat n'est pas ouverte (Jean-Guy, 12/11). Rien pour un bien de l'agence, un dossier vendeur, ni
+// un propriétaire qui ne veut plus être sollicité.
+export const OUTSIDE_MANDATE_NOTE =
+  'Pas de bon de visite ni d’offre d’achat ici pour l’instant : ce bien n’est pas sous mandat de l’agence. Ils viennent avec la collaboration du confrère ou un mandat rentré, sur sa carte de Prospection.';
+
+export function outsideMandateNote(
+  source: 'project' | 'competitor' | 'listing',
+  next: Pick<VisitNextStep, 'agency' | 'step'>,
+): string | null {
+  if (source === 'project' || next.agency || next.step === 'closed') return null;
+  return OUTSIDE_MANDATE_NOTE;
+}

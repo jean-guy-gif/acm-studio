@@ -8,6 +8,7 @@ import {
   MoreMenuEntries,
   isOutside,
   menuKeyIntent,
+  menuShift,
   nextMenuIndex,
 } from '@/components/ui/more-menu';
 import { btnPrimary } from '@/components/ui/styles';
@@ -305,5 +306,17 @@ describe('L’accueil du Live (C8)', () => {
   it('le bandeau ne répète pas le nom sur l’accueil d’une agence sans logo', () => {
     const shell = read('src/features/live-seller/components/live-comparative-shell.tsx');
     expect(shell).toContain('isIntro && !hasAgencyLogo ? null');
+  });
+});
+
+describe('le menu « … » reste dans la fenêtre (Prospection sur téléphone, 12/11)', () => {
+  it('sorti à gauche : décalé vers la droite, à 8 px du bord', () => {
+    expect(menuShift({ left: -150, right: 90 }, 390)).toBe(158);
+  });
+  it('sorti à droite : décalé vers la gauche', () => {
+    expect(menuShift({ left: 200, right: 420 }, 390)).toBe(-38);
+  });
+  it('dans la fenêtre : rien ne bouge', () => {
+    expect(menuShift({ left: 20, right: 300 }, 390)).toBe(0);
   });
 });
