@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { DEMO_NOTES_OUTPUT } from '@/features/demo/data/notes-arnaud';
 import { guardProposal, proposedFieldNames } from '@/features/buyer-notes/services/guard-proposal';
+import {
+  NOTE_OUTPUT_SCHEMA,
+  NOTE_READING_INSTRUCTIONS,
+} from '@/features/buyer-notes/model-request';
+import { QUICK_STAR_CRITERIA } from '@/features/buyers/schemas/buyer-input';
 
 // Mission 151 — les gardes du serveur, sur les défauts mesurés le 12/11 (plan B, Sonnet 4.6).
 
@@ -172,5 +177,37 @@ describe('guardProposal', () => {
     expect(names).toContain('must_have:outdoor');
     expect(names).toContain('soft:calme');
     expect(names.join(' ')).not.toMatch(/Arnaud|750|samedi/);
+  });
+
+  // Mission 151 — une seule liste d'indispensables pour la lecture : la consigne, le schéma de la
+  // réponse, la garde et l'écran (dont le type vient de la même constante) disent les six mêmes.
+  // La copropriété n'en est pas : son ★ se pose dans le formulaire complet (A.4).
+  it('la consigne, le schéma et la garde ont la même liste de ★, sans la copropriété', () => {
+    expect([...QUICK_STAR_CRITERIA]).toEqual([
+      'cities',
+      'budget',
+      'outdoor',
+      'parking',
+      'pool',
+      'elevator',
+    ]);
+    const properties = NOTE_OUTPUT_SCHEMA.properties as Record<
+      string,
+      { items?: { enum?: unknown } }
+    >;
+    expect(properties.must_have?.items?.enum).toEqual([...QUICK_STAR_CRITERIA]);
+    expect(NOTE_READING_INSTRUCTIONS).toContain(`parmi : ${QUICK_STAR_CRITERIA.join(', ')}`);
+    const proposal = guardProposal({
+      ...empty,
+      condominium_accepted: false,
+      must_have: ['condominium', 'pool'],
+      sources: [
+        { field: 'condominium_accepted', quote: 'PAS de copropriété' },
+        { field: 'must_have:condominium', quote: 'PAS de copropriété' },
+        { field: 'must_have:pool', quote: 'piscine OBLIGATOIRE' },
+      ],
+    });
+    expect(proposal.mustHave.map((star) => star.key)).toEqual(['pool']);
+    expect(proposal.values.condominiumAccepted).toBe(false);
   });
 });
