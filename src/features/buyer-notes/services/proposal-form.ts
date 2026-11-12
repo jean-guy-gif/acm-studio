@@ -128,76 +128,62 @@ export type ProposalChoices = {
   typedCities?: string;
 };
 
-// Le formulaire envoyé : la fiche d'avant, et par-dessus les champs retenus.
+// Le formulaire envoyé : les SEULS champs retenus. Sur une fiche existante, le serveur les pose sur
+// la fiche lue en base au moment d'enregistrer et n'écrit qu'eux (décision de Jean-Guy, 12/11) :
+// rien de ce que la fiche sait déjà ne repart, donc rien de ce qu'un collègue y change ne s'écrase.
 export function proposalForm(
   proposal: Omit<NoteProposal, 'communes'>,
   existing: ExistingBuyer | null,
   choices: ProposalChoices,
 ): { fields: Record<string, string | string[]>; toVerify: string[] } {
   const fields: Record<string, string | string[]> = {};
-  if (existing) {
-    for (const field of NOTE_FIELDS) {
-      const before = existingValue(existing, field);
-      if (!isEmpty(before)) fields[NOTE_FORM_FIELDS[field]] = toForm(before);
-    }
-    fields.must_have = existing.mustHave.map(String);
-    if (existing.dealBreakers) fields.deal_breakers = existing.dealBreakers;
-    if (existing.condominiumMustHave) fields.condominium_must_have = 'yes';
-  }
   const toVerify: string[] = [];
   for (const field of NOTE_FIELDS) {
     const proposed = proposal.values[field];
     if (proposed === undefined || !choices.kept.has(field)) continue;
-    fields[NOTE_FORM_FIELDS[field]] = toForm(proposed);
+    // Les communes partent en une valeur, comme le formulaire de la fiche (« Vence, Biot »).
+    fields[NOTE_FORM_FIELDS[field]] =
+      field === 'cities' ? (proposed as string[]).join(', ') : toForm(proposed);
     toVerify.push(NOTE_FORM_FIELDS[field]);
   }
-  if (!fields.name && choices.typedName?.trim()) fields.name = choices.typedName.trim();
-  // Les communes tapées par le conseiller (non lues, ou lues mais non reconnues) s'ajoutent.
+  if (!existing && !fields.name && choices.typedName?.trim())
+    fields.name = choices.typedName.trim();
+  // Les communes tapées par le conseiller : le serveur les ajoute à celles de la fiche ou lues.
   const typed = (choices.typedCities ?? '')
     .split(',')
     .map((city) => city.trim())
     .filter(Boolean);
-  if (typed.length > 0) {
-    const known = Array.isArray(fields.cities)
-      ? fields.cities
-      : fields.cities
-        ? [fields.cities]
-        : [];
-    fields.cities = [...new Set([...known, ...typed])];
-  }
+  if (typed.length > 0) fields.cities_add = [...new Set(typed)];
   if (choices.starsKept && proposal.mustHave.length > 0) {
-    const stars = new Set([
-      ...((fields.must_have as string[] | undefined) ?? []),
-      ...proposal.mustHave.map((star) => star.key),
-    ]);
-    fields.must_have = [...stars];
     // Un ★ sur un équipement le met à « oui » (M132) — sauf sur une fiche existante qui dit
     // autre chose et dont la carte n'est pas cochée : ce ★ ne s'ajoute pas (A.8, rien sans coche).
-    const blocked = new Set<string>();
+    const stars: string[] = [];
     for (const star of proposal.mustHave) {
-      if (!['outdoor', 'parking', 'pool', 'elevator'].includes(star.key)) continue;
-      const field = star.key as 'outdoor' | 'parking' | 'pool' | 'elevator';
-      if (
-        existing &&
-        existing[field] != null &&
-        existing[field] !== true &&
-        !choices.kept.has(field)
-      ) {
-        blocked.add(star.key);
-        continue;
+      if (['outdoor', 'parking', 'pool', 'elevator'].includes(star.key)) {
+        const field = star.key as 'outdoor' | 'parking' | 'pool' | 'elevator';
+        if (
+          existing &&
+          existing[field] != null &&
+          existing[field] !== true &&
+          !choices.kept.has(field)
+        ) {
+          continue;
+        }
+        fields[star.key] = 'yes';
       }
-      fields[star.key] = 'yes';
+      stars.push(star.key);
     }
-    fields.must_have = [...stars].filter((star) => !blocked.has(star));
-    toVerify.push('must_have');
+    if (stars.length > 0) {
+      // En création, les ★ ; sur une fiche existante, le serveur les ajoute aux siens.
+      fields.must_have = stars;
+      toVerify.push('must_have');
+    }
   }
   if (choices.softKept && proposal.softCriteria.length > 0) {
-    const merged = new Map((existing?.softCriteria ?? []).map((soft) => [soft.key, soft.words]));
-    for (const soft of proposal.softCriteria) merged.set(soft.key, soft.words);
-    fields.soft_criteria = JSON.stringify([...merged].map(([key, words]) => ({ key, words })));
+    fields.soft_criteria = JSON.stringify(
+      proposal.softCriteria.map((soft) => ({ key: soft.key, words: soft.words })),
+    );
     toVerify.push('soft_criteria');
-  } else if (existing && existing.softCriteria.length > 0) {
-    fields.soft_criteria = JSON.stringify(existing.softCriteria);
   }
   const financing =
     proposal.financing ?? (proposal.cashSuggestion && choices.cashValidated ? 'validated' : null);

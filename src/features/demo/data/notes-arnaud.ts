@@ -4,6 +4,11 @@
 // et « M. très pressé » ne sont pas relevés). Tout est inventé : 06 39 98 (plage que l'ARCEP
 // réserve à la fiction), aucune adresse.
 
+// La photo inventée de ces notes (décision de Jean-Guy, 12/11), dessinée par le générateur des
+// maquettes (`node missions/maquettes/M151-generateur.mjs --photo-notes`) : proposée en premier ;
+// « Coller un texte » reste le second choix.
+export const DEMO_NOTES_PHOTO = '/demo/notes-arnaud.jpg';
+
 export const DEMO_NOTES_TEXT = [
   'ARNAUD (M. et Mme)  06 39 98 27 14',
   'Maison 4-5 p — 3 ch mini',

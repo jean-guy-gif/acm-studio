@@ -8,7 +8,11 @@ import {
   readBuyerFormData,
   type BuyerFormErrors,
 } from '@/features/buyers/schemas/buyer-input';
-import { buyerColumns, sanitizeSoftCriteria } from '@/features/buyers/services/buyer-row';
+import { buyerColumns, sanitizeSoftCriteria, toBuyer } from '@/features/buyers/services/buyer-row';
+import {
+  buyerFormValues,
+  submittedFields,
+} from '@/features/buyer-notes/services/buyer-form-values';
 import { sanitizeBuyerFieldsToVerify } from '@/features/buyer-notes/services/fields-to-verify';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -43,47 +47,86 @@ function softCriteriaOf(value: FormDataEntryValue | null) {
 export async function saveBuyerFromNotes(formData: FormData): Promise<SaveFromNotesResult> {
   const profile = await getProfile();
   if (!profile || profile.removed_at) return { ok: false, error: NOT_CONNECTED };
-  const parsed = parseBuyerInput(readBuyerFormData(formData));
-  if (!parsed.ok) return { ok: false, error: parsed.error, errors: parsed.errors };
 
   const usageId =
     typeof formData.get('usage_id') === 'string' ? String(formData.get('usage_id')) : '';
   const buyerId =
     typeof formData.get('buyer_id') === 'string' ? String(formData.get('buyer_id')) : '';
-  const softCriteria = softCriteriaOf(formData.get('soft_criteria'));
+  const softSent = formData.has('soft_criteria');
+  const sentSoft = softCriteriaOf(formData.get('soft_criteria'));
   const financing = financingOf(formData.get('financing'));
   const toVerify = sanitizeBuyerFieldsToVerify(formData.getAll('fields_to_verify'));
+  // Les communes que le conseiller a tapées (non lues, ou lues mais non reconnues) s'ajoutent.
+  const citiesAdded = formData
+    .getAll('cities_add')
+    .filter((city): city is string => typeof city === 'string' && city.trim() !== '')
+    .map((city) => city.trim());
   const now = new Date().toISOString();
   const client = createServiceRoleClient();
-
-  const columns = {
-    ...buyerColumns({ ...parsed.input, softCriteria }),
-    ...(financing ? { financing, financing_changed_at: now } : {}),
-  };
+  const sent = readBuyerFormData(formData);
+  const withCities = (cities: unknown): string[] => [
+    ...new Set([
+      ...(Array.isArray(cities) ? cities.map(String) : cities ? [String(cities)] : []),
+      ...citiesAdded,
+    ]),
+  ];
 
   let savedId: string;
   if (buyerId) {
-    const { data: existing, error: readError } = await client
+    // « Compléter » : la fiche lue EN BASE maintenant, et par-dessus les seuls champs envoyés ;
+    // seules ces colonnes s'écrivent. Ce qu'un collègue a changé entre-temps reste (Jean-Guy, 12/11).
+    const { data: row, error: readError } = await client
       .from('buyers')
-      .select('id, fields_to_verify')
+      .select('*')
       .eq('id', buyerId)
       .eq('agency_id', profile.agency_id)
       .is('archived_at', null)
       .maybeSingle();
-    if (readError || !existing) return { ok: false, error: NOT_FOUND };
-    const merged = sanitizeBuyerFieldsToVerify([...(existing.fields_to_verify ?? []), ...toVerify]);
+    if (readError || !row) return { ok: false, error: NOT_FOUND };
+    const current = toBuyer(row);
+    const fields = submittedFields(formData);
+    const merged: Record<string, unknown> = { ...buyerFormValues(current) };
+    for (const field of fields) merged[field] = sent[field];
+    if (fields.includes('must_have')) {
+      merged.must_have = [...new Set([...current.mustHave, ...(sent.must_have as string[])])];
+    }
+    if (citiesAdded.length > 0) merged.cities = withCities(merged.cities);
+    const parsed = parseBuyerInput(merged);
+    if (!parsed.ok) return { ok: false, error: parsed.error, errors: parsed.errors };
+    const soft = new Map(current.softCriteria.map((item) => [item.key, item.words]));
+    for (const item of sentSoft) soft.set(item.key, item.words);
+    const all: Record<string, unknown> = buyerColumns({
+      ...parsed.input,
+      softCriteria: [...soft].map(([key, words]) => ({ key, words })),
+    });
+    const written = [
+      ...fields,
+      ...(citiesAdded.length > 0 ? ['cities'] : []),
+      ...(softSent ? ['soft_criteria'] : []),
+    ];
+    const columns = Object.fromEntries(
+      Object.entries(all).filter(([column]) => written.includes(column)),
+    );
     const { error } = await client
       .from('buyers')
-      .update({ ...columns, fields_to_verify: merged, updated_at: now })
+      .update({
+        ...columns,
+        ...(financing ? { financing, financing_changed_at: now } : {}),
+        fields_to_verify: sanitizeBuyerFieldsToVerify([...current.fieldsToVerify, ...toVerify]),
+        updated_at: now,
+      })
       .eq('id', buyerId)
       .eq('agency_id', profile.agency_id);
     if (error) return { ok: false, error: NOT_SAVED };
     savedId = buyerId;
   } else {
+    const parsed = parseBuyerInput({ ...sent, cities: withCities(sent.cities) });
+    if (!parsed.ok) return { ok: false, error: parsed.error, errors: parsed.errors };
     const { data, error } = await client
       .from('buyers')
       .insert({
-        ...columns,
+        ...buyerColumns({ ...parsed.input, softCriteria: sentSoft }),
+        ...(financing ? { financing, financing_changed_at: now } : {}),
         fields_to_verify: toVerify,
         agency_id: profile.agency_id,
         advisor_id: profile.id,

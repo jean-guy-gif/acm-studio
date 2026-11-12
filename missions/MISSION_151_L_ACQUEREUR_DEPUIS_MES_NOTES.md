@@ -180,6 +180,10 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
 8. **Valider.** « Créer la fiche » (le seul plein, M146) ; « Recommencer la lecture » ; « Annuler »,
    qui n'écrit rien. Sur une fiche existante, une valeur différente se lit « 650 000 € → 750 000 € »,
    **décochée** par défaut ; un champ vide proposé est coché (Jean-Guy, 10/11).
+   **« Compléter » n'écrit que les champs que le conseiller vient de valider**, jamais la fiche
+   entière : le serveur relit la fiche en base au moment d'enregistrer et n'y pose que ce qui est
+   coché ; une modification faite par un collègue pendant la vérification n'est pas écrasée, un test
+   le prouve (Jean-Guy, 12/11).
 9. **Le financement** n'est proposé que si les notes le disent clairement (« accord banque OK »),
    toujours « À vérifier », et ne s'écrit que par son action (M132), appelée par « Créer la fiche »
    (Jean-Guy, 10/11). **Un achat comptant** (« cash », « sans prêt ») est une suggestion à l'écran,
@@ -191,9 +195,13 @@ l'acquéreur (M. et Mme Arnaud) sont inventés. **Validées par Jean-Guy le 10/1
     lu par le manager (Jean-Guy, 10/11) ; atteint : « Budget de lecture du mois atteint : saisissez
     la fiche à la main. » ; illisible n'est pas libre (M100).
 11. **La trace** (CLAUDE.md : « ses sorties sont tracées ») : la date, l'auteur, le modèle, le coût,
-    la source (photo, fichier, texte — jamais son contenu), les champs proposés et ceux gardés ;
-    partie avec la fiche.
-12. **Démo** (M114) : aucune lecture réelle ; une photo de notes inventées proposée d'avance, la
+    la source (photo, fichier, texte — jamais son contenu), les champs proposés et ceux gardés.
+    **Elle reste à l'agence après la suppression de la fiche**, sans lien vers la fiche ni aucune
+    donnée qui permette de retrouver l'acquéreur (le lien vers la fiche se vide ; seuls des noms de
+    champs, jamais leurs valeurs), sans migration de plus (Jean-Guy, 12/11 ; remplace « partie avec
+    la fiche »).
+12. **Démo** (M114) : aucune lecture réelle ; une photo de notes inventées proposée en premier,
+    comme sur la planche 1, « Coller un texte » prérempli en second choix (Jean-Guy, 12/11), la
     lecture simulée répond après 1,5 s, par les mêmes services ; un dixième acquéreur, « M. et Mme
     Arnaud », à Vence.
 

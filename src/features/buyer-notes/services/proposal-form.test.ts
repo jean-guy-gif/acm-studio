@@ -61,7 +61,7 @@ describe('la fiche proposée (planche 2)', () => {
       name: 'M. et Mme Arnaud',
       phone: '06 39 98 27 14',
       property_types: ['house'],
-      cities: ['Vence', 'Saint-Paul-de-Vence', 'Tourrettes-sur-Loup'],
+      cities: 'Vence, Saint-Paul-de-Vence, Tourrettes-sur-Loup',
       budget_max: '750000',
       budget_ideal: '700000',
       outdoor: 'yes',
@@ -91,25 +91,15 @@ describe('la fiche proposée (planche 2)', () => {
     expect(line('name')).toMatchObject({ changes: false, checkedByDefault: false });
   });
 
-  it('sur une fiche existante, rien ne change sans coche ; ce qu’elle sait déjà reste', () => {
+  it('sur une fiche existante, seuls les champs cochés partent ; rien de ce qu’elle sait déjà', () => {
     const { fields, toVerify } = proposalForm(proposal, existing, {
       kept: new Set<NoteField>(['phone']),
       starsKept: false,
       softKept: false,
       cashValidated: false,
     });
-    expect(fields).toMatchObject({
-      name: 'M. et Mme Arnaud',
-      email: 'arnaud@example.com',
-      phone: '06 39 98 27 14',
-      budget_max: '650000',
-      surface_min: '120',
-      must_have: ['pool'],
-      deal_breakers: 'pas de lotissement',
-      soft_criteria: JSON.stringify([{ key: 'vue', words: 'une vue' }]),
-    });
+    expect(fields).toEqual({ phone: '06 39 98 27 14' });
     expect(toVerify).toEqual(['phone']);
-    expect(fields.financing).toBeUndefined();
   });
 
   it('sur une fiche existante, le financement lu ne remplace rien sans coche (A.8)', () => {
@@ -133,8 +123,8 @@ describe('la fiche proposée (planche 2)', () => {
       softKept: false,
       cashValidated: false,
     });
-    expect(without.fields.outdoor).toBe('no');
-    expect(without.fields.must_have).toEqual([]);
+    expect(without.fields.outdoor).toBeUndefined();
+    expect(without.fields.must_have).toBeUndefined();
     const withCard = proposalForm(proposal, refusing, {
       kept: new Set<NoteField>(['outdoor']),
       starsKept: true,
@@ -145,17 +135,19 @@ describe('la fiche proposée (planche 2)', () => {
     expect(withCard.fields.must_have).toEqual(['outdoor']);
   });
 
-  it('sur une fiche existante, les mots déjà notés restent tant que la case n’est pas cochée', () => {
-    const { fields } = proposalForm(proposal, existing, {
-      kept: new Set<NoteField>(),
-      starsKept: false,
-      softKept: false,
-      cashValidated: false,
-    });
-    expect(fields.soft_criteria).toBe(JSON.stringify([{ key: 'vue', words: 'une vue' }]));
+  it('sur une fiche existante, les mots lus ne partent qu’avec leur case', () => {
+    const base = { kept: new Set<NoteField>(), starsKept: false, cashValidated: false };
+    expect(
+      proposalForm(proposal, existing, { ...base, softKept: false }).fields.soft_criteria,
+    ).toBeUndefined();
+    expect(
+      JSON.parse(
+        String(proposalForm(proposal, existing, { ...base, softKept: true }).fields.soft_criteria),
+      ),
+    ).toHaveLength(5);
   });
 
-  it('une commune non reconnue, tapée par le conseiller, s’ajoute aux communes lues', () => {
+  it('une commune non reconnue, tapée par le conseiller, part à part : le serveur l’ajoute', () => {
     const { fields } = proposalForm(proposal, null, {
       kept: allKept,
       starsKept: true,
@@ -163,12 +155,8 @@ describe('la fiche proposée (planche 2)', () => {
       cashValidated: false,
       typedCities: 'Cagnes-sur-Mer, Vence',
     });
-    expect(fields.cities).toEqual([
-      'Vence',
-      'Saint-Paul-de-Vence',
-      'Tourrettes-sur-Loup',
-      'Cagnes-sur-Mer',
-    ]);
+    expect(fields.cities).toBe('Vence, Saint-Paul-de-Vence, Tourrettes-sur-Loup');
+    expect(fields.cities_add).toEqual(['Cagnes-sur-Mer', 'Vence']);
   });
 
   it('« Comptant, à vérifier » ne devient « Validé » que par le geste du conseiller', () => {
@@ -197,7 +185,7 @@ describe('la fiche proposée (planche 2)', () => {
       typedCities: 'Vence',
     });
     expect(fields.name).toBe('Famille Test');
-    expect(fields.cities).toEqual(['Vence']);
+    expect(fields.cities_add).toEqual(['Vence']);
   });
 
   it('les cartes suivent la planche : budget et pièces regroupés, la ligne des notes dessous', () => {

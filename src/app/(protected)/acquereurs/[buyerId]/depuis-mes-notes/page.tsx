@@ -6,7 +6,7 @@ import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/
 import { NotesFlow } from '@/features/buyer-notes/components/notes-flow';
 import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
-import { DEMO_NOTES_TEXT } from '@/features/demo/data/notes-arnaud';
+import { DEMO_NOTES_PHOTO, DEMO_NOTES_TEXT } from '@/features/demo/data/notes-arnaud';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -37,7 +37,10 @@ export default async function CompleteFromNotesPage({
           Ce que vos notes ajoutent à sa fiche : vous choisissez ce qui change.
         </p>
       </div>
-      <NotesFlow existing={buyer} demoText={isDemo ? DEMO_NOTES_TEXT : null} />
+      <NotesFlow
+        existing={buyer}
+        demo={isDemo ? { text: DEMO_NOTES_TEXT, photo: DEMO_NOTES_PHOTO } : null}
+      />
     </div>
   );
 }

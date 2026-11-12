@@ -188,6 +188,7 @@ describe('saveBuyerFromNotes', () => {
     form.set('name', 'M. et Mme Arnaud');
     form.set('phone', '06 39 98 27 14');
     form.set('cities', 'Vence, Saint-Paul-de-Vence');
+    form.append('cities_add', 'Tourrettes-sur-Loup');
     form.append('property_types', 'house');
     form.set('budget_max', '750000');
     form.set('outdoor', 'yes');
@@ -221,7 +222,7 @@ describe('saveBuyerFromNotes', () => {
     >;
     expect(insert).toMatchObject({
       name: 'M. et Mme Arnaud',
-      cities: ['Vence', 'Saint-Paul-de-Vence'],
+      cities: ['Vence', 'Saint-Paul-de-Vence', 'Tourrettes-sur-Loup'],
       budget_max: 750000,
       must_have: ['outdoor'],
       financing: 'validated',
@@ -251,31 +252,94 @@ describe('saveBuyerFromNotes', () => {
     );
   });
 
-  it('« Compléter » : la fiche de l’agence est mise à jour, ses pastilles s’ajoutent', async () => {
-    const form = proposalForm();
+  it('« Compléter » n’écrit que les champs validés : la modification d’un collègue reste', async () => {
+    // La fiche telle qu'elle est EN BASE au moment d'enregistrer : un collègue vient d'y changer
+    // l'e-mail et les notes pendant que le conseiller vérifiait la proposition.
+    const row = {
+      id: 'b-1',
+      agency_id: 'agency-a',
+      advisor_id: 'u2',
+      created_at: '2026-11-01T09:00:00Z',
+      updated_at: '2026-11-12T10:05:00Z',
+      archived_at: null,
+      status: 'searching',
+      status_changed_at: '2026-11-01T09:00:00Z',
+      demo: false,
+      ignored_suggestions: [],
+      financing: 'unknown',
+      financing_changed_at: null,
+      contacted_at: null,
+      language: 'fr',
+      name: 'M. et Mme Arnaud',
+      phone: null,
+      email: 'nouvel.email@example.com',
+      purpose: null,
+      timeline: null,
+      notes: 'Changé par un collègue à 10 h 05',
+      property_types: ['house'],
+      cities: ['Vence'],
+      budget_ideal: null,
+      budget_max: 650000,
+      rooms_min: null,
+      bedrooms_min: null,
+      surface_min: '120.00',
+      outdoor: null,
+      parking: null,
+      pool: true,
+      floor_min: null,
+      elevator: null,
+      energy_rating_max: null,
+      works_accepted: null,
+      must_have: ['pool'],
+      deal_breakers: null,
+      condominium_accepted: null,
+      condominium_must_have: false,
+      soft_criteria: [{ key: 'vue', words: 'une vue' }],
+      fields_to_verify: ['email'],
+    };
+    state.respond = (calls) => (calls.at(-1)?.method === 'maybeSingle' ? { data: row } : {});
+    // L'écran n'envoie que ce que le conseiller a coché : le téléphone, une ★ et un critère doux.
+    const form = new FormData();
     form.set('buyer_id', 'b-1');
-    state.respond = (calls) =>
-      calls.at(-1)?.method === 'maybeSingle'
-        ? { data: { id: 'b-1', fields_to_verify: ['email'] } }
-        : {};
+    form.set('usage_id', 'usage-1');
+    form.set('phone', '06 39 98 27 14');
+    form.set('outdoor', 'yes');
+    form.append('must_have', 'outdoor');
+    form.set('soft_criteria', JSON.stringify([{ key: 'calme', words: 'AU CALME' }]));
+    for (const name of ['phone', 'must_have', 'soft_criteria'])
+      form.append('fields_to_verify', name);
     expect(await saveBuyerFromNotes(form)).toEqual({ ok: true, buyerId: 'b-1' });
-    expect(fake.writes()).toEqual(['update buyers', 'update ai_usage']);
     const update = fake.calls.find((call) => call.method === 'update')?.args[0] as Record<
       string,
       unknown
     >;
-    expect(update.fields_to_verify).toEqual(['email', 'name', 'cities', 'budget_max']);
-    expect(
-      fake.calls.find(
-        (call) =>
-          call.method === 'update' && call !== fake.calls.find((c) => c.method === 'update'),
-      )?.args[0],
-    ).toMatchObject({ outcome: 'completed' });
+    expect(Object.keys(update).sort()).toEqual([
+      'fields_to_verify',
+      'must_have',
+      'outdoor',
+      'phone',
+      'soft_criteria',
+      'updated_at',
+    ]);
+    expect(update).toMatchObject({
+      phone: '06 39 98 27 14',
+      outdoor: true,
+      must_have: ['pool', 'outdoor'],
+      soft_criteria: [
+        { key: 'vue', words: 'une vue' },
+        { key: 'calme', words: 'AU CALME' },
+      ],
+      fields_to_verify: ['email', 'phone', 'must_have', 'soft_criteria'],
+    });
+    // Ni l'e-mail ni les notes du collègue ne sont réécrits.
+    expect(update).not.toHaveProperty('email');
+    expect(update).not.toHaveProperty('notes');
   });
 
   it('refuse une fiche invalide sans rien écrire', async () => {
     const form = proposalForm();
     form.set('cities', '');
+    form.delete('cities_add');
     const result = await saveBuyerFromNotes(form);
     expect(result.ok).toBe(false);
     expect(fake.writes()).toEqual([]);

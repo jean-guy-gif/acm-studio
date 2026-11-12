@@ -71,7 +71,7 @@ function VerifyPill() {
 
 export function NotesFlow({
   existing,
-  demoText,
+  demo,
   children,
 }: {
   // La saisie rapide (M132), dessous, tant que rien n'est en lecture ni en vérification : un seul
@@ -79,13 +79,14 @@ export function NotesFlow({
   children?: ReactNode;
   // Une fiche à compléter, ou null pour une fiche neuve.
   existing: ExistingBuyer | null;
-  // L'agence de démonstration : un texte de notes inventé, proposé d'avance (M114).
-  demoText: string | null;
+  // L'agence de démonstration (M114) : la photo inventée des notes, proposée en premier, et leur
+  // texte, d'avance dans « Coller un texte ».
+  demo: { text: string; photo: string } | null;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('intake');
   const [error, setError] = useState<string | null>(null);
-  const [text, setText] = useState(demoText ?? '');
+  const [text, setText] = useState(demo?.text ?? '');
   const [prepared, setPrepared] = useState<Extract<PreparedNotes, { ok: true }> | null>(null);
   const [preview, setPreview] = useState<{ urls: string[]; text: string | null }>({
     urls: [],
@@ -150,6 +151,23 @@ export function NotesFlow({
     await read(notes);
   }
 
+  // La photo de la démo passe par la même préparation qu'une photo prise au téléphone.
+  async function onDemoPhoto() {
+    if (!demo) return;
+    setError(null);
+    try {
+      const response = await fetch(demo.photo);
+      if (!response.ok) throw new Error('photo');
+      const blob = await response.blob();
+      const file = new File([blob], 'notes.jpg', { type: blob.type || 'image/jpeg' });
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      await onFiles('photo', transfer.files);
+    } catch {
+      setError(NOTE_READING_MESSAGES.unsupported_file);
+    }
+  }
+
   async function onText() {
     const notes = { ok: true as const, kind: 'text' as const, text: text.trim(), images: [] };
     if (!notes.text) {
@@ -212,6 +230,26 @@ export function NotesFlow({
               vous la vérifiez.
             </p>
           </div>
+          {demo ? (
+            <div
+              className="flex items-center gap-4 rounded-xl border border-zinc-200 p-3"
+              data-testid="notes-demo-photo"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- une image du dépôt, telle quelle */}
+              <img
+                src={demo.photo}
+                alt="Photo des notes de M. et Mme Arnaud"
+                className="h-20 w-auto rounded-md border border-zinc-200"
+              />
+              <div className="flex flex-1 flex-col gap-1">
+                <b className="text-sm">Les notes de M. et Mme Arnaud</b>
+                <span className="text-xs text-zinc-500">Une photo prise après leur appel</span>
+              </div>
+              <button type="button" className={btnSecondary} onClick={() => void onDemoPhoto()}>
+                Lire cette photo
+              </button>
+            </div>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-3">
             <button
               type="button"

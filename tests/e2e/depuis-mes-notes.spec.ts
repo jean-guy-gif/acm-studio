@@ -10,7 +10,7 @@ import {
 
 // Mission 151 (partie A) — « Depuis mes notes » (planches 1 et 2, validées par Jean-Guy les 10 et
 // 12/11), sur l'URL d'essai avec le compte de l'agence de démonstration : la lecture y est simulée
-// (M114), aucun appel au vrai modèle. De la note à la fiche ; la confirmation avant de quitter, sur
+// (M114), aucun appel au vrai modèle. De la photo inventée des notes à la fiche ; la confirmation avant de quitter, sur
 // un lien et sur « Annuler » ; la fiche créée porte « À vérifier » et « Ce qui compte pour eux » ;
 // aucune ligne des notes montrée à la validation n'est écrite en base (lu en lecture seule).
 
@@ -37,9 +37,12 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(intake).toContainText('Déposer un fichier');
     await expect(page.getByText('ou saisissez-le en 30 secondes')).toBeVisible();
     await expectOneFilled(page, 'Nouvel acquéreur');
+    // La photo inventée des notes, en premier ; « Coller un texte », prérempli, en second.
     await intake.getByRole('button', { name: /Coller un texte/ }).click();
     await expect(page.getByTestId('notes-text')).not.toHaveValue('');
-    await intake.getByRole('button', { name: 'Lire ce texte' }).click();
+    const photo = page.getByTestId('notes-demo-photo');
+    await expect(photo.getByRole('img')).toHaveJSProperty('complete', true);
+    await photo.getByRole('button', { name: 'Lire cette photo' }).click();
     await expect(page.getByTestId('notes-reading')).toContainText('Lecture de vos notes…');
   });
 
@@ -60,7 +63,11 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(page.getByTestId('proposal-skipped')).toHaveText(
       '2 mentions personnelles n’ont pas été relevées.',
     );
-    await expect(proposal).not.toContainText(/enceinte|pressé|difficile/i);
+    // Les notes collées restent montrées à gauche (planche 2) ; aucune carte proposée ne les reprend.
+    const fieldSections = proposal.locator('section');
+    for (let index = 0; index < (await fieldSections.count()); index += 1) {
+      await expect(fieldSections.nth(index)).not.toContainText(/enceinte|pressé|difficile/i);
+    }
     await expectOneFilled(page, 'La fiche proposée');
     await expectNoHorizontalScroll(page, 'La fiche proposée');
   });
@@ -86,6 +93,10 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\?enregistre=1/, { timeout: 20_000 });
     buyerId = /\/acquereurs\/([0-9a-f-]{36})/.exec(page.url())![1];
     await expect(page.getByTestId('buyer-name')).toHaveText('M. et Mme Arnaud');
+    // Les trois communes des notes, vérifiées sur la liste officielle, sont toutes écrites.
+    for (const city of ['Vence', 'Saint-Paul-de-Vence', 'Tourrettes-sur-Loup']) {
+      await expect(page.getByText(city).first(), city).toBeVisible();
+    }
     await expect(page.getByTestId('buyer-to-verify')).toContainText(/À vérifier · \d+/);
     await expect(page.getByTestId('buyer-soft-criteria')).toContainText('Au calme');
     await expect(page.getByTestId('buyer-soft-criteria')).toContainText(
