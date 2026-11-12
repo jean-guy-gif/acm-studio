@@ -8,7 +8,7 @@ import { getAgencyCities } from '@/features/buyers/queries/get-agency-cities';
 import { criteriaToBuyerDraft } from '@/features/buyers/services/buyer-criteria';
 import { NotesFlow } from '@/features/buyer-notes/components/notes-flow';
 import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
-import { DEMO_NOTES_TEXT } from '@/features/demo/data/notes-arnaud';
+import { DEMO_NOTES_PHOTO, DEMO_NOTES_TEXT } from '@/features/demo/data/notes-arnaud';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -72,7 +72,10 @@ export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) 
         <BuyerForm buyer={null} draft={draft} />
       ) : readingOpen ? (
         // Mission 151 — « Depuis mes notes » en tête (planche 1), la saisie rapide dessous.
-        <NotesFlow existing={null} demoText={isDemo ? DEMO_NOTES_TEXT : null}>
+        <NotesFlow
+          existing={null}
+          demo={isDemo ? { text: DEMO_NOTES_TEXT, photo: DEMO_NOTES_PHOTO } : null}
+        >
           <BuyerQuickForm cities={await getAgencyCities()} />
         </NotesFlow>
       ) : (

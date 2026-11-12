@@ -615,3 +615,25 @@ if (process.argv.includes('--png')) {
   await browser.close();
 }
 console.log(`${Object.keys(SHEETS).length} planches écrites`);
+
+// Mission 151 — `--photo-notes` : la photo inventée des notes de M. et Mme Arnaud pour l'agence de
+// démonstration (décision de Jean-Guy, 12/11), le même dessin que la planche 1, en JPEG, rangée
+// avec les photos de la démo. Tout est inventé ; aucune écriture réelle n'est photographiée.
+if (process.argv.includes('--photo-notes')) {
+  const { chromium } = await import(
+    pathToFileURL(join(here, '../../node_modules/playwright/index.mjs')).href
+  );
+  const browser = await chromium.launch();
+  const tab = await browser.newPage({ viewport: { width: 900, height: 1200 }, deviceScaleFactor: 2 });
+  await tab.setContent(
+    `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>${css}</style></head><body>${notesPhoto('l')}</body></html>`,
+  );
+  await tab.evaluate(() => document.fonts.ready);
+  await tab.locator('.photo').first().screenshot({
+    path: join(here, '../../public/demo/notes-arnaud.jpg'),
+    type: 'jpeg',
+    quality: 82,
+  });
+  await browser.close();
+  console.log('photo des notes écrite : public/demo/notes-arnaud.jpg');
+}
