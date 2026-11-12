@@ -236,3 +236,42 @@ describe('reconcileBuyer — trois groupes, puis « proches mais hors critères 
     expect(none.composition.byType.some((entry) => entry.type === 'land')).toBe(false);
   });
 });
+
+// Mission 151 — la copropriété au rapprochement : seule la fiche d'un mandat la dit.
+describe('la copropriété', () => {
+  const signed = [dossier('copro', { outcome: 'signed' }), dossier('libre', { outcome: 'signed' })];
+  const known = new Map([
+    ['copro', true],
+    ['libre', false],
+  ]);
+  const noCondo: BuyerCriteria = { ...BUYER, condominiumAccepted: false };
+
+  it('★ : un mandat en copropriété connue passe dans « proches », avec l’écart', () => {
+    const result = reconcileBuyer(
+      { ...noCondo, condominiumMustHave: true },
+      buyerCandidates(signed, [], known),
+    );
+    expect(keys(result.matches.mandate)).toEqual(['dossier:libre']);
+    expect(result.near.map((hit) => hit.gaps)).toEqual([['En copropriété']]);
+  });
+
+  it('sans ★ : il correspond, et la carte le dit', () => {
+    const result = reconcileBuyer(noCondo, buyerCandidates(signed, [], known));
+    expect(result.matchCount).toBe(2);
+    const note = (key: string) =>
+      result.matches.mandate.find((hit) => hit.candidate.key === key)?.condominiumNote;
+    expect(note('dossier:copro')).toBe('En copropriété');
+    expect(note('dossier:libre')).toBeNull();
+  });
+
+  it('inconnue : jamais écartée, « Copropriété : à vérifier » ; sans critère, rien n’est dit', () => {
+    const result = reconcileBuyer(
+      { ...noCondo, condominiumMustHave: true },
+      buyerCandidates([dossier('inconnu', { outcome: 'signed' })], []),
+    );
+    expect(result.matchCount).toBe(1);
+    expect(result.matches.mandate[0]?.condominiumNote).toBe('Copropriété : à vérifier');
+    const open = reconcileBuyer(BUYER, buyerCandidates(signed, [], known));
+    expect(open.matches.mandate.map((hit) => hit.condominiumNote)).toEqual([null, null]);
+  });
+});

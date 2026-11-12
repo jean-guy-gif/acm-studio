@@ -89,6 +89,11 @@ export type CandidateFeatures = {
   condition: string | null; // vocabulaire general_condition
   exposure: string | null; // vocabulaire exposure
   constructionYear: number | null;
+  // Mission 151 — la copropriété CONNUE : seule la fiche d'un mandat de l'agence la dit (le bloc
+  // « Copropriété » du bien vendeur, M77). Aucune annonce ne la publie en étiquette : 0 sur 136
+  // concurrents lus sur les portails, 0 sur 13 biens Stream Estate (mesuré en base le 12/11).
+  // Absent ou null = inconnue ; un appartement n'est jamais lu comme une copropriété connue.
+  isCondominium?: boolean | null;
 };
 
 // Une annonce candidate détectée sur une page de résultats. Champs best-effort :

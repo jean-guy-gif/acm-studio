@@ -59,6 +59,7 @@ import {
 } from '@/features/meeting-conclusion/services/buyer-reconciliation';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
 import { withoutExamples } from '@/features/welcome/services/example-exclusion';
+import { getMandateCondominiums } from '@/features/buyers/queries/get-mandate-condominiums';
 import { getProfile } from '@/lib/auth/get-profile';
 import { academiaLinkView } from '@/lib/academia';
 import { getBuyerLastWatch } from '@/features/buyer-watch/queries/get-watch';
@@ -125,35 +126,50 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   ]);
   const supabase = await createClient();
   const counted = withoutExamples(dossiers);
-  const [loadedDeck, answers, progress, prospecting, history, lastWatch, loopProposals] =
-    await Promise.all([
-      selection ? loadDeck(buyer.id) : Promise.resolve(null),
-      profile
-        ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
-        : Promise.resolve({ lines: [], forSuggestions: [] }),
-      profile
-        ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
-        : Promise.resolve(new Map()),
-      // Mission 130 B — si la prospection ne se lit pas (« Ne plus solliciter » illisible, M98), la
-      // fiche s'affiche quand même : seules les correspondances le disent.
-      getAgencyProspecting(counted).catch(() => null),
-      profile
-        ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
-        : Promise.resolve({
-            selections: [],
-            letters: [],
-            proposals: [],
-            events: [],
-            readings: [],
-            failed: true,
-          }),
-      // Mission 136 — son dernier passage de veille.
-      profile
-        ? getBuyerLastWatch(profile.agency_id, buyer.id)
-        : Promise.resolve({ ok: false as const }),
-      // Mission 145 (partie A, I2) — les mandats signés à lui proposer.
-      profile ? getBuyerLoopProposals(profile.agency_id, new Date()) : null,
-    ]);
+  const [
+    loadedDeck,
+    answers,
+    progress,
+    prospecting,
+    history,
+    lastWatch,
+    loopProposals,
+    condominiums,
+  ] = await Promise.all([
+    selection ? loadDeck(buyer.id) : Promise.resolve(null),
+    profile
+      ? getBuyerAnswers(supabase, buyer.id, profile.agency_id)
+      : Promise.resolve({ lines: [], forSuggestions: [] }),
+    profile
+      ? getBuyersProgress(supabase, profile.agency_id, [buyer.id])
+      : Promise.resolve(new Map()),
+    // Mission 130 B — si la prospection ne se lit pas (« Ne plus solliciter » illisible, M98), la
+    // fiche s'affiche quand même : seules les correspondances le disent.
+    getAgencyProspecting(counted).catch(() => null),
+    profile
+      ? getBuyerHistory(supabase, profile.agency_id, buyer.id)
+      : Promise.resolve({
+          selections: [],
+          letters: [],
+          proposals: [],
+          events: [],
+          readings: [],
+          failed: true,
+        }),
+    // Mission 136 — son dernier passage de veille.
+    profile
+      ? getBuyerLastWatch(profile.agency_id, buyer.id)
+      : Promise.resolve({ ok: false as const }),
+    // Mission 145 (partie A, I2) — les mandats signés à lui proposer.
+    profile ? getBuyerLoopProposals(profile.agency_id, new Date()) : null,
+    // Mission 151 — la copropriété connue des mandats, seulement s'il n'en veut pas.
+    profile && buyer.condominiumAccepted === false
+      ? getMandateCondominiums(
+          profile.agency_id,
+          counted.map((dossier) => dossier.project.id),
+        )
+      : Promise.resolve(new Map<string, boolean>()),
+  ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
   // Mission 120 — ses visites demandées, chacune avec l'action qui convient et l'état du courrier.
@@ -211,6 +227,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           prospecting.cards
             .filter((cardItem) => cardItem.row.opposedOn == null)
             .map(({ row, seller }) => ({ row, seller })),
+          condominiums,
         ),
       ).matchCount
     : null;

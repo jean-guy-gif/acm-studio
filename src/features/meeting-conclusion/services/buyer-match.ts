@@ -20,6 +20,9 @@ export type BuyerCriteria = {
   budgetMin: number | null;
   budgetMax: number | null;
   city: string | null;
+  // Mission 151 — « Copropriété acceptée » de la fiche et sa ★ (absents : rien ne filtre).
+  condominiumAccepted?: boolean | null;
+  condominiumMustHave?: boolean;
 };
 
 // §3.1 — quel prix sert de référence : le prix de commercialisation CONVENU s'il existe

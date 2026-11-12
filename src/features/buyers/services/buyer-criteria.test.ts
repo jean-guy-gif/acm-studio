@@ -50,6 +50,9 @@ describe('de la fiche au rapprochement (M86)', () => {
       budgetMin: null,
       budgetMax: 430_000,
       city: 'Antibes, Juan-les-Pins',
+      // Mission 151 — la copropriété suit la fiche (non renseignée ici).
+      condominiumAccepted: null,
+      condominiumMustHave: false,
     });
   });
 
@@ -103,6 +106,8 @@ describe('de la fiche au rapprochement (M86)', () => {
       roomsMin: 5,
       surfaceMin: 120,
       budgetMax: 800_000,
+      condominiumAccepted: null,
+      condominiumMustHave: false,
     });
     expect(
       criteriaToBuyerDraft({

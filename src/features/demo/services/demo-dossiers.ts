@@ -1008,13 +1008,26 @@ export async function seedDemoDossier(
 
   // Le bien vendeur, avec ses photos déposées dans le stockage de l'agence (M37).
   const photos = await depositDemoPhotos(supabase, closer, projectId, plan.photoFiles);
-  const { error: propertyError } = await supabase.from('subject_properties').insert({
-    ...(plan.property as Database['public']['Tables']['subject_properties']['Insert']),
-    project_id: projectId,
-    agency_id: closer.agencyId,
-    photo_urls: photos,
-  });
-  if (propertyError) return failed();
+  const { data: subjectRow, error: propertyError } = await supabase
+    .from('subject_properties')
+    .insert({
+      ...(plan.property as Database['public']['Tables']['subject_properties']['Insert']),
+      project_id: projectId,
+      agency_id: closer.agencyId,
+      photo_urls: photos,
+    })
+    .select('id')
+    .single();
+  if (propertyError || !subjectRow) return failed();
+  // Mission 151 — le bloc « Copropriété » de la fiche, que lisent les biens idéaux et la boucle.
+  if (plan.isCondominium != null) {
+    const { error } = await supabase.from('subject_property_condominiums').insert({
+      subject_property_id: subjectRow.id,
+      agency_id: closer.agencyId,
+      is_condominium: plan.isCondominium,
+    });
+    if (error) return failed();
+  }
 
   // Les concurrents, comme un import les crée (M83, M101) ; relus sans pastille « À vérifier ».
   for (const competitor of plan.competitors) {

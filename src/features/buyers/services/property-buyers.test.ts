@@ -156,6 +156,18 @@ describe('un acquéreur correspond au bien', () => {
     expect(buyerMatchesProperty(bedrooms, HOUSE, 740_000)).toBe(false);
     expect(buyerMatchesProperty(buyer({ bedroomsMin: 5 }), HOUSE, 740_000)).toBe(true);
   });
+
+  // Mission 151 — la ★ « Copropriété : non » : une copropriété connue écarte, une inconnue jamais.
+  it('la ★ « pas de copropriété » écarte une copropriété connue, jamais une inconnue', () => {
+    const noCondo = buyer({ condominiumAccepted: false, condominiumMustHave: true });
+    expect(buyerMatchesProperty(noCondo, { ...HOUSE, isCondominium: true }, 740_000)).toBe(false);
+    expect(buyerMatchesProperty(noCondo, { ...HOUSE, isCondominium: false }, 740_000)).toBe(true);
+    expect(buyerMatchesProperty(noCondo, { ...HOUSE, isCondominium: null }, 740_000)).toBe(true);
+    expect(buyerMatchesProperty(noCondo, HOUSE, 740_000)).toBe(true);
+    // Sans ★, la copropriété se dit sur la carte, elle n'écarte pas.
+    const preference = buyer({ condominiumAccepted: false });
+    expect(buyerMatchesProperty(preference, { ...HOUSE, isCondominium: true }, 740_000)).toBe(true);
+  });
 });
 
 describe('prêts à visiter, et les autres', () => {

@@ -4,7 +4,11 @@ import { buyerReadiness } from '@/features/buyers/services/buyer-readiness';
 import { BUYER_CRITERION_LABELS, type Buyer, type BuyerCriterion } from '@/features/buyers/types';
 import type { CompetitorCandidate } from '@/features/competitor-search/types';
 import { dpeClass } from '@/features/dpe/services/dpe';
-import { judgeCriterion } from '@/features/ideal-properties/services/categorize-ideal';
+import {
+  judgeCondominium,
+  judgeCriterion,
+  OUT_OF_CONDOMINIUM,
+} from '@/features/ideal-properties/services/categorize-ideal';
 import { reconcileBuyer } from '@/features/meeting-conclusion/services/buyer-reconciliation';
 
 // Mission 133 — la boucle vendeur → acquéreurs : les acquéreurs DE TOUTE L'AGENCE (décision du
@@ -34,6 +38,8 @@ export type BuyerLoopProperty = {
   parkingTypes: string[];
   energyRating: string | null;
   generalCondition: string | null;
+  // Mission 151 — la copropriété connue (le bloc « Copropriété » de sa fiche) ; absente : inconnue.
+  isCondominium?: boolean | null;
 };
 
 // § 3 — le prix de référence du bien : le prix retenu ensemble, sinon l'analyse du conseiller (figée
@@ -102,6 +108,7 @@ function asCandidate(property: BuyerLoopProperty, price: number): CompetitorCand
       condition: property.generalCondition,
       exposure: null,
       constructionYear: null,
+      isCondominium: property.isCondominium ?? null,
     },
   };
 }
@@ -116,10 +123,19 @@ function starContradicted(buyer: Buyer, property: BuyerLoopProperty, price: numb
   ) {
     return true;
   }
+  if (condominiumStarContradicted(buyer, property)) return true;
   const candidate = asCandidate(property, price);
   return buyer.mustHave.some(
     (criterion) =>
       STAR_ONLY.includes(criterion) && judgeCriterion(criterion, buyer, candidate)?.kind === 'gap',
+  );
+}
+
+// Mission 151 — la ★ « Copropriété : non » (sa propre colonne) que le bien contredit : une
+// copropriété CONNUE ; inconnue, elle n'écarte jamais.
+function condominiumStarContradicted(buyer: Buyer, property: BuyerLoopProperty): boolean {
+  return (
+    buyer.condominiumMustHave && judgeCondominium(buyer, property.isCondominium)?.kind === 'gap'
   );
 }
 
@@ -252,7 +268,12 @@ export function starsFilled(buyer: Buyer, property: BuyerLoopProperty, price: nu
           property.bedroomsCount >= buyer.bedroomsMin
         : judgeCriterion(criterion, buyer, candidate)?.kind === 'ok',
     )
-    .map((criterion) => BUYER_CRITERION_LABELS[criterion]);
+    .map((criterion) => BUYER_CRITERION_LABELS[criterion])
+    .concat(
+      buyer.condominiumMustHave && judgeCondominium(buyer, property.isCondominium)?.kind === 'ok'
+        ? [OUT_OF_CONDOMINIUM]
+        : [],
+    );
 }
 
 // Mission 135 — un indispensable ★, quel qu'il soit, que le bien CONTREDIT (une sélection déjà
@@ -263,6 +284,7 @@ export function anyStarContradicted(
   property: BuyerLoopProperty,
   price: number,
 ): boolean {
+  if (condominiumStarContradicted(buyer, property)) return true;
   const candidate = asCandidate(property, price);
   return buyer.mustHave.some((criterion) =>
     criterion === 'bedrooms'
