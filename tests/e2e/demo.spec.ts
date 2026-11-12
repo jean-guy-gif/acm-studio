@@ -1891,8 +1891,13 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   );
   await expect(visitA.getByTestId('visit-actions')).toHaveAttribute('data-step', 'confirm');
   await expect(visitA.getByTestId('visit-track')).toContainText('Bon de visite');
-  await expect(visitC.getByTestId('visit-actions')).toHaveAttribute('data-step', 'write');
-  await expect(visitC.getByTestId('visit-track')).not.toContainText('Bon de visite');
+  // Mission 153 — hors mandat, sans courrier : le chemin court (confirmer, bon de visite, visite
+  // faite), écrire au propriétaire en lien, la ligne grise qui dit ce que le bon demandera.
+  await expect(visitC.getByTestId('visit-actions')).toHaveAttribute('data-step', 'confirm');
+  await expect(visitC.getByTestId('visit-track')).toContainText('Bon de visite');
+  await expect(visitC.getByTestId('visit-outside-mandate')).toContainText(
+    'demandent votre mandat de recherche avec la famille Keller',
+  );
   await visitC.getByTestId('visit-prepare-owner-letter').click();
   await expect(page).toHaveURL(/\/acquereurs\/courrier\/[0-9a-f-]{36}$/);
   const letterDocument = page.getByTestId('buyer-letter-document');

@@ -19,6 +19,7 @@ import {
 import type { VisitLetter } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { buyerDateLabel } from '@/features/buyers/services/buyer-criteria';
 import { SELECTION_SOURCE_LABELS } from '@/features/ideal-properties/types';
+import { HORS_MANDAT_OUVERT } from '@/features/visit-voucher/services/outside-mandate';
 import { formatEuro, formatRelativeMoment } from '@/lib/format';
 
 // Mission 119 — une visite demandée ou faite. Mission 120 — une visite demandée porte le courrier
@@ -52,7 +53,14 @@ export function VisitRow({
     letterPrepared: letter?.letterHref != null,
     letterState: letter?.state ?? { kind: 'none' },
     colleague: letter?.colleague ?? false,
+    outside: HORS_MANDAT_OUVERT && line.itemSource !== 'project',
   });
+  // Mission 153 — pourquoi pas de bon, ou ce que le bon demandera, sous le chemin.
+  const outsideLine = outsideMandateNote(
+    line.itemSource,
+    next,
+    HORS_MANDAT_OUVERT ? { buyerName: line.buyerName, voucherSigned: voucher != null } : null,
+  );
   return (
     <li
       id={`visite-${line.id}`}
@@ -138,12 +146,12 @@ export function VisitRow({
         colleague={letter?.colleague ?? false}
         openMessages={openMessages && line.report?.nextStep != null}
       />
-      {outsideMandateNote(line.itemSource, next) ? (
+      {outsideLine ? (
         <p
           className="text-xs text-zinc-500 stage:text-white/60"
           data-testid="visit-outside-mandate"
         >
-          {outsideMandateNote(line.itemSource, next)}
+          {outsideLine}
         </p>
       ) : null}
     </li>

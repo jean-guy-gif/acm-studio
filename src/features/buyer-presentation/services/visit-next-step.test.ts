@@ -216,3 +216,74 @@ describe('outsideMandateNote — pourquoi pas de bon de visite (Jean-Guy, 12/11)
     expect(outsideMandateNote('competitor', closed)).toBeNull();
   });
 });
+
+// Mission 153 (planche M153-1) — hors mandat, l'étape « Bon de visite » existe aussi.
+describe('visitNextStep — un bien hors mandat, la fonction ouverte', () => {
+  const labels = (input: Partial<VisitNextStepInput>) =>
+    visitNextStep({ ...base, outside: true, ...input }).track.map((step) => step.label);
+
+  it('sans courrier : le chemin court, écrire reste en liens', () => {
+    const result = visitNextStep({ ...base, outside: true, action: { kind: 'owner_letter' } });
+    expect(result.track.map((step) => step.label)).toEqual([
+      'Confirmer la visite',
+      'Bon de visite',
+      'Visite faite',
+    ]);
+    expect(result.step).toBe('confirm');
+    expect(result.links.write).toBe(true);
+    expect(
+      visitNextStep({
+        ...base,
+        outside: true,
+        action: { kind: 'owner_letter' },
+        scheduledAt: '2026-11-14T08:00:00Z',
+      }).step,
+    ).toBe('voucher');
+  });
+
+  it('avec un courrier : son chemin, plus le bon de visite', () => {
+    expect(
+      labels({
+        action: { kind: 'colleague_letter' },
+        letterPrepared: true,
+        colleague: true,
+        letterState: { kind: 'handed', label: 'Contacté le 10/11' },
+      }),
+    ).toEqual([
+      'Écrire au confrère',
+      'Réponse du confrère',
+      'Confirmer la visite',
+      'Bon de visite',
+      'Visite faite',
+    ]);
+  });
+
+  it('un propriétaire qui ne veut plus être sollicité : aucun bon', () => {
+    const closed = visitNextStep({
+      ...base,
+      outside: true,
+      letterPrepared: true,
+      letterState: { kind: 'closed', label: 'Ne plus solliciter' },
+    });
+    expect(closed.track.map((step) => step.label)).not.toContain('Bon de visite');
+    expect(closed.links.voucher).toBe(false);
+  });
+
+  it('une visite faite sans bon : « Signer le bon de visite » en lien', () => {
+    const done = visitNextStep({ ...base, outside: true, done: true, outcome: 'offer' });
+    expect(done.step).toBe('offer');
+    expect(done.links.voucher).toBe(true);
+  });
+
+  it('la ligne grise dit ce que le bon demandera, jusqu’au bon signé', () => {
+    const next = visitNextStep({ ...base, outside: true });
+    expect(
+      outsideMandateNote('listing', next, { buyerName: 'Famille Keller', voucherSigned: false }),
+    ).toBe(
+      'Hors mandat de l’agence : le bon de visite et l’offre d’achat demandent votre mandat de recherche avec la famille Keller, ou la collaboration du confrère.',
+    );
+    expect(
+      outsideMandateNote('listing', next, { buyerName: 'Famille Keller', voucherSigned: true }),
+    ).toBeNull();
+  });
+});

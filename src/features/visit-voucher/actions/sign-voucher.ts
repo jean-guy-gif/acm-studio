@@ -20,8 +20,13 @@ import {
   documentToText,
   renderVoucher,
   VISITOR_PIECES,
+  VOUCHER_OUTSIDE_TEMPLATE_VERSION,
   VOUCHER_TEMPLATE_VERSION,
 } from '@/features/visit-voucher/services/voucher-text';
+import {
+  OUTSIDE_TITLE_MISSING,
+  OUTSIDE_TITLE_MIXED,
+} from '@/features/visit-voucher/services/outside-mandate';
 import { SIGNATURE_BUCKET, voucherPath } from '@/features/visit-voucher/services/voucher-link';
 import { getProfile } from '@/lib/auth/get-profile';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
@@ -32,6 +37,12 @@ export type SignVoucherResult =
   { ok: true; documentId: string; linkPath: string } | { ok: false; error: string };
 
 const FAILED = 'Le bon de visite n’a pas pu être enregistré. Réessayez.';
+
+// Le jour à Paris, AAAA-MM-JJ.
+const parisToday = (): string => {
+  const [day, month, year] = parisDateLabel(new Date()).split('/');
+  return `${year}-${month}-${day}`;
+};
 
 // Mission 137 — « Signer le bon de visite » : tout est relu au serveur — la fiche de l'agence, chaque
 // visite (de cette fiche, non annulée, et qui peut porter un bon : § 9), l'identité légale complète,
@@ -69,6 +80,22 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     if (!visit.eligible) return { ok: false, error: visit.note ?? FAILED };
     ids.add(bien.visitId);
   }
+  // Mission 153 — un bon est sous mandat OU hors mandat, jamais les deux (chacun porte exactement un
+  // texte validé) ; hors mandat, le titre est obligatoire et vaut pour tous ses biens ; sous mandat,
+  // chaque bien a son n° de mandat.
+  const outside = input.biens.map((bien) => visits.get(bien.visitId)!.outside);
+  if (outside.some(Boolean) && !outside.every(Boolean)) {
+    return { ok: false, error: OUTSIDE_TITLE_MIXED };
+  }
+  const title = outside[0] ? input.title : null;
+  if (outside[0] && !title) return { ok: false, error: OUTSIDE_TITLE_MISSING };
+  if (!outside[0] && input.title) return { ok: false, error: FAILED };
+  if (!outside[0] && input.biens.some((bien) => !bien.mandate)) {
+    return { ok: false, error: 'Indiquez le n° de mandat de chaque bien.' };
+  }
+  if (title?.kind === 'search' && title.signedOn > parisToday()) {
+    return { ok: false, error: 'Le mandat de recherche ne peut pas être signé dans le futur.' };
+  }
   const signatures = input.signatures.map(decodeSignature);
   if (signatures.some((bytes) => bytes == null)) {
     return { ok: false, error: 'La signature n’a pas pu être lue : signez de nouveau.' };
@@ -103,7 +130,7 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
         visitId: bien.visitId,
         reference: referenceOf.get(bien.visitId) ?? '',
         label: visit.label,
-        mandate: bien.mandate,
+        mandate: title ? '' : bien.mandate,
         price: visit.price != null && visit.price > 0 ? Math.round(visit.price) : bien.price,
         address: visit.address?.trim() ? visit.address.trim() : bien.address,
       };
@@ -111,6 +138,7 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     advisorName: context.advisorName,
     city: context.city.trim() ? context.city.trim() : input.city,
     date: parisDateLabel(now),
+    title,
   };
   const text = documentToText(
     renderVoucher({
@@ -126,6 +154,7 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
       advisorName: fields.advisorName,
       city: fields.city,
       date: fields.date,
+      title,
     }),
   );
 
@@ -148,7 +177,7 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     agency_id: profile.agency_id,
     buyer_id: input.buyerId,
     kind: 'visit_voucher',
-    template_version: VOUCHER_TEMPLATE_VERSION,
+    template_version: title ? VOUCHER_OUTSIDE_TEMPLATE_VERSION : VOUCHER_TEMPLATE_VERSION,
     fields: fields as unknown as NonNullable<Json>,
     rendered_text: text,
     // Recalculée par la base sur le texte figé.

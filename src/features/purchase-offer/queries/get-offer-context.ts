@@ -1,6 +1,13 @@
 import 'server-only';
 
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
+import {
+  HORS_MANDAT_OUVERT,
+  readOutsideTitle,
+  type OutsideTitle,
+} from '@/features/visit-voucher/services/outside-mandate';
+import { readVoucherFields } from '@/features/visit-voucher/services/voucher-input';
 import { readLegalIdentity } from '@/features/legal-identity/queries/get-legal-identity';
 import { legalIdentityGaps } from '@/features/legal-identity/services/legal-identity';
 import {
@@ -45,6 +52,13 @@ export type OfferVisit = {
   // Mission 138 — une offre déjà acceptée sur ce bien : le jour de l'acceptation (JJ/MM/AAAA), pour
   // prévenir ; rien n'est bloqué.
   acceptedOfferOn: string | null;
+  // Mission 153 — un bien hors mandat de l'agence : le titre remplace le n° de mandat, l'adresse et
+  // les honoraires se saisissent ; le titre du bon de cette visite, s'il y en a un, est proposé.
+  outside: boolean;
+  suggestion: OutsideTitle | { kind: 'colleague'; agency: string; number: string } | null;
+  // L'annonce dit le bien commercialisé par une agence (« Vendu par » ou une exclusivité) : un
+  // rappel sur les honoraires au mandat de recherche (Jean-Guy, 12/11), à l'écran seulement.
+  soldByAgency: boolean;
 };
 
 export type OfferContext = {
@@ -55,6 +69,8 @@ export type OfferContext = {
   cover: { site: string | null };
   advisorFirstName: string | null;
   last: StoredOfferFields | null;
+  // Mission 153 — le mandat de recherche du dernier bon ou de la dernière offre de la fiche.
+  lastSearchTitle: Extract<OutsideTitle, { kind: 'search' }> | null;
 };
 
 const number = (value: unknown): number | null => {
@@ -120,37 +136,65 @@ export async function getOfferContext(
       : null;
 
   const lines = visitRead.lines.filter((line) => line.buyerId === buyerId && !line.buyerArchived);
+  const competitorIds = [
+    ...new Set(
+      lines.filter((line) => line.itemSource === 'competitor').map((l) => l.itemReference),
+    ),
+  ];
   const projectIds = [
     ...new Set(lines.filter((line) => line.itemSource === 'project').map((l) => l.itemReference)),
   ];
-  const [conclusions, subjects, projects, answers] = await Promise.all([
-    projectIds.length > 0
-      ? supabase
-          .from('project_meeting_conclusions')
-          .select(
-            'project_id, outcome, commercialization_price, mandate_number, fees_amount, fees_paid_by',
-          )
-          .eq('agency_id', agencyId)
-          .in('project_id', projectIds)
-      : Promise.resolve({ data: [], error: null }),
-    projectIds.length > 0
-      ? supabase
-          .from('subject_properties')
-          .select('id, project_id, address, postal_code, city, photo_urls')
-          .eq('agency_id', agencyId)
-          .in('project_id', projectIds)
-      : Promise.resolve({ data: [], error: null }),
-    projectIds.length > 0
-      ? supabase
-          .from('projects')
-          .select('id, seller_email, seller_phone, status')
-          .eq('agency_id', agencyId)
-          .in('id', projectIds)
-      : Promise.resolve({ data: [], error: null }),
-    getProjectOfferAnswers(supabase, agencyId, projectIds),
-  ]);
+  const [conclusions, subjects, projects, answers, letters, competitors, buyerDocuments] =
+    await Promise.all([
+      projectIds.length > 0
+        ? supabase
+            .from('project_meeting_conclusions')
+            .select(
+              'project_id, outcome, commercialization_price, mandate_number, fees_amount, fees_paid_by',
+            )
+            .eq('agency_id', agencyId)
+            .in('project_id', projectIds)
+        : Promise.resolve({ data: [], error: null }),
+      projectIds.length > 0
+        ? supabase
+            .from('subject_properties')
+            .select('id, project_id, address, postal_code, city, photo_urls')
+            .eq('agency_id', agencyId)
+            .in('project_id', projectIds)
+        : Promise.resolve({ data: [], error: null }),
+      projectIds.length > 0
+        ? supabase
+            .from('projects')
+            .select('id, seller_email, seller_phone, status')
+            .eq('agency_id', agencyId)
+            .in('id', projectIds)
+        : Promise.resolve({ data: [], error: null }),
+      getProjectOfferAnswers(supabase, agencyId, projectIds),
+      HORS_MANDAT_OUVERT ? getVisitLetters(lines) : Promise.resolve(new Map()),
+      HORS_MANDAT_OUVERT && competitorIds.length > 0
+        ? supabase
+            .from('comparables')
+            .select('id, address, locator_address, sold_by, exclusivity')
+            .eq('agency_id', agencyId)
+            .in('id', competitorIds)
+        : Promise.resolve({ data: [], error: null }),
+      supabase
+        .from('buyer_documents')
+        .select('kind, fields')
+        .eq('agency_id', agencyId)
+        .eq('buyer_id', buyerId)
+        .order('signed_at', { ascending: false })
+        .limit(20),
+    ]);
   // Une lecture en échec n'est jamais lue comme « aucune offre acceptée » (M98).
-  if (conclusions.error || subjects.error || projects.error || answers == null) {
+  if (
+    conclusions.error ||
+    subjects.error ||
+    projects.error ||
+    answers == null ||
+    competitors.error ||
+    buyerDocuments.error
+  ) {
     return { ok: false, error: 'L’offre d’achat n’a pas pu être préparée : rechargez la page.' };
   }
   const subjectIds = (subjects.data ?? []).map((row) => row.id);
@@ -175,8 +219,69 @@ export async function getOfferContext(
   const condoOf = new Map(
     (condos.data ?? []).map((row) => [row.subject_property_id, row.is_condominium]),
   );
+  const competitorOf = new Map((competitors.data ?? []).map((row) => [row.id, row]));
+  // Le titre du bon déjà signé pour une visite, et le mandat de recherche de la fiche.
+  const voucherTitleOf = new Map<string, OutsideTitle>();
+  let lastSearchTitle: Extract<OutsideTitle, { kind: 'search' }> | null = null;
+  for (const row of buyerDocuments.data ?? []) {
+    const title = readOutsideTitle((row.fields as { title?: unknown } | null)?.title);
+    if (title?.kind === 'search' && !lastSearchTitle) lastSearchTitle = title;
+    if (row.kind === 'visit_voucher' && title) {
+      for (const bien of readVoucherFields(row.fields)?.biens ?? []) {
+        if (!voucherTitleOf.has(bien.visitId)) voucherTitleOf.set(bien.visitId, title);
+      }
+    }
+  }
+
+  // Mission 153 — une visite sur un bien hors mandat (annonce du marché, concurrent) : l'offre se
+  // prépare après « Offre envisagée », au titre du mandat de recherche ou de la collaboration ;
+  // jamais pour un propriétaire qui ne veut plus être sollicité ; un mandat rentré (sans dossier
+  // vendeur dans ACM) reste hors de l'offre, comme avant.
+  function outsideVisit(line: (typeof lines)[number]): OfferVisit {
+    const state = letters.get(line.id)?.state;
+    const closed = state?.kind === 'closed';
+    const mandateIn = state?.kind === 'done' && state.label === 'Mandat rentré';
+    const collaboration = state?.kind === 'done' && !mandateIn;
+    const competitor =
+      line.itemSource === 'competitor' ? competitorOf.get(line.itemReference) : undefined;
+    const eligible = !closed && !mandateIn && line.outcome === 'offer';
+    const soldBy = competitor ? competitor.sold_by : line.itemSoldBy;
+    const exclusivity = competitor ? competitor.exclusivity : line.itemExclusivity;
+    return {
+      visitId: line.id,
+      label: line.itemLabel,
+      eligible,
+      note: closed
+        ? `${state.label} : pas d’offre d’achat pour ce bien.`
+        : mandateIn
+          ? OFFER_NOT_MANDATE
+          : eligible
+            ? 'Offre envisagée · hors mandat de l’agence'
+            : 'Marquez d’abord la visite « Offre envisagée » (Visites).',
+      projectId: null,
+      price: line.itemPrice,
+      propertyAddress: competitor?.locator_address ?? competitor?.address ?? null,
+      condominium: false,
+      mandateNumber: null,
+      fees: null,
+      feesPaidBy: null,
+      photoPath: null,
+      visitedAt: line.visitedAt,
+      sellerEmail: null,
+      sellerPhone: null,
+      acceptedOfferOn: null,
+      outside: true,
+      suggestion:
+        voucherTitleOf.get(line.id) ??
+        (collaboration ? { kind: 'colleague', agency: '', number: '' } : null),
+      soldByAgency: soldBy === 'agency' || exclusivity === 'yes',
+    };
+  }
 
   const visits: OfferVisit[] = lines.map((line) => {
+    if (line.itemSource !== 'project' && HORS_MANDAT_OUVERT) {
+      return outsideVisit(line);
+    }
     const projectId = line.itemSource === 'project' ? line.itemReference : null;
     const conclusion = projectId ? conclusionOf.get(projectId) : undefined;
     const subject = projectId ? subjectOf.get(projectId) : undefined;
@@ -216,6 +321,9 @@ export async function getOfferContext(
       sellerEmail: projectId ? (projectOf.get(projectId)?.seller_email ?? null) : null,
       sellerPhone: projectId ? (projectOf.get(projectId)?.seller_phone ?? null) : null,
       acceptedOfferOn: acceptedOn(projectId),
+      outside: false,
+      suggestion: null,
+      soldByAgency: false,
     };
   });
 
@@ -229,6 +337,7 @@ export async function getOfferContext(
       cover: { site: branding.data?.site_url ?? null },
       advisorFirstName: profile.first_name ?? null,
       last: readOfferFields(lastOffer.data?.fields),
+      lastSearchTitle,
     },
   };
 }

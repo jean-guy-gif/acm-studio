@@ -15,6 +15,11 @@ const PREPARE_LABELS: Record<BuyerLetterVersion, string> = {
   owner: 'Préparer le courrier au propriétaire',
   colleague: 'Préparer le dossier de collaboration au confrère',
 };
+// Mission 153 (planche M153-1) — dans le chemin court d'un bien hors mandat, en liens.
+const LINK_LABELS: Record<BuyerLetterVersion, string> = {
+  owner: 'Écrire au propriétaire',
+  colleague: 'Écrire au confrère',
+};
 
 // Mission 120 — sur une visite demandée (Visites, fiche), le courrier qui convient à l'origine du
 // bien, et son état relu sur sa carte de Prospection (Mission 146 B : le mandat signé et le vendeur
@@ -29,12 +34,15 @@ export function VisitLetterAction({
   letterHref,
   state,
   colleague = false,
+  asLinks = false,
 }: {
   visitId: string;
   action: VisitAction;
   letterHref: string | null;
   state: VisitLetterState;
   colleague?: boolean;
+  // Mission 153 — les mêmes gestes, en liens discrets (le chemin court hors mandat).
+  asLinks?: boolean;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +102,31 @@ export function VisitLetterAction({
           : [];
   if (versions.length === 0) {
     return null;
+  }
+  if (asLinks) {
+    return (
+      <>
+        {versions.map((version) => (
+          <button
+            key={version}
+            type="button"
+            className="text-sm font-semibold text-brand-deep hover:underline disabled:opacity-50 stage:text-brand"
+            disabled={pending}
+            onClick={() => prepare(version)}
+            data-testid={
+              version === 'owner' ? 'visit-prepare-owner-letter' : 'visit-prepare-colleague-letter'
+            }
+          >
+            {preparing === version ? 'Préparation…' : LINK_LABELS[version]}
+          </button>
+        ))}
+        {error ? (
+          <span role="alert" className="text-xs text-red-600">
+            {error}
+          </span>
+        ) : null}
+      </>
+    );
   }
   return (
     <div className="flex flex-col gap-1.5">
