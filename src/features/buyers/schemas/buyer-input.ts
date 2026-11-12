@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { BUYER_NAME_MAX, BUYER_TEXT_MAX } from '@/features/buyers/constants';
 import { splitCities } from '@/features/buyers/services/buyer-criteria';
+import { sanitizeSoftCriteria } from '@/features/buyers/services/buyer-row';
 import {
   BUYER_CRITERIA,
   BUYER_PROPERTY_TYPES,
@@ -42,6 +43,11 @@ export const BUYER_FORM_FIELDS = [
   'works_accepted',
   'must_have',
   'deal_breakers',
+  // Mission 151 — la copropriété acceptée (oui / non / non renseigné) et son ★.
+  'condominium_accepted',
+  'condominium_must_have',
+  // Mission 151 — « Ce qui compte pour eux », relu par liste d'autorisation.
+  'soft_criteria',
 ] as const;
 export type BuyerFormField = (typeof BUYER_FORM_FIELDS)[number];
 
@@ -140,6 +146,9 @@ const schema = z
     works_accepted: triState,
     must_have: listOf(BUYER_CRITERIA),
     deal_breakers: trimmed(BUYER_TEXT_MAX),
+    condominium_accepted: triState,
+    condominium_must_have: triState,
+    soft_criteria: z.unknown().transform((value) => sanitizeSoftCriteria(value)),
   })
   .superRefine((value, ctx) => {
     if (
@@ -217,6 +226,9 @@ export function parseBuyerInput(raw: unknown): ParsedBuyerInput {
       worksAccepted: v.works_accepted,
       mustHave: v.must_have,
       dealBreakers: v.deal_breakers,
+      condominiumAccepted: v.condominium_accepted,
+      condominiumMustHave: v.condominium_must_have === true,
+      softCriteria: v.soft_criteria,
     },
   };
 }
@@ -254,6 +266,10 @@ export function readBuyerFormData(formData: FormData): Record<string, unknown> {
     works_accepted: text('works_accepted') ?? '',
     must_have: list('must_have'),
     deal_breakers: text('deal_breakers'),
+    condominium_accepted: text('condominium_accepted') ?? '',
+    condominium_must_have: text('condominium_must_have') ?? '',
+    // Une case cochée par critère doux, et leurs mots à côté.
+    soft_criteria: list('soft_key').map((key) => ({ key, words: text(`soft_words_${key}`) ?? '' })),
   };
 }
 

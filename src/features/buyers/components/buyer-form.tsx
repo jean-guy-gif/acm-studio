@@ -25,6 +25,9 @@ import {
   BUYER_PROPERTY_TYPES,
   BUYER_PURPOSES,
   BUYER_PURPOSE_LABELS,
+  BUYER_SOFT_CRITERIA,
+  BUYER_SOFT_CRITERION_LABELS,
+  BUYER_SOFT_WORDS_MAX,
   BUYER_TIMELINES,
   BUYER_TIMELINE_LABELS,
   ENERGY_RATINGS,
@@ -53,6 +56,7 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
   const [errors, setErrors] = useState<BuyerFormErrors>({});
   const initial: Partial<BuyerInput> = buyer ?? draft ?? {};
   const mustHave = new Set(initial.mustHave ?? []);
+  const softWords = new Map((initial.softCriteria ?? []).map((soft) => [soft.key, soft.words]));
   const types = new Set(initial.propertyTypes ?? []);
 
   const submit = (formData: FormData) => {
@@ -255,6 +259,40 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
             initial.energyRatingMax ?? '',
           )}
           {yesNo('Travaux acceptés', 'works_accepted', initial.worksAccepted)}
+          {yesNo('Copropriété acceptée', 'condominium_accepted', initial.condominiumAccepted)}
+        </div>
+      </section>
+
+      {/* Mission 151 — « Ce qui compte pour eux » : la liste fermée, avec leurs mots. */}
+      <section className={formSection} data-testid="buyer-form-soft">
+        <h2 className={formSectionTitle}>Ce qui compte pour eux</h2>
+        <p className={hintText}>
+          Leurs mots. Les biens trouvés sont rangés d’après eux ; aucun bien n’est écarté pour eux.
+        </p>
+        <div className="flex flex-col gap-2">
+          {BUYER_SOFT_CRITERIA.map((key) => (
+            <div key={key} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label className={`${checkChip} sm:w-64 sm:shrink-0`}>
+                <input
+                  type="checkbox"
+                  name="soft_key"
+                  value={key}
+                  defaultChecked={softWords.has(key)}
+                  className="accent-brand"
+                />
+                {BUYER_SOFT_CRITERION_LABELS[key]}
+              </label>
+              <input
+                type="text"
+                name={`soft_words_${key}`}
+                aria-label={`Leurs mots : ${BUYER_SOFT_CRITERION_LABELS[key]}`}
+                maxLength={BUYER_SOFT_WORDS_MAX}
+                defaultValue={softWords.get(key) ?? ''}
+                placeholder="Leurs mots (facultatif)"
+                className={`${inputBase} flex-1`}
+              />
+            </div>
+          ))}
         </div>
       </section>
 
@@ -278,6 +316,16 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
                 {BUYER_CRITERION_LABELS[criterion]}
               </label>
             ))}
+            <label className={checkChip}>
+              <input
+                type="checkbox"
+                name="condominium_must_have"
+                value="yes"
+                defaultChecked={initial.condominiumMustHave === true}
+                className="accent-brand"
+              />
+              Copropriété
+            </label>
           </div>
           {error('must_have')}
         </div>

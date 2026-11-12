@@ -285,7 +285,6 @@ function grade(raw, c) {
   const softMissing = (c.souples_attendus ?? []).filter((k) => !soft.includes(k));
   const softExtra = soft.filter((k) => !(c.souples_attendus ?? []).includes(k) && !(c.souples_acceptes ?? []).includes(k));
   const notesMissing = (c.notes_contient ?? []).filter((w) => !fold(out.notes).includes(fold(w)));
-  const whole = fold(JSON.stringify(out));
   const wordAt = (w) => new RegExp(`(^|[^a-z0-9])${fold(w).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
   // notes_permis : un mot permis dans les Notes seules, et seulement suivi de sa marque (« à vérifier ») ; ailleurs, c'est une mention.
   const permis = c.notes_permis ?? [];

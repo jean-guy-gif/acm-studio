@@ -405,6 +405,13 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/purge_texte_annonces.sql
 
+      # Mission 151 (partie A) — la fiche depuis mes notes : des ajouts seulement, la consommation
+      # et la trace de chaque lecture, le budget d'IA réservé puis réglé, écrits par le serveur seul.
+      - name: La fiche depuis mes notes (mission 151 A)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/fiche_depuis_mes_notes.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes

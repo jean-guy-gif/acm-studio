@@ -37,6 +37,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      agency_ai_budgets: {
+        Row: {
+          agency_id: string;
+          created_at: string;
+          id: string;
+          monthly_cap_cents: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          agency_id: string;
+          created_at?: string;
+          id?: string;
+          monthly_cap_cents: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          agency_id?: string;
+          created_at?: string;
+          id?: string;
+          monthly_cap_cents?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'agency_ai_budgets_agency_id_fkey';
+            columns: ['agency_id'];
+            isOneToOne: true;
+            referencedRelation: 'agencies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       agency_branding: {
         Row: {
           agency_id: string;
@@ -299,6 +335,76 @@ export type Database = {
             columns: ['agency_id'];
             isOneToOne: true;
             referencedRelation: 'agencies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_usage: {
+        Row: {
+          agency_id: string;
+          buyer_id: string | null;
+          cost_millicents: number;
+          created_at: string;
+          fields_kept: string[];
+          fields_proposed: string[];
+          id: string;
+          model: string;
+          outcome: string;
+          personal_mentions_skipped: number | null;
+          purpose: string;
+          reserved: boolean;
+          source: string | null;
+          updated_at: string;
+          user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          agency_id: string;
+          buyer_id?: string | null;
+          cost_millicents: number;
+          created_at?: string;
+          fields_kept?: string[];
+          fields_proposed?: string[];
+          id?: string;
+          model: string;
+          outcome?: string;
+          personal_mentions_skipped?: number | null;
+          purpose: string;
+          reserved?: boolean;
+          source?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          agency_id?: string;
+          buyer_id?: string | null;
+          cost_millicents?: number;
+          created_at?: string;
+          fields_kept?: string[];
+          fields_proposed?: string[];
+          id?: string;
+          model?: string;
+          outcome?: string;
+          personal_mentions_skipped?: number | null;
+          purpose?: string;
+          reserved?: boolean;
+          source?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_usage_agency_id_fkey';
+            columns: ['agency_id'];
+            isOneToOne: false;
+            referencedRelation: 'agencies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_usage_buyer_id_fkey';
+            columns: ['buyer_id'];
+            isOneToOne: false;
+            referencedRelation: 'buyers';
             referencedColumns: ['id'];
           },
         ];
@@ -1467,6 +1573,8 @@ export type Database = {
           budget_ideal: number | null;
           budget_max: number | null;
           cities: string[];
+          condominium_accepted: boolean | null;
+          condominium_must_have: boolean;
           contacted_at: string | null;
           created_at: string;
           deal_breakers: string | null;
@@ -1474,6 +1582,7 @@ export type Database = {
           elevator: boolean | null;
           email: string | null;
           energy_rating_max: string | null;
+          fields_to_verify: string[];
           financing: string;
           financing_changed_at: string | null;
           floor_min: number | null;
@@ -1490,6 +1599,7 @@ export type Database = {
           property_types: string[];
           purpose: string | null;
           rooms_min: number | null;
+          soft_criteria: NonNullable<Json>;
           status: string;
           status_changed_at: string;
           surface_min: number | null;
@@ -1506,6 +1616,8 @@ export type Database = {
           budget_ideal?: number | null;
           budget_max?: number | null;
           cities: string[];
+          condominium_accepted?: boolean | null;
+          condominium_must_have?: boolean;
           contacted_at?: string | null;
           created_at?: string;
           deal_breakers?: string | null;
@@ -1513,6 +1625,7 @@ export type Database = {
           elevator?: boolean | null;
           email?: string | null;
           energy_rating_max?: string | null;
+          fields_to_verify?: string[];
           financing?: string;
           financing_changed_at?: string | null;
           floor_min?: number | null;
@@ -1529,6 +1642,7 @@ export type Database = {
           property_types?: string[];
           purpose?: string | null;
           rooms_min?: number | null;
+          soft_criteria?: NonNullable<Json>;
           status?: string;
           status_changed_at?: string;
           surface_min?: number | null;
@@ -1544,6 +1658,8 @@ export type Database = {
           budget_ideal?: number | null;
           budget_max?: number | null;
           cities?: string[];
+          condominium_accepted?: boolean | null;
+          condominium_must_have?: boolean;
           contacted_at?: string | null;
           created_at?: string;
           deal_breakers?: string | null;
@@ -1551,6 +1667,7 @@ export type Database = {
           elevator?: boolean | null;
           email?: string | null;
           energy_rating_max?: string | null;
+          fields_to_verify?: string[];
           financing?: string;
           financing_changed_at?: string | null;
           floor_min?: number | null;
@@ -1567,6 +1684,7 @@ export type Database = {
           property_types?: string[];
           purpose?: string | null;
           rooms_min?: number | null;
+          soft_criteria?: NonNullable<Json>;
           status?: string;
           status_changed_at?: string;
           surface_min?: number | null;
@@ -3657,6 +3775,13 @@ export type Database = {
           profile_id: string;
         }[];
       };
+      ai_usage_since: {
+        Args: { p_since: string };
+        Returns: {
+          agency_id: string;
+          cost_millicents: number;
+        }[];
+      };
       answer_buyer_item: {
         Args: { p_agency_id: string; p_answer: string; p_item_id: string; p_reasons: string[] };
         Returns: {
@@ -3774,6 +3899,19 @@ export type Database = {
         Args: { p_ids: string[]; p_project_id: string };
         Returns: undefined;
       };
+      reserve_ai_budget: {
+        Args: {
+          p_agency_id: string;
+          p_default_cap_cents: number;
+          p_model: string;
+          p_purpose: string;
+          p_since: string;
+          p_source: string;
+          p_user_id: string;
+          p_wanted_millicents: number;
+        };
+        Returns: string;
+      };
       reserve_stream_estate_budget: {
         Args: {
           p_agency_id: string;
@@ -3800,6 +3938,16 @@ export type Database = {
         Returns: undefined;
       };
       save_live_shortlist: { Args: { p_project_id: string; p_shown: string[] }; Returns: number };
+      settle_ai_budget: {
+        Args: {
+          p_cost_millicents: number;
+          p_fields_proposed: string[];
+          p_outcome: string;
+          p_personal_mentions_skipped: number;
+          p_usage_id: string;
+        };
+        Returns: undefined;
+      };
       settle_stream_estate_budget: {
         Args: { p_billed: number; p_reservation_id: string };
         Returns: undefined;

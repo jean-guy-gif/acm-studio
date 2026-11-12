@@ -311,6 +311,14 @@ export type TimelineInput = {
   proposals?: { at: string; label: string }[];
   // Mission 135 — ses relances et les ajustements de sa recherche.
   events?: { at: string; kind: 'relaunch' | 'search_adjusted'; summary: string | null }[];
+  // Mission 151 — les lectures de notes qui ont créé ou complété la fiche (planche 3).
+  readings?: {
+    at: string;
+    outcome: 'created' | 'completed';
+    source: 'photo' | 'file' | 'text' | null;
+    proposed: number;
+    kept: number;
+  }[];
   visits: {
     requestedAt: string;
     visitedAt: string | null;
@@ -323,7 +331,27 @@ export type TimelineInput = {
 // « Ce qui s'est passé » : un fil daté, du plus récent au plus ancien, rien d'autre que ce qui est
 // en base.
 export function buyerTimeline(input: TimelineInput): TimelineEntry[] {
-  const entries: TimelineEntry[] = [{ at: input.createdAt, text: 'Fiche créée' }];
+  // Mission 151 — une fiche née d'une lecture le dit à la place de « Fiche créée » :
+  // « Fiche créée depuis vos notes (photo) · 15 champs proposés, 15 gardés ».
+  const creation = (input.readings ?? []).find((reading) => reading.outcome === 'created');
+  const SOURCE_WORDS = { photo: 'photo', file: 'fichier', text: 'texte' } as const;
+  const readingText = (reading: NonNullable<TimelineInput['readings']>[number], verb: string) =>
+    `${verb} depuis vos notes${reading.source ? ` (${SOURCE_WORDS[reading.source]})` : ''} · ${plural(
+      reading.proposed,
+      'champ proposé',
+      'champs proposés',
+    )}, ${reading.kept} ${reading.kept > 1 ? 'gardés' : 'gardé'}`;
+  const entries: TimelineEntry[] = [
+    {
+      at: input.createdAt,
+      text: creation ? readingText(creation, 'Fiche créée') : 'Fiche créée',
+    },
+  ];
+  for (const reading of input.readings ?? []) {
+    if (reading.outcome === 'completed') {
+      entries.push({ at: reading.at, text: readingText(reading, 'Fiche complétée') });
+    }
+  }
   for (const selection of input.selections) {
     const total = selection.agencyCount + selection.marketCount;
     const parts = [
