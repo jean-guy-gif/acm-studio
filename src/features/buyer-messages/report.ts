@@ -74,6 +74,19 @@ export function visitOutcomeOf(report: {
   return 'visited';
 }
 
+// Correctif du 13/11 (essai de Jean-Guy) — l'acquéreur change d'avis après la visite : une visite
+// FAITE passe en « Offre envisagée », sauf déjà en offre, ou « Pas pour moi » (avant le compte rendu
+// de la M139, « Pas pour lui » sans avis) : les deux se contredisent.
+export function canTurnIntoOffer(visit: {
+  visitedAt: string | null;
+  outcome: string;
+  opinion: string | null;
+}): boolean {
+  if (visit.visitedAt == null || visit.outcome === 'offer') return false;
+  if (visit.opinion === 'not_for_me') return false;
+  return !(visit.opinion == null && visit.outcome === 'declined');
+}
+
 // « Intéressé · a aimé : La piscine, L'extérieur · gêné : Le prix », ce que le conseiller relit.
 export function visitReportLine(report: {
   opinion: VisitOpinion;

@@ -27,3 +27,6 @@ export const visitReportSchema = z
     disliked: VISIT_TAGS.filter((tag) => report.disliked.includes(tag)),
   }));
 export type VisitReportInput = z.infer<typeof visitReportSchema>;
+
+// Correctif du 13/11 — la suite seule, quand elle se change après la visite.
+export const visitNextStepSchema = z.enum(VISIT_NEXT_STEPS);

@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { visitOutcomeOf } from '@/features/buyer-messages/report';
-import { visitReportSchema } from '@/features/buyer-messages/report-schema';
+import { canTurnIntoOffer, visitOutcomeOf } from '@/features/buyer-messages/report';
+import { visitNextStepSchema, visitReportSchema } from '@/features/buyer-messages/report-schema';
 import {
   FEEDBACK_MAX,
   toVisitRequest,
@@ -12,6 +12,8 @@ import { type VisitRequest, type VisitRequestDuring } from '@/features/buyer-pre
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+
+type ServiceClient = ReturnType<typeof createServiceRoleClient>;
 
 export type VisitActionResult = { ok: true; request: VisitRequest } | { ok: false; error: string };
 export type PlainResult = { ok: true } | { ok: false; error: string };
@@ -31,6 +33,7 @@ async function activeProfile() {
 function revalidate(buyerId: string): void {
   revalidatePath('/visites');
   revalidatePath(`/acquereurs/${buyerId}`);
+  revalidatePath(`/acquereurs/${buyerId}/offre`);
   revalidatePath(`/presentation/${buyerId}`);
 }
 
@@ -143,26 +146,132 @@ export async function recordVisitDone(requestId: string, raw: unknown): Promise<
   // jamais lue comme « aucune » (M98) : rien n'est demandé, et le journal le dit. La visite, elle,
   // est notée : l'échec de la deuxième demande ne la défait pas (elle se demande depuis la fiche).
   if (report.nextStep === 'second_visit') {
-    const { data: alive, error: aliveError } = await client
-      .from('buyer_visit_requests')
-      .select('id')
-      .eq('agency_id', profile.agency_id)
-      .eq('buyer_id', data.buyer_id)
-      .eq('buyer_selection_item_id', data.buyer_selection_item_id)
-      .is('cancelled_at', null)
-      .is('visited_at', null)
+    await askSecondVisit(client, profile.agency_id, data, 'recordVisitDone.secondVisit');
+  }
+  revalidate(data.buyer_id);
+  return { ok: true, request: toVisitRequest(data) };
+}
+
+// « Deuxième visite » : une demande encore vivante sur ce bien ne se redouble pas (M122) ; une
+// lecture en échec n'est jamais lue comme « aucune » (M98) : rien n'est demandé, et le journal le
+// dit. La visite, elle, est notée : l'échec de la deuxième demande ne la défait pas (elle se
+// demande depuis la fiche).
+async function askSecondVisit(
+  client: ServiceClient,
+  agencyId: string,
+  visit: { buyer_id: string; buyer_selection_item_id: string },
+  where: string,
+): Promise<void> {
+  const { data: alive, error: aliveError } = await client
+    .from('buyer_visit_requests')
+    .select('id')
+    .eq('agency_id', agencyId)
+    .eq('buyer_id', visit.buyer_id)
+    .eq('buyer_selection_item_id', visit.buyer_selection_item_id)
+    .is('cancelled_at', null)
+    .is('visited_at', null)
+    .limit(1);
+  if (aliveError) {
+    await reportServerError(where, aliveError);
+    return;
+  }
+  if ((alive ?? []).length > 0) return;
+  const { error } = await client.from('buyer_visit_requests').insert({
+    agency_id: agencyId,
+    buyer_id: visit.buyer_id,
+    buyer_selection_item_id: visit.buyer_selection_item_id,
+    requested_during: 'conseiller',
+  });
+  if (error) await reportServerError(where, error);
+}
+
+// Correctif du 13/11 (essai de Jean-Guy) — un acquéreur qui change d'avis après la visite : la
+// suite d'une visite faite se change, depuis Visites, la fiche acquéreur et l'offre d'achat. Le
+// compte rendu et la date ne bougent pas ; l'issue suit la suite (`visitOutcomeOf`). « Pas pour
+// moi » ne passe pas en « Offre envisagée » (le compte rendu le refuse aussi) ; une visite qui porte
+// une offre signée garde sa suite ; une lecture en échec n'est jamais lue comme « aucune offre »
+// (M98). L'écriture vise la suite relue : deux changements au même instant, le second n'écrit rien.
+export async function changeVisitNextStep(
+  requestId: string,
+  raw: unknown,
+): Promise<VisitActionResult> {
+  const profile = await activeProfile();
+  if (!profile) return { ok: false, error: NOT_CONNECTED };
+  const parsed = visitNextStepSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: 'Choisissez la suite de la visite.' };
+  const nextStep = parsed.data;
+  const client = createServiceRoleClient();
+  const { data: visit } = await client
+    .from('buyer_visit_requests')
+    .select('*, buyers!inner(archived_at)')
+    .eq('id', requestId)
+    .eq('agency_id', profile.agency_id)
+    .maybeSingle();
+  const archived = (visit?.buyers as unknown as { archived_at: string | null } | null)?.archived_at;
+  if (!visit || visit.cancelled_at != null || archived != null) {
+    return { ok: false, error: 'Cette visite n’est plus suivie.' };
+  }
+  if (visit.visited_at == null) {
+    return {
+      ok: false,
+      error: 'Cette visite n’est pas encore faite : notez d’abord son compte rendu.',
+    };
+  }
+  const { buyers: _buyers, ...row } = visit; // eslint-disable-line @typescript-eslint/no-unused-vars
+  if (visit.next_step === nextStep) return { ok: true, request: toVisitRequest(row) };
+  if (
+    nextStep === 'offer' &&
+    !canTurnIntoOffer({
+      visitedAt: visit.visited_at,
+      outcome: visit.outcome,
+      opinion: visit.opinion,
+    })
+  ) {
+    return {
+      ok: false,
+      error: 'Son avis était « Pas pour moi » : « Offre envisagée » le contredit.',
+    };
+  }
+  if (visit.outcome === 'offer') {
+    const { data: offers, error: offersError } = await client
+      .from('buyer_document_visits')
+      .select('document_id, buyer_documents!inner(kind)')
+      .eq('visit_request_id', requestId)
+      .eq('buyer_documents.kind', 'purchase_offer')
       .limit(1);
-    if (aliveError) {
-      await reportServerError('recordVisitDone.secondVisit', aliveError);
-    } else if ((alive ?? []).length === 0) {
-      const { error: secondError } = await client.from('buyer_visit_requests').insert({
-        agency_id: profile.agency_id,
-        buyer_id: data.buyer_id,
-        buyer_selection_item_id: data.buyer_selection_item_id,
-        requested_during: 'conseiller',
-      });
-      if (secondError) await reportServerError('recordVisitDone.secondVisit', secondError);
+    if (offersError) {
+      await reportServerError('changeVisitNextStep.offers', offersError);
+      return { ok: false, error: 'La suite n’a pas pu être changée. Réessayez.' };
     }
+    if ((offers ?? []).length > 0) {
+      return {
+        ok: false,
+        error: 'Une offre d’achat est signée sur cette visite : sa suite ne change plus.',
+      };
+    }
+  }
+  // L'issue suit la suite ; une visite d'avant le compte rendu, sans avis, garde son « Pas pour
+  // lui » (M119) hors de l'offre.
+  const outcome =
+    nextStep === 'offer'
+      ? 'offer'
+      : visit.opinion === 'not_for_me' || (visit.opinion == null && visit.outcome === 'declined')
+        ? 'declined'
+        : 'visited';
+  let update = client
+    .from('buyer_visit_requests')
+    .update({ outcome, next_step: nextStep })
+    .eq('id', requestId)
+    .eq('agency_id', profile.agency_id)
+    .is('cancelled_at', null);
+  update =
+    visit.next_step == null
+      ? update.is('next_step', null)
+      : update.eq('next_step', visit.next_step);
+  const { data, error } = await update.select('*').maybeSingle();
+  if (error || !data) return { ok: false, error: 'La suite n’a pas pu être changée. Réessayez.' };
+  if (nextStep === 'second_visit') {
+    await askSecondVisit(client, profile.agency_id, data, 'changeVisitNextStep.secondVisit');
   }
   revalidate(data.buyer_id);
   return { ok: true, request: toVisitRequest(data) };
