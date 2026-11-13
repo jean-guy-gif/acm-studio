@@ -12,6 +12,14 @@ import {
 } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro, formatRelativeMoment } from '@/lib/format';
 
+// Mission 155 — une réponse perdue ne laisse jamais « Veille active » sans le dire (décision de
+// Jean-Guy, 13/11 : le 13/11, la base tenait 0 € et l'écran restait sur l'ancien état) : au-delà
+// de 20 secondes sans réponse, ou si l'appel échoue, l'écran dit que l'enregistrement n'a pas
+// abouti et propose de recharger.
+const SAVE_TIMEOUT_MS = 20_000;
+const SAVE_LOST =
+  'L’enregistrement n’a pas abouti : rechargez la page pour voir le plafond enregistré.';
+
 const STATUS_LABELS: Record<WatchAdmin['journal'][number]['status'], string> = {
   running: 'en cours',
   done: 'terminée',
@@ -25,7 +33,11 @@ export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
   const router = useRouter();
   const [value, setValue] = useState(String(Math.round(watch.watchCapCents / 100)));
   const [pending, setPending] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    ok: boolean;
+    text: string;
+    reload?: true;
+  } | null>(null);
   const maxEuros = Math.floor(watch.agencyCapCents / 200);
 
   return (
@@ -51,8 +63,19 @@ export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
           event.preventDefault();
           setMessage(null);
           setPending(true);
+          let settled = false;
+          const lost = () => {
+            if (settled) return;
+            settled = true;
+            setPending(false);
+            setMessage({ ok: false, text: SAVE_LOST, reload: true });
+          };
+          const timer = window.setTimeout(lost, SAVE_TIMEOUT_MS);
           void setBuyerWatchCap(value)
             .then((result) => {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timer);
               setPending(false);
               if (!result.ok) {
                 setMessage({ ok: false, text: result.error });
@@ -62,8 +85,8 @@ export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
               router.refresh();
             })
             .catch(() => {
-              setPending(false);
-              setMessage({ ok: false, text: 'Connexion perdue : réessayez.' });
+              window.clearTimeout(timer);
+              lost();
             });
         }}
       >
@@ -98,6 +121,18 @@ export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
           }
         >
           {message.text}
+          {message.reload ? (
+            <>
+              {' '}
+              <button
+                type="button"
+                className="underline underline-offset-2"
+                onClick={() => window.location.reload()}
+              >
+                Recharger la page
+              </button>
+            </>
+          ) : null}
         </p>
       ) : null}
       <div className="flex flex-col gap-1.5">
