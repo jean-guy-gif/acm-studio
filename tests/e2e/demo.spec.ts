@@ -515,12 +515,24 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // depuis la page du dossier (M83), puis, sur Prospection : contacté → « Collaboration
       // refusée » remet le bien en courrier propriétaire, avec la phrase proposée ; contacté →
       // « Collaboration obtenue » clôt sa prospection, comptée à part.
+      // Mission 155 — un concurrent que ce dossier partage avec un mandat signé (Delmas, Perrin)
+      // y est déjà en exclusivité, et la carte réunit ce que chaque copie sait (M98) : on compte
+      // les cartes confrère avant, plus celles que le closer bascule.
+      const colleagueCards = () =>
+        ready
+          .getByTestId('prospecting-card')
+          .filter({ hasText: 'Exclusivité · appeler le confrère' });
+      await page.goto(`/prospection?bien=${projectId}`);
+      await expect(ready.getByTestId('prospecting-card')).toHaveCount(RETAINED);
+      const colleaguesBefore = await colleagueCards().count();
+      let flipped = 0;
       await page.goto(`/builder/${projectId}`);
       const exclusivityGroups = page.getByRole('group', { name: 'Exclusivité' });
       await expect(exclusivityGroups.first()).toBeVisible();
       for (const index of [0, 1]) {
         const yes = () =>
           exclusivityGroups.nth(index).getByRole('button', { name: 'Oui', exact: true });
+        if ((await yes().getAttribute('aria-pressed')) !== 'true') flipped += 1;
         await yes().click();
         await expect(yes()).toHaveAttribute('aria-pressed', 'true');
         // Le chip est optimiste : on attend que la correction soit EN BASE avant de continuer
@@ -538,16 +550,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
           .toBe('true');
       }
       await page.goto(`/prospection?bien=${projectId}`);
-      const colleague = () =>
-        ready
-          .getByTestId('prospecting-card')
-          .filter({ hasText: 'Exclusivité · appeler le confrère' })
-          .first();
-      await expect(
-        ready
-          .getByTestId('prospecting-card')
-          .filter({ hasText: 'Exclusivité · appeler le confrère' }),
-      ).toHaveCount(2);
+      const colleague = () => colleagueCards().first();
+      await expect(colleagueCards()).toHaveCount(colleaguesBefore + flipped);
+      expect(
+        colleaguesBefore + flipped,
+        'Deux confrères au moins pour la suite',
+      ).toBeGreaterThanOrEqual(2);
 
       // Refusée : le bien repasse propriétaire, et son courrier le dit.
       const first = colleague();
