@@ -11,6 +11,9 @@ import { fakeSupabase, type FakeCall, type FakeResponse } from '@/test-fixtures/
 
 const state = vi.hoisted(() => ({
   demo: true,
+  // Mission 155 — le repère relu par `deleteDemoBuyers` elle-même (le second verrou).
+  agencyRow: { is_demo: true } as { is_demo: boolean } | null,
+  agencyError: false,
   profile: null as Record<string, unknown> | null,
   respond: (() => ({})) as (table: string, calls: FakeCall[]) => FakeResponse,
   reported: [] as string[],
@@ -18,7 +21,17 @@ const state = vi.hoisted(() => ({
 const service = fakeSupabase((calls) => {
   const fromIndex = calls.map((call) => call.method).lastIndexOf('from');
   const table = fromIndex >= 0 ? String(calls[fromIndex]!.args[0]) : '';
-  return state.respond(table, calls.slice(Math.max(fromIndex, 0)));
+  const own = calls.slice(Math.max(fromIndex, 0));
+  const methodsOf = own.map((call) => call.method);
+  if (
+    table === 'agencies' &&
+    methodsOf.includes('select') &&
+    methodsOf.includes('maybeSingle') &&
+    !methodsOf.includes('update')
+  ) {
+    return state.agencyError ? { error: { message: 'timeout' } } : { data: state.agencyRow };
+  }
+  return state.respond(table, own);
 });
 
 vi.mock('@/features/demo/services/is-demo-agency', () => ({
@@ -60,6 +73,8 @@ const SIX = [
 beforeEach(() => {
   service.reset();
   state.demo = true;
+  state.agencyRow = { is_demo: true };
+  state.agencyError = false;
   state.profile = closer;
   state.reported = [];
   state.respond = () => ({ data: [] });
@@ -179,10 +194,12 @@ describe('la première étape : supprimer, recompter à zéro, préparer l’age
             : { data: [] };
     const result = await startDemoSetup('reset');
     expect(result).toMatchObject({ ok: true, now: expect.any(String) });
-    // L'adresse, puis la carte professionnelle si l'agence n'en a pas (M155).
+    // L'adresse, puis la carte professionnelle si l'agence n'en a pas ou garde le premier numéro
+    // inventé (M155) ; jamais celle d'un manager.
     expect(service.writes()).toEqual([
       'delete buyers',
       'update agencies',
+      'update agency_branding',
       'update agency_branding',
       'update agency_branding',
     ]);
@@ -297,6 +314,13 @@ describe('le logo et le téléphone de la démo (mission 147)', () => {
           : { data: [] };
     expect(await prepareDemoAgency(service.client as never, CLOSER)).toBe(true);
     expect(service.calls.some((call) => call.method === 'upload')).toBe(false);
+  });
+
+  // Mission 155 — la carte professionnelle de la démo : visiblement fictive, aucun chiffre qui
+  // pourrait désigner un confrère (Jean-Guy, 13/11).
+  it('la carte professionnelle inventée n’a que des zéros', async () => {
+    const { DEMO_PROFESSIONAL_CARD } = await import('@/features/demo/data/demo-legal-identity');
+    expect(DEMO_PROFESSIONAL_CARD.professional_card.replace(/\D/g, '')).toMatch(/^0+$/);
   });
 
   it('le téléphone du closer : posé s’il est vide ou vaut l’ancien numéro, jamais sinon', async () => {
@@ -430,15 +454,45 @@ describe('les acquéreurs de la démo', () => {
       table === 'buyers' ? { data: [{ id: 'b1' }, { id: 'b2' }] } : { data: [] };
     expect(await deleteDemoBuyers(service.client as never, CLOSER)).toBe(true);
     expect(service.writes()).toEqual(['delete buyers']);
-    // Les filtres de la suppression des fiches, avant celle des biens démarchés (M120).
-    const secondFrom = service.calls.findIndex(
-      (call, index) => index > 0 && call.method === 'from',
+    // Les filtres de la suppression des fiches : de son `from('buyers')` à la suivante.
+    const deletion = service.calls.findIndex((call) => call.method === 'delete');
+    const from = service.calls
+      .slice(0, deletion)
+      .map((call) => call.method)
+      .lastIndexOf('from');
+    const next = service.calls.findIndex(
+      (call, index) => index > deletion && call.method === 'from',
     );
     const filters = service.calls
-      .slice(0, secondFrom < 0 ? undefined : secondFrom)
+      .slice(from, next < 0 ? undefined : next)
       .filter((call) => call.method === 'eq')
       .map((call) => `${String(call.args[0])}=${String(call.args[1])}`);
+    // Le repère de l'agence relu d'abord (le second verrou).
+    expect(service.calls.find((call) => call.method === 'from')?.args[0]).toBe('agencies');
     expect(filters).toEqual([`agency_id=${AGENCY}`]);
+  });
+
+  // Le second verrou (Jean-Guy, 13/11) : la fonction relit le repère elle-même.
+  it('hors d’une agence de démonstration, ou repère illisible : faux, rien n’est supprimé', async () => {
+    const { deleteDemoBuyers } = await import('@/features/demo/services/demo-dossiers');
+    state.respond = (table) =>
+      table === 'buyers' ? { data: [{ id: 'b1' }, { id: 'b2' }] } : { data: [] };
+    for (const setup of [
+      () => (state.agencyRow = { is_demo: false }),
+      () => (state.agencyRow = null),
+      () => (state.agencyError = true),
+    ]) {
+      service.reset();
+      state.agencyRow = { is_demo: true };
+      state.agencyError = false;
+      setup();
+      expect(await deleteDemoBuyers(service.client as never, CLOSER)).toBe(false);
+      expect(service.writes()).toEqual([]);
+      // Rien n'est lu des fiches non plus : la relecture du repère vient d'abord.
+      expect(
+        service.calls.some((call) => call.method === 'from' && call.args[0] === 'buyers'),
+      ).toBe(false);
+    }
   });
 
   it('une lecture des acquéreurs en échec : faux, rien n’est supprimé', async () => {
