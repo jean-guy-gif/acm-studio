@@ -618,6 +618,22 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
       await expect(admin.getByText('Plafond de la veille enregistré.')).toBeVisible();
       await expect.poll(() => readDemoWatchCap(), { timeout: 20_000 }).toBe(restoreCap);
       await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille active');
+      // Une réponse perdue (connexion coupée pendant l'action) : l'écran le dit et propose de
+      // recharger ; rien n'est écrit, et la page rechargée relit le plafond en base.
+      await page.route('**/admin', (route) =>
+        route.request().method() === 'POST' && route.request().headers()['next-action']
+          ? route.abort('internetdisconnected')
+          : route.continue(),
+      );
+      await cap.fill('0');
+      await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect(admin.getByRole('alert')).toContainText(
+        'L’enregistrement n’a pas abouti : rechargez la page pour voir le plafond enregistré.',
+      );
+      await page.unroute('**/admin');
+      await admin.getByRole('button', { name: 'Recharger la page' }).click();
+      await expect(page.getByTestId('buyer-watch-state')).toHaveText('Veille active');
+      expect(readDemoWatchCap()).toBe(restoreCap);
     } finally {
       if (readDemoWatchCap() !== restoreCap) restoreDemoWatchCap(restoreCap);
     }
