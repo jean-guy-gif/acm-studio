@@ -5,7 +5,9 @@ import { useState, type ReactNode } from 'react';
 
 import { btnSecondary, link } from '@/components/ui/styles';
 import { VisitMessagesPanel } from '@/features/buyer-messages/components/visit-messages-panel';
+import type { VisitNextStep as ReportNextStep } from '@/features/buyer-messages/templates/types';
 import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-done-form';
+import { VisitNextStepForm } from '@/features/buyer-presentation/components/visit-next-step-form';
 import type { VisitNextStep } from '@/features/buyer-presentation/services/visit-next-step';
 import { VisitLetterAction } from '@/features/buyer-prospecting/components/visit-letter-action';
 import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting/types';
@@ -20,7 +22,7 @@ const PILL: Record<'done' | 'now' | 'later', string> = {
   later: 'bg-zinc-100 text-zinc-500 stage:bg-white/5 stage:text-white/50',
 };
 
-type Opened = 'confirm' | 'done' | 'messages' | null;
+type Opened = 'confirm' | 'done' | 'messages' | 'change' | null;
 
 // Mission 146 (partie B, I10, planche B1) — sur une visite : son chemin en pastilles (vert fait,
 // bleu maintenant, gris à venir, M143), UNE prochaine étape en contour (Visites n'a aucun bouton
@@ -36,6 +38,7 @@ export function VisitActions({
   letterState,
   colleague,
   openMessages = false,
+  changeNext = null,
 }: {
   visitId: string;
   buyerId: string;
@@ -46,6 +49,8 @@ export function VisitActions({
   colleague: boolean;
   // Mission 139 — juste après « Visite faite » : ses messages ouverts aussitôt.
   openMessages?: boolean;
+  // Correctif du 13/11 — une visite faite : sa suite se change (l'acquéreur a changé d'avis).
+  changeNext?: { current: ReportNextStep | null; offerAllowed: boolean } | null;
 }) {
   const [opened, setOpened] = useState<Opened>(openMessages ? 'messages' : null);
   const toggle = (value: Exclude<Opened, null>) =>
@@ -248,6 +253,17 @@ export function VisitActions({
             Messages prêts
           </button>
         ) : null}
+        {changeNext ? (
+          <button
+            type="button"
+            className={linkButton}
+            aria-expanded={opened === 'change'}
+            onClick={() => toggle('change')}
+            data-testid="visit-change-open"
+          >
+            Changer la suite
+          </button>
+        ) : null}
         {next.links.proposeToSeller && projectId ? (
           <Link
             href={`/builder/${projectId}`}
@@ -264,6 +280,14 @@ export function VisitActions({
         <VisitDoneForm requestId={visitId} onCancel={() => setOpened(null)} />
       ) : null}
       {opened === 'messages' ? <VisitMessagesPanel requestId={visitId} /> : null}
+      {opened === 'change' && changeNext ? (
+        <VisitNextStepForm
+          visitId={visitId}
+          current={changeNext.current}
+          offerAllowed={changeNext.offerAllowed}
+          onCancel={() => setOpened(null)}
+        />
+      ) : null}
     </div>
   );
 }

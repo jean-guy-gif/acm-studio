@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { badgeBrand, badgeNeutral } from '@/components/ui/styles';
 import type { VisitVoucher } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
-import { NEXT_STEP_LABELS, visitReportLine } from '@/features/buyer-messages/report';
+import {
+  canTurnIntoOffer,
+  NEXT_STEP_LABELS,
+  visitReportLine,
+} from '@/features/buyer-messages/report';
 import type { OfferAnswer } from '@/features/purchase-offer/queries/get-offer-answers';
 import { AVAILABILITY_LABELS } from '@/features/buyer-deck/types';
 import { VisitActions } from '@/features/buyer-presentation/components/visit-actions';
@@ -145,6 +149,20 @@ export function VisitRow({
         letterState={letter?.state ?? { kind: 'none' }}
         colleague={letter?.colleague ?? false}
         openMessages={openMessages && line.report?.nextStep != null}
+        // Correctif du 13/11 — la suite d'une visite faite se change ; pas une fois l'offre signée
+        // (le serveur le refuse aussi).
+        changeNext={
+          done && offerAnswer == null
+            ? {
+                current: line.report?.nextStep ?? null,
+                offerAllowed: canTurnIntoOffer({
+                  visitedAt: line.visitedAt,
+                  outcome: line.outcome,
+                  opinion: line.report?.opinion ?? null,
+                }),
+              }
+            : null
+        }
       />
       {outsideLine ? (
         <p

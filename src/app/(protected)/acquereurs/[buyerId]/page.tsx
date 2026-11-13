@@ -175,9 +175,14 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
   // Mission 120 — ses visites demandées, chacune avec l'action qui convient et l'état du courrier.
   const visits = ownVisits.filter((line) => line.visitedAt == null);
+  // Correctif du 13/11 (essai de Jean-Guy) — ses visites faites : la suite s'y change quand
+  // l'acquéreur change d'avis (« Changer la suite »), et « Offre envisagée » mène à l'offre d'achat.
+  const doneVisits = ownVisits
+    .filter((line) => line.visitedAt != null)
+    .sort((a, b) => b.visitedAt!.localeCompare(a.visitedAt!));
   // Mission 137 — et le bon de visite signé de chaque visite, toutes visites de la fiche.
   const [letters, vouchers, signedVouchers, signedOffers] = await Promise.all([
-    getVisitLetters(visits),
+    getVisitLetters([...visits, ...doneVisits]),
     getVisitVouchers(
       supabase,
       ownVisits.map((line) => line.id),
@@ -693,6 +698,24 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               </div>
               <ul className="flex flex-col gap-2">
                 {visits.map((line) => (
+                  <VisitRow
+                    key={line.id}
+                    line={line}
+                    letter={letters.get(line.id) ?? null}
+                    voucher={vouchers.get(line.id) ?? null}
+                  />
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {doneVisits.length > 0 ? (
+            <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-visits-done">
+              <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+                Ses visites faites
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {doneVisits.map((line) => (
                   <VisitRow
                     key={line.id}
                     line={line}
