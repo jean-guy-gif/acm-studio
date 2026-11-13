@@ -29,12 +29,15 @@ test('la copropriété : biens idéaux et rapprochement des Lambert', async ({ p
     await expect(page.getByTestId('ideal-title')).toHaveText(
       'Les biens idéaux de M. et Mme Lambert',
     );
-    // La maison des Lopez est déclarée hors copropriété : aucune mention sur sa carte. Ses
-    // concurrents à prospecter ne disent pas la leur : « à vérifier », sans être écartés.
+    // Les maisons sous mandat sont déclarées hors copropriété : aucune mention sur leur carte
+    // (plusieurs depuis la M155). Leurs concurrents à prospecter ne disent pas la leur : « à
+    // vérifier », sans être écartés.
     const agencyHits = page.getByTestId('ideal-agency-hit');
-    const mandate = agencyHits.filter({ hasText: 'Mes mandats' });
-    await expect(mandate).toHaveCount(1);
-    await expect(mandate).not.toContainText('Copropriété');
+    const mandates = agencyHits.filter({ hasText: 'Mes mandats' });
+    await expect(mandates.first()).toBeVisible();
+    for (let index = 0; index < (await mandates.count()); index += 1) {
+      await expect(mandates.nth(index)).not.toContainText('Copropriété');
+    }
     const competitors = agencyHits.filter({ hasText: 'Concurrents à prospecter' });
     await expect(competitors.first()).toBeVisible();
     const competitorCount = await competitors.count();

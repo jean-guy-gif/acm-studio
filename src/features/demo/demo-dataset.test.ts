@@ -145,7 +145,8 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
     expect(DEMO_SCENARIOS.map((scenario) => scenario.id)).toEqual(['antibes', 'vence', 'mougins']);
     for (const scenario of DEMO_SCENARIOS) {
       expect(scenario.listings.length).toBeGreaterThanOrEqual(12);
-      expect(scenario.listings.length).toBeLessThanOrEqual(15);
+      // Mission 155 — des annonces du marché seulement en plus.
+      expect(scenario.listings.length).toBeLessThanOrEqual(18);
       // Partie B — le nom du vendeur devient celui d'un dossier de démo : rien n'y dit « démo ».
       expect(scenario.sellerName).not.toMatch(/d[ée]mo/i);
     }
