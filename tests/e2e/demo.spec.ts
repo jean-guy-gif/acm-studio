@@ -127,10 +127,10 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       }
     });
 
-    // Mission 114 (partie B) — « Préparer ma démo » : six dossiers à cinq étapes, à soi. Un
+    // Mission 114 (partie B) — « Préparer ma démo » : douze dossiers à cinq étapes, à soi (M155). Un
     // passage précédent les a peut-être déjà préparés : ils sont alors là, et la fin du passage
     // les remet à zéro (Mission 147 B : par les étapes, « Votre démo est prête » sur preuve).
-    await test.step('Ma démo : six dossiers, deux mandats signés', async () => {
+    await test.step('Ma démo : douze dossiers, huit mandats signés', async () => {
       // Mission 125 — « Ma démo » s'ouvre par l'entrée du menu de la carte (Aide → Ma démo).
       await goViaAccountMenu(page, 'Ma démo');
       await expect(page).toHaveURL(/\/ma-demo$/);
@@ -142,12 +142,21 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
         .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
       // Mission 131 — « Prêt, en présentation directe », jouable comme le vrai produit. Mission 145 —
       // deux mandats signés : Mougins (M. Lefebvre), puis Vence (M. et Mme Lopez).
-      expect(stages).toEqual(['to_prepare', 'ready', 'direct', 'signed', 'signed', 'follow_up']);
+      // Mission 155 — huit mandats signés, dans l'ordre des dossiers de la démo.
+      expect(stages).toEqual([
+        'to_prepare',
+        'ready',
+        'direct',
+        ...Array.from({ length: 8 }, () => 'signed'),
+        'follow_up',
+      ]);
       const signedNames = await page
         .locator('[data-testid="demo-dossier"][data-stage="signed"]')
         .allInnerTexts();
       expect(signedNames[0]).toContain('M. Lefebvre');
       expect(signedNames[1]).toContain('M. et Mme Lopez');
+      expect(signedNames[2]).toContain('Mme Ferrand');
+      expect(signedNames[7]).toContain('M. et Mme Castel');
       // Mission 117 — les deux acquéreurs de la démo, et « Rapprocher » trouve le mandat de Mougins.
       // Des dossiers préparés avant la mission n'en ont pas : la remise à zéro, en fin de passage,
       // les prouve alors.

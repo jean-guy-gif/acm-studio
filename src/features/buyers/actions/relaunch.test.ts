@@ -161,13 +161,13 @@ describe('le partage noté', () => {
 });
 
 describe('la démo', () => {
-  it('les Lambert : le mandat de La Colle-sur-Loup puis deux maisons de Vence ; les Keller : deux refus de Mougins', () => {
+  it('les Lambert : le mandat de La Colle-sur-Loup puis deux maisons à piscine ; les Keller : deux refus de Mougins', () => {
     const now = new Date();
     const lambert = demoLambertSelectionPlan(now);
     expect(lambert.map((item) => item.mandateKey ?? item.listingId)).toEqual([
       'signed_la_colle',
       'ven-02',
-      'ven-05',
+      'ven-08',
     ]);
     const keller = demoKellerRefusalsPlan(now);
     expect(keller.map((item) => item.listingId)).toEqual(['mou-06', 'mou-01']);

@@ -249,11 +249,14 @@ const round500 = (value: number): number => Math.round(value / 500) * 500;
 // Les concurrents retenus : les plus proches du prix de l'annonce du bien, un bien qui baissera
 // après le rendez-vous toujours parmi eux (il fait la démonstration de « Mettre à jour les prix »).
 export function demoSeedCompetitors(scenario: DemoScenario): DemoListing[] {
-  const byCloseness = [...scenario.listings].sort(
-    (a, b) =>
-      Math.abs(a.price - scenario.subject.listedPrice) -
-        Math.abs(b.price - scenario.subject.listedPrice) || a.id.localeCompare(b.id),
-  );
+  // Mission 155 — une annonce du marché seulement n'est jamais semée comme concurrent.
+  const byCloseness = scenario.listings
+    .filter((listing) => !listing.marketOnly)
+    .sort(
+      (a, b) =>
+        Math.abs(a.price - scenario.subject.listedPrice) -
+          Math.abs(b.price - scenario.subject.listedPrice) || a.id.localeCompare(b.id),
+    );
   const chosen = byCloseness.slice(0, DEMO_SEED_COMPETITORS);
   const dropped = byCloseness.find(
     (listing) => listing.priceAfterMeeting != null && listing.priceAfterMeeting < listing.price,
@@ -553,13 +556,14 @@ export const DEMO_LAMBERT_SHARED_DAYS_AGO = 3;
 export const DEMO_WILSON_SELECTED_DAYS_AGO = 4;
 
 export const DEMO_JOURNEYS: readonly DemoJourney[] = [
-  // Sélection envoyée il y a 3 jours, sans réponse : la relance est due (M135). La maison de La
-  // Colle-sur-Loup, à piscine, puis deux maisons de Vence, dont une à piscine.
+  // Sélection envoyée il y a 3 jours, sans réponse : la relance est due (M135). Trois maisons à
+  // piscine : celle de La Colle-sur-Loup, sous mandat, une à Vence, une autre à La Colle (les biens
+  // que leur classement range, M151 B, restent dans « Ce que l'agence a déjà »).
   {
     buyer: 'M. et Mme Lambert',
     daysAgo: DEMO_LAMBERT_SHARED_DAYS_AGO,
     mandate: 'signed_la_colle',
-    listings: ['ven-02', 'ven-05'],
+    listings: ['ven-02', 'ven-08'],
     shared: true,
   },
   // Sélection envoyée hier, sans réponse : la relance n'est pas encore due (48 h).

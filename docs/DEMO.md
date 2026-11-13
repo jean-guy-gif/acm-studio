@@ -172,7 +172,7 @@ la date de téléchargement (JJ/MM/AAAA).
 
 ### Fiche — `mandat-antibes-appartement` · l'appartement de Mme Ferrand (mandat signé)
 
-Un nouveau mandat du lot 1 ; ses données suivront cette fiche.
+Un nouveau mandat du lot 1 (`FERRAND_SUBJECT`, `src/features/demo/data/seed-subjects.ts`).
 
 - **Le bien** : appartement de 3 pièces, 74 m², deux chambres, une salle de bains, au 4e et
   dernier étage avec ascenseur, terrasse de 18 m² exposée sud-ouest, parking en sous-sol et cave.
@@ -196,6 +196,137 @@ Un nouveau mandat du lot 1 ; ses données suivront cette fiche.
   4. `04-cuisine.jpg` — la cuisine ouverte sur le séjour ;
   5. `05-chambre.jpg` — la chambre principale ;
   6. `06-salle-de-bain.jpg` — la salle de bains et sa douche à l'italienne.
+
+### Fiche — `mandat-vence-maison` · la maison de M. et Mme Lopez (mandat signé)
+
+- **Le bien** : maison de 5 pièces, 135 m² sur deux niveaux, terrain de 900 m², quatre chambres,
+  deux salles de bains, terrasse plein sud, garage, sans piscine. Vence, quartier de la Sine, sur
+  les hauteurs. Prix de commercialisation 713 000 €.
+- **Époque et style** : construite en 1994, maison provençale traditionnelle — toiture en tuiles
+  canal, génoises, volets bois, une tonnelle sur la terrasse.
+- **Matériaux** : enduit jaune paille, volets bleu lavande, menuiseries bois ; dedans, tomettes
+  rouges anciennes au rez-de-chaussée, parquet clair à l'étage, poutres apparentes dans le séjour,
+  cheminée en pierre ; cuisine en bois clair, plan de travail carrelé.
+- **Standing** : bon, familial, entretenu ; sans luxe.
+- **Extérieur** : jardin plat engazonné, oliviers et un figuier, haie de lauriers ; terrasse sous
+  tonnelle de vigne ; les Baous au loin (sans relief reconnaissable), pas de piscine.
+- **Lumière** : matin, à la fin du printemps.
+- **Les 6 vues attendues** :
+  1. `01-facade.jpg` — la maison vue du jardin, la terrasse et sa tonnelle (photo principale) ;
+  2. `02-sejour.jpg` — le séjour, la cheminée et les poutres ;
+  3. `03-cuisine.jpg` — la cuisine en bois clair ;
+  4. `04-chambre.jpg` — une chambre à l'étage, parquet clair ;
+  5. `05-salle-de-bain.jpg` — la salle de bains, baignoire et faïence claire ;
+  6. `06-jardin.jpg` — le jardin, les oliviers et le figuier.
+
+### Fiche — `mandat-juan-les-pins-appartement` · l'appartement de M. et Mme Delmas (mandat signé)
+
+- **Le bien** : appartement de 3 pièces, 65 m², deux chambres, une salle de bains, au 2e étage
+  avec ascenseur, balcon de 8 m² exposé sud, place de parking extérieure. Juan-les-Pins (Antibes),
+  à quelques minutes à pied des plages. DPE D. Prix de commercialisation 395 000 €.
+- **Époque et style** : résidence de 1988, quatre étages, balcons filants ; appartement en bon
+  état, à rafraîchir par endroits.
+- **Matériaux** : façade en enduit rose saumon, garde-corps en fer forgé blanc, stores bannes
+  rayés ; dedans, carrelage beige 45 × 45, murs blancs, menuiseries PVC blanches ; cuisine
+  séparée en mélaminé blanc ; salle de bains avec baignoire, faïence bleu pâle.
+- **Standing** : moyen, propre et lumineux.
+- **Extérieur** : le balcon, deux chaises et une petite table, des palmiers de la résidence ; pas
+  de vue mer, la rue n'est pas lisible.
+- **Lumière** : milieu de journée, en été.
+- **Les 5 vues attendues** :
+  1. `01-facade.jpg` — la résidence vue du parking, les palmiers (photo principale) ;
+  2. `02-sejour.jpg` — le séjour ouvert sur le balcon ;
+  3. `03-cuisine.jpg` — la cuisine séparée ;
+  4. `04-chambre.jpg` — la chambre principale ;
+  5. `05-balcon.jpg` — le balcon et sa petite table.
+
+### Fiche — `mandat-villeneuve-loubet-appartement` · l'appartement de Mme Perrin (mandat signé)
+
+- **Le bien** : appartement de 3 pièces, 62 m², deux chambres, une salle d'eau, au 1er étage
+  d'une petite résidence de trois étages sans ascenseur, balcon exposé est, box fermé.
+  Villeneuve-Loubet, près du village. DPE D. Prix de commercialisation 349 000 €.
+- **Époque et style** : résidence de 1995, toits en tuiles, aspect de petit immeuble provençal ;
+  appartement en bon état.
+- **Matériaux** : enduit ocre clair, volets roulants, garde-corps métal vert sombre ; dedans,
+  sol stratifié chêne clair, murs blancs ; cuisine ouverte en blanc et bois ; salle d'eau avec
+  douche, faïence grise.
+- **Standing** : simple et soigné ; un premier achat.
+- **Extérieur** : le balcon donnant sur les arbres de la résidence et les collines ; pas de vue
+  mer.
+- **Lumière** : matin, à l'automne.
+- **Les 5 vues attendues** :
+  1. `01-facade.jpg` — la petite résidence et son jardin (photo principale) ;
+  2. `02-sejour.jpg` — le séjour et la cuisine ouverte ;
+  3. `03-chambre.jpg` — une chambre ;
+  4. `04-salle-d-eau.jpg` — la salle d'eau et sa douche ;
+  5. `05-balcon.jpg` — le balcon sur les arbres.
+
+### Fiche — `mandat-la-colle-sur-loup-maison` · la maison de M. et Mme Garnier (mandat signé)
+
+- **Le bien** : maison de 5 pièces, 145 m² sur deux niveaux, terrain de 1 100 m², piscine, quatre
+  chambres, deux salles de bains, terrasse exposée sud, garage. La Colle-sur-Loup, sur les
+  hauteurs, au calme. DPE C. Prix de commercialisation 785 000 €.
+- **Époque et style** : construite en 2002, néo-provençale — toiture en tuiles canal, un
+  pigeonnier, larges ouvertures.
+- **Matériaux** : enduit ocre rosé, volets bois vert amande, menuiseries bois ; dedans, grand
+  carrelage beige effet pierre au rez-de-chaussée, parquet chêne à l'étage ; cuisine ouverte
+  blanche, îlot en bois ; salle de bains en carreaux de ciment gris.
+- **Standing** : bon standing, familial.
+- **Extérieur** : piscine de 10 × 4 m bordée de dalles claires, pelouse, oliviers et lavandes,
+  terrasse couverte d'une pergola en bois ; vue sur les collines boisées.
+- **Lumière** : fin d'après-midi, en été.
+- **Les 6 vues attendues** :
+  1. `01-facade.jpg` — la maison et la piscine, vues du jardin (photo principale) ;
+  2. `02-sejour.jpg` — le séjour ouvert sur la terrasse ;
+  3. `03-cuisine.jpg` — la cuisine et son îlot en bois ;
+  4. `04-chambre.jpg` — une chambre à l'étage, parquet chêne ;
+  5. `05-salle-de-bain.jpg` — la salle de bains en carreaux de ciment ;
+  6. `06-terrasse.jpg` — la terrasse sous la pergola, les collines au loin.
+
+### Fiche — `mandat-saint-paul-de-vence-maison` · la maison de Mme Navarro (mandat signé)
+
+- **Le bien** : maison de plain-pied, 4 pièces, 118 m², terrain de 1 400 m², trois chambres, deux
+  salles de bains, terrasse exposée sud, abri pour deux voitures, sans piscine.
+  Saint-Paul-de-Vence, dans les collines, loin du village et de ses remparts (jamais visibles).
+  DPE C. Prix de commercialisation 705 000 €.
+- **Époque et style** : construite en 1985, rénovée ; une maison basse, en longueur, sous un toit
+  de tuiles anciennes.
+- **Matériaux** : murs en pierre sèche et enduit blanc cassé, volets gris clair ; dedans, sol en
+  pierre claire, murs blancs, plafonds bas ; cuisine rénovée en gris clair ; salles de bains
+  modernes, douche à l'italienne.
+- **Standing** : bon, calme, pratique ; pensé pour une vie de plain-pied.
+- **Extérieur** : terrasse dallée, jardin en pente douce, oliviers et chênes verts, potager en
+  carrés ; vue dégagée sur les collines, aucune maison au premier plan.
+- **Lumière** : matin ensoleillé, à l'automne.
+- **Les 6 vues attendues** :
+  1. `01-facade.jpg` — la maison de plain-pied et sa terrasse (photo principale) ;
+  2. `02-sejour.jpg` — le séjour, de plain-pied sur la terrasse ;
+  3. `03-cuisine.jpg` — la cuisine rénovée ;
+  4. `04-chambre.jpg` — une chambre ouverte sur le jardin ;
+  5. `05-salle-de-bain.jpg` — la salle de bains, douche à l'italienne ;
+  6. `06-jardin.jpg` — le jardin, les oliviers et les collines.
+
+### Fiche — `mandat-valbonne-villa` · la villa de M. et Mme Castel (mandat signé)
+
+- **Le bien** : villa de 6 pièces, 195 m² sur deux niveaux, terrain de 2 300 m², piscine, quatre
+  chambres, trois salles de bains, garage double. Valbonne, dans la campagne boisée. DPE C. Prix
+  de commercialisation 1 590 000 €.
+- **Époque et style** : construite en 1992, rénovée en 2019 — une bastide moderne : volumes
+  carrés, toit en tuiles, grandes baies refaites.
+- **Matériaux** : enduit blanc cassé, pierre apparente aux angles, menuiseries alu noires,
+  volets bois naturel ; dedans, béton ciré clair, murs blancs, poutres blanchies ; cuisine noire
+  mate, îlot en marbre blanc ; salles de bains en pierre grise.
+- **Standing** : haut de gamme, contemporain.
+- **Extérieur** : piscine à débordement de 12 × 5 m, plage en bois, pins et chênes autour, pelouse,
+  une terrasse couverte ; forêt au loin, aucun voisin visible.
+- **Lumière** : fin de matinée, en été.
+- **Les 6 vues attendues** :
+  1. `01-facade.jpg` — la villa et sa piscine (photo principale) ;
+  2. `02-sejour.jpg` — le séjour en béton ciré, les grandes baies ;
+  3. `03-cuisine.jpg` — la cuisine noire et l'îlot en marbre ;
+  4. `04-chambre.jpg` — la suite parentale ;
+  5. `05-salle-de-bain.jpg` — la salle de bains en pierre grise ;
+  6. `06-piscine.jpg` — la piscine et le jardin boisé.
 
 ## Les fiches PDF (`public/demo/fiche-*.pdf`)
 

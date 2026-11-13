@@ -11,6 +11,7 @@ import {
   demoPhotoSetFolders,
 } from '@/features/demo/data/photo-sets';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
+import { DEMO_SEED_SUBJECTS } from '@/features/demo/services/demo-seed';
 import { servedDemoPhotoFile } from '@/lib/photo-url';
 
 // Mission 155 — un jeu de photos par bien (décision de Jean-Guy, 13/11) : toutes les photos d'un
@@ -91,6 +92,20 @@ describe('les jeux de photos de la démo, un dossier par bien', () => {
           owner.set(photo, listing.id);
         }
       }
+    }
+  });
+
+  it('le dossier de chaque bien est attendu, et chaque mandat a sa fiche photo dans docs/DEMO.md', () => {
+    const doc = readFileSync(join(process.cwd(), 'docs', 'DEMO.md'), 'utf8');
+    const subjects = [
+      ...DEMO_SCENARIOS.map((scenario) => scenario.subject),
+      ...Object.values(DEMO_SEED_SUBJECTS),
+    ];
+    for (const subject of subjects) {
+      expect(DEMO_PHOTO_SET_IDS as readonly string[]).toContain(subject.photoSet);
+    }
+    for (const id of DEMO_PHOTO_SET_IDS.filter((each) => each.startsWith('mandat-'))) {
+      expect(doc, id).toContain(`### Fiche — \`${id}\``);
     }
   });
 

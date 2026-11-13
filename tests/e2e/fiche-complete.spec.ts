@@ -45,10 +45,11 @@ test('la fiche complète d’un bien : biens idéaux, sélection, « Proposer ce
   await login(page, demoCredentials());
   await resetDemoByScreen(page);
 
-  let moreauUrl = '';
+  // Mission 155 — M. et Mme Roux, nouveaux, sans sélection : la famille Moreau a la sienne, pleine.
+  let rouxUrl = '';
   await test.step('Un mandat de l’agence, depuis « Ce que l’agence a déjà »', async () => {
-    moreauUrl = await openBuyer(page, /Famille Moreau/);
-    await page.goto(`${moreauUrl}/biens-ideaux`);
+    rouxUrl = await openBuyer(page, /M\. et Mme Roux/);
+    await page.goto(`${rouxUrl}/biens-ideaux`);
     const agencyHits = page.getByTestId('ideal-agency-hit');
     await expect(agencyHits.first()).toBeVisible();
     const mandate = agencyHits.filter({ hasText: 'Mes mandats' }).first();
@@ -61,7 +62,7 @@ test('la fiche complète d’un bien : biens idéaux, sélection, « Proposer ce
     // Un mandat de l'agence n'a pas de lien en ligne.
     await expect(sheet.getByTestId('sheet-online')).toHaveCount(0);
     await expect(sheet.getByTestId('sheet-retain')).toHaveText('Retenir ce bien');
-    await expect(sheet.getByTestId('sheet-selection-count')).toContainText('Pour Famille Moreau');
+    await expect(sheet.getByTestId('sheet-selection-count')).toContainText('Pour M. et Mme Roux');
     await expectOneFilled(page, 'Biens idéaux, fiche complète ouverte');
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('property-sheet')).toHaveCount(0);
@@ -135,7 +136,7 @@ test('la fiche complète d’un bien : biens idéaux, sélection, « Proposer ce
   });
 
   await test.step('« Proposer ce bien » : la fiche du mandat', async () => {
-    await page.goto(moreauUrl);
+    await page.goto(rouxUrl);
     await page.getByRole('link', { name: 'Proposer ce bien' }).first().click();
     await expect(page.getByTestId('propose-title')).toBeVisible();
     await page.getByRole('button', { name: 'Voir la fiche du bien' }).click();

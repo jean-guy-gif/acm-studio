@@ -23,6 +23,7 @@ import {
   DEMO_AGENCY_NAME,
   DEMO_LEGAL_IDENTITY,
   DEMO_PROFESSIONAL_CARD,
+  OLD_DEMO_PROFESSIONAL_CARD,
 } from '@/features/demo/data/demo-legal-identity';
 import { DEMO_SIGNATURE_PNG_BASE64 } from '@/features/demo/data/demo-signature';
 import { readLegalIdentity } from '@/features/legal-identity/queries/get-legal-identity';
@@ -143,6 +144,15 @@ async function removeStored(supabase: Client, bucket: string, paths: string[]): 
 // (décision de Jean-Guy, 13/11). Appelée seulement derrière le garde « agence de démonstration »,
 // relu en base (`requireDemoCloser`) ; la suppression reste cadrée sur cette agence.
 export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promise<boolean> {
+  // Le second verrou (Jean-Guy, 13/11) : la fonction relit elle-même le repère de l'agence et ne
+  // supprime rien hors d'une agence de démonstration, ou si le repère est illisible — même appelée
+  // sans le garde de l'action.
+  const { data: agency, error: agencyError } = await supabase
+    .from('agencies')
+    .select('is_demo')
+    .eq('id', closer.agencyId)
+    .maybeSingle();
+  if (agencyError || agency?.is_demo !== true) return false;
   // Mission 120 — les courriers nés de leurs recherches partent en cascade : leurs photos aussi.
   const { data: own, error: ownError } = await supabase
     .from('buyers')
@@ -177,7 +187,13 @@ async function nameDemoAgency(supabase: Client, closer: Closer): Promise<boolean
     .update({ ...DEMO_PROFESSIONAL_CARD })
     .eq('agency_id', closer.agencyId)
     .is('professional_card', null);
-  return !cardError;
+  if (cardError) return false;
+  const { error: oldCardError } = await supabase
+    .from('agency_branding')
+    .update({ ...DEMO_PROFESSIONAL_CARD })
+    .eq('agency_id', closer.agencyId)
+    .eq('professional_card', OLD_DEMO_PROFESSIONAL_CARD);
+  return !oldCardError;
 }
 
 // Mission 147 (partie B) — le logo de l'agence de démonstration (planche M147-6), clair et sombre,
