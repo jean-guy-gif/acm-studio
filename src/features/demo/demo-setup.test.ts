@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   checkDemoSetup,
+  DEMO_SEED_GROUPS,
+  demoSeedGroup,
   demoSetupSteps,
   readSetupMoment,
 } from '@/features/demo/services/demo-setup';
@@ -37,6 +39,13 @@ describe('les étapes de la remise à zéro', () => {
     ]);
     expect(steps[4]!.label).toBe('M. Lefebvre, conclu, mandat signé');
     expect(steps[6]!.label).toBe('Mme Ferrand, conclu, mandat signé');
+    // Mission 155 — trois groupes créés d'un coup, chaque dossier dans un seul, dans l'ordre.
+    expect(DEMO_SEED_GROUPS.flat()).toEqual(steps.slice(1, 13).map((step) => step.key));
+    expect(steps.slice(1, 13).map((step) => step.group)).toEqual([
+      0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
+    ]);
+    expect(demoSeedGroup(['to_prepare', 'ready', 'direct', 'signed'])).toHaveLength(4);
+    expect(demoSeedGroup(['ready', 'to_prepare', 'direct', 'signed'])).toBeNull();
   });
 
   it('rien ne dit « démonstration » dans la barre ni dans les messages (M114) ; « Ma démo » garde son mot', () => {

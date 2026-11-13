@@ -16,6 +16,7 @@ import {
 } from '@/features/demo/services/demo-dossiers';
 import {
   checkDemoSetup,
+  demoSeedGroup,
   demoSeedLabel,
   isDemoSeedKey,
   readSetupMode,
@@ -151,6 +152,40 @@ export async function seedDemoProjectStep(
   if (!id) {
     await reportServerError('demoReset.dossier', new Error(`dossier ${key} non créé`));
     return failed(`le dossier de ${demoSeedLabel(key)} n’a pas pu être créé`, mode);
+  }
+  return { ok: true };
+}
+
+// Mission 155 — un groupe de dossiers, créés en même temps (`DEMO_SEED_GROUPS`) : seul un groupe
+// connu, dans son ordre, est accepté ; un dossier en échec arrête tout et se nomme.
+export async function seedDemoProjectsStep(
+  keys: unknown,
+  now: unknown,
+  requested?: unknown,
+): Promise<DemoSetupResult> {
+  const mode = readSetupMode(requested);
+  const group = demoSeedGroup(keys);
+  if (!group) return failed('dossiers inconnus', mode);
+  const closer = await requireDemoCloser();
+  const moment = readSetupMoment(now, new Date());
+  if (!moment) return stale(mode);
+  const supabase = createServiceRoleClient();
+  const ids = await Promise.all(
+    group.map((key) => seedDemoDossier(supabase, closer, demoSeedPlan(key, moment), moment)),
+  );
+  const missing = group.filter((_, index) => !ids[index]);
+  if (missing.length > 0) {
+    await reportServerError(
+      'demoReset.dossier',
+      new Error(`dossiers ${missing.join(', ')} non créés`),
+    );
+    const names = missing.map((key) => demoSeedLabel(key));
+    return failed(
+      names.length === 1
+        ? `le dossier de ${names[0]} n’a pas pu être créé`
+        : `les dossiers de ${names.join(' ; ')} n’ont pas pu être créés`,
+      mode,
+    );
   }
   return { ok: true };
 }

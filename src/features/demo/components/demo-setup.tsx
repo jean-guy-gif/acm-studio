@@ -14,6 +14,7 @@ import {
 import {
   seedDemoBuyersStep,
   seedDemoProjectStep,
+  seedDemoProjectsStep,
   startDemoSetup,
   verifyDemoSetup,
 } from '@/features/demo/actions/demo-setup';
@@ -32,7 +33,7 @@ import {
 type State =
   | { kind: 'idle' }
   | { kind: 'confirming' }
-  | { kind: 'running'; mode: Mode; index: number }
+  | { kind: 'running'; mode: Mode; index: number; until: number }
   | { kind: 'done' }
   | { kind: 'failed'; message: string };
 
@@ -65,20 +66,29 @@ export function DemoSetup({
   const run = async (mode: Mode): Promise<void> => {
     const fail = (message: string) => setState({ kind: 'failed', message });
     const lost = setupFailure(mode, 'la connexion a été perdue');
-    const at = (index: number) => setState({ kind: 'running', mode, index });
+    const at = (index: number, until = index) => setState({ kind: 'running', mode, index, until });
     at(0);
     const start = await attempt(() => startDemoSetup(mode));
     if (!start) return fail(lost);
     if (!start.ok) return fail(start.error);
-    for (const [index, step] of steps.entries()) {
-      if (step.key === 'delete') continue;
-      at(index);
+    for (let index = 1; index < steps.length; index += 1) {
+      const step = steps[index]!;
+      // Mission 155 — les dossiers d'un même groupe se créent d'un coup, au serveur.
+      let until = index;
+      while (step.group != null && step.group >= 0 && steps[until + 1]?.group === step.group) {
+        until += 1;
+      }
+      const group = steps.slice(index, until + 1).map((each) => each.key);
+      at(index, until);
+      index = until;
       const result = await attempt(() =>
         step.key === 'buyers'
           ? seedDemoBuyersStep(start.now, mode)
           : step.key === 'verify'
             ? verifyDemoSetup(mode)
-            : seedDemoProjectStep(step.key, start.now, mode),
+            : group.length > 1
+              ? seedDemoProjectsStep(group, start.now, mode)
+              : seedDemoProjectStep(step.key, start.now, mode),
       );
       if (!result) return fail(lost);
       if (!result.ok) {
@@ -91,7 +101,7 @@ export function DemoSetup({
   };
 
   if (state.kind === 'running') {
-    return <Progress steps={steps} index={state.index} mode={state.mode} />;
+    return <Progress steps={steps} index={state.index} until={state.until} mode={state.mode} />;
   }
 
   if (state.kind === 'failed') {
@@ -167,10 +177,12 @@ export function DemoSetup({
 function Progress({
   steps,
   index,
+  until,
   mode,
 }: {
   steps: DemoSetupStepView[];
   index: number;
+  until: number;
   mode: Mode;
 }) {
   const dossiers = steps
@@ -179,8 +191,9 @@ function Progress({
   const firstDossier = dossiers[0]?.position ?? 1;
   const lastDossier = dossiers[dossiers.length - 1]?.position ?? firstDossier;
   const made = Math.max(0, Math.min(index, lastDossier + 1) - firstDossier);
-  const current = dossiers.find((step) => step.position === index);
+  const current = dossiers.filter((step) => step.position >= index && step.position <= until);
   const percent = Math.round((index / steps.length) * 100);
+  const numberOf = (step: { position: number }) => step.position - firstDossier + 1;
   const line = (state: 'done' | 'current' | 'todo', text: string, key: string) => (
     <li
       key={key}
@@ -225,13 +238,19 @@ function Progress({
         {made > 0
           ? line('done', made === 1 ? 'Dossier 1 créé' : `Dossiers 1 à ${made} créés`, 'made')
           : null}
-        {current
+        {current.length === 1
           ? line(
               'current',
-              `Dossier ${current.position - firstDossier + 1} sur ${dossiers.length} : ${current.label}…`,
+              `Dossier ${numberOf(current[0]!)} sur ${dossiers.length} : ${current[0]!.label}…`,
               'current',
             )
-          : null}
+          : current.length > 1
+            ? line(
+                'current',
+                `Dossiers ${numberOf(current[0]!)} à ${numberOf(current[current.length - 1]!)} sur ${dossiers.length} : ${current.map((step) => step.label.split(',')[0]).join(', ')}…`,
+                'current',
+              )
+            : null}
         {index < firstDossier ? line('todo', `${dossiers.length} dossiers`, 'dossiers') : null}
         {line(stateOf(after('buyers')), steps[after('buyers')]?.label ?? '', 'buyers')}
         {line(stateOf(after('verify')), steps[after('verify')]?.label ?? '', 'verify')}

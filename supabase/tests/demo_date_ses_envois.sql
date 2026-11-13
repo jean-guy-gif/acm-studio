@@ -4,7 +4,8 @@
 --   §3 dans toute autre agence, l'heure de la base, quelle que soit celle envoyée (M134 inchangée) ;
 --   §4 une mise à jour ne change jamais l'heure de l'envoi, démo comprise ;
 --   §5 sans heure fournie (le code de `main`), l'heure de la base, démo comprise ;
---   §6 le navigateur n'écrit toujours rien, démo comprise.
+--   §6 le navigateur n'écrit toujours rien, démo comprise ;
+--   §7 la fonction en base est celle du fichier (empreinte de son corps).
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/demo_date_ses_envois.sql
@@ -115,6 +116,15 @@ begin
   end;
 end $$;
 reset role;
+
+-- §7 — la fonction en base est celle du fichier (empreinte du corps, relue par le gardien-sql).
+do $$
+begin
+  if (select md5(prosrc) from pg_proc where oid = 'public.check_buyer_proposal()'::regprocedure)
+     <> '1cfa85b35c78d117e2e0df001f742ce1' then
+    raise exception 'FAIL 7: la fonction en base n''est pas celle de la migration';
+  end if;
+end $$;
 
 do $$ begin raise notice 'demo_date_ses_envois : OK'; end $$;
 

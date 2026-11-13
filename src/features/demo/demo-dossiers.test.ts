@@ -80,6 +80,12 @@ describe('qui peut préparer ou remettre à zéro', () => {
       'REDIRECT /builder',
     );
     await expect(actions.verifyDemoSetup()).rejects.toThrow('REDIRECT /builder');
+    await expect(
+      actions.seedDemoProjectsStep(
+        ['to_prepare', 'ready', 'direct', 'signed'],
+        new Date().toISOString(),
+      ),
+    ).rejects.toThrow('REDIRECT /builder');
     expect(service.writes()).toEqual([]);
   });
 
@@ -101,6 +107,12 @@ describe('qui peut préparer ou remettre à zéro', () => {
     const stale = new Date(Date.now() - 20 * 60_000).toISOString();
     expect(await actions.seedDemoProjectStep('ready', stale)).toMatchObject({ ok: false });
     expect(await actions.seedDemoBuyersStep('hier')).toMatchObject({ ok: false });
+    // Mission 155 — seul un groupe connu, dans son ordre.
+    for (const keys of [['ready', 'to_prepare'], ['signed', 'villa'], 'signed', []]) {
+      expect(await actions.seedDemoProjectsStep(keys, new Date().toISOString())).toMatchObject({
+        ok: false,
+      });
+    }
     expect(service.writes()).toEqual([]);
   });
 });

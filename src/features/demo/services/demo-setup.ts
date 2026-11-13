@@ -33,7 +33,25 @@ export function setupFailure(mode: DemoSetupMode, reason: string): string {
   return `${setupName(mode)} n’a pas abouti : ${reason}. Rien n’est prêt.`;
 }
 
-export type DemoSetupStepView = { key: DemoSetupStepKey; label: string };
+// Mission 155 — un dossier porte le numéro du groupe que le serveur crée d'un coup.
+export type DemoSetupStepView = { key: DemoSetupStepKey; label: string; group?: number };
+
+// Mission 155 — douze dossiers : créés un par un, la remise à zéro passait de 21 à 43 s (mesuré sur
+// l'essai, 13/11). Le serveur les crée par groupes, en même temps (les appels d'un écran au serveur,
+// eux, partent l'un après l'autre) ; chaque groupe reste une étape, qui dit les dossiers qu'il crée.
+export const DEMO_SEED_GROUPS: readonly (readonly DemoSeedKey[])[] = [
+  ['to_prepare', 'ready', 'direct', 'signed'],
+  ['signed_vence', 'signed_antibes', 'signed_juan', 'signed_villeneuve'],
+  ['signed_la_colle', 'signed_saint_paul', 'signed_valbonne', 'follow_up'],
+];
+
+export function demoSeedGroup(keys: unknown): DemoSeedKey[] | null {
+  if (!Array.isArray(keys)) return null;
+  const group = DEMO_SEED_GROUPS.find(
+    (each) => each.length === keys.length && each.every((key, index) => keys[index] === key),
+  );
+  return group ? [...group] : null;
+}
 
 const lowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1);
 
@@ -46,7 +64,11 @@ export function demoSeedLabel(key: DemoSeedKey): string {
 export function demoSetupSteps(): DemoSetupStepView[] {
   return [
     { key: 'delete', label: 'Vos anciens dossiers et acquéreurs supprimés' },
-    ...DEMO_SEEDS.map((key) => ({ key, label: demoSeedLabel(key) })),
+    ...DEMO_SEEDS.map((key) => ({
+      key,
+      label: demoSeedLabel(key),
+      group: DEMO_SEED_GROUPS.findIndex((group) => group.includes(key)),
+    })),
     { key: 'buyers', label: 'Acquéreurs' },
     { key: 'verify', label: 'Vérification' },
   ];
