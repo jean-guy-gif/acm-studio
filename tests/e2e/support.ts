@@ -647,6 +647,30 @@ export function readDemoBuyersShown(projectId: string): number | null {
   return Number(count) < 0 ? null : Number(count);
 }
 
+// Mission 155 — « Veille active » restée à l'écran alors que la base tenait 0 € (13/11) : un état
+// à l'écran ne prouve pas un plafond écrit (M103). Le plafond de la veille de l'agence de
+// démonstration du compte de démo, en centimes, lu EN BASE ; lecture seule.
+export function readDemoWatchCap(): number {
+  const email = requireEnv('E2E_DEMO_EMAIL').replace(/'/g, "''");
+  const sql = `select coalesce((select a.buyer_watch_cap_cents from public.agencies a
+    join public.profiles p on p.agency_id = a.id
+    where lower(p.email) = lower('${email}') and a.is_demo), -1)::int as plafond`;
+  let output: string;
+  try {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: false }), {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error('Le plafond de la veille n’a pas pu être lu : `supabase db query` a échoué.');
+  }
+  const cap = /"plafond":\s*(-?\d+)/.exec(output)?.[1];
+  if (cap === undefined || Number(cap) < 0) {
+    throw new Error('Réponse inattendue de `supabase db query` à la lecture du plafond.');
+  }
+  return Number(cap);
+}
+
 // Mission 148 — le commentaire facultatif du Live s'ouvre par « + Ajouter un commentaire ».
 export async function fillLiveComment(page: Page, name: string, text: string): Promise<void> {
   const area = page.locator(`textarea[name="${name}"]`);

@@ -10,6 +10,7 @@ import {
   openToday,
   pagePayload,
   readDemoBuyersShown,
+  readDemoWatchCap,
   resetDemoByScreen,
 } from './support';
 
@@ -597,12 +598,18 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
       await cap.fill('16');
       await admin.getByRole('button', { name: 'Enregistrer' }).click();
       await expect(admin.getByRole('alert')).toContainText('moitié');
+      // Mission 155 — l'écran ne suffit pas : le message de l'action, puis le plafond relu en
+      // base, puis l'état à l'écran sans recharger (le 13/11, la base tenait 0 € et l'écran
+      // disait encore « Veille active »).
       await cap.fill('0');
       await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect(admin.getByText('Plafond de la veille enregistré.')).toBeVisible();
+      await expect.poll(() => readDemoWatchCap(), { timeout: 20_000 }).toBe(0);
       await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille coupée');
     } finally {
       await cap.fill('10');
       await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect.poll(() => readDemoWatchCap(), { timeout: 20_000 }).toBe(1000);
       await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille active');
     }
   });
