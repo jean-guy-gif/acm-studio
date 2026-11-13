@@ -105,6 +105,8 @@ export type DemoSubject = {
   district: string | null;
   address: DemoAddress;
   location: { lat: number; lon: number };
+  // Mission 155 — le dossier de son jeu de photos (`public/demo/photos/<photoSet>/`).
+  photoSet?: string;
   photos: string[];
   // Le prix affiché par l'annonce du bien (information seulement, M38 : il ne remplit rien).
   listedPrice: number;

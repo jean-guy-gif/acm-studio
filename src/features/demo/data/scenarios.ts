@@ -1,3 +1,4 @@
+import { demoPhotoSet } from '@/features/demo/data/photo-sets';
 import type {
   DemoListing,
   DemoScenario,
@@ -84,7 +85,11 @@ const seed =
       ...listing,
       scenario,
       propertyType,
-      photos: listing.photos ?? photosPer(index).map((name) => pool[Number(name)] ?? name),
+      // Mission 155 — le jeu de photos du bien dès qu'il est déposé (`public/demo/photos/<id>/`).
+      photos:
+        demoPhotoSet(listing.id) ??
+        listing.photos ??
+        photosPer(index).map((name) => pool[Number(name)] ?? name),
     }));
 
 // Les photos libres de droits, par famille (`public/demo/photos`, sources dans docs/DEMO.md).
@@ -1105,7 +1110,8 @@ const mouginsSubject: DemoSubject = {
   district: 'Les Collines',
   address: addr('7', 'traverse des Terrasses Fleuries'),
   location: at(43.6031, 7.0012),
-  photos: [
+  photoSet: 'mandat-mougins-villa',
+  photos: demoPhotoSet('mandat-mougins-villa') ?? [
     DEMO_PHOTO_POOLS.villa[0],
     DEMO_PHOTO_POOLS.villa[1],
     DEMO_PHOTO_POOLS.villa[2],
