@@ -14,6 +14,7 @@ import {
   DEMO_STREETS,
 } from '@/features/demo/data/scenarios';
 import { DEMO_LISTING_HOST } from '@/features/demo/constants';
+import { DEMO_SEED_SUBJECTS } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoSubjectListingUrl } from '@/features/demo/services/demo-urls';
 
 // Mission 114 (A3.8) — le jeu de données est relu par un test : aucune adresse ne correspond à une
@@ -135,6 +136,10 @@ const SOURCE = readFileSync(
   'utf8',
 );
 
+// Mission 155 — une photo d'un jeu par bien (« mou-02/01-facade.jpg ») suit les règles de
+// demo-photo-sets.test.ts, pas celles des photos partagées par famille.
+const inSet = (file: string): boolean => file.includes('/');
+
 describe('le jeu de données de la démonstration (mission 114)', () => {
   it('trois scénarios, 12 à 15 biens chacun, identifiants uniques', () => {
     expect(DEMO_SCENARIOS.map((scenario) => scenario.id)).toEqual(['antibes', 'vence', 'mougins']);
@@ -152,6 +157,8 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
     expect([...DEMO_STREETS]).toEqual(FICTIONAL_STREETS);
     const streets = [
       ...DEMO_SCENARIOS.map((scenario) => scenario.subject.address.street),
+      // Mission 155 — le bien de chaque dossier.
+      ...Object.values(DEMO_SEED_SUBJECTS).map((subject) => subject.address.street),
       ...DEMO_LISTINGS.map((listing) => listing.address.street),
     ];
     for (const street of streets) {
@@ -254,14 +261,14 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
     for (const scenario of DEMO_SCENARIOS) {
       expect(scenario.subject.photos.length).toBeGreaterThanOrEqual(3);
       expect(scenario.subject.photos.length).toBeLessThanOrEqual(5);
-      for (const file of scenario.subject.photos) expect(pool.has(file)).toBe(true);
+      for (const file of scenario.subject.photos) expect(pool.has(file) || inSet(file)).toBe(true);
       expect(existsSync(join(process.cwd(), 'public', 'demo', `fiche-${scenario.id}.pdf`))).toBe(
         true,
       );
       for (const listing of scenario.listings) {
         expect(listing.photos.length).toBeGreaterThanOrEqual(2);
         expect(listing.photos.length).toBeLessThanOrEqual(4);
-        for (const file of listing.photos) expect(pool.has(file)).toBe(true);
+        for (const file of listing.photos) expect(pool.has(file) || inSet(file)).toBe(true);
       }
     }
   });
@@ -275,12 +282,14 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
       const own = new Set<string>(DEMO_PHOTO_POOLS[family[scenario.id]]);
       const all = [scenario.subject.photos, ...scenario.listings.map((listing) => listing.photos)];
       for (const photos of all) {
-        for (const file of photos) expect(own.has(file), `${scenario.id} : ${file}`).toBe(true);
+        for (const file of photos.filter((f) => !inSet(f)))
+          expect(own.has(file), `${scenario.id} : ${file}`).toBe(true);
       }
       if (scenario.id === 'mougins') {
         const exteriors = new Set<string>(DEMO_PHOTO_EXTERIORS.villa);
         for (const photos of all) {
-          for (const file of photos) expect(exteriors.has(file), `Mougins : ${file}`).toBe(true);
+          for (const file of photos.filter((f) => !inSet(f)))
+            expect(exteriors.has(file), `Mougins : ${file}`).toBe(true);
         }
       }
       // Deux colonnes de la grille ne montrent jamais la même miniature : la photo principale d'un
@@ -294,7 +303,7 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
       }
       if (scenario.id === 'vence') {
         const exteriors = new Set<string>(DEMO_PHOTO_EXTERIORS.house);
-        for (const photos of all)
+        for (const photos of all.filter((p) => !inSet(p[0]!)))
           expect(exteriors.has(photos[0]!), `Vence : ${photos[0]}`).toBe(true);
       }
     }

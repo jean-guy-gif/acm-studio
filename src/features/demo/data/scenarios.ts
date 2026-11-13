@@ -1,3 +1,4 @@
+import { demoPhotoSet } from '@/features/demo/data/photo-sets';
 import type {
   DemoListing,
   DemoScenario,
@@ -84,15 +85,18 @@ const seed =
       ...listing,
       scenario,
       propertyType,
-      photos: listing.photos ?? photosPer(index).map((name) => pool[Number(name)] ?? name),
+      // Mission 155 — le jeu de photos du bien dès qu'il est déposé (`public/demo/photos/<id>/`).
+      photos:
+        demoPhotoSet(listing.id) ??
+        listing.photos ??
+        photosPer(index).map((name) => pool[Number(name)] ?? name),
     }));
 
 // Les photos libres de droits, par famille (`public/demo/photos`, sources dans docs/DEMO.md).
 export const DEMO_PHOTO_POOLS = {
-  apartment: Array.from(
-    { length: 8 },
-    (_, i) => `appartement-${String(i + 1).padStart(2, '0')}.jpg`,
-  ),
+  // Mission 155 — retirées : appartement-04 (des objets sur une table de chevet), appartement-06
+  // (une rue de village et ses voitures), appartement-08 (une tour qui n'est pas de la Côte d'Azur).
+  apartment: ['01', '02', '03', '05', '07'].map((n) => `appartement-${n}.jpg`),
   house: Array.from({ length: 8 }, (_, i) => `maison-${String(i + 1).padStart(2, '0')}.jpg`),
   villa: Array.from({ length: 8 }, (_, i) => `villa-${String(i + 1).padStart(2, '0')}.jpg`),
 } as const;
@@ -157,7 +161,8 @@ const antibesSubject: DemoSubject = {
   district: 'Centre-ville',
   address: addr('12', 'allée des Cistes Blancs'),
   location: at(43.5839, 7.1197),
-  photos: [
+  photoSet: 'a-preparer-antibes-appartement',
+  photos: demoPhotoSet('a-preparer-antibes-appartement') ?? [
     DEMO_PHOTO_POOLS.apartment[0],
     DEMO_PHOTO_POOLS.apartment[1],
     DEMO_PHOTO_POOLS.apartment[2],
@@ -177,7 +182,7 @@ const antibesListings = seed(
   // Jamais la photo principale du bien vendeur (appartement-01) : le dossier « À relancer »
   // d'Antibes et ses concurrents peuvent se trouver dans la même grille (relecture, 25/10).
   DEMO_PHOTO_POOLS.apartment.slice(1),
-  rotate(7),
+  rotate(DEMO_PHOTO_POOLS.apartment.length - 1),
 )([
   {
     id: 'ant-01',
@@ -644,7 +649,8 @@ const venceSubject: DemoSubject = {
   district: 'Les Collines',
   address: addr('4', 'chemin des Restanques Hautes'),
   location: at(43.7268, 7.1052),
-  photos: [
+  photoSet: 'live-vence-maison',
+  photos: demoPhotoSet('live-vence-maison') ?? [
     DEMO_PHOTO_POOLS.house[0],
     DEMO_PHOTO_POOLS.house[1],
     DEMO_PHOTO_POOLS.house[2],
@@ -1106,7 +1112,8 @@ const mouginsSubject: DemoSubject = {
   district: 'Les Collines',
   address: addr('7', 'traverse des Terrasses Fleuries'),
   location: at(43.6031, 7.0012),
-  photos: [
+  photoSet: 'mandat-mougins-villa',
+  photos: demoPhotoSet('mandat-mougins-villa') ?? [
     DEMO_PHOTO_POOLS.villa[0],
     DEMO_PHOTO_POOLS.villa[1],
     DEMO_PHOTO_POOLS.villa[2],

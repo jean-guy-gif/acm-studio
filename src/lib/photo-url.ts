@@ -5,7 +5,9 @@ import { DEMO_PHOTOS_PATH } from '@/features/demo/constants';
 // une photo de portail (M114). Enregistrée depuis l'essai, protégé, elle ne s'ouvrait pas en
 // production. À l'affichage, une telle adresse redevient un chemin de l'hôte qui sert la page ;
 // toute autre adresse passe telle quelle (une photo de portail n'est jamais réécrite).
-const DEMO_PHOTO_PATH = new RegExp(`^${DEMO_PHOTOS_PATH}/([a-z0-9-]+\\.jpg)$`);
+// Mission 155 — une photo peut vivre dans le dossier de son bien (« mandat-mougins-villa/01-facade.jpg ») :
+// un seul niveau, aucun point hors de « .jpg », donc aucun chemin qui remonte.
+const DEMO_PHOTO_PATH = new RegExp(`^${DEMO_PHOTOS_PATH}/((?:[a-z0-9-]+/)?[a-z0-9-]+\\.jpg)$`);
 
 const isAppHost = (hostname: string): boolean =>
   hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.vercel.app');

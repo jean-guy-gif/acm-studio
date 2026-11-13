@@ -78,32 +78,124 @@ méditerranéen (les maisons américaines, bardage, brique, pelouse, sont partie
 `maison-04`, `villa-04`, `villa-05`, `appartement-06`, `appartement-08`. Mêmes banques, même
 licence ; aucune façade reconnaissable d'un lieu nommé.
 
-| Fichier              | Titre d'origine                            | Source       | Licence                  | Page d'origine                                                                          |
-| -------------------- | ------------------------------------------ | ------------ | ------------------------ | --------------------------------------------------------------------------------------- |
-| `appartement-01.jpg` | Free modern living room interior           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5915137/image-light-public-domain-plants                 |
-| `appartement-02.jpg` | Free minimalist living room interior       | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927318/photo-image-public-domain-minimalist-house       |
-| `appartement-03.jpg` | Free modern kitchen interior image         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5925293/photo-image-public-domain-kitchen-living-room    |
-| `appartement-04.jpg` | Bedroom White                              | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-white-8RWPJ5Q6OZ                                     |
-| `appartement-05.jpg` | Free living room interior design           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5917348/image-frame-light-public-domain                  |
-| `appartement-06.jpg` | City Town (Lou Levit)                      | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/city-town-52DC8952A2                                         |
-| `appartement-07.jpg` | Modern bathroom, house interior            | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043329/photo-image-public-domain-room-interior          |
-| `appartement-08.jpg` | Building Balconies (The Building Envelope) | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/building-balconies-H8SXFODO3W                                |
-| `maison-01.jpg`      | white house greenish blue shutters         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/3291661/free-photo-image-building-cc0-countryside        |
-| `maison-02.jpg`      | Sans titre (mas dans la lavande)           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5942139/free-public-domain-cc0-photo                     |
-| `maison-03.jpg`      | Free Italian house Tuscany photo           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5920499/photo-image-public-domain-white-free             |
-| `maison-04.jpg`      | Sans titre (villa ocre et palmiers)        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6070200/free-public-domain-cc0-photo                     |
-| `maison-05.jpg`      | Living Room Interior of House              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5970065/living-room-interior-house                       |
-| `maison-06.jpg`      | Modern white kitchen interior              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6039071/photo-image-public-domain-minimal-wood           |
-| `maison-07.jpg`      | Bedroom Clean                              | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-clean-OE0F9BHXJQ                                     |
-| `maison-08.jpg`      | Free dining room image                     | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5904672/photo-image-flower-public-domain-minimal         |
-| `villa-01.jpg`       | Free modern house, villa, swimming         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5907779/photo-image-public-domain-free-cc0               |
-| `villa-02.jpg`       | House pool, real estate                    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6023165/photo-image-public-domain-house-summer           |
-| `villa-03.jpg`       | Swimming Pool House                        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5916870/image-aesthetic-background                       |
-| `villa-04.jpg`       | Pool Backyard (Vita Vilcina)               | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/pool-backyard-8512A55AD8                                     |
-| `villa-05.jpg`       | Sans titre (maison de pierre, cyprès)      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5934664/free-public-domain-cc0-photo                     |
-| `villa-06.jpg`       | Free Mediterranean house                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5906917/free-mediterranean-house-public-domain-cc0-photo |
-| `villa-07.jpg`       | Luxury bathroom interior                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043330/photo-image-public-domain-living-room            |
-| `villa-08.jpg`       | Free minimalist living room interior       | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927077/photo-image-public-domain-minimalist-house       |
+Mission 155 (13/11) : trois photos retirées, qui ne montraient pas un logement crédible :
+`appartement-04` (des objets sur une table de chevet), `appartement-06` (une rue de village et ses
+voitures), `appartement-08` (une tour qui n'est pas de la Côte d'Azur). Les biens d'Antibes se
+partagent les quatre photos d'appartement qui restent jusqu'au lot des photos.
+
+| Fichier              | Titre d'origine                       | Source       | Licence                  | Page d'origine                                                                          |
+| -------------------- | ------------------------------------- | ------------ | ------------------------ | --------------------------------------------------------------------------------------- |
+| `appartement-01.jpg` | Free modern living room interior      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5915137/image-light-public-domain-plants                 |
+| `appartement-02.jpg` | Free minimalist living room interior  | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927318/photo-image-public-domain-minimalist-house       |
+| `appartement-03.jpg` | Free modern kitchen interior image    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5925293/photo-image-public-domain-kitchen-living-room    |
+| `appartement-05.jpg` | Free living room interior design      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5917348/image-frame-light-public-domain                  |
+| `appartement-07.jpg` | Modern bathroom, house interior       | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043329/photo-image-public-domain-room-interior          |
+| `maison-01.jpg`      | white house greenish blue shutters    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/3291661/free-photo-image-building-cc0-countryside        |
+| `maison-02.jpg`      | Sans titre (mas dans la lavande)      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5942139/free-public-domain-cc0-photo                     |
+| `maison-03.jpg`      | Free Italian house Tuscany photo      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5920499/photo-image-public-domain-white-free             |
+| `maison-04.jpg`      | Sans titre (villa ocre et palmiers)   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6070200/free-public-domain-cc0-photo                     |
+| `maison-05.jpg`      | Living Room Interior of House         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5970065/living-room-interior-house                       |
+| `maison-06.jpg`      | Modern white kitchen interior         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6039071/photo-image-public-domain-minimal-wood           |
+| `maison-07.jpg`      | Bedroom Clean                         | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-clean-OE0F9BHXJQ                                     |
+| `maison-08.jpg`      | Free dining room image                | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5904672/photo-image-flower-public-domain-minimal         |
+| `villa-01.jpg`       | Free modern house, villa, swimming    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5907779/photo-image-public-domain-free-cc0               |
+| `villa-02.jpg`       | House pool, real estate               | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6023165/photo-image-public-domain-house-summer           |
+| `villa-03.jpg`       | Swimming Pool House                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5916870/image-aesthetic-background                       |
+| `villa-04.jpg`       | Pool Backyard (Vita Vilcina)          | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/pool-backyard-8512A55AD8                                     |
+| `villa-05.jpg`       | Sans titre (maison de pierre, cyprès) | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5934664/free-public-domain-cc0-photo                     |
+| `villa-06.jpg`       | Free Mediterranean house              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5906917/free-mediterranean-house-public-domain-cc0-photo |
+| `villa-07.jpg`       | Luxury bathroom interior              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043330/photo-image-public-domain-living-room            |
+| `villa-08.jpg`       | Free minimalist living room interior  | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927077/photo-image-public-domain-minimalist-house       |
+
+## Les jeux de photos, un dossier par bien (mission 155)
+
+Décision de Jean-Guy (13/11) : toutes les photos d'un bien montrent **le même bien**, et aucune
+photo n'est partagée entre deux biens. Les photos ci-dessus, partagées par famille, sont
+remplacées bien par bien ; tant qu'un bien n'a pas son jeu, il garde ses photos d'avant.
+
+### Où déposer un jeu
+
+Un dossier par bien : `public/demo/photos/<bien>/`. Le nom du dossier est donné par la fiche du
+bien (`mandat-mougins-villa`, `mandat-antibes-appartement`… ; une annonce du marché prend son
+identifiant, `mou-02`). Déposer le jeu complet dans son dossier suffit : la liste des photos est
+relue avant chaque compilation et chaque test (`npm run demo:photos`), rien d'autre à toucher.
+
+### Le format
+
+- **JPEG**, sRGB, **1 600 × 1 200 px** (4:3, paysage), qualité 80 environ, **400 Ko au plus**
+  par photo, sans métadonnées (aucune position GPS).
+- **Noms** : `01-facade.jpg`, `02-sejour.jpg`, `03-cuisine.jpg`… — deux chiffres, un tiret, la
+  vue en minuscules, sans accent, mots séparés par des tirets. Les numéros se suivent à partir de
+  01 et donnent l'ordre d'affichage ; **la photo 01 est la photo principale** (la miniature
+  partout : cartes, grille, Live, documents).
+- **3 à 6 photos** : 5 à 6 pour un mandat, 3 au moins pour une annonce du marché.
+- Les tests refusent un jeu hors format (nom, nombre, numéros, taille, poids) et un dossier qui
+  n'est pas celui d'un bien connu.
+
+### Ce qu'aucune photo ne montre
+
+Aucune personne reconnaissable, aucune marque ni plaque d'immatriculation lisible, aucun numéro
+ni nom de rue, aucun lieu célèbre reconnaissable, aucun texte ni filigrane. Dans un même jeu : la
+même saison et la même lumière, les mêmes matériaux d'une pièce à l'autre (sol, menuiseries,
+façade), et un extérieur qui est bien celui de la façade.
+
+### Le registre
+
+Une ligne par jeu déposé, exigée par les tests : le dossier, la source, l'auteur, la licence et
+la date de téléchargement (JJ/MM/AAAA).
+
+| Dossier | Bien | Source | Auteur | Licence | Téléchargé le |
+| ------- | ---- | ------ | ------ | ------- | ------------- |
+
+### Fiche — `mandat-mougins-villa` · la villa de M. Lefebvre (mandat signé)
+
+- **Le bien** : villa de 7 pièces, 210 m² sur deux niveaux, terrain de 1 800 m², piscine,
+  quatre chambres dont une suite, trois salles de bains, garage double. Mougins, quartier des
+  Collines, au calme sur un coteau, exposée plein sud. Prix de commercialisation 1 639 500 €.
+- **Époque et style** : construite en 2008, provençale contemporaine — volumes simples, toiture
+  en tuiles canal avec génoises, grandes baies vitrées.
+- **Matériaux** : enduit ocre clair (beige rosé), volets bois gris-vert, menuiseries alu
+  anthracite ; dedans, sol en pierre claire (travertin) partout, murs blancs, cheminée moderne
+  dans le séjour ; cuisine blanche, îlot central, plan de travail clair.
+- **Standing** : haut de gamme, sans ostentation ; état excellent.
+- **Extérieur** : jardin en restanques (oliviers, lavandes, pins parasols, haie de cyprès),
+  piscine de 12 × 5 m bordée de pierre claire, terrasse couverte d'une pergola ; collines boisées
+  au loin, aucune autre maison au premier plan, pas de vue mer.
+- **Lumière** : fin d'après-midi, en juin.
+- **Les 6 vues attendues** :
+  1. `01-facade.jpg` — la villa vue du jardin, la piscine au premier plan (photo principale) ;
+  2. `02-sejour.jpg` — le séjour, la cheminée, les baies ouvertes sur la terrasse ;
+  3. `03-cuisine.jpg` — la cuisine ouverte et son îlot ;
+  4. `04-chambre.jpg` — la suite parentale, une baie sur le jardin ;
+  5. `05-salle-de-bain.jpg` — double vasque, douche à l'italienne ;
+  6. `06-jardin.jpg` — la terrasse couverte et le jardin en restanques, les collines au loin.
+
+### Fiche — `mandat-antibes-appartement` · l'appartement de Mme Ferrand (mandat signé)
+
+Un nouveau mandat du lot 1 ; ses données suivront cette fiche.
+
+- **Le bien** : appartement de 3 pièces, 74 m², deux chambres, une salle de bains, au 4e et
+  dernier étage avec ascenseur, terrasse de 18 m² exposée sud-ouest, parking en sous-sol et cave.
+  Antibes, quartier de la Salis, à quelques minutes à pied des plages. DPE C. Prix de
+  commercialisation 439 000 €.
+- **Époque et style** : résidence de 1972, façades refaites en 2020 ; appartement rénové en 2022,
+  sobre et clair.
+- **Matériaux** : façade en enduit blanc cassé, balcons filants, garde-corps métal blanc ;
+  dedans, grès cérame clair effet pierre dans toutes les pièces, murs blancs, menuiseries alu
+  blanches ; cuisine ouverte blanc mat, plan de travail chêne clair ; salle de bains en faïence
+  blanche, douche à l'italienne vitrée.
+- **Standing** : bon standing, sans luxe.
+- **Extérieur** : la terrasse, une table et deux chaises, des pots d'agrumes ; la mer au loin
+  au-dessus des pins (vue partielle, pas un panorama), aucun lieu reconnaissable ; jardin commun
+  de la résidence planté de pins parasols.
+- **Lumière** : matin ensoleillé, au printemps.
+- **Les 6 vues attendues** :
+  1. `01-facade.jpg` — la résidence vue de son jardin, les pins parasols (photo principale) ;
+  2. `02-sejour.jpg` — le séjour ouvert sur la terrasse par une baie vitrée ;
+  3. `03-terrasse.jpg` — la terrasse et la vue mer partielle au-dessus des pins ;
+  4. `04-cuisine.jpg` — la cuisine ouverte sur le séjour ;
+  5. `05-chambre.jpg` — la chambre principale ;
+  6. `06-salle-de-bain.jpg` — la salle de bains et sa douche à l'italienne.
 
 ## Les fiches PDF (`public/demo/fiche-*.pdf`)
 

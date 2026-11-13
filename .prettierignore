@@ -15,3 +15,6 @@ src/features/competitor-search/__fixtures__
 # du prose et des fichiers outillés, jamais mis en forme par prettier.
 missions/
 supabase/.temp
+
+# Mission 155 — la liste des jeux de photos de la démo, écrite par scripts/demo-photo-sets.mjs
+src/features/demo/data/photo-sets.generated.json

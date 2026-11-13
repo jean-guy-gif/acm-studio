@@ -4,7 +4,7 @@ import { alertError, card, hintText, link, sectionTitle } from '@/components/ui/
 import { DemoSetup } from '@/features/demo/components/demo-setup';
 import type { DemoDossier } from '@/features/demo/queries/get-demo-dossiers';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
-import { DEMO_SEEDS, DEMO_STAGE_LABELS } from '@/features/demo/services/demo-seed';
+import { DEMO_SEED_STAGE, DEMO_SEEDS, DEMO_STAGE_LABELS } from '@/features/demo/services/demo-seed';
 import { demoSetupSteps } from '@/features/demo/services/demo-setup';
 import { numberInWords } from '@/features/purchase-offer/services/amount-in-words';
 
@@ -29,8 +29,9 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] | null
       <h2 className={sectionTitle}>Ma démo</h2>
       <p className={hintText}>
         {capitalized(numberInWords(DEMO_SEEDS.length))} dossiers aux étapes de l’outil : à préparer,
-        prêt pour le Live, prêt en présentation directe, deux mandats signés, à relancer ; et{' '}
-        {numberInWords(DEMO_BUYERS.length)}{' '}
+        prêt pour le Live, prêt en présentation directe,{' '}
+        {numberInWords(DEMO_SEEDS.filter((key) => DEMO_SEED_STAGE[key] === 'signed').length)}{' '}
+        mandats signés, à relancer ; et {numberInWords(DEMO_BUYERS.length)}{' '}
         <Link href="/acquereurs" className={link}>
           acquéreurs
         </Link>{' '}

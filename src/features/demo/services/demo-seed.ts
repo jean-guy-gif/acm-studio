@@ -7,7 +7,23 @@ import type {
 import { BUYER_CRITERION_LABELS } from '@/features/buyers/types';
 import type { ImportedComparableData } from '@/features/comparable-import/types';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
-import type { DemoListing, DemoScenario, DemoScenarioId } from '@/features/demo/data/types';
+import {
+  BERNARD_SUBJECT,
+  CASTEL_SUBJECT,
+  DELMAS_SUBJECT,
+  FERRAND_SUBJECT,
+  GARNIER_SUBJECT,
+  LAMBERT_DUVAL_SUBJECT,
+  LOPEZ_SUBJECT,
+  NAVARRO_SUBJECT,
+  PERRIN_SUBJECT,
+} from '@/features/demo/data/seed-subjects';
+import type {
+  DemoListing,
+  DemoScenario,
+  DemoScenarioId,
+  DemoSubject,
+} from '@/features/demo/data/types';
 import {
   demoAddressLine,
   demoImportedData,
@@ -47,12 +63,21 @@ export const DEMO_STAGE_LABELS: Record<DemoStage, string> = {
 // de Vence de M. et Mme Lopez, signée il y a 3 jours, que la boucle propose à ses acquéreurs prêts.
 // Un dossier se retrouve donc par sa clé, ou par sa marque ET son scénario, jamais par sa marque
 // seule.
+// Mission 155 — huit mandats signés, un portefeuille varié (décision de Jean-Guy, 13/11) :
+// appartements à Antibes, Juan-les-Pins et Villeneuve-Loubet, maisons à Vence, La Colle-sur-Loup et
+// Saint-Paul-de-Vence, villas à Mougins et Valbonne ; chaque dossier a son propre bien.
 export const DEMO_SEEDS = [
   'to_prepare',
   'ready',
   'direct',
   'signed',
   'signed_vence',
+  'signed_antibes',
+  'signed_juan',
+  'signed_villeneuve',
+  'signed_la_colle',
+  'signed_saint_paul',
+  'signed_valbonne',
   'follow_up',
 ] as const;
 export type DemoSeedKey = (typeof DEMO_SEEDS)[number];
@@ -63,6 +88,12 @@ export const DEMO_SEED_STAGE: Record<DemoSeedKey, DemoStage> = {
   direct: 'direct',
   signed: 'signed',
   signed_vence: 'signed',
+  signed_antibes: 'signed',
+  signed_juan: 'signed',
+  signed_villeneuve: 'signed',
+  signed_la_colle: 'signed',
+  signed_saint_paul: 'signed',
+  signed_valbonne: 'signed',
   follow_up: 'follow_up',
 };
 
@@ -73,7 +104,41 @@ export const DEMO_SEED_SCENARIO: Record<DemoSeedKey, DemoScenarioId> = {
   direct: 'vence',
   signed: 'mougins',
   signed_vence: 'vence',
+  signed_antibes: 'antibes',
+  signed_juan: 'antibes',
+  signed_villeneuve: 'antibes',
+  signed_la_colle: 'vence',
+  signed_saint_paul: 'vence',
+  signed_valbonne: 'mougins',
   follow_up: 'antibes',
+};
+
+// Mission 155 — le bien de chaque dossier, quand ce n'est pas celui de son scénario (« À préparer »
+// à Antibes, le Live interactif à Vence et le mandat de Mougins le gardent).
+export const DEMO_SEED_SUBJECTS: Partial<Record<DemoSeedKey, DemoSubject>> = {
+  direct: BERNARD_SUBJECT,
+  signed_vence: LOPEZ_SUBJECT,
+  signed_antibes: FERRAND_SUBJECT,
+  signed_juan: DELMAS_SUBJECT,
+  signed_villeneuve: PERRIN_SUBJECT,
+  signed_la_colle: GARNIER_SUBJECT,
+  signed_saint_paul: NAVARRO_SUBJECT,
+  signed_valbonne: CASTEL_SUBJECT,
+  follow_up: LAMBERT_DUVAL_SUBJECT,
+};
+
+// Les vendeurs des nouveaux mandats, leur date de signature (jours avant « Préparer ma démo ») et
+// leur type de mandat : signés de 6 à 27 jours avant la remise à zéro, aucun Point marché n'est dû
+// avant le mois (M130 A) ; deux mandats simples.
+export const DEMO_MANDATES: Partial<
+  Record<DemoSeedKey, { seller: string; daysAgo: number; type: 'exclusive' | 'simple' }>
+> = {
+  signed_antibes: { seller: 'Mme Ferrand', daysAgo: 12, type: 'exclusive' },
+  signed_juan: { seller: 'M. et Mme Delmas', daysAgo: 20, type: 'simple' },
+  signed_villeneuve: { seller: 'Mme Perrin', daysAgo: 27, type: 'simple' },
+  signed_la_colle: { seller: 'M. et Mme Garnier', daysAgo: 6, type: 'exclusive' },
+  signed_saint_paul: { seller: 'Mme Navarro', daysAgo: 16, type: 'exclusive' },
+  signed_valbonne: { seller: 'M. et Mme Castel', daysAgo: 9, type: 'exclusive' },
 };
 
 // Mission 145 — le mandat signé de Vence : un autre foyer que Mme Garcia et les Bernard, signé
@@ -83,14 +148,11 @@ export const DEMO_SIGNED_VENCE_DAYS_AGO = 3;
 
 // Le mandat de Mougins, où vivent la sélection, le bon de visite et l'offre acceptée des Keller :
 // trouvé par sa marque ET son scénario, quel que soit l'ordre de création des dossiers.
+// Mission 155 — Valbonne est aussi un mandat signé du marché de Mougins : la clé seule le désigne.
 export function mouginsMandateId(
   created: readonly { key: DemoSeedKey; id: string }[],
 ): string | null {
-  return (
-    created.find(
-      ({ key }) => DEMO_SEED_STAGE[key] === 'signed' && DEMO_SEED_SCENARIO[key] === 'mougins',
-    )?.id ?? null
-  );
+  return created.find(({ key }) => key === 'signed')?.id ?? null;
 }
 
 export const DEMO_SEED_COMPETITORS = 5;
@@ -101,9 +163,7 @@ export const DEMO_SEED_COMPETITORS = 5;
 export const DEMO_DIRECT_SELLER = 'Mr and Mrs Bernard';
 export const DEMO_DIRECT_LANGUAGE = 'en' as const;
 // Mission 133 — la maison des Bernard a une piscine, celle de Mme Garcia non (décision de Jean-Guy,
-// 06/11) : M. et Mme Lambert veulent une piscine (★), le moteur les écarte du bien de Mme Garcia —
-// 4 acquéreurs prêts, pas de pastille au Live — et les garde pour les Bernard — 5, la pastille.
-export const DEMO_DIRECT_HAS_POOL = true;
+// 06/11) : depuis la mission 155, c'est leur bien qui le dit (`BERNARD_SUBJECT`).
 export const DEMO_DANGEROUS_REASON = 'better_location';
 export const DEMO_READINESS_MISSING = 'Le délai : il voudrait vendre avant l’été.';
 export const DEMO_FOLLOW_UP_MOTIVE = 'thinking_price';
@@ -173,7 +233,7 @@ export type DemoSeedPlan = {
   competitors: DemoSeedCompetitor[];
   live: DemoSeedLive | null;
   conclusion:
-    | { outcome: 'signed'; mandateType: 'exclusive' }
+    | { outcome: 'signed'; mandateType: 'exclusive' | 'simple' }
     | { outcome: 'follow_up'; motive: string; objections: string[] }
     | null;
   // « À relancer » : le concurrent qui a baissé depuis le rendez-vous, et son nouveau prix.
@@ -219,8 +279,11 @@ export function demoSeedCompetitors(scenario: DemoScenario): DemoListing[] {
 
 export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
   const stage = DEMO_SEED_STAGE[key];
-  const scenario = DEMO_SCENARIOS.find((item) => item.id === DEMO_SEED_SCENARIO[key])!;
+  const market = DEMO_SCENARIOS.find((item) => item.id === DEMO_SEED_SCENARIO[key])!;
+  // Mission 155 — le scénario du dossier : son marché (les annonces), et son propre bien.
+  const scenario: DemoScenario = { ...market, subject: DEMO_SEED_SUBJECTS[key] ?? market.subject };
   const { subject } = scenario;
+  const mandate = DEMO_MANDATES[key];
   if (stage === 'to_prepare') {
     return {
       key,
@@ -251,7 +314,7 @@ export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
     // La piscine et l'ascenseur du bien (oui / non / non renseigné) : l'import d'une annonce ne
     // les écrit pas (le conseiller les renseigne, Stream Estate, 05/10) ; la démo pose ceux de son
     // scénario, sans quoi la villa de Mougins montrait « ? Piscine » aux Keller (essai, 25/10).
-    has_pool: stage === 'direct' ? DEMO_DIRECT_HAS_POOL : subject.hasPool,
+    has_pool: subject.hasPool,
     has_elevator: subject.hasElevator,
   };
   const competitors = demoSeedCompetitors(scenario).map((listing) => ({
@@ -285,7 +348,7 @@ export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
           ? DEMO_FOLLOW_UP_SELLER
           : key === 'signed_vence'
             ? DEMO_SIGNED_VENCE_SELLER
-            : scenario.sellerName,
+            : (mandate?.seller ?? scenario.sellerName),
     language: stage === 'direct' ? DEMO_DIRECT_LANGUAGE : 'fr',
     property,
     isCondominium: subject.propertyType === 'apartment',
@@ -294,7 +357,7 @@ export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
     live,
     conclusion:
       stage === 'signed'
-        ? { outcome: 'signed', mandateType: 'exclusive' }
+        ? { outcome: 'signed', mandateType: mandate?.type ?? 'exclusive' }
         : stage === 'follow_up'
           ? {
               outcome: 'follow_up',
@@ -312,7 +375,7 @@ export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
     // L'adresse « Ne plus solliciter » : sur le seul mandat de Mougins.
     opposedAddress:
       key === 'signed' ? demoAddressLine(competitors[competitors.length - 1].listing) : null,
-    signedDaysAgo: key === 'signed_vence' ? DEMO_SIGNED_VENCE_DAYS_AGO : null,
+    signedDaysAgo: key === 'signed_vence' ? DEMO_SIGNED_VENCE_DAYS_AGO : (mandate?.daysAgo ?? null),
   };
 }
 
@@ -325,6 +388,8 @@ export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
 export type DemoSelectionItemPlan = {
   source: 'project' | 'listing';
   listingId: string | null;
+  // Mission 155 — un mandat de la démo : son dossier, connu au moment de semer.
+  mandateKey?: DemoSeedKey;
   label: string;
   listedPrice: number | null;
   priceSeenOn: string | null;
@@ -424,18 +489,150 @@ function demoListingItem(
   };
 }
 
-// Mission 142 — Mr and Mrs Wilson (anglophones) : une sélection d'un appartement d'Antibes, et une
-// visite demandée sur lui.
-export const DEMO_WILSON_SELECTED_DAYS_AGO = 4;
-export function demoWilsonSelectionPlan(now: Date): DemoSelectionItemPlan[] {
-  return [demoListingItem('antibes', 'ant-01', now)];
+// Mission 155 — un mandat de la démo dans une sélection, comme « Retenir la sélection » l'écrit
+// (M118) : le bien de l'agence, au prix convenu au rendez-vous, « à négocier » au-dessus du budget.
+export function demoMandateItem(
+  key: DemoSeedKey,
+  now: Date,
+  budgetMax: number | null,
+): DemoSelectionItemPlan {
+  const plan = demoSeedPlan(key, now);
+  const subject = demoSubjectImportedData(plan.scenario, now);
+  const price = plan.live?.agreedPrice ?? null;
+  return {
+    source: 'project',
+    listingId: null,
+    mandateKey: key,
+    label: labelOf(plan.scenario.subject.propertyType, subject),
+    listedPrice: price,
+    priceSeenOn: null,
+    category: 'agency',
+    gaps:
+      price != null && budgetMax != null && price > budgetMax
+        ? [`${formatEuro(price - budgetMax)} au-dessus du budget, à négocier`]
+        : [],
+    imported: null,
+    snapshot: null,
+  };
 }
 
-// Mission 135 — les Lambert : une sélection partagée il y a 3 jours, sans réponse (la relance de
-// leur lien est due). Deux maisons de Vence, dont celle à la piscine qu'ils veulent.
+// Mission 155 — le parcours de chaque acquéreur (décision de Jean-Guy, 13/11 : des fiches à des
+// stades différents, une sélection cohérente avec son budget et ses critères, le mandat de
+// l'agence qui lui correspond en tête). Une sélection a trois biens au plus (M118). Ce qui a eu
+// lieu : la sélection datée, son lien partagé (M135) ou sa présentation (M122), les réponses, les
+// visites demandées, confirmées (M142) ou faites avec leur compte rendu (M139). Les Keller gardent
+// leur histoire (sélection, tournée, bon, offre acceptée) ; M. Girard et Mme Chevalier et M. et
+// Mme Roux sont nouveaux, sans sélection ; M. Fontaine est à recontacter.
+export type DemoAnswer = 'visit' | 'maybe' | { no: string[] };
+export type DemoJourneyVisit = {
+  item: number;
+  during: 'presentation' | 'conseiller';
+  requestedDaysAgo: number;
+  // Une visite confirmée : demain à 10 h (Paris, à l'heure près).
+  confirmedTomorrow?: boolean;
+  visitedDaysAgo?: number;
+  report?: {
+    opinion: VisitOpinion;
+    liked: VisitTag[];
+    disliked: VisitTag[];
+    next_step: VisitNextStep;
+  };
+};
+export type DemoJourney = {
+  buyer: string;
+  daysAgo: number;
+  mandate: DemoSeedKey;
+  listings: string[];
+  shared?: boolean;
+  presented?: boolean;
+  answers?: DemoAnswer[];
+  visits?: DemoJourneyVisit[];
+};
+
 export const DEMO_LAMBERT_SHARED_DAYS_AGO = 3;
+export const DEMO_WILSON_SELECTED_DAYS_AGO = 4;
+
+export const DEMO_JOURNEYS: readonly DemoJourney[] = [
+  // Sélection envoyée il y a 3 jours, sans réponse : la relance est due (M135). La maison de La
+  // Colle-sur-Loup, à piscine, puis deux maisons de Vence, dont une à piscine.
+  {
+    buyer: 'M. et Mme Lambert',
+    daysAgo: DEMO_LAMBERT_SHARED_DAYS_AGO,
+    mandate: 'signed_la_colle',
+    listings: ['ven-02', 'ven-05'],
+    shared: true,
+  },
+  // Sélection envoyée hier, sans réponse : la relance n'est pas encore due (48 h).
+  {
+    buyer: 'Mme Faure',
+    daysAgo: 1,
+    mandate: 'signed_la_colle',
+    listings: ['ven-12', 'ven-01'],
+    shared: true,
+  },
+  // Présentée il y a 6 jours : deux visites demandées, l'une confirmée pour demain.
+  {
+    buyer: 'Famille Moreau',
+    daysAgo: 6,
+    mandate: 'signed_la_colle',
+    listings: ['ven-05', 'ven-10'],
+    presented: true,
+    answers: ['visit', 'visit', { no: ['surface'] }],
+    visits: [
+      { item: 0, during: 'presentation', requestedDaysAgo: 6, confirmedTomorrow: true },
+      { item: 1, during: 'presentation', requestedDaysAgo: 6 },
+    ],
+  },
+  // Présentée il y a 10 jours ; le mandat de Juan-les-Pins visité avant-hier, un coup de cœur : une
+  // deuxième visite est à planifier.
+  {
+    buyer: 'M. et Mme Rossi',
+    daysAgo: 10,
+    mandate: 'signed_juan',
+    listings: ['ant-03', 'ant-09'],
+    presented: true,
+    answers: ['visit', 'maybe', { no: ['district'] }],
+    visits: [
+      {
+        item: 0,
+        during: 'presentation',
+        requestedDaysAgo: 10,
+        visitedDaysAgo: 2,
+        report: {
+          opinion: 'love',
+          liked: ['outdoor', 'light'],
+          disliked: ['noise'],
+          next_step: 'second_visit',
+        },
+      },
+      { item: 0, during: 'conseiller', requestedDaysAgo: 2 },
+    ],
+  },
+  // Sélection d'il y a 4 jours ; une visite demandée hier sur un appartement du marché (M142).
+  {
+    buyer: 'Mr and Mrs Wilson',
+    daysAgo: DEMO_WILSON_SELECTED_DAYS_AGO,
+    mandate: 'signed_antibes',
+    listings: ['ant-01', 'ant-13'],
+    visits: [{ item: 1, during: 'conseiller', requestedDaysAgo: 1 }],
+  },
+];
+
+export function demoJourneyPlan(journey: DemoJourney, now: Date): DemoSelectionItemPlan[] {
+  const buyer = DEMO_BUYERS.find((entry) => entry.name === journey.buyer)!;
+  const scenarioOf = (id: string) =>
+    DEMO_SCENARIOS.find((scenario) => scenario.listings.some((listing) => listing.id === id))!.id;
+  return [
+    demoMandateItem(journey.mandate, now, buyer.budgetMax ?? null),
+    ...journey.listings.map((id) => demoListingItem(scenarioOf(id), id, now)),
+  ];
+}
+
 export function demoLambertSelectionPlan(now: Date): DemoSelectionItemPlan[] {
-  return [demoListingItem('vence', 'ven-02', now), demoListingItem('vence', 'ven-04', now)];
+  return demoJourneyPlan(
+    DEMO_JOURNEYS.find((j) => j.buyer === 'M. et Mme Lambert')!,
+    now,
+  );
 }
 
 // Mission 135 — les Keller : une sélection présentée il y a 21 jours, deux biens refusés pour « Le

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-import { DEMO_SEED_STAGE, demoSeedPlan } from '@/features/demo/services/demo-seed';
+import { DEMO_SEED_STAGE, DEMO_SEEDS, demoSeedPlan } from '@/features/demo/services/demo-seed';
 import {
   deleteDemoBuyers,
   deleteDemoDossiers,
@@ -12,6 +12,7 @@ import {
   seedDemoBuyersStory,
   seedDemoDossier,
   type Closer,
+  type DemoMandateIds,
 } from '@/features/demo/services/demo-dossiers';
 import {
   checkDemoSetup,
@@ -154,8 +155,9 @@ export async function seedDemoProjectStep(
   return { ok: true };
 }
 
-// Les acquéreurs et leur histoire. Le mandat de Mougins (la sélection et l'offre des Keller) se
-// retrouve en base par sa marque ET son vendeur, jamais par la marque seule (M145).
+// Les acquéreurs et leur histoire. Les mandats (la sélection et l'offre des Keller sur celui de
+// Mougins, M145 ; les sélections des autres acquéreurs, M155) se retrouvent en base par leur marque
+// ET leur vendeur, jamais par la marque seule ; chacun doit y être une fois.
 export async function seedDemoBuyersStep(
   now: unknown,
   requested?: unknown,
@@ -165,19 +167,28 @@ export async function seedDemoBuyersStep(
   const moment = readSetupMoment(now, new Date());
   if (!moment) return stale(mode);
   const supabase = createServiceRoleClient();
-  const mougins = demoSeedPlan('signed', moment);
-  const { data: mandates, error } = await supabase
+  const signedKeys = DEMO_SEEDS.filter((key) => DEMO_SEED_STAGE[key] === DEMO_SEED_STAGE.signed);
+  const sellerOf = new Map(signedKeys.map((key) => [demoSeedPlan(key, moment).sellerName, key]));
+  const { data: rows, error } = await supabase
     .from('projects')
-    .select('id')
+    .select('id, seller_name')
     .eq('agency_id', closer.agencyId)
     .eq('advisor_id', closer.id)
     .eq('demo_stage', DEMO_SEED_STAGE.signed)
-    .eq('seller_name', mougins.sellerName);
+    .in('seller_name', [...sellerOf.keys()]);
   if (error) return { ok: false, error: READ_FAILED };
-  if ((mandates ?? []).length !== 1) {
-    return failed('le mandat signé de Mougins est introuvable, ou en double', mode);
+  const mandates: DemoMandateIds = {};
+  for (const row of rows ?? []) {
+    const key = sellerOf.get(row.seller_name ?? '');
+    if (!key || mandates[key]) {
+      return failed('un mandat signé est en double', mode);
+    }
+    mandates[key] = row.id;
   }
-  if (!(await seedDemoBuyersStory(supabase, closer, mandates![0]!.id, moment))) {
+  if (!mandates.signed) {
+    return failed('le mandat signé de Mougins est introuvable', mode);
+  }
+  if (!(await seedDemoBuyersStory(supabase, closer, mandates, moment))) {
     await reportServerError('demoReset.buyers', new Error('acquéreurs de démo non créés'));
     return failed('les acquéreurs n’ont pas pu être créés', mode);
   }

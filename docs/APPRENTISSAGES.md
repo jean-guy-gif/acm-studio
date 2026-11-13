@@ -553,6 +553,21 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   que ni les tests ni l'e2e n'avaient vus (une opposition non lue sans courrier, la couverture de
   l'offre, la copropriété perdue). Suite e2e complète 32 min.
 
+- 12/11 · M154 · La production et l'essai partagent la base et le compte de démo : une remise à
+  zéro faite par un autre code (la production, ou un onglet de l'essai chargé avant le déploiement)
+  efface ce que l'essai vient de semer, et une page non rechargée garde l'ancien formulaire. Avant
+  de donner un parcours à Jean-Guy : relire l'état en base après la dernière remise à zéro, et lui
+  demander un onglet neuf rechargé (⌘⇧R), sans la production ouverte. La suite e2e et Jean-Guy sur
+  le même compte de démo se gênent : une agence de démo réservée aux e2e est proposée.
+- 12/11 · M154 · Plusieurs blocs de boutons radio dans un formulaire doivent avoir chacun leur
+  groupe (`useId`) : sous un même `name`, choisir un titre sur un bien décochait l'autre ; trouvé
+  par la seule spec e2e. Relecteur 5 min : un bloquant (la clé d'un titre de collaboration sans le
+  n° du mandat imprimait un n° faux). Suite e2e complète 35 min, quatre specs touchées 16 min.
+
+- 12/11 · M154 · Un interrupteur qui ouvre une fonction ailleurs qu'en production se teste avec sa
+  valeur en paramètre (`tourVoucherOpen(env, lit)`) : l'allumer ne casse pas les tests qui prouvent
+  qu'éteint, la production reste fermée.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
