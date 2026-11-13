@@ -134,10 +134,12 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
   });
 
   await test.step('L’offre : le titre repris du bon, le rappel des honoraires, la signature', async () => {
+    // Celle des Wilson (66 m²) ; la visite des Rossi à Juan-les-Pins est faite aussi (M155).
     const offerVisit = page
       .getByTestId('visits-done')
       .getByTestId('visit-line')
-      .filter({ hasText: 'Antibes' });
+      .filter({ hasText: 'Antibes' })
+      .filter({ hasText: /66\sm²/ });
     await expect(offerVisit.getByTestId('visit-actions')).toHaveAttribute('data-step', 'offer');
     await offerVisit.getByTestId('visit-offer-open').click();
     const form = page.getByTestId('offer-form');

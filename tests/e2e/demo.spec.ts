@@ -916,7 +916,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expectUnspoken(page, 'Ma démo, remise à zéro');
       // Mission 117 — ses acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
       // Le dossier « TEST AUTOMATIQUE » du passage, signé, reste jusqu'à la fin.
-      await expectDemoBuyers(page, true);
+      await expectDemoBuyers(page);
       await expectTodayAlerts(page);
     });
 
@@ -1333,7 +1333,7 @@ async function expectTodayAlerts(page: Page): Promise<void> {
   await page.goto('/suivi');
 }
 
-async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
+async function expectDemoBuyers(page: Page): Promise<void> {
   await page.goto('/acquereurs');
   await expectUnspoken(page, 'Acquéreurs');
   const rows = page.getByTestId('buyer-row');
@@ -1356,11 +1356,12 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   // acceptée, la ligne dit « Lancer le compromis », jamais plus « Lui présenter sa sélection ».
   await expect(keller.getByTestId('buyer-next-step')).toHaveText('Prévenir la famille Keller');
   await expect(keller).toContainText(/Prochaine étape · Lancer le compromis · depuis /);
-  // Mission 145 (partie B) — les Rossi, prêts : le mandat signé de l'appartement d'Antibes que ce
-  // passage a conclu leur est à proposer, tant qu'il existe ; sans lui, leurs biens idéaux.
+  // Mission 155 — les Rossi ont visité l'appartement de Juan-les-Pins, un coup de cœur : leur
+  // deuxième visite passe avant tout bien à leur proposer (M145 A), que ce passage ait conclu un
+  // mandat à Antibes ou non.
   await expect(
     rows.filter({ hasText: 'M. et Mme Rossi' }).getByTestId('buyer-next-step'),
-  ).toHaveText(runMandate ? 'Proposer ce bien' : 'Trouver les biens idéaux');
+  ).toHaveText('Organiser les visites');
   // Mission 146 (partie B, I4) — « Mes fiches » d'abord (toutes au closer dans la démo), triées
   // par urgence : la vente en cours en tête ; l'action en contour ; un seul plein, « Nouvel
   // acquéreur » ; les filtres d'état comptés, la recherche filtre en tapant.

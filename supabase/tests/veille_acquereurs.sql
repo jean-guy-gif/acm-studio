@@ -10,6 +10,7 @@
 --   §5 le navigateur lit son agence et n'écrit rien (ni passage, ni plafond de veille, ni fonction) ;
 --      une autre agence et un membre retiré ne lisent rien ;
 --   §6 la fiche supprimée emporte ses passages ; sa consommation reste à l'agence, sans fiche.
+--   §7 une agence réelle à 0 € : aucun passage, aucune réservation, pas choisie la nuit (M155).
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/veille_acquereurs.sql
@@ -293,6 +294,35 @@ begin
     where agency_id = '136aaaaa-0000-0000-0000-000000000000' and buyer_watch and buyer_id is null and adverts = 20
   ) then
     raise exception 'FAIL 6: la consommation de la veille part avec la fiche';
+  end if;
+end $$;
+
+-- §7 (M155, question de Jean-Guy, 13/11) — une agence réelle à 0 € : aucun passage, aucune
+-- réservation, et la tâche de nuit ne la choisit pas (`is_demo` faux ET plafond > 0, la route
+-- /api/cron/veille-acquereurs).
+do $$
+declare r record; n integer;
+begin
+  delete from public.buyer_watch_runs where agency_id = '136bbbbb-0000-0000-0000-000000000000';
+  update public.agencies set buyer_watch_cap_cents = 0 where id = '136bbbbb-0000-0000-0000-000000000000';
+  select * into r from public.start_buyer_watch('136bbbbb-0000-0000-0000-000000000000',
+    '136ccccc-0000-0000-0000-000000000003', 20, date_trunc('month', now()), 3000, now() - interval '7 days');
+  if r.run_id is not null then
+    raise exception 'FAIL 7: à 0 €, un passage s''ouvre';
+  end if;
+  select count(*) into n from public.buyer_watch_runs where agency_id = '136bbbbb-0000-0000-0000-000000000000';
+  if n <> 0 then raise exception 'FAIL 7: à 0 €, % passage(s)', n; end if;
+  if exists (
+    select 1 from public.stream_estate_usage
+    where agency_id = '136bbbbb-0000-0000-0000-000000000000' and buyer_watch
+  ) then
+    raise exception 'FAIL 7: à 0 €, une réservation de veille';
+  end if;
+  if exists (
+    select 1 from public.agencies
+    where id = '136bbbbb-0000-0000-0000-000000000000' and is_demo = false and buyer_watch_cap_cents > 0
+  ) then
+    raise exception 'FAIL 7: la tâche de nuit choisirait l''agence à 0 €';
   end if;
 end $$;
 
