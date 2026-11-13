@@ -739,12 +739,13 @@ export async function resetDemoByScreen(page: Page): Promise<void> {
         const after = await hrefs();
         const dossiers = after.filter((href) => href?.startsWith('/builder/'));
         return (
-          after.length === 6 &&
-          dossiers.length === 5 &&
+          // Mission 155 — douze dossiers, dont onze ouvrent leur page (« À relancer » mène au Suivi).
+          after.length === 12 &&
+          dossiers.length === 11 &&
           dossiers.every((href) => !before.includes(href))
         );
       },
-      { timeout: 30_000, message: 'La liste n’a pas montré les six nouveaux dossiers' },
+      { timeout: 30_000, message: 'La liste n’a pas montré les douze nouveaux dossiers' },
     )
     .toBe(true);
 }
