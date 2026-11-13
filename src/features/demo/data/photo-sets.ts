@@ -12,7 +12,22 @@ const SETS: Readonly<Record<string, readonly string[]>> = generated;
 
 // Les dossiers attendus : un par bien qui a sa fiche photo dans docs/DEMO.md. Un dossier qui n'est
 // pas ici est refusé par les tests (une faute de frappe ne passerait pas en silence).
-export const DEMO_PHOTO_SET_IDS = ['mandat-mougins-villa', 'mandat-antibes-appartement'] as const;
+export const DEMO_PHOTO_SET_IDS = [
+  // Les huit mandats signés.
+  'mandat-mougins-villa',
+  'mandat-antibes-appartement',
+  'mandat-vence-maison',
+  'mandat-juan-les-pins-appartement',
+  'mandat-villeneuve-loubet-appartement',
+  'mandat-la-colle-sur-loup-maison',
+  'mandat-saint-paul-de-vence-maison',
+  'mandat-valbonne-villa',
+  // Les quatre autres dossiers.
+  'a-preparer-antibes-appartement',
+  'live-vence-maison',
+  'directe-vence-maison',
+  'relance-antibes-appartement',
+] as const;
 
 export const DEMO_PHOTO_SET_RULES = {
   minPhotos: 3,
