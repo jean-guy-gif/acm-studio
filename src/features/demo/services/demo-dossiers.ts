@@ -1422,6 +1422,16 @@ async function seedJourney(
       .eq('agency_id', closer.agencyId);
     if (presentedError) return false;
   }
+  // Une visite demandée : la fiche passe « En visite », datée de la première demande (M117).
+  const firstVisit = Math.max(...(journey.visits ?? []).map((visit) => visit.requestedDaysAgo));
+  if (Number.isFinite(firstVisit)) {
+    const { error: statusError } = await supabase
+      .from('buyers')
+      .update({ status: 'visiting', status_changed_at: daysBefore(now, firstVisit) })
+      .eq('id', buyerId)
+      .eq('agency_id', closer.agencyId);
+    if (statusError) return false;
+  }
   for (const visit of journey.visits ?? []) {
     const visited = visit.visitedDaysAgo != null;
     const { error } = await supabase.from('buyer_visit_requests').insert({
