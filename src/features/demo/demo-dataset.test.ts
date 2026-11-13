@@ -14,6 +14,7 @@ import {
   DEMO_STREETS,
 } from '@/features/demo/data/scenarios';
 import { DEMO_LISTING_HOST } from '@/features/demo/constants';
+import { DEMO_SEED_SUBJECTS } from '@/features/demo/services/demo-seed';
 import { demoListingUrl, demoSubjectListingUrl } from '@/features/demo/services/demo-urls';
 
 // Mission 114 (A3.8) — le jeu de données est relu par un test : aucune adresse ne correspond à une
@@ -156,6 +157,8 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
     expect([...DEMO_STREETS]).toEqual(FICTIONAL_STREETS);
     const streets = [
       ...DEMO_SCENARIOS.map((scenario) => scenario.subject.address.street),
+      // Mission 155 — le bien de chaque dossier.
+      ...Object.values(DEMO_SEED_SUBJECTS).map((subject) => subject.address.street),
       ...DEMO_LISTINGS.map((listing) => listing.address.street),
     ];
     for (const street of streets) {

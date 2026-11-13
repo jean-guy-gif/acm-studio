@@ -161,7 +161,8 @@ const antibesSubject: DemoSubject = {
   district: 'Centre-ville',
   address: addr('12', 'allée des Cistes Blancs'),
   location: at(43.5839, 7.1197),
-  photos: [
+  photoSet: 'a-preparer-antibes-appartement',
+  photos: demoPhotoSet('a-preparer-antibes-appartement') ?? [
     DEMO_PHOTO_POOLS.apartment[0],
     DEMO_PHOTO_POOLS.apartment[1],
     DEMO_PHOTO_POOLS.apartment[2],
@@ -648,7 +649,8 @@ const venceSubject: DemoSubject = {
   district: 'Les Collines',
   address: addr('4', 'chemin des Restanques Hautes'),
   location: at(43.7268, 7.1052),
-  photos: [
+  photoSet: 'live-vence-maison',
+  photos: demoPhotoSet('live-vence-maison') ?? [
     DEMO_PHOTO_POOLS.house[0],
     DEMO_PHOTO_POOLS.house[1],
     DEMO_PHOTO_POOLS.house[2],

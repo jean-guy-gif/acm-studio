@@ -48,7 +48,14 @@ const isCount = (calls: FakeCall[]) =>
   calls.some(
     (call) => call.method === 'select' && JSON.stringify(call.args[1] ?? {}).includes('head'),
   );
-const SIX = ['to_prepare', 'ready', 'direct', 'signed', 'signed', 'follow_up'];
+// Mission 155 — douze dossiers, dont huit mandats signés.
+const SIX = [
+  'to_prepare',
+  'ready',
+  'direct',
+  ...Array.from({ length: 8 }, () => 'signed'),
+  'follow_up',
+];
 
 beforeEach(() => {
   service.reset();
@@ -59,6 +66,8 @@ beforeEach(() => {
 });
 
 describe('qui peut préparer ou remettre à zéro', () => {
+  // Mission 155 — la remise à zéro supprime toutes les fiches acquéreur de l'agence : ce refus,
+  // au serveur, est ce qui la garde hors de toute agence qui n'est pas de démonstration.
   it('hors de l’agence de démonstration : renvoyé vers ses dossiers, sans rien écrire', async () => {
     const actions = await import('@/features/demo/actions/demo-setup');
     state.demo = false;
@@ -187,10 +196,19 @@ describe('une étape en échec arrête tout et le dit', () => {
   it('les acquéreurs : le mandat de Mougins absent, en double ou illisible, rien n’est semé', async () => {
     const { seedDemoBuyersStep } = await import('@/features/demo/actions/demo-setup');
     const now = new Date().toISOString();
-    for (const answer of [{ data: [] }, { data: [{ id: 'm1' }, { id: 'm2' }] }]) {
+    // Mission 155 — chaque mandat est retrouvé par sa marque ET son vendeur, une fois.
+    const mougins = { id: 'm1', seller_name: 'M. Lefebvre' };
+    for (const [answer, words] of [
+      [{ data: [] }, 'mandat signé de Mougins est introuvable'],
+      [
+        { data: [{ id: 'm9', seller_name: 'Mme Ferrand' }] },
+        'mandat signé de Mougins est introuvable',
+      ],
+      [{ data: [mougins, { ...mougins, id: 'm2' }] }, 'un mandat signé est en double'],
+    ] as const) {
       state.respond = (table) => (table === 'projects' ? answer : { data: [] });
       const result = await seedDemoBuyersStep(now);
-      expect(!result.ok && result.error).toContain('mandat signé de Mougins');
+      expect(!result.ok && result.error).toContain(words);
     }
     state.respond = (table) =>
       table === 'projects' ? { error: { message: 'timeout' } } : { data: [] };
@@ -205,7 +223,7 @@ describe('une étape en échec arrête tout et le dit', () => {
     const { seedDemoBuyersStep } = await import('@/features/demo/actions/demo-setup');
     state.respond = (table, calls) =>
       table === 'projects'
-        ? { data: [{ id: 'm1' }] }
+        ? { data: [{ id: 'm1', seller_name: 'M. Lefebvre' }] }
         : table === 'buyers' && methods(calls).includes('insert')
           ? { error: { message: 'refusé' } }
           : { data: [] };
@@ -285,14 +303,14 @@ describe('la vérification : « prête » seulement sur preuve', () => {
         ? { count: buyers }
         : { data: [] };
 
-  it('six dossiers, un par étape attendue, et neuf acquéreurs : prête', async () => {
+  it('douze dossiers, un par étape attendue, et neuf acquéreurs : prête', async () => {
     const { verifyDemoSetup } = await import('@/features/demo/actions/demo-setup');
     state.respond = answer(SIX, 9);
     expect(await verifyDemoSetup()).toEqual({ ok: true });
     expect(service.writes()).toEqual([]);
   });
 
-  it('cinq dossiers : « 5 dossiers sur 6 », ce qui manque, jamais « prête »', async () => {
+  it('onze dossiers : « 11 dossiers sur 12 », ce qui manque, jamais « prête »', async () => {
     const { verifyDemoSetup } = await import('@/features/demo/actions/demo-setup');
     state.respond = answer(
       SIX.filter((stage) => stage !== 'direct'),
@@ -301,16 +319,16 @@ describe('la vérification : « prête » seulement sur preuve', () => {
     expect(await verifyDemoSetup()).toEqual({
       ok: false,
       error:
-        'La remise à zéro n’a pas abouti : 5 dossiers sur 6 (il manque « Prêt, en présentation directe »). Rien n’est prêt.',
+        'La remise à zéro n’a pas abouti : 11 dossiers sur 12 (il manque « Prêt, en présentation directe »). Rien n’est prêt.',
     });
     expect(state.reported).toContain('demoReset.verify');
   });
 
-  it('douze dossiers : deux remises à zéro en même temps, et le message le dit', async () => {
+  it('vingt-quatre dossiers : deux remises à zéro en même temps, et le message le dit', async () => {
     const { verifyDemoSetup } = await import('@/features/demo/actions/demo-setup');
     state.respond = answer([...SIX, ...SIX], 18);
     const result = await verifyDemoSetup();
-    expect(!result.ok && result.error).toContain('12 dossiers au lieu de 6');
+    expect(!result.ok && result.error).toContain('24 dossiers au lieu de 12');
     expect(!result.ok && result.error).toContain('18 acquéreurs au lieu de 9');
     expect(!result.ok && result.error).toContain('lancée en même temps');
   });
@@ -386,7 +404,10 @@ describe('la remise à zéro ne touche qu’aux dossiers de démo du closer conn
 // Mission 117 — les acquéreurs de la démo vont et viennent avec les dossiers : semés par
 // « Préparer ma démo », retirés par la remise à zéro, dans le seul périmètre du closer.
 describe('les acquéreurs de la démo', () => {
-  it('la remise à zéro ne retire que SES acquéreurs marqués, dans SON agence', async () => {
+  // Mission 155 — toutes les fiches de l'agence de démonstration, marquées ou non (décision de
+  // Jean-Guy, 13/11) ; jamais hors de cette agence (le garde : « qui peut préparer ou remettre à
+  // zéro », plus haut, refuse toute agence qui n'est pas de démonstration, sans rien écrire).
+  it('la remise à zéro retire toutes les fiches de SON agence, marquées ou non, et rien d’autre', async () => {
     const { deleteDemoBuyers } = await import('@/features/demo/services/demo-dossiers');
     state.respond = (table) =>
       table === 'buyers' ? { data: [{ id: 'b1' }, { id: 'b2' }] } : { data: [] };
@@ -400,7 +421,7 @@ describe('les acquéreurs de la démo', () => {
       .slice(0, secondFrom < 0 ? undefined : secondFrom)
       .filter((call) => call.method === 'eq')
       .map((call) => `${String(call.args[0])}=${String(call.args[1])}`);
-    expect(filters).toEqual([`agency_id=${AGENCY}`, 'advisor_id=u-closer', 'demo=true']);
+    expect(filters).toEqual([`agency_id=${AGENCY}`]);
   });
 
   it('une lecture des acquéreurs en échec : faux, rien n’est supprimé', async () => {

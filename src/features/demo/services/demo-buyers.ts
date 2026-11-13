@@ -155,36 +155,40 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   }),
   venceHouse({
     name: 'M. Girard et Mme Chevalier',
-    createdDaysAgo: 36,
+    // Mission 155 — une fiche nouvelle, sans sélection : la maison de plain-pied de Mme Navarro, à
+    // Saint-Paul-de-Vence, est à leur proposer.
+    createdDaysAgo: 2,
     phone: '06 39 98 58 62',
     email: 'girard.chevalier@example.com',
     notes: 'Télétravail : un bureau au calme.',
     cities: ['Saint-Paul-de-Vence', 'Vence'],
     budgetMax: 750_000,
     mustHave: ['cities', 'outdoor'],
-    contactedDaysAgo: 12,
+    contactedDaysAgo: 2,
   }),
   venceHouse({
     name: 'M. et Mme Roux',
-    createdDaysAgo: 50,
+    // Mission 155 — nouveaux aussi, sans sélection.
+    createdDaysAgo: 5,
     phone: '06 39 98 69 35',
     email: 'roux.famille@example.com',
     notes: 'Retraités, cherchent de plain-pied si possible.',
     roomsMin: 4,
     bedroomsMin: 2,
     budgetMax: 720_000,
-    contactedDaysAgo: 18,
+    contactedDaysAgo: 5,
   }),
   venceHouse({
     name: 'M. Fontaine',
-    createdDaysAgo: 12,
+    // Mission 155 — à recontacter : aucun échange depuis plus de 30 jours (M132).
+    createdDaysAgo: 40,
     phone: '06 39 98 72 18',
     email: 'f.fontaine@example.com',
     notes: 'Rendez-vous à la banque dans quinze jours.',
     cities: ['Vence'],
     budgetMax: 770_000,
     financing: 'in_progress',
-    contactedDaysAgo: 4,
+    contactedDaysAgo: 34,
   }),
   // Mission 139 — un acquéreur anglophone, pour montrer ses messages en anglais : un appartement à
   // Antibes, financement en cours (il ne compte pas parmi les prêts à visiter).
