@@ -1471,10 +1471,14 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   for (const letter of ['A', 'B', 'C']) {
     await expect(currentItem(letter).getByRole('checkbox')).toBeChecked();
   }
+  // Mission 155 — huit mandats signés : celui des Castel (Valbonne, 1 590 000 €) ressort aussi pour
+  // les Keller ; celui de Mougins, déjà A dans le bandeau, ne se répète pas.
+  const agencyMandates = page.getByTestId('ideal-agency-hit').filter({ hasText: 'Mes mandats' });
   await expect(
-    page.getByTestId('ideal-agency-hit').filter({ hasText: 'Mes mandats' }),
+    agencyMandates.filter({ hasText: 'Mougins' }),
     'le mandat de Mougins n’apparaît qu’une fois, dans le bandeau',
   ).toHaveCount(0);
+  await expect(agencyMandates.filter({ hasText: 'M. et Mme Castel' })).toHaveCount(1);
   await expect(page.getByText(/\bM\d{2,3}\b|règles? du rapprochement/)).toHaveCount(0);
   await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
   await page
