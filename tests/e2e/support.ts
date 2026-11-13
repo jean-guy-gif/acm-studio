@@ -671,6 +671,38 @@ export function readDemoWatchCap(): number {
   return Number(cap);
 }
 
+// Mission 155 — EXCEPTION à « tout passe par l'écran » (décision de Jean-Guy, 13/11) : le test de
+// la veille remet TOUJOURS l'agence à son plafond de départ, même quand l'écran a échoué. Écrit
+// seulement le plafond de l'agence de DÉMONSTRATION du compte e2e de démo ; rend le nombre
+// d'agences touchées (0 ou 1).
+export function restoreDemoWatchCap(cents: number): number {
+  if (!Number.isInteger(cents) || cents < 0 || cents > 100_000) {
+    throw new Error('Plafond inattendu : la base n’est pas touchée.');
+  }
+  const email = requireEnv('E2E_DEMO_EMAIL').replace(/'/g, "''");
+  const sql = `with restored as (
+    update public.agencies set buyer_watch_cap_cents = ${cents}
+    where is_demo and id = (select agency_id from public.profiles where lower(email) = lower('${email}'))
+    returning 1
+  ) select count(*)::int as agences from restored`;
+  let output: string;
+  try {
+    output = execFileSync('npx', supabaseQueryArgs(sql, { write: true }), {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch {
+    throw new Error(
+      'Le plafond de la veille n’a pas pu être remis : `supabase db query` a échoué.',
+    );
+  }
+  const count = /"agences":\s*(\d+)/.exec(output)?.[1];
+  if (count === undefined) {
+    throw new Error('Réponse inattendue de `supabase db query` à la remise du plafond.');
+  }
+  return Number(count);
+}
+
 // Mission 148 — le commentaire facultatif du Live s'ouvre par « + Ajouter un commentaire ».
 export async function fillLiveComment(page: Page, name: string, text: string): Promise<void> {
   const area = page.locator(`textarea[name="${name}"]`);
