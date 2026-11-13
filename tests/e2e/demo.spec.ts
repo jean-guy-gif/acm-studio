@@ -909,17 +909,17 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     await test.step('Remettre ma démo à zéro', async () => {
       await goViaAccountMenu(page, 'Ma démo');
       await expect(page).toHaveURL(/\/ma-demo$/);
-      await expect(page.getByTestId('demo-dossier')).toHaveCount(6);
+      await expect(page.getByTestId('demo-dossier')).toHaveCount(12);
       await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
       const confirm = page.getByTestId('demo-reset-confirm');
       await expect(confirm).toContainText('Les dossiers de vos collègues ne bougent pas.');
       await confirm.getByRole('button', { name: 'Annuler' }).click();
       await expect(confirm).toHaveCount(0);
-      // Mission 147 (partie B) — la barre des étapes, puis « Votre démo est prête », six dossiers
-      // neufs (d'autres identifiants).
+      // Mission 147 (partie B) — la barre des étapes, puis « Votre démo est prête », douze dossiers
+      // neufs (d'autres identifiants ; M155).
       await resetDemoByScreen(page);
       await expect(page.getByTestId('demo-ready')).toContainText(
-        'Votre démo est prête : six dossiers et neuf acquéreurs',
+        'Votre démo est prête : douze dossiers et neuf acquéreurs',
       );
       await expectOneFilled(page, 'Ma démo, prête');
       await expectUnspoken(page, 'Ma démo, remise à zéro');
