@@ -127,16 +127,17 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       }
     });
 
-    // Mission 114 (partie B) — « Préparer ma démo » : douze dossiers à cinq étapes, à soi (M155). Un
-    // passage précédent les a peut-être déjà préparés : ils sont alors là, et la fin du passage
-    // les remet à zéro (Mission 147 B : par les étapes, « Votre démo est prête » sur preuve).
+    // Mission 114 (partie B) — « Préparer ma démo » : douze dossiers à cinq étapes, à soi (M155).
+    // Mission 155 — le passage part TOUJOURS d'une démo neuve (Mission 147 B : par les étapes,
+    // « Votre démo est prête » sur preuve) : un passage arrêté en route laissait des dossiers déjà
+    // joués (les Keller présentés), et le suivant échouait sur eux (13/11).
     await test.step('Ma démo : douze dossiers, huit mandats signés', async () => {
       // Mission 125 — « Ma démo » s'ouvre par l'entrée du menu de la carte (Aide → Ma démo).
       await goViaAccountMenu(page, 'Ma démo');
       await expect(page).toHaveURL(/\/ma-demo$/);
       await expect(page.getByTestId('demo-dossiers')).toBeVisible();
       await expectUnspoken(page, 'Ma démo');
-      if ((await page.getByTestId('demo-dossier').count()) === 0) await resetDemoByScreen(page);
+      await resetDemoByScreen(page);
       const stages = await page
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
