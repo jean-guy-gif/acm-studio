@@ -120,6 +120,7 @@ const context = (over: Partial<OfferContext> = {}): OfferContext => ({
       outside: false,
       suggestion: null,
       soldByAgency: false,
+      switchable: false,
     },
     {
       visitId: OUTSIDE,
@@ -141,6 +142,7 @@ const context = (over: Partial<OfferContext> = {}): OfferContext => ({
       outside: true,
       suggestion: null,
       soldByAgency: true,
+      switchable: false,
     },
   ],
   agency: agency as OfferContext['agency'],

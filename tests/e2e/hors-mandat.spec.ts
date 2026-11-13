@@ -115,19 +115,60 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     await expect(document).not.toContainText('précisés notamment dans le mandat de vente');
   });
 
-  await test.step('Visites : la visite faite, « Offre envisagée »', async () => {
+  // Correctif du 13/11 (essai de Jean-Guy) — la visite notée « Intéressé · On continue à chercher »,
+  // puis l'acquéreur veut faire une offre : la suite se change, et l'offre d'achat le propose elle-même.
+  const done = () =>
+    page
+      .getByTestId('visits-done')
+      .getByTestId('visit-line')
+      .filter({ hasText: 'Antibes' })
+      .filter({ hasText: /66\sm²/ });
+  await test.step('Visites : la visite faite, « On continue à chercher »', async () => {
     await page.goto('/visites');
     // Le bon signé : la ligne grise ne s'affiche plus.
     await expect(pending().getByTestId('visit-outside-mandate')).toHaveCount(0);
     await pending().getByTestId('visit-done-open').click();
     const doneForm = page.getByTestId('visit-done-form');
-    await doneForm.getByTestId('visit-opinion-love').click();
-    await doneForm.getByTestId('visit-next-offer').click();
+    await doneForm.getByTestId('visit-opinion-interested').click();
+    await doneForm.getByTestId('visit-next-keep_searching').click();
     await doneForm.getByTestId('visit-done-save').click();
     await expect(page).toHaveURL(/\/visites\?messages=[0-9a-f-]{36}/);
+    await expect(done().getByTestId('visit-report')).toContainText(
+      'Intéressé · On continue à chercher',
+    );
+    await expect(done().getByTestId('visit-actions')).toHaveAttribute('data-step', 'messages');
+    // La suite se change sur place : les deux autres suites, sans la suite notée.
+    await done().getByTestId('visit-change-open').click();
+    const change = done().getByTestId('visit-next-step-form');
+    await expect(change.getByTestId('visit-change-offer')).toBeVisible();
+    await expect(change.getByTestId('visit-change-second_visit')).toBeVisible();
+    await expect(change.getByTestId('visit-change-keep_searching')).toHaveCount(0);
+    await expectOneFilled(page, 'Visites — changer la suite');
+    await change.getByRole('button', { name: 'Annuler' }).click();
+    await expect(done().getByTestId('visit-next-step-form')).toHaveCount(0);
+  });
+
+  await test.step('L’offre d’achat propose de passer la visite en « Offre envisagée »', async () => {
+    await page.goto(`${wilsonUrl}/offre`);
+    const none = page.getByTestId('offer-none');
+    await expect(none).toContainText('Suite notée : « On continue à chercher ».');
+    await expect(none).not.toContainText('Marquez d’abord');
+    await expectOneFilled(page, 'Offre d’achat — visite à passer en offre');
+    await none.getByTestId('offer-switch').click();
+    await expect(page).toHaveURL(/\/offre\?visite=[0-9a-f-]{36}$/);
+    await expect(page.getByTestId('offer-form')).toBeVisible();
+    // La fiche acquéreur montre la visite faite, passée en « Offre envisagée ».
+    await page.goto(wilsonUrl);
+    const onBuyer = page
+      .getByTestId('buyer-visits-done')
+      .getByTestId('visit-line')
+      .filter({ hasText: /66\sm²/ });
+    await expect(onBuyer.getByTestId('visit-report')).toContainText('Intéressé · Offre envisagée');
+    await expect(onBuyer.getByTestId('visit-actions')).toHaveAttribute('data-step', 'offer');
   });
 
   await test.step('L’offre : le titre repris du bon, le rappel des honoraires, la signature', async () => {
+    await page.goto('/visites');
     const offerVisit = page
       .getByTestId('visits-done')
       .getByTestId('visit-line')

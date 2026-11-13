@@ -1,6 +1,11 @@
 import 'server-only';
 
-import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { canTurnIntoOffer, NEXT_STEP_LABELS } from '@/features/buyer-messages/report';
+import {
+  readVisitLines,
+  type VisitLine,
+} from '@/features/buyer-presentation/queries/get-visit-requests';
+import { VISIT_OUTCOME_LABELS } from '@/features/buyer-presentation/types';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import {
   HORS_MANDAT_OUVERT,
@@ -59,7 +64,27 @@ export type OfferVisit = {
   // L'annonce dit le bien commercialisé par une agence (« Vendu par » ou une exclusivité) : un
   // rappel sur les honoraires au mandat de recherche (Jean-Guy, 12/11), à l'écran seulement.
   soldByAgency: boolean;
+  // Correctif du 13/11 — une visite faite, pas encore « Offre envisagée », sur un bien qui la
+  // permettrait : l'écran propose de la passer en « Offre envisagée » et de faire l'offre.
+  switchable: boolean;
 };
+
+// Pourquoi la visite n'ouvre pas l'offre, quand le bien la permettrait : pas encore faite, ou une
+// autre suite notée (celle qui se change, `switchable`).
+function notOfferYet(line: VisitLine): string {
+  if (line.visitedAt == null) {
+    return 'Visite pas encore faite : notez d’abord son compte rendu (Visites).';
+  }
+  if (!canTurnIntoOffer({ ...line, opinion: line.report?.opinion ?? null })) {
+    return 'Son avis était « Pas pour moi » : pas d’offre d’achat pour ce bien.';
+  }
+  const next = line.report?.nextStep;
+  return `Suite notée : « ${next ? NEXT_STEP_LABELS[next] : VISIT_OUTCOME_LABELS[line.outcome]} ».`;
+}
+
+function switchableToOffer(line: VisitLine): boolean {
+  return canTurnIntoOffer({ ...line, opinion: line.report?.opinion ?? null });
+}
 
 export type OfferContext = {
   buyer: { id: string; name: string; email: string | null };
@@ -274,7 +299,7 @@ export async function getOfferContext(
           ? OFFER_NOT_MANDATE
           : eligible
             ? 'Offre envisagée · hors mandat de l’agence'
-            : 'Marquez d’abord la visite « Offre envisagée » (Visites).',
+            : notOfferYet(line),
       projectId: null,
       price: line.itemPrice,
       propertyAddress: competitor?.locator_address ?? competitor?.address ?? null,
@@ -292,6 +317,7 @@ export async function getOfferContext(
         voucherTitleOf.get(line.id) ??
         (collaboration ? { kind: 'colleague', agency: '', number: '' } : null),
       soldByAgency: soldBy === 'agency' || exclusivity === 'yes',
+      switchable: !closed && !mandateIn && switchableToOffer(line),
     };
   }
 
@@ -318,7 +344,7 @@ export async function getOfferContext(
       note: eligible
         ? 'Offre envisagée · mandat signé'
         : signed
-          ? 'Marquez d’abord la visite « Offre envisagée » (Visites).'
+          ? notOfferYet(line)
           : OFFER_NOT_MANDATE,
       projectId,
       price: number(conclusion?.commercialization_price) ?? line.itemPrice,
@@ -341,6 +367,7 @@ export async function getOfferContext(
       outside: false,
       suggestion: null,
       soldByAgency: false,
+      switchable: signed && switchableToOffer(line),
     };
   });
 
