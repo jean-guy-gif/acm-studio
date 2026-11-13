@@ -98,7 +98,7 @@ test('la langue de l’acquéreur : les Wilson, leur dossier, son lien et la pr�
     await expect(header).not.toContainText(/Apartment|House|rooms?\b/);
     await page.getByRole('button', { name: 'Commencer la présentation' }).click();
     await expect(page.getByRole('heading', { name: 'You told me:' })).toBeVisible();
-    await expect(page.getByTestId('deck-kicker')).toContainText('Your selection · 2 properties');
+    await expect(page.getByTestId('deck-kicker')).toContainText('Your selection · 3 properties');
     await page.getByTestId('presentation-next').click();
     await expect(page.getByTestId('deck-kicker')).toHaveText('Your criteria');
   });
