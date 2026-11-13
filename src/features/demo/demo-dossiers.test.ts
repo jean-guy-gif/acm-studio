@@ -179,11 +179,16 @@ describe('la première étape : supprimer, recompter à zéro, préparer l’age
             : { data: [] };
     const result = await startDemoSetup('reset');
     expect(result).toMatchObject({ ok: true, now: expect.any(String) });
+    // L'adresse, puis la carte professionnelle si l'agence n'en a pas (M155).
     expect(service.writes()).toEqual([
       'delete buyers',
       'update agencies',
       'update agency_branding',
+      'update agency_branding',
     ]);
+    expect(
+      service.calls.some((call) => call.method === 'is' && call.args[0] === 'professional_card'),
+    ).toBe(true);
   });
 });
 

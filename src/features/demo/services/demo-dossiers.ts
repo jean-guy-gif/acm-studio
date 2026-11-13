@@ -22,6 +22,7 @@ import {
   DEMO_AGENCY_ADDRESS,
   DEMO_AGENCY_NAME,
   DEMO_LEGAL_IDENTITY,
+  DEMO_PROFESSIONAL_CARD,
 } from '@/features/demo/data/demo-legal-identity';
 import { DEMO_SIGNATURE_PNG_BASE64 } from '@/features/demo/data/demo-signature';
 import { readLegalIdentity } from '@/features/legal-identity/queries/get-legal-identity';
@@ -169,7 +170,14 @@ async function nameDemoAgency(supabase: Client, closer: Closer): Promise<boolean
     .from('agency_branding')
     .update({ postal_address: DEMO_AGENCY_ADDRESS })
     .eq('agency_id', closer.agencyId);
-  return !addressError;
+  if (addressError) return false;
+  // Mission 155 — la carte professionnelle, si l'agence n'en a pas (jamais celle d'un manager).
+  const { error: cardError } = await supabase
+    .from('agency_branding')
+    .update({ ...DEMO_PROFESSIONAL_CARD })
+    .eq('agency_id', closer.agencyId)
+    .is('professional_card', null);
+  return !cardError;
 }
 
 // Mission 147 (partie B) — le logo de l'agence de démonstration (planche M147-6), clair et sombre,
@@ -216,6 +224,7 @@ async function depositDemoLogo(supabase: Client, closer: Closer): Promise<boolea
     : await supabase.from('agency_branding').insert({
         agency_id: closer.agencyId,
         postal_address: DEMO_AGENCY_ADDRESS,
+        ...DEMO_PROFESSIONAL_CARD,
         logo_light_path: paths.light,
         logo_dark_path: paths.dark,
       });
