@@ -28,3 +28,12 @@ export const DEMO_LEGAL_IDENTITY = {
 // « Préparer ma démo » et « Remettre ma démo à zéro » ; plus aucun « Démo » imprimé sur un document.
 export const DEMO_AGENCY_NAME = 'Agence Horizon Côte d’Azur';
 export const DEMO_AGENCY_ADDRESS = '70 rue du Bonheur, 06140 Vence';
+
+// Mission 155 — la carte professionnelle de l'agence de démonstration, inventée au format d'une carte
+// délivrée par une CCI des Alpes-Maritimes : posée seulement si l'agence n'en a pas (une agence de
+// démonstration neuve ne préparait ni bon de visite ni offre, M102, M137) ; celle d'un manager n'est
+// jamais remplacée.
+export const DEMO_PROFESSIONAL_CARD = {
+  professional_card: 'CPI 0605 2026 000 090 155',
+  professional_card_issuer: 'CCI Nice Côte d’Azur',
+} as const;
