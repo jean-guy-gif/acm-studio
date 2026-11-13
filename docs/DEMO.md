@@ -78,32 +78,34 @@ méditerranéen (les maisons américaines, bardage, brique, pelouse, sont partie
 `maison-04`, `villa-04`, `villa-05`, `appartement-06`, `appartement-08`. Mêmes banques, même
 licence ; aucune façade reconnaissable d'un lieu nommé.
 
-| Fichier              | Titre d'origine                            | Source       | Licence                  | Page d'origine                                                                          |
-| -------------------- | ------------------------------------------ | ------------ | ------------------------ | --------------------------------------------------------------------------------------- |
-| `appartement-01.jpg` | Free modern living room interior           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5915137/image-light-public-domain-plants                 |
-| `appartement-02.jpg` | Free minimalist living room interior       | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927318/photo-image-public-domain-minimalist-house       |
-| `appartement-03.jpg` | Free modern kitchen interior image         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5925293/photo-image-public-domain-kitchen-living-room    |
-| `appartement-04.jpg` | Bedroom White                              | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-white-8RWPJ5Q6OZ                                     |
-| `appartement-05.jpg` | Free living room interior design           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5917348/image-frame-light-public-domain                  |
-| `appartement-06.jpg` | City Town (Lou Levit)                      | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/city-town-52DC8952A2                                         |
-| `appartement-07.jpg` | Modern bathroom, house interior            | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043329/photo-image-public-domain-room-interior          |
-| `appartement-08.jpg` | Building Balconies (The Building Envelope) | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/building-balconies-H8SXFODO3W                                |
-| `maison-01.jpg`      | white house greenish blue shutters         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/3291661/free-photo-image-building-cc0-countryside        |
-| `maison-02.jpg`      | Sans titre (mas dans la lavande)           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5942139/free-public-domain-cc0-photo                     |
-| `maison-03.jpg`      | Free Italian house Tuscany photo           | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5920499/photo-image-public-domain-white-free             |
-| `maison-04.jpg`      | Sans titre (villa ocre et palmiers)        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6070200/free-public-domain-cc0-photo                     |
-| `maison-05.jpg`      | Living Room Interior of House              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5970065/living-room-interior-house                       |
-| `maison-06.jpg`      | Modern white kitchen interior              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6039071/photo-image-public-domain-minimal-wood           |
-| `maison-07.jpg`      | Bedroom Clean                              | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-clean-OE0F9BHXJQ                                     |
-| `maison-08.jpg`      | Free dining room image                     | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5904672/photo-image-flower-public-domain-minimal         |
-| `villa-01.jpg`       | Free modern house, villa, swimming         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5907779/photo-image-public-domain-free-cc0               |
-| `villa-02.jpg`       | House pool, real estate                    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6023165/photo-image-public-domain-house-summer           |
-| `villa-03.jpg`       | Swimming Pool House                        | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5916870/image-aesthetic-background                       |
-| `villa-04.jpg`       | Pool Backyard (Vita Vilcina)               | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/pool-backyard-8512A55AD8                                     |
-| `villa-05.jpg`       | Sans titre (maison de pierre, cyprès)      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5934664/free-public-domain-cc0-photo                     |
-| `villa-06.jpg`       | Free Mediterranean house                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5906917/free-mediterranean-house-public-domain-cc0-photo |
-| `villa-07.jpg`       | Luxury bathroom interior                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043330/photo-image-public-domain-living-room            |
-| `villa-08.jpg`       | Free minimalist living room interior       | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927077/photo-image-public-domain-minimalist-house       |
+Mission 155 (13/11) : trois photos retirées, qui ne montraient pas un logement crédible :
+`appartement-04` (des objets sur une table de chevet), `appartement-06` (une rue de village et ses
+voitures), `appartement-08` (une tour qui n'est pas de la Côte d'Azur). Les biens d'Antibes se
+partagent les quatre photos d'appartement qui restent jusqu'au lot des photos.
+
+| Fichier              | Titre d'origine                       | Source       | Licence                  | Page d'origine                                                                          |
+| -------------------- | ------------------------------------- | ------------ | ------------------------ | --------------------------------------------------------------------------------------- |
+| `appartement-01.jpg` | Free modern living room interior      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5915137/image-light-public-domain-plants                 |
+| `appartement-02.jpg` | Free minimalist living room interior  | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927318/photo-image-public-domain-minimalist-house       |
+| `appartement-03.jpg` | Free modern kitchen interior image    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5925293/photo-image-public-domain-kitchen-living-room    |
+| `appartement-05.jpg` | Free living room interior design      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5917348/image-frame-light-public-domain                  |
+| `appartement-07.jpg` | Modern bathroom, house interior       | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043329/photo-image-public-domain-room-interior          |
+| `maison-01.jpg`      | white house greenish blue shutters    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/3291661/free-photo-image-building-cc0-countryside        |
+| `maison-02.jpg`      | Sans titre (mas dans la lavande)      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5942139/free-public-domain-cc0-photo                     |
+| `maison-03.jpg`      | Free Italian house Tuscany photo      | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5920499/photo-image-public-domain-white-free             |
+| `maison-04.jpg`      | Sans titre (villa ocre et palmiers)   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6070200/free-public-domain-cc0-photo                     |
+| `maison-05.jpg`      | Living Room Interior of House         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5970065/living-room-interior-house                       |
+| `maison-06.jpg`      | Modern white kitchen interior         | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6039071/photo-image-public-domain-minimal-wood           |
+| `maison-07.jpg`      | Bedroom Clean                         | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/bedroom-clean-OE0F9BHXJQ                                     |
+| `maison-08.jpg`      | Free dining room image                | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5904672/photo-image-flower-public-domain-minimal         |
+| `villa-01.jpg`       | Free modern house, villa, swimming    | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5907779/photo-image-public-domain-free-cc0               |
+| `villa-02.jpg`       | House pool, real estate               | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6023165/photo-image-public-domain-house-summer           |
+| `villa-03.jpg`       | Swimming Pool House                   | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5916870/image-aesthetic-background                       |
+| `villa-04.jpg`       | Pool Backyard (Vita Vilcina)          | StockSnap.io | CC0 1.0 (domaine public) | https://stocksnap.io/photo/pool-backyard-8512A55AD8                                     |
+| `villa-05.jpg`       | Sans titre (maison de pierre, cyprès) | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5934664/free-public-domain-cc0-photo                     |
+| `villa-06.jpg`       | Free Mediterranean house              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5906917/free-mediterranean-house-public-domain-cc0-photo |
+| `villa-07.jpg`       | Luxury bathroom interior              | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/6043330/photo-image-public-domain-living-room            |
+| `villa-08.jpg`       | Free minimalist living room interior  | rawpixel.com | CC0 1.0 (domaine public) | https://www.rawpixel.com/image/5927077/photo-image-public-domain-minimalist-house       |
 
 ## Les fiches PDF (`public/demo/fiche-*.pdf`)
 

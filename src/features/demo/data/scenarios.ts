@@ -89,10 +89,9 @@ const seed =
 
 // Les photos libres de droits, par famille (`public/demo/photos`, sources dans docs/DEMO.md).
 export const DEMO_PHOTO_POOLS = {
-  apartment: Array.from(
-    { length: 8 },
-    (_, i) => `appartement-${String(i + 1).padStart(2, '0')}.jpg`,
-  ),
+  // Mission 155 — retirées : appartement-04 (des objets sur une table de chevet), appartement-06
+  // (une rue de village et ses voitures), appartement-08 (une tour qui n'est pas de la Côte d'Azur).
+  apartment: ['01', '02', '03', '05', '07'].map((n) => `appartement-${n}.jpg`),
   house: Array.from({ length: 8 }, (_, i) => `maison-${String(i + 1).padStart(2, '0')}.jpg`),
   villa: Array.from({ length: 8 }, (_, i) => `villa-${String(i + 1).padStart(2, '0')}.jpg`),
 } as const;
@@ -177,7 +176,7 @@ const antibesListings = seed(
   // Jamais la photo principale du bien vendeur (appartement-01) : le dossier « À relancer »
   // d'Antibes et ses concurrents peuvent se trouver dans la même grille (relecture, 25/10).
   DEMO_PHOTO_POOLS.apartment.slice(1),
-  rotate(7),
+  rotate(DEMO_PHOTO_POOLS.apartment.length - 1),
 )([
   {
     id: 'ant-01',
