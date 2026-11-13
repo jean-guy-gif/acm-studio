@@ -1316,12 +1316,14 @@ export async function seedDemoBuyersStory(
   // Mission 135 — les refus des Keller ; Mission 155 — le parcours des autres acquéreurs.
   const lambert = buyers.find((buyer) => buyer.name === 'M. et Mme Lambert');
   if (!lambert) return false;
-  for (const journey of DEMO_JOURNEYS) {
-    const buyer = buyers.find((entry) => entry.name === journey.buyer);
-    if (!buyer || !(await seedJourney(supabase, closer, buyer.id, journey, mandates, now))) {
-      return false;
-    }
-  }
+  // Les parcours sont indépendants les uns des autres : écrits en même temps.
+  const journeys = await Promise.all(
+    DEMO_JOURNEYS.map(async (journey) => {
+      const buyer = buyers.find((entry) => entry.name === journey.buyer);
+      return buyer != null && seedJourney(supabase, closer, buyer.id, journey, mandates, now);
+    }),
+  );
+  if (journeys.some((done) => !done)) return false;
   return (
     (await seedKellerRefusals(supabase, closer, keller.id, now)) &&
     (await seedWatchRuns(supabase, closer, buyers, keller.id, now)) &&

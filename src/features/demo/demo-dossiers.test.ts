@@ -82,7 +82,7 @@ describe('qui peut préparer ou remettre à zéro', () => {
     await expect(actions.verifyDemoSetup()).rejects.toThrow('REDIRECT /builder');
     await expect(
       actions.seedDemoProjectsStep(
-        ['to_prepare', 'ready', 'direct', 'signed'],
+        ['to_prepare', 'ready', 'direct', 'signed', 'signed_vence', 'signed_antibes'],
         new Date().toISOString(),
       ),
     ).rejects.toThrow('REDIRECT /builder');

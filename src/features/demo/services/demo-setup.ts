@@ -37,12 +37,18 @@ export function setupFailure(mode: DemoSetupMode, reason: string): string {
 export type DemoSetupStepView = { key: DemoSetupStepKey; label: string; group?: number };
 
 // Mission 155 — douze dossiers : créés un par un, la remise à zéro passait de 21 à 43 s (mesuré sur
-// l'essai, 13/11). Le serveur les crée par groupes, en même temps (les appels d'un écran au serveur,
+// l'essai, 13/11). Le serveur les crée par deux groupes de six, en même temps (les appels d'un écran au serveur,
 // eux, partent l'un après l'autre) ; chaque groupe reste une étape, qui dit les dossiers qu'il crée.
 export const DEMO_SEED_GROUPS: readonly (readonly DemoSeedKey[])[] = [
-  ['to_prepare', 'ready', 'direct', 'signed'],
-  ['signed_vence', 'signed_antibes', 'signed_juan', 'signed_villeneuve'],
-  ['signed_la_colle', 'signed_saint_paul', 'signed_valbonne', 'follow_up'],
+  ['to_prepare', 'ready', 'direct', 'signed', 'signed_vence', 'signed_antibes'],
+  [
+    'signed_juan',
+    'signed_villeneuve',
+    'signed_la_colle',
+    'signed_saint_paul',
+    'signed_valbonne',
+    'follow_up',
+  ],
 ];
 
 export function demoSeedGroup(keys: unknown): DemoSeedKey[] | null {
