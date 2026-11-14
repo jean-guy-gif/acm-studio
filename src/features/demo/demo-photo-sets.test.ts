@@ -7,6 +7,8 @@ import generated from '@/features/demo/data/photo-sets.generated.json';
 import {
   DEMO_PHOTO_SET_IDS,
   DEMO_PHOTO_SET_RULES,
+  DEMO_PHOTO_SET_VIEWS,
+  completePhotoSet,
   demoPhotoSet,
   demoPhotoSetFolders,
 } from '@/features/demo/data/photo-sets';
@@ -106,6 +108,41 @@ describe('les jeux de photos de la démo, un dossier par bien', () => {
     }
     for (const id of DEMO_PHOTO_SET_IDS.filter((each) => each.startsWith('mandat-'))) {
       expect(doc, id).toContain(`### Fiche — \`${id}\``);
+    }
+  });
+
+  it('les vues attendues de chaque mandat sont celles de sa fiche dans docs/DEMO.md', () => {
+    const doc = readFileSync(join(process.cwd(), 'docs', 'DEMO.md'), 'utf8');
+    for (const id of DEMO_PHOTO_SET_IDS.filter((each) => each.startsWith('mandat-'))) {
+      const fiche = doc.split(`### Fiche — \`${id}\``)[1]!.split('\n### ')[0]!;
+      const views = [...fiche.matchAll(/^ {2}\d\. `(\d{2}-[a-z0-9-]+\.jpg)`/gm)].map((m) => m[1]);
+      expect(views.length, id).toBeGreaterThanOrEqual(DEMO_PHOTO_SET_RULES.minPhotos);
+      expect(DEMO_PHOTO_SET_VIEWS[id], id).toEqual(views);
+    }
+  });
+
+  it('un jeu ne s’affiche que complet : toutes les vues de sa fiche, rien d’autre', () => {
+    const expected = ['01-facade.jpg', '02-sejour.jpg', '03-cuisine.jpg'];
+    expect(
+      completePhotoSet(['01-facade.jpg', '02-sejour.jpg', '03-cuisine.jpg'], expected),
+    ).toEqual(expected);
+    expect(completePhotoSet(['01-facade.jpg', '02-sejour.jpg'], expected)).toBeNull();
+    expect(completePhotoSet(['01-facade.jpg'], undefined)).toEqual(['01-facade.jpg']);
+    for (const id of DEMO_PHOTO_SET_IDS) {
+      const views = DEMO_PHOTO_SET_VIEWS[id];
+      const shown = demoPhotoSet(id);
+      if (!views || !shown) continue;
+      expect(shown, id).toEqual(views.map((file) => `${id}/${file}`));
+    }
+  });
+
+  it('un dossier qui a une fiche ne contient que des vues de sa fiche', () => {
+    for (const folder of folders) {
+      const views = DEMO_PHOTO_SET_VIEWS[folder as (typeof DEMO_PHOTO_SET_IDS)[number]];
+      if (!views) continue;
+      for (const file of readdirSync(join(ROOT, folder)).filter((name) => FILE.test(name))) {
+        expect(views, `${folder}/${file}`).toContain(file);
+      }
     }
   });
 
