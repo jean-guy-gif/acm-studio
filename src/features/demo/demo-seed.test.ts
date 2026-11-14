@@ -9,6 +9,8 @@ import {
   DEMO_SEED_COMPETITORS,
   DEMO_STAGE_LABELS,
   DEMO_STAGES,
+  DEMO_JOURNEYS,
+  demoJourneyPlan,
   demoSeedCompetitors,
   demoSeedPlan,
   mouginsMandateId,
@@ -23,7 +25,7 @@ const NOW = new Date('2026-10-24T10:00:00.000Z');
 const UNSPOKEN = /d[ée]mo|fictif|simulat/i;
 
 describe('le plan des dossiers de démo', () => {
-  it('six dossiers à cinq étapes nommées, chacun avec son scénario', () => {
+  it('douze dossiers à cinq étapes nommées, chacun avec son scénario', () => {
     expect(DEMO_STAGES).toEqual(['to_prepare', 'ready', 'direct', 'signed', 'follow_up']);
     expect(DEMO_SEEDS).toEqual([
       'to_prepare',
@@ -31,6 +33,12 @@ describe('le plan des dossiers de démo', () => {
       'direct',
       'signed',
       'signed_vence',
+      'signed_antibes',
+      'signed_juan',
+      'signed_villeneuve',
+      'signed_la_colle',
+      'signed_saint_paul',
+      'signed_valbonne',
       'follow_up',
     ]);
     for (const stage of DEMO_STAGES) expect(DEMO_STAGE_LABELS[stage]).not.toMatch(UNSPOKEN);
@@ -203,7 +211,7 @@ describe('« Prêt, en présentation directe »', () => {
 // Finitions du 06/11 — cinq vendeurs, cinq foyers : le vendeur à relancer n'est plus un second
 // « M. et Mme Martin » (le dossier à préparer, même scénario d'Antibes), ni le nom d'un acquéreur.
 describe('les vendeurs de la démo', () => {
-  it('cinq noms différents, aucun pris à un acquéreur de la démo', () => {
+  it('douze noms différents, aucun pris à un acquéreur de la démo', () => {
     const names = DEMO_SEEDS.map((key) => demoSeedPlan(key, NOW).sellerName);
     expect(new Set(names).size).toBe(DEMO_SEEDS.length);
     expect(demoSeedPlan('follow_up', NOW).sellerName).toBe('M. et Mme Lambert-Duval');
@@ -238,6 +246,12 @@ describe('le mandat signé de Vence (M. et Mme Lopez)', () => {
       direct: 'p-bernard',
       signed: 'p-mougins',
       signed_vence: 'p-lopez',
+      signed_antibes: 'p-ferrand',
+      signed_juan: 'p-delmas',
+      signed_villeneuve: 'p-perrin',
+      signed_la_colle: 'p-garnier',
+      signed_saint_paul: 'p-navarro',
+      signed_valbonne: 'p-castel',
       follow_up: 'p-lambert-duval',
     };
     const inOrder = DEMO_SEEDS.map((key) => ({ key, id: ids[key] }));
@@ -250,6 +264,60 @@ describe('le mandat signé de Vence (M. et Mme Lopez)', () => {
     expect(mouginsMandateId(lopezFirst)).toBe('p-mougins');
     // Sans Mougins, rien : jamais le mandat de Vence à sa place.
     expect(mouginsMandateId([{ key: 'signed_vence', id: 'p-lopez' }])).toBeNull();
+    // Ni la villa de Valbonne, du même marché que Mougins (M155).
+    expect(mouginsMandateId([{ key: 'signed_valbonne', id: 'p-castel' }])).toBeNull();
+  });
+});
+
+// Mission 155 — huit mandats signés, un portefeuille varié, et un bien par dossier (décision de
+// Jean-Guy, 13/11 : aucune photo partagée entre deux biens).
+describe('le portefeuille de la démo', () => {
+  const signed = DEMO_SEEDS.filter((key) => DEMO_SEED_STAGE[key] === 'signed');
+  const plans = signed.map((key) => demoSeedPlan(key, NOW));
+
+  it('huit mandats : trois appartements, trois maisons, deux villas, dans sept communes', () => {
+    expect(signed).toHaveLength(8);
+    const apartments = plans.filter((plan) => plan.scenario.subject.propertyType === 'apartment');
+    expect(apartments).toHaveLength(3);
+    const withPool = plans.filter((plan) => plan.scenario.subject.hasPool === true);
+    expect(withPool.map((plan) => plan.key).sort()).toEqual([
+      'signed',
+      'signed_la_colle',
+      'signed_valbonne',
+    ]);
+    const cities = new Set(plans.map((plan) => plan.property!.city));
+    expect(cities.size).toBe(7);
+  });
+
+  it('chaque dossier a son bien : sa propre adresse et son propre dossier de photos', () => {
+    const subjects = DEMO_SEEDS.filter((key) => key !== 'to_prepare').map(
+      (key) => demoSeedPlan(key, NOW).scenario.subject,
+    );
+    const addresses = subjects.map(
+      (subject) => `${subject.address.number} ${subject.address.street}`,
+    );
+    expect(new Set(addresses).size).toBe(subjects.length);
+    const sets = subjects.map((subject) => subject.photoSet);
+    expect(sets.every(Boolean)).toBe(true);
+    expect(new Set(sets).size).toBe(subjects.length);
+  });
+
+  it('signés de 3 jours à un mois : un seul Point marché dû, celui de Mougins', () => {
+    for (const plan of plans) {
+      if (plan.key === 'signed') expect(plan.signedDaysAgo).toBeNull();
+      else expect(plan.signedDaysAgo).toBeLessThan(28);
+    }
+    expect(
+      plans.filter(
+        (plan) => plan.conclusion?.outcome === 'signed' && plan.conclusion.mandateType === 'simple',
+      ),
+    ).toHaveLength(2);
+  });
+
+  it('le prix convenu au Live est celui de la fiche photo', () => {
+    expect(demoSeedPlan('signed_antibes', NOW).live?.agreedPrice).toBe(439_000);
+    expect(demoSeedPlan('signed_la_colle', NOW).live?.agreedPrice).toBe(785_000);
+    expect(demoSeedPlan('signed_juan', NOW).live?.agreedPrice).toBe(395_000);
   });
 });
 
@@ -269,5 +337,38 @@ describe('la copropriété de la démo', () => {
     const lambert = DEMO_BUYERS.find((buyer) => buyer.name === 'M. et Mme Lambert');
     expect(lambert?.condominiumAccepted).toBe(false);
     expect(lambert?.condominiumMustHave ?? false).toBe(false);
+  });
+});
+
+// Mission 155 — le parcours des acquéreurs : une sélection de trois biens au plus, cohérente avec
+// le budget et les communes de la fiche, le mandat de l'agence en tête ; des stades différents.
+describe('le parcours des acquéreurs de la démo', () => {
+  it('chaque sélection : trois biens au plus, le mandat dans le budget (+5 %) et les communes', () => {
+    for (const journey of DEMO_JOURNEYS) {
+      const buyer = DEMO_BUYERS.find((entry) => entry.name === journey.buyer)!;
+      expect(buyer, journey.buyer).toBeDefined();
+      const plan = demoJourneyPlan(journey, NOW);
+      expect(plan.length, journey.buyer).toBeLessThanOrEqual(3);
+      expect(plan[0]!.mandateKey).toBe(journey.mandate);
+      expect(plan[0]!.listedPrice!, journey.buyer).toBeLessThanOrEqual(
+        (buyer.budgetMax ?? 0) * 1.05,
+      );
+      const city = demoSeedPlan(journey.mandate, NOW).property!.city as string;
+      expect(buyer.cities.includes(city), `${journey.buyer} : ${city}`).toBe(true);
+      for (const visit of journey.visits ?? []) expect(visit.item).toBeLessThan(plan.length);
+    }
+  });
+
+  it('des stades différents : envoyée sans réponse, présentée, visitée, nouveaux, à recontacter', () => {
+    const of = (name: string) => DEMO_JOURNEYS.find((journey) => journey.buyer === name);
+    expect(of('M. et Mme Lambert')?.shared).toBe(true);
+    expect(of('Mme Faure')?.shared).toBe(true);
+    expect(of('Famille Moreau')?.visits?.some((visit) => visit.confirmedTomorrow)).toBe(true);
+    expect(of('M. et Mme Rossi')?.visits?.some((visit) => visit.report)).toBe(true);
+    for (const name of ['M. Girard et Mme Chevalier', 'M. et Mme Roux', 'M. Fontaine']) {
+      expect(of(name), name).toBeUndefined();
+    }
+    const fontaine = DEMO_BUYERS.find((buyer) => buyer.name === 'M. Fontaine')!;
+    expect(fontaine.contactedDaysAgo).toBeGreaterThan(30);
   });
 });

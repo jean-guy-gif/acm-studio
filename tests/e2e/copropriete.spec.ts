@@ -29,12 +29,15 @@ test('la copropriété : biens idéaux et rapprochement des Lambert', async ({ p
     await expect(page.getByTestId('ideal-title')).toHaveText(
       'Les biens idéaux de M. et Mme Lambert',
     );
-    // La maison des Lopez est déclarée hors copropriété : aucune mention sur sa carte. Ses
-    // concurrents à prospecter ne disent pas la leur : « à vérifier », sans être écartés.
+    // Les maisons sous mandat sont déclarées hors copropriété : aucune mention sur leur carte
+    // (plusieurs depuis la M155). Leurs concurrents à prospecter ne disent pas la leur : « à
+    // vérifier », sans être écartés.
     const agencyHits = page.getByTestId('ideal-agency-hit');
-    const mandate = agencyHits.filter({ hasText: 'Mes mandats' });
-    await expect(mandate).toHaveCount(1);
-    await expect(mandate).not.toContainText('Copropriété');
+    const mandates = agencyHits.filter({ hasText: 'Mes mandats' });
+    await expect(mandates.first()).toBeVisible();
+    for (let index = 0; index < (await mandates.count()); index += 1) {
+      await expect(mandates.nth(index)).not.toContainText('Copropriété');
+    }
     const competitors = agencyHits.filter({ hasText: 'Concurrents à prospecter' });
     await expect(competitors.first()).toBeVisible();
     const competitorCount = await competitors.count();
@@ -59,7 +62,14 @@ test('la copropriété : biens idéaux et rapprochement des Lambert', async ({ p
       await expect(hits.nth(index)).toContainText('Copropriété : à vérifier');
     }
     await expect(page.getByText(/À vérifier :/)).toHaveCount(0);
-    await expect(page.getByText(/écartés? :.*copropriété/i)).toHaveCount(0);
+    // Aucune ligne d'écartés ne cite la copropriété. Ligne par ligne : une expression lue sur la page
+    // entière attrapait le bloc « Le marché », qui porte à la fois « 9 écartés : pas de piscine (9) »
+    // et, sur ses annonces, « Copropriété : à vérifier » (M155).
+    const excludedLines = page.getByText(/\d+ écartés? :/);
+    await expect(excludedLines.first()).toBeVisible();
+    for (let index = 0; index < (await excludedLines.count()); index += 1) {
+      await expect(excludedLines.nth(index)).not.toContainText(/copropriété/i);
+    }
   });
 
   await test.step('Rapprochement : la copropriété de la fiche le suit, le mandat ne dit rien', async () => {

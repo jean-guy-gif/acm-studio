@@ -10,7 +10,9 @@ import {
   openToday,
   pagePayload,
   readDemoBuyersShown,
+  readDemoWatchCap,
   resetDemoByScreen,
+  restoreDemoWatchCap,
 } from './support';
 
 // Mission 145 (partie B) — le point de la semaine est dû le lundi et retiré le mercredi soir
@@ -188,7 +190,10 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     expect(
       new Set(await screen.getByTestId('live-buyer-card').allInnerTexts()).size,
     ).toBeGreaterThan(1);
-    await expect(screen.getByText(/cherche depuis \d+ semaines?/)).toHaveCount(5);
+    // Mission 155 — deux fiches de moins d'une semaine (M. Girard et Mme Chevalier, M. et Mme Roux).
+    await expect(
+      screen.getByText(/cherche depuis (\d+ semaines?|moins d’une semaine)/),
+    ).toHaveCount(5);
     await expect(screen.getByTestId('live-buyer-card')).toHaveCount(5);
     await expect(screen.getByText('Financement validé')).toHaveCount(5);
     const payload = await pagePayload(page);
@@ -370,11 +375,13 @@ test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en
     await expect(page.getByTestId('today-page')).not.toContainText('bien du marché');
   });
 
-  await test.step('La fiche et la liste de la famille Moreau : « Lui proposer la maison de M. et Mme Lopez »', async () => {
+  // Mission 155 — M. Girard et Mme Chevalier, nouveaux, sans sélection (la famille Moreau a des
+  // visites à organiser, qui passent avant).
+  await test.step('La fiche et la liste de M. Girard et Mme Chevalier : « Lui proposer la maison de M. et Mme Lopez »', async () => {
     await page.goto('/acquereurs');
-    const row = page.getByTestId('buyer-row').filter({ hasText: 'Famille Moreau' });
+    const row = page.getByTestId('buyer-row').filter({ hasText: 'M. Girard et Mme Chevalier' });
     await expect(row).toContainText('Prochaine étape · Lui proposer la maison de M. et Mme Lopez');
-    await row.getByRole('link', { name: 'Famille Moreau' }).click();
+    await row.getByRole('link', { name: 'M. Girard et Mme Chevalier' }).click();
     await expect(page.getByText('Lui proposer la maison de M. et Mme Lopez').first()).toBeVisible();
     // M. et Mme Rossi : l'appartement des Lambert-Duval, sans mandat, ne leur est pas proposé.
     await page.goto('/acquereurs');
@@ -588,17 +595,47 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     await expect(admin).toContainText('Veille des acquéreurs');
     await expect(admin.getByTestId('buyer-watch-journal')).toContainText('Famille Keller');
     const cap = admin.getByTestId('buyer-watch-cap');
+    // Mission 155 — le plafond de départ, relu en base, est TOUJOURS remis à la fin, même en cas
+    // d'échec (décision de Jean-Guy, 13/11) ; un 0 € laissé par un passage interrompu revient au
+    // plafond par défaut, 10 €.
+    const startCap = readDemoWatchCap();
+    const restoreCap = startCap > 0 ? startCap : 1000;
     try {
       await cap.fill('16');
       await admin.getByRole('button', { name: 'Enregistrer' }).click();
       await expect(admin.getByRole('alert')).toContainText('moitié');
+      // L'écran ne suffit pas : le message de l'action, puis le plafond relu en base, puis l'état
+      // à l'écran sans recharger (le 13/11, la base tenait 0 € et l'écran disait encore « Veille
+      // active »).
       await cap.fill('0');
       await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect(admin.getByText('Plafond de la veille enregistré.')).toBeVisible();
+      await expect.poll(() => readDemoWatchCap(), { timeout: 20_000 }).toBe(0);
       await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille coupée');
-    } finally {
-      await cap.fill('10');
+      // Le plafond de départ, remis par l'écran : le message, la base, puis l'état.
+      await cap.fill(String(restoreCap / 100));
       await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect(admin.getByText('Plafond de la veille enregistré.')).toBeVisible();
+      await expect.poll(() => readDemoWatchCap(), { timeout: 20_000 }).toBe(restoreCap);
       await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille active');
+      // Une réponse perdue (connexion coupée pendant l'action) : l'écran le dit et propose de
+      // recharger ; rien n'est écrit, et la page rechargée relit le plafond en base.
+      await page.route('**/admin', (route) =>
+        route.request().method() === 'POST' && route.request().headers()['next-action']
+          ? route.abort('internetdisconnected')
+          : route.continue(),
+      );
+      await cap.fill('0');
+      await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await expect(admin.getByRole('alert')).toContainText(
+        'L’enregistrement n’a pas abouti : rechargez la page pour voir le plafond enregistré.',
+      );
+      await page.unroute('**/admin');
+      await admin.getByRole('button', { name: 'Recharger la page' }).click();
+      await expect(page.getByTestId('buyer-watch-state')).toHaveText('Veille active');
+      expect(readDemoWatchCap()).toBe(restoreCap);
+    } finally {
+      if (readDemoWatchCap() !== restoreCap) restoreDemoWatchCap(restoreCap);
     }
   });
 });

@@ -22,6 +22,8 @@ import {
   DEMO_AGENCY_ADDRESS,
   DEMO_AGENCY_NAME,
   DEMO_LEGAL_IDENTITY,
+  DEMO_PROFESSIONAL_CARD,
+  OLD_DEMO_PROFESSIONAL_CARD,
 } from '@/features/demo/data/demo-legal-identity';
 import { DEMO_SIGNATURE_PNG_BASE64 } from '@/features/demo/data/demo-signature';
 import { readLegalIdentity } from '@/features/legal-identity/queries/get-legal-identity';
@@ -58,7 +60,6 @@ import {
   DEMO_READINESS_MISSING,
   DEMO_SEEDS,
   DEMO_KELLER_REFUSALS_DAYS_AGO,
-  DEMO_LAMBERT_SHARED_DAYS_AGO,
   demoKellerRefusalsPlan,
   demoKellerWatchFinds,
   DEMO_VOUCHER_DAYS_AGO,
@@ -71,11 +72,11 @@ import {
   DEMO_VOUCHER_VISITOR_ADDRESS,
   DEMO_WATCH_DAYS_AGO,
   demoKellerSelectionPlan,
-  demoWilsonSelectionPlan,
-  DEMO_WILSON_SELECTED_DAYS_AGO,
-  demoLambertSelectionPlan,
+  DEMO_JOURNEYS,
+  demoJourneyPlan,
+  type DemoJourney,
+  type DemoSelectionItemPlan,
   demoSeedPlan,
-  mouginsMandateId,
   type DemoSeedKey,
   type DemoSeedPlan,
 } from '@/features/demo/services/demo-seed';
@@ -138,26 +139,32 @@ async function removeStored(supabase: Client, bucket: string, paths: string[]): 
 // retrouve.
 // Mission 117 — les deux acquéreurs de la démo du closer : marqués, à lui, dans son agence.
 // Rend vrai si tout est parti ; faux à la première lecture ou suppression en échec.
+// Mission 155 — TOUTES les fiches acquéreur de l'agence de démonstration, marquées ou non, de tout
+// closer : une fiche saisie à la main (« Natacha », 10/11) ne survit plus à la remise à zéro
+// (décision de Jean-Guy, 13/11). Appelée seulement derrière le garde « agence de démonstration »,
+// relu en base (`requireDemoCloser`) ; la suppression reste cadrée sur cette agence.
 export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promise<boolean> {
+  // Le second verrou (Jean-Guy, 13/11) : la fonction relit elle-même le repère de l'agence et ne
+  // supprime rien hors d'une agence de démonstration, ou si le repère est illisible — même appelée
+  // sans le garde de l'action.
+  const { data: agency, error: agencyError } = await supabase
+    .from('agencies')
+    .select('is_demo')
+    .eq('id', closer.agencyId)
+    .maybeSingle();
+  if (agencyError || agency?.is_demo !== true) return false;
   // Mission 120 — les courriers nés de leurs recherches partent en cascade : leurs photos aussi.
   const { data: own, error: ownError } = await supabase
     .from('buyers')
     .select('id')
-    .eq('agency_id', closer.agencyId)
-    .eq('advisor_id', closer.id)
-    .eq('demo', true);
+    .eq('agency_id', closer.agencyId);
   if (ownError) return false;
   const buyerIds = (own ?? []).map((buyer) => buyer.id);
   const letterOrigins = await buyerLetterOriginsOf(supabase, closer.agencyId, { buyerIds });
   // Mission 137 — un bon signé ne part plus avec sa fiche (il reste, sans fiche) : ceux des
   // acquéreurs de démo sont des données de démonstration, retirés ici avec leurs signatures.
   if (!(await deleteDemoVouchers(supabase, closer, buyerIds))) return false;
-  const { error } = await supabase
-    .from('buyers')
-    .delete()
-    .eq('agency_id', closer.agencyId)
-    .eq('advisor_id', closer.id)
-    .eq('demo', true);
+  const { error } = await supabase.from('buyers').delete().eq('agency_id', closer.agencyId);
   if (error) return false;
   await removeBuyerLetterPhotos(supabase.storage, closer.agencyId, letterOrigins);
   return deleteOrphanDemoProspects(supabase, closer);
@@ -173,7 +180,20 @@ async function nameDemoAgency(supabase: Client, closer: Closer): Promise<boolean
     .from('agency_branding')
     .update({ postal_address: DEMO_AGENCY_ADDRESS })
     .eq('agency_id', closer.agencyId);
-  return !addressError;
+  if (addressError) return false;
+  // Mission 155 — la carte professionnelle, si l'agence n'en a pas (jamais celle d'un manager).
+  const { error: cardError } = await supabase
+    .from('agency_branding')
+    .update({ ...DEMO_PROFESSIONAL_CARD })
+    .eq('agency_id', closer.agencyId)
+    .is('professional_card', null);
+  if (cardError) return false;
+  const { error: oldCardError } = await supabase
+    .from('agency_branding')
+    .update({ ...DEMO_PROFESSIONAL_CARD })
+    .eq('agency_id', closer.agencyId)
+    .eq('professional_card', OLD_DEMO_PROFESSIONAL_CARD);
+  return !oldCardError;
 }
 
 // Mission 147 (partie B) — le logo de l'agence de démonstration (planche M147-6), clair et sombre,
@@ -220,6 +240,7 @@ async function depositDemoLogo(supabase: Client, closer: Closer): Promise<boolea
     : await supabase.from('agency_branding').insert({
         agency_id: closer.agencyId,
         postal_address: DEMO_AGENCY_ADDRESS,
+        ...DEMO_PROFESSIONAL_CARD,
         logo_light_path: paths.light,
         logo_dark_path: paths.dark,
       });
@@ -771,7 +792,8 @@ async function insertDatedSelection(
   closer: Closer,
   buyerId: string,
   createdAt: string,
-  plan: ReturnType<typeof demoLambertSelectionPlan>,
+  plan: DemoSelectionItemPlan[],
+  mandates: DemoMandateIds = {},
 ): Promise<{ selectionId: string; itemIds: string[] } | null> {
   const { data: selection, error } = await supabase
     .from('buyer_selections')
@@ -784,14 +806,19 @@ async function insertDatedSelection(
     .select('id')
     .single();
   if (error || !selection) return null;
+  const references = plan.map((item) => {
+    if (item.mandateKey) return mandates[item.mandateKey] ?? null;
+    const listing = DEMO_LISTINGS.find((entry) => entry.id === item.listingId);
+    return listing ? demoListingUrl(listing) : null;
+  });
+  if (references.some((reference) => reference == null)) return null;
   const rows = plan.map((item, index) => {
-    const listing = DEMO_LISTINGS.find((entry) => entry.id === item.listingId)!;
     return {
       agency_id: closer.agencyId,
       selection_id: selection.id,
       position: index + 1,
       source: item.source,
-      reference: demoListingUrl(listing),
+      reference: references[index]!,
       label: item.label,
       listed_price: item.listedPrice,
       price_seen_on: item.priceSeenOn,
@@ -810,44 +837,6 @@ async function insertDatedSelection(
     selectionId: selection.id,
     itemIds: [...items].sort((a, b) => a.position - b.position).map((item) => item.id),
   };
-}
-
-// Mission 135 — les Lambert : leur sélection partagée il y a 3 jours (un lien valable, un partage
-// noté), sans réponse : « Relancer M. et Mme Lambert » est dû. Le jeton du lien n'est jamais montré.
-async function seedLambertSharedSelection(
-  supabase: Client,
-  closer: Closer,
-  buyerId: string,
-  now: Date,
-): Promise<boolean> {
-  const at = daysBefore(now, DEMO_LAMBERT_SHARED_DAYS_AGO);
-  const seeded = await insertDatedSelection(
-    supabase,
-    closer,
-    buyerId,
-    at,
-    demoLambertSelectionPlan(now),
-  );
-  if (!seeded) return false;
-  const { error: linkError } = await supabase.from('buyer_dossier_links').insert({
-    agency_id: closer.agencyId,
-    buyer_id: buyerId,
-    selection_id: seeded.selectionId,
-    created_by: closer.id,
-    token_hash: hashDossierToken(newDossierToken()),
-    created_at: at,
-    expires_at: new Date(now.getTime() + 27 * 86_400_000).toISOString(),
-  });
-  if (linkError) return false;
-  const { error: eventError } = await supabase.from('buyer_events').insert({
-    agency_id: closer.agencyId,
-    buyer_id: buyerId,
-    kind: 'link_shared',
-    selection_id: seeded.selectionId,
-    occurred_at: at,
-    created_by: closer.id,
-  });
-  return !eventError;
 }
 
 // Mission 135 — les Keller : une sélection présentée il y a 21 jours, deux biens refusés pour « Le
@@ -1322,7 +1311,12 @@ export async function seedDemoDossiers(
     if (!id) return false;
     created.push({ key, id });
   }
-  return seedDemoBuyersStory(supabase, closer, mouginsMandateId(created), now);
+  return seedDemoBuyersStory(
+    supabase,
+    closer,
+    Object.fromEntries(created.map(({ key, id }) => [key, id])) as DemoMandateIds,
+    now,
+  );
 }
 
 // Les acquéreurs de la démo et leur histoire (sélections, refus, veille, bon de visite, offre,
@@ -1331,9 +1325,10 @@ export async function seedDemoDossiers(
 export async function seedDemoBuyersStory(
   supabase: Client,
   closer: Closer,
-  mouginsProjectId: string | null,
+  mandates: DemoMandateIds,
   now: Date,
 ): Promise<boolean> {
+  const mouginsProjectId = mandates.signed ?? null;
   // Mission 117 — et ses acquéreurs, qui vont avec les scénarios ; les Keller avec leur
   // sélection (essai de Jean-Guy, 25/10).
   const buyers = await insertDemoBuyers(supabase, closer, now);
@@ -1343,18 +1338,142 @@ export async function seedDemoBuyersStory(
   if (!(await seedKellerSelection(supabase, closer, keller.id, mouginsProjectId, now))) {
     return false;
   }
-  // Mission 135 — la relance des Lambert et les refus des Keller.
+  // Mission 135 — les refus des Keller ; Mission 155 — le parcours des autres acquéreurs.
   const lambert = buyers.find((buyer) => buyer.name === 'M. et Mme Lambert');
   if (!lambert) return false;
+  // Les parcours sont indépendants les uns des autres : écrits en même temps.
+  const journeys = await Promise.all(
+    DEMO_JOURNEYS.map(async (journey) => {
+      const buyer = buyers.find((entry) => entry.name === journey.buyer);
+      return buyer != null && seedJourney(supabase, closer, buyer.id, journey, mandates, now);
+    }),
+  );
+  if (journeys.some((done) => !done)) return false;
   return (
-    (await seedLambertSharedSelection(supabase, closer, lambert.id, now)) &&
     (await seedKellerRefusals(supabase, closer, keller.id, now)) &&
     (await seedWatchRuns(supabase, closer, buyers, keller.id, now)) &&
     (await seedKellerVoucher(supabase, closer, keller.id, mouginsProjectId, now)) &&
     (await seedKellerTour(supabase, closer, keller.id, now)) &&
-    (await seedLambertDismissals(supabase, closer, lambert.id, now)) &&
-    (await seedWilsonVisit(supabase, closer, buyers, now))
+    (await seedLambertDismissals(supabase, closer, lambert.id, now))
   );
+}
+
+// Les dossiers de mandat de la démo, par leur clé : la sélection d'un acquéreur les désigne.
+export type DemoMandateIds = Partial<Record<DemoSeedKey, string>>;
+
+// Mission 155 — le parcours d'un acquéreur (`DEMO_JOURNEYS`) : sa sélection datée, le mandat en
+// tête ; son lien partagé (un jeton jamais montré, M135) ou sa présentation (M122) ; le mandat
+// proposé, noté comme « Envoyé » (M134) ; ses réponses ; ses visites. Les mêmes tables que l'outil,
+// par la clé service après le garde.
+async function seedJourney(
+  supabase: Client,
+  closer: Closer,
+  buyerId: string,
+  journey: DemoJourney,
+  mandates: DemoMandateIds,
+  now: Date,
+): Promise<boolean> {
+  const at = daysBefore(now, journey.daysAgo);
+  const plan = demoJourneyPlan(journey, now);
+  const seeded = await insertDatedSelection(supabase, closer, buyerId, at, plan, mandates);
+  if (!seeded) return false;
+  if (journey.shared) {
+    const { error: linkError } = await supabase.from('buyer_dossier_links').insert({
+      agency_id: closer.agencyId,
+      buyer_id: buyerId,
+      selection_id: seeded.selectionId,
+      created_by: closer.id,
+      token_hash: hashDossierToken(newDossierToken()),
+      created_at: at,
+      expires_at: new Date(new Date(at).getTime() + 30 * 86_400_000).toISOString(),
+    });
+    if (linkError) return false;
+    const { error: eventError } = await supabase.from('buyer_events').insert({
+      agency_id: closer.agencyId,
+      buyer_id: buyerId,
+      kind: 'link_shared',
+      selection_id: seeded.selectionId,
+      occurred_at: at,
+      created_by: closer.id,
+    });
+    if (eventError) return false;
+  }
+  if (journey.shared || journey.presented) {
+    const projectId = mandates[journey.mandate]!;
+    const { error: proposalError } = await supabase.from('buyer_proposals').insert({
+      agency_id: closer.agencyId,
+      buyer_id: buyerId,
+      property_key: `project:${projectId}`,
+      source: 'project',
+      reference: projectId,
+      project_id: projectId,
+      origin: 'mandate',
+      label: plan[0]!.label,
+      selection_item_id: seeded.itemIds[0]!,
+      sent_by: closer.id,
+      sent_at: at,
+    });
+    if (proposalError) return false;
+  }
+  if (journey.answers && journey.answers.length > 0) {
+    const { error: answersError } = await supabase.from('buyer_item_responses').insert(
+      journey.answers.map((answer, index) => ({
+        agency_id: closer.agencyId,
+        buyer_id: buyerId,
+        selection_item_id: seeded.itemIds[index]!,
+        answer: typeof answer === 'string' ? answer : 'no',
+        reasons: typeof answer === 'string' ? [] : answer.no,
+        answered_during: 'presentation',
+        answered_at: at,
+      })),
+    );
+    if (answersError) return false;
+  }
+  if (journey.presented) {
+    // La base refuse une réponse sur une sélection présentée : les réponses d'abord.
+    const { error: presentedError } = await supabase
+      .from('buyer_selections')
+      .update({ presented_at: at })
+      .eq('id', seeded.selectionId)
+      .eq('agency_id', closer.agencyId);
+    if (presentedError) return false;
+  }
+  // Une visite demandée : la fiche passe « En visite », datée de la première demande (M117).
+  const firstVisit = Math.max(...(journey.visits ?? []).map((visit) => visit.requestedDaysAgo));
+  if (Number.isFinite(firstVisit)) {
+    const { error: statusError } = await supabase
+      .from('buyers')
+      .update({ status: 'visiting', status_changed_at: daysBefore(now, firstVisit) })
+      .eq('id', buyerId)
+      .eq('agency_id', closer.agencyId);
+    if (statusError) return false;
+  }
+  for (const visit of journey.visits ?? []) {
+    const visited = visit.visitedDaysAgo != null;
+    const { error } = await supabase.from('buyer_visit_requests').insert({
+      agency_id: closer.agencyId,
+      buyer_id: buyerId,
+      buyer_selection_item_id: seeded.itemIds[visit.item]!,
+      requested_during: visit.during,
+      requested_at: daysBefore(now, visit.requestedDaysAgo),
+      ...(visit.confirmedTomorrow ? { scheduled_at: tomorrowAtTen(now) } : {}),
+      ...(visited
+        ? {
+            visited_at: daysBefore(now, visit.visitedDaysAgo!),
+            outcome: 'visited',
+            ...visit.report,
+          }
+        : {}),
+    });
+    if (error) return false;
+  }
+  return true;
+}
+
+// Demain à 10 h, heure de Paris (à l'heure d'été près, une heure d'écart au plus).
+function tomorrowAtTen(now: Date): string {
+  const day = new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10);
+  return new Date(`${day}T09:00:00Z`).toISOString();
 }
 
 // Mission 154 (point 3) — la tournée des Keller : deux visites demandées par le conseiller, sur la
@@ -1399,35 +1518,6 @@ async function seedKellerTour(
       requested_at: daysBefore(now, 1),
     })),
   );
-  return !visitError;
-}
-
-// Mission 142 — Mr and Mrs Wilson : leur sélection (un appartement d'Antibes) et une visite
-// demandée sur lui. Mission 147 (partie A) — ce qui comptait pour eux ne servait qu'au « Vivre ici »
-// d'ACM : il n'est plus semé.
-async function seedWilsonVisit(
-  supabase: Client,
-  closer: Closer,
-  buyers: { id: string; name: string }[],
-  now: Date,
-): Promise<boolean> {
-  const wilson = buyers.find((buyer) => buyer.name === 'Mr and Mrs Wilson');
-  if (!wilson) return true;
-  const seeded = await insertDatedSelection(
-    supabase,
-    closer,
-    wilson.id,
-    daysBefore(now, DEMO_WILSON_SELECTED_DAYS_AGO),
-    demoWilsonSelectionPlan(now),
-  );
-  if (!seeded) return false;
-  const { error: visitError } = await supabase.from('buyer_visit_requests').insert({
-    agency_id: closer.agencyId,
-    buyer_id: wilson.id,
-    buyer_selection_item_id: seeded.itemIds[0]!,
-    requested_during: 'conseiller',
-    requested_at: daysBefore(now, 1),
-  });
   return !visitError;
 }
 

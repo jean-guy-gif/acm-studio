@@ -55,6 +55,12 @@ describe('le plafond de la veille', () => {
     expect(writes.list).toEqual([['agencies', { buyer_watch_cap_cents: 1200 }]]);
   });
 
+  // Mission 155 (question de Jean-Guy, 13/11) — 0 € s'enregistre : c'est ce qui coupe la veille.
+  it('0 € est accepté et écrit tel quel', async () => {
+    expect(await setBuyerWatchCap('0')).toEqual({ ok: true, cents: 0 });
+    expect(writes.list).toEqual([['agencies', { buyer_watch_cap_cents: 0 }]]);
+  });
+
   it('au-delà de la moitié, un conseiller, un membre retiré : refusé, rien d’écrit', async () => {
     expect((await setBuyerWatchCap('16')).ok).toBe(false);
     writes.agencyCap = 10_000;

@@ -29,8 +29,14 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
   await login(page, demoCredentials());
   await resetDemoByScreen(page);
 
+  // L'appartement d'Antibes (66 m²) que les Wilson vont visiter ; la deuxième visite des Rossi, à
+  // Juan-les-Pins (commune d'Antibes, 65 m²), attend aussi depuis la M155.
   const pending = () =>
-    page.getByTestId('visits-pending').getByTestId('visit-line').filter({ hasText: 'Antibes' });
+    page
+      .getByTestId('visits-pending')
+      .getByTestId('visit-line')
+      .filter({ hasText: 'Antibes' })
+      .filter({ hasText: /66\sm²/ });
 
   await test.step('Visites : le chemin court et ce que le bon demandera', async () => {
     await page.goto('/visites');
@@ -169,10 +175,12 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
 
   await test.step('L’offre : le titre repris du bon, le rappel des honoraires, la signature', async () => {
     await page.goto('/visites');
+    // Celle des Wilson (66 m²) ; la visite des Rossi à Juan-les-Pins est faite aussi (M155).
     const offerVisit = page
       .getByTestId('visits-done')
       .getByTestId('visit-line')
-      .filter({ hasText: 'Antibes' });
+      .filter({ hasText: 'Antibes' })
+      .filter({ hasText: /66\sm²/ });
     await expect(offerVisit.getByTestId('visit-actions')).toHaveAttribute('data-step', 'offer');
     await offerVisit.getByTestId('visit-offer-open').click();
     const form = page.getByTestId('offer-form');

@@ -568,6 +568,10 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 12/11 · M154 · Un interrupteur qui ouvre une fonction ailleurs qu'en production se teste avec sa
   valeur en paramètre (`tourVoucherOpen(env, lit)`) : l'allumer ne casse pas les tests qui prouvent
   qu'éteint, la production reste fermée.
+- 14/11 · M155 (lot 1) · Douze dossiers de démo créés un par un faisaient passer la remise à zéro de 21 à 43 s : créés par groupes, d'un coup au serveur, elle revient sous la demi-minute. Mesurer la remise à zéro dès qu'un scénario s'ajoute.
+- 14/11 · M155 (lot 1) · La spec `demo` réutilisait l'état laissé par un passage précédent (une sélection des Keller déjà présentée : « Revoir la présentation » au lieu de « Présenter ») : elle part désormais toujours d'une démo remise à zéro, et finit par une remise à zéro qui compte douze dossiers.
+- 14/11 · M155 (lot 1) · Avec huit mandats, leurs concurrents prenaient presque toutes les annonces du jeu, et les biens idéaux du marché n'avaient plus rien à montrer : des annonces marquées « marché seulement » ne sont jamais semées comme concurrents. Vérifier ce qui reste au marché quand le jeu grossit.
+- 14/11 · M155 (lot 1) · Une base qui pose l'heure d'un fait à l'insertion (`buyer_proposals.sent_at`) démentait la démo semée « il y a 3 jours » (« proposé aujourd'hui ») : chercher, avant de semer des dates, les colonnes que la base date elle-même.
 - 14/11 · Correctif · Un correctif urgent se fait dans un worktree depuis `main` pendant qu'une mission occupe le dépôt : Turbopack y refuse `node_modules` en lien symbolique (panique), le build se prouve donc par la CI ; `git diff` n'emporte pas les fichiers neufs, à copier à la main ; les tests unitaires locaux demandent les variables factices de la CI (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`), sans elles 8 fichiers tombent à l'import.
 
 ## La base

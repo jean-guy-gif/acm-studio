@@ -78,6 +78,10 @@ export type DemoListing = {
   // Mission 127 — l'annonce a disparu après le rendez-vous : « Mettre à jour les concurrents » la
   // marque retirée (preuve simulée, M103), et la règle des annonces disparues conclut.
   goneAfterMeeting?: true;
+  // Mission 155 — une annonce du marché seulement : jamais semée comme concurrent d'un dossier. Avec
+  // huit mandats, leurs concurrents prenaient presque toutes les annonces ; celles-ci restent dans
+  // « Le marché » des biens idéaux.
+  marketOnly?: true;
 };
 
 export type DemoSubject = {
@@ -105,6 +109,8 @@ export type DemoSubject = {
   district: string | null;
   address: DemoAddress;
   location: { lat: number; lon: number };
+  // Mission 155 — le dossier de son jeu de photos (`public/demo/photos/<photoSet>/`).
+  photoSet?: string;
   photos: string[];
   // Le prix affiché par l'annonce du bien (information seulement, M38 : il ne remplit rien).
   listedPrice: number;

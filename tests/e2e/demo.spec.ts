@@ -127,27 +127,37 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       }
     });
 
-    // Mission 114 (partie B) — « Préparer ma démo » : six dossiers à cinq étapes, à soi. Un
-    // passage précédent les a peut-être déjà préparés : ils sont alors là, et la fin du passage
-    // les remet à zéro (Mission 147 B : par les étapes, « Votre démo est prête » sur preuve).
-    await test.step('Ma démo : six dossiers, deux mandats signés', async () => {
+    // Mission 114 (partie B) — « Préparer ma démo » : douze dossiers à cinq étapes, à soi (M155).
+    // Mission 155 — le passage part TOUJOURS d'une démo neuve (Mission 147 B : par les étapes,
+    // « Votre démo est prête » sur preuve) : un passage arrêté en route laissait des dossiers déjà
+    // joués (les Keller présentés), et le suivant échouait sur eux (13/11).
+    await test.step('Ma démo : douze dossiers, huit mandats signés', async () => {
       // Mission 125 — « Ma démo » s'ouvre par l'entrée du menu de la carte (Aide → Ma démo).
       await goViaAccountMenu(page, 'Ma démo');
       await expect(page).toHaveURL(/\/ma-demo$/);
       await expect(page.getByTestId('demo-dossiers')).toBeVisible();
       await expectUnspoken(page, 'Ma démo');
-      if ((await page.getByTestId('demo-dossier').count()) === 0) await resetDemoByScreen(page);
+      await resetDemoByScreen(page);
       const stages = await page
         .getByTestId('demo-dossier')
         .evaluateAll((items) => items.map((item) => item.getAttribute('data-stage')));
       // Mission 131 — « Prêt, en présentation directe », jouable comme le vrai produit. Mission 145 —
       // deux mandats signés : Mougins (M. Lefebvre), puis Vence (M. et Mme Lopez).
-      expect(stages).toEqual(['to_prepare', 'ready', 'direct', 'signed', 'signed', 'follow_up']);
+      // Mission 155 — huit mandats signés, dans l'ordre des dossiers de la démo.
+      expect(stages).toEqual([
+        'to_prepare',
+        'ready',
+        'direct',
+        ...Array.from({ length: 8 }, () => 'signed'),
+        'follow_up',
+      ]);
       const signedNames = await page
         .locator('[data-testid="demo-dossier"][data-stage="signed"]')
         .allInnerTexts();
       expect(signedNames[0]).toContain('M. Lefebvre');
       expect(signedNames[1]).toContain('M. et Mme Lopez');
+      expect(signedNames[2]).toContain('Mme Ferrand');
+      expect(signedNames[7]).toContain('M. et Mme Castel');
       // Mission 117 — les deux acquéreurs de la démo, et « Rapprocher » trouve le mandat de Mougins.
       // Des dossiers préparés avant la mission n'en ont pas : la remise à zéro, en fin de passage,
       // les prouve alors.
@@ -506,12 +516,24 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // depuis la page du dossier (M83), puis, sur Prospection : contacté → « Collaboration
       // refusée » remet le bien en courrier propriétaire, avec la phrase proposée ; contacté →
       // « Collaboration obtenue » clôt sa prospection, comptée à part.
+      // Mission 155 — un concurrent que ce dossier partage avec un mandat signé (Delmas, Perrin)
+      // y est déjà en exclusivité, et la carte réunit ce que chaque copie sait (M98) : on compte
+      // les cartes confrère avant, plus celles que le closer bascule.
+      const colleagueCards = () =>
+        ready
+          .getByTestId('prospecting-card')
+          .filter({ hasText: 'Exclusivité · appeler le confrère' });
+      await page.goto(`/prospection?bien=${projectId}`);
+      await expect(ready.getByTestId('prospecting-card')).toHaveCount(RETAINED);
+      const colleaguesBefore = await colleagueCards().count();
+      let flipped = 0;
       await page.goto(`/builder/${projectId}`);
       const exclusivityGroups = page.getByRole('group', { name: 'Exclusivité' });
       await expect(exclusivityGroups.first()).toBeVisible();
       for (const index of [0, 1]) {
         const yes = () =>
           exclusivityGroups.nth(index).getByRole('button', { name: 'Oui', exact: true });
+        if ((await yes().getAttribute('aria-pressed')) !== 'true') flipped += 1;
         await yes().click();
         await expect(yes()).toHaveAttribute('aria-pressed', 'true');
         // Le chip est optimiste : on attend que la correction soit EN BASE avant de continuer
@@ -529,16 +551,12 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
           .toBe('true');
       }
       await page.goto(`/prospection?bien=${projectId}`);
-      const colleague = () =>
-        ready
-          .getByTestId('prospecting-card')
-          .filter({ hasText: 'Exclusivité · appeler le confrère' })
-          .first();
-      await expect(
-        ready
-          .getByTestId('prospecting-card')
-          .filter({ hasText: 'Exclusivité · appeler le confrère' }),
-      ).toHaveCount(2);
+      const colleague = () => colleagueCards().first();
+      await expect(colleagueCards()).toHaveCount(colleaguesBefore + flipped);
+      expect(
+        colleaguesBefore + flipped,
+        'Deux confrères au moins pour la suite',
+      ).toBeGreaterThanOrEqual(2);
 
       // Refusée : le bien repasse propriétaire, et son courrier le dit.
       const first = colleague();
@@ -891,23 +909,23 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
     await test.step('Remettre ma démo à zéro', async () => {
       await goViaAccountMenu(page, 'Ma démo');
       await expect(page).toHaveURL(/\/ma-demo$/);
-      await expect(page.getByTestId('demo-dossier')).toHaveCount(6);
+      await expect(page.getByTestId('demo-dossier')).toHaveCount(12);
       await page.getByRole('button', { name: 'Remettre ma démo à zéro' }).click();
       const confirm = page.getByTestId('demo-reset-confirm');
       await expect(confirm).toContainText('Les dossiers de vos collègues ne bougent pas.');
       await confirm.getByRole('button', { name: 'Annuler' }).click();
       await expect(confirm).toHaveCount(0);
-      // Mission 147 (partie B) — la barre des étapes, puis « Votre démo est prête », six dossiers
-      // neufs (d'autres identifiants).
+      // Mission 147 (partie B) — la barre des étapes, puis « Votre démo est prête », douze dossiers
+      // neufs (d'autres identifiants ; M155).
       await resetDemoByScreen(page);
       await expect(page.getByTestId('demo-ready')).toContainText(
-        'Votre démo est prête : six dossiers et neuf acquéreurs',
+        'Votre démo est prête : douze dossiers et neuf acquéreurs',
       );
       await expectOneFilled(page, 'Ma démo, prête');
       await expectUnspoken(page, 'Ma démo, remise à zéro');
       // Mission 117 — ses acquéreurs à nouveau, pas plus : les anciens sont partis avec les dossiers.
       // Le dossier « TEST AUTOMATIQUE » du passage, signé, reste jusqu'à la fin.
-      await expectDemoBuyers(page, true);
+      await expectDemoBuyers(page);
       await expectTodayAlerts(page);
     });
 
@@ -1324,7 +1342,7 @@ async function expectTodayAlerts(page: Page): Promise<void> {
   await page.goto('/suivi');
 }
 
-async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
+async function expectDemoBuyers(page: Page): Promise<void> {
   await page.goto('/acquereurs');
   await expectUnspoken(page, 'Acquéreurs');
   const rows = page.getByTestId('buyer-row');
@@ -1347,11 +1365,12 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   // acceptée, la ligne dit « Lancer le compromis », jamais plus « Lui présenter sa sélection ».
   await expect(keller.getByTestId('buyer-next-step')).toHaveText('Prévenir la famille Keller');
   await expect(keller).toContainText(/Prochaine étape · Lancer le compromis · depuis /);
-  // Mission 145 (partie B) — les Rossi, prêts : le mandat signé de l'appartement d'Antibes que ce
-  // passage a conclu leur est à proposer, tant qu'il existe ; sans lui, leurs biens idéaux.
+  // Mission 155 — les Rossi ont visité l'appartement de Juan-les-Pins, un coup de cœur : leur
+  // deuxième visite passe avant tout bien à leur proposer (M145 A), que ce passage ait conclu un
+  // mandat à Antibes ou non.
   await expect(
     rows.filter({ hasText: 'M. et Mme Rossi' }).getByTestId('buyer-next-step'),
-  ).toHaveText(runMandate ? 'Proposer ce bien' : 'Trouver les biens idéaux');
+  ).toHaveText('Organiser les visites');
   // Mission 146 (partie B, I4) — « Mes fiches » d'abord (toutes au closer dans la démo), triées
   // par urgence : la vente en cours en tête ; l'action en contour ; un seul plein, « Nouvel
   // acquéreur » ; les filtres d'état comptés, la recherche filtre en tapant.
@@ -1461,10 +1480,14 @@ async function expectDemoBuyers(page: Page, runMandate = false): Promise<void> {
   for (const letter of ['A', 'B', 'C']) {
     await expect(currentItem(letter).getByRole('checkbox')).toBeChecked();
   }
+  // Mission 155 — huit mandats signés : celui des Castel (Valbonne, 1 590 000 €) ressort aussi pour
+  // les Keller ; celui de Mougins, déjà A dans le bandeau, ne se répète pas.
+  const agencyMandates = page.getByTestId('ideal-agency-hit').filter({ hasText: 'Mes mandats' });
   await expect(
-    page.getByTestId('ideal-agency-hit').filter({ hasText: 'Mes mandats' }),
+    agencyMandates.filter({ hasText: 'Mougins' }),
     'le mandat de Mougins n’apparaît qu’une fois, dans le bandeau',
   ).toHaveCount(0);
+  await expect(agencyMandates.filter({ hasText: 'M. et Mme Castel' })).toHaveCount(1);
   await expect(page.getByText(/\bM\d{2,3}\b|règles? du rapprochement/)).toHaveCount(0);
   await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
   await page

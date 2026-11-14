@@ -14,11 +14,12 @@ import {
 // démo est remise à zéro par l'écran d'abord. Rien d'extérieur, rien de payant.
 
 test('la démo : une photo chargée pour chaque concurrent montré', async ({ page }) => {
-  test.setTimeout(5 * 60_000);
+  // Mission 155 — douze dossiers, huit mandats : plus de pages à parcourir.
+  test.setTimeout(10 * 60_000);
   await login(page, demoCredentials());
   await resetDemoByScreen(page);
   await goViaAccountMenu(page, 'Ma démo');
-  await expect(page.getByTestId('demo-dossier')).toHaveCount(6);
+  await expect(page.getByTestId('demo-dossier')).toHaveCount(12);
   const ids = (
     await page
       .locator('[data-testid="demo-dossier"]:not([data-stage="to_prepare"]) a')
@@ -34,7 +35,7 @@ test('la démo : une photo chargée pour chaque concurrent montré', async ({ pa
     .getByRole('link', { name: 'Ouvrir le dossier' })
     .getAttribute('href');
   ids.push(/\/builder\/([^/]+)/.exec(followUpHref ?? '')?.[1] ?? '');
-  expect(ids.filter(Boolean)).toHaveLength(5);
+  expect(ids.filter(Boolean)).toHaveLength(11);
   for (const id of ids) {
     await page.goto(`/builder/${id}/comparables`);
     await expect(page.locator('main li img').first()).toBeVisible();
