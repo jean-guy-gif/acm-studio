@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEMO_PHOTO_SET_VIEWS, demoPhotoSet } from '@/features/demo/data/photo-sets';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
 import {
   DEMO_SEED_SCENARIO,
   DEMO_SEED_STAGE,
+  DEMO_SEED_SUBJECTS,
   DEMO_SEEDS,
   DEMO_SEED_COMPETITORS,
   DEMO_STAGE_LABELS,
@@ -37,6 +39,23 @@ describe('le plan des dossiers de démo', () => {
       if (plan.photoFiles.some((file) => file.includes('/'))) continue;
       expect(plan.photoFiles.length, key).toBeLessThanOrEqual(3);
     }
+  });
+
+  it('chacun des huit mandats dépose toutes les vues de sa fiche, dans son ordre', () => {
+    const now = new Date('2026-11-14T09:00:00.000Z');
+    const deposited = new Set<string>();
+    for (const key of DEMO_SEEDS) {
+      const scenario = DEMO_SCENARIOS.find((item) => item.id === DEMO_SEED_SCENARIO[key])!;
+      const subject = DEMO_SEED_SUBJECTS[key] ?? scenario.subject;
+      const set = subject.photoSet;
+      const views = set
+        ? DEMO_PHOTO_SET_VIEWS[set as keyof typeof DEMO_PHOTO_SET_VIEWS]
+        : undefined;
+      if (!set || !views || !demoPhotoSet(set)) continue;
+      expect(demoSeedPlan(key, now).photoFiles, key).toEqual(views.map((view) => `${set}/${view}`));
+      deposited.add(set);
+    }
+    expect([...deposited].sort()).toEqual(Object.keys(DEMO_PHOTO_SET_VIEWS).sort());
   });
 
   it('douze dossiers à cinq étapes nommées, chacun avec son scénario', () => {

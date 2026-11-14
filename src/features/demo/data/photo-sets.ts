@@ -37,11 +37,96 @@ export const DEMO_PHOTO_SET_RULES = {
   maxBytes: 400 * 1024,
 } as const;
 
+// Les vues de chaque mandat, dans l'ordre de sa fiche photo (docs/DEMO.md ; un test compare les
+// deux). Un jeu ne s'affiche que complet : tant qu'il lui manque une vue, il ne montre rien et le
+// bien garde ses photos d'avant (décision de Jean-Guy, 14/11). Les numéros d'un dossier se suivent
+// toujours depuis 01 (`demo-photo-sets.test.ts`) : seule la ou les dernières vues peuvent attendre.
+export const DEMO_PHOTO_SET_VIEWS: Partial<
+  Record<(typeof DEMO_PHOTO_SET_IDS)[number], readonly string[]>
+> = {
+  'mandat-mougins-villa': [
+    '01-facade.jpg',
+    '02-sejour.jpg',
+    '03-cuisine.jpg',
+    '04-chambre.jpg',
+    '05-salle-de-bain.jpg',
+    '06-jardin.jpg',
+  ],
+  'mandat-antibes-appartement': [
+    '01-facade.jpg',
+    '02-sejour.jpg',
+    '03-terrasse.jpg',
+    '04-cuisine.jpg',
+    '05-chambre.jpg',
+    '06-salle-de-bain.jpg',
+  ],
+  'mandat-vence-maison': [
+    '01-facade.jpg',
+    '02-sejour.jpg',
+    '03-cuisine.jpg',
+    '04-chambre.jpg',
+    '05-salle-de-bain.jpg',
+    '06-jardin.jpg',
+  ],
+  'mandat-juan-les-pins-appartement': [
+    '01-facade.jpg',
+    '02-sejour.jpg',
+    '03-cuisine.jpg',
+    '04-chambre.jpg',
+    '05-balcon.jpg',
+  ],
+  'mandat-villeneuve-loubet-appartement': [
+    '01-facade.jpg',
+    '02-sejour.jpg',
+    '03-chambre.jpg',
+    '04-salle-d-eau.jpg',
+    '05-balcon.jpg',
+  ],
+  'mandat-la-colle-sur-loup-maison': [
+    '01-facade.jpg',
+    '02-sejour.jpg',
+    '03-cuisine.jpg',
+    '04-chambre.jpg',
+    '05-salle-de-bain.jpg',
+    '06-terrasse.jpg',
+  ],
+  'mandat-saint-paul-de-vence-maison': [
+    '01-facade.jpg',
+    '02-sejour.jpg',
+    '03-cuisine.jpg',
+    '04-chambre.jpg',
+    '05-salle-de-bain.jpg',
+    '06-jardin.jpg',
+  ],
+  'mandat-valbonne-villa': [
+    '01-facade.jpg',
+    '02-sejour.jpg',
+    '03-cuisine.jpg',
+    '04-chambre.jpg',
+    '05-salle-de-bain.jpg',
+    '06-piscine.jpg',
+  ],
+};
+
+// Les fichiers d'un jeu s'il est complet, sinon null ; sans vues attendues, ceux qui sont là. Pur.
+export function completePhotoSet(
+  files: readonly string[],
+  expected: readonly string[] | undefined,
+): string[] | null {
+  if (!expected) return [...files];
+  return expected.every((view) => files.includes(view)) ? [...expected] : null;
+}
+
 // Les photos du jeu d'un bien, en chemins sous `/demo/photos` (« mandat-mougins-villa/01-facade.jpg »),
-// ou null si son dossier n'a pas encore de photos.
+// ou null si son dossier n'a pas encore de photos, ou pas encore toutes celles de sa fiche.
 export function demoPhotoSet(id: string): string[] | null {
   const files = SETS[id];
-  return files && files.length > 0 ? files.map((file) => `${id}/${file}`) : null;
+  if (!files || files.length === 0) return null;
+  const complete = completePhotoSet(
+    files,
+    DEMO_PHOTO_SET_VIEWS[id as (typeof DEMO_PHOTO_SET_IDS)[number]],
+  );
+  return complete ? complete.map((file) => `${id}/${file}`) : null;
 }
 
 export function demoPhotoSetFolders(): string[] {
