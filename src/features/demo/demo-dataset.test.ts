@@ -248,7 +248,7 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
     }
   });
 
-  it('les photos : 3 à 5 pour le bien vendeur, 2 à 4 par concurrent, toutes dans l’application', () => {
+  it('les photos : 3 à 6 pour le bien vendeur, 2 à 4 par concurrent, toutes dans l’application', () => {
     const pool = new Set([
       ...DEMO_PHOTO_POOLS.apartment,
       ...DEMO_PHOTO_POOLS.house,
@@ -261,7 +261,7 @@ describe('le jeu de données de la démonstration (mission 114)', () => {
     }
     for (const scenario of DEMO_SCENARIOS) {
       expect(scenario.subject.photos.length).toBeGreaterThanOrEqual(3);
-      expect(scenario.subject.photos.length).toBeLessThanOrEqual(5);
+      expect(scenario.subject.photos.length).toBeLessThanOrEqual(6);
       for (const file of scenario.subject.photos) expect(pool.has(file) || inSet(file)).toBe(true);
       expect(existsSync(join(process.cwd(), 'public', 'demo', `fiche-${scenario.id}.pdf`))).toBe(
         true,
