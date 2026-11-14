@@ -38,8 +38,9 @@ export const DEMO_PHOTO_SET_RULES = {
 } as const;
 
 // Les vues de chaque mandat, dans l'ordre de sa fiche photo (docs/DEMO.md ; un test compare les
-// deux). Un jeu ne s'affiche que complet : déposé vue par vue, il attend sa dernière vue sans rien
-// montrer, et le bien garde ses photos d'avant (décision de Jean-Guy, 14/11).
+// deux). Un jeu ne s'affiche que complet : tant qu'il lui manque une vue, il ne montre rien et le
+// bien garde ses photos d'avant (décision de Jean-Guy, 14/11). Les numéros d'un dossier se suivent
+// toujours depuis 01 (`demo-photo-sets.test.ts`) : seule la ou les dernières vues peuvent attendre.
 export const DEMO_PHOTO_SET_VIEWS: Partial<
   Record<(typeof DEMO_PHOTO_SET_IDS)[number], readonly string[]>
 > = {
