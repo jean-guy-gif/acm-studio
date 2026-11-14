@@ -144,8 +144,10 @@ façade), et un extérieur qui est bien celui de la façade.
 Une ligne par jeu déposé, exigée par les tests : le dossier, la source, l'auteur, la licence et
 la date de téléchargement (JJ/MM/AAAA).
 
-| Dossier | Bien | Source | Auteur | Licence | Téléchargé le |
-| ------- | ---- | ------ | ------ | ------- | ------------- |
+| Dossier                       | Bien                                  | Source                                                                                                                                          | Auteur                 | Licence                                                                                                                  | Téléchargé le |
+| ----------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| `mandat-mougins-villa/`       | la villa de M. Lefebvre, Mougins      | Images générées par IA avec Runway (compte Start-academia), d'après la fiche photo ci-dessous : façade le 13/11/2026, autres vues le 14/11/2026 | Start Academy (Runway) | Conditions d'usage de Runway (« Usage rights », https://help.runwayml.com/hc/en-us/articles/18927776141715-Usage-rights) | 14/11/2026    |
+| `mandat-antibes-appartement/` | l'appartement de Mme Ferrand, Antibes | Images générées par IA avec Runway (compte Start-academia), d'après la fiche photo ci-dessous : façade le 13/11/2026, autres vues le 14/11/2026 | Start Academy (Runway) | Conditions d'usage de Runway (« Usage rights », https://help.runwayml.com/hc/en-us/articles/18927776141715-Usage-rights) | 14/11/2026    |
 
 ### Fiche — `mandat-mougins-villa` · la villa de M. Lefebvre (mandat signé)
 

@@ -1,1 +1,18 @@
-{}
+{
+  "mandat-antibes-appartement": [
+    "01-facade.jpg",
+    "02-sejour.jpg",
+    "03-terrasse.jpg",
+    "04-cuisine.jpg",
+    "05-chambre.jpg",
+    "06-salle-de-bain.jpg"
+  ],
+  "mandat-mougins-villa": [
+    "01-facade.jpg",
+    "02-sejour.jpg",
+    "03-cuisine.jpg",
+    "04-chambre.jpg",
+    "05-salle-de-bain.jpg",
+    "06-jardin.jpg"
+  ]
+}
