@@ -25,6 +25,20 @@ const NOW = new Date('2026-10-24T10:00:00.000Z');
 const UNSPOKEN = /d[ée]mo|fictif|simulat/i;
 
 describe('le plan des dossiers de démo', () => {
+  it('un bien qui a son jeu de photos les montre toutes ; les autres, trois au plus', () => {
+    const now = new Date('2026-11-14T09:00:00.000Z');
+    for (const key of ['signed', 'signed_antibes'] as const) {
+      const plan = demoSeedPlan(key, now);
+      expect(plan.photoFiles, key).toHaveLength(6);
+      expect(plan.photoFiles[0], key).toMatch(/^mandat-[a-z-]+\/01-facade\.jpg$/);
+    }
+    for (const key of DEMO_SEEDS) {
+      const plan = demoSeedPlan(key, now);
+      if (plan.photoFiles.some((file) => file.includes('/'))) continue;
+      expect(plan.photoFiles.length, key).toBeLessThanOrEqual(3);
+    }
+  });
+
   it('douze dossiers à cinq étapes nommées, chacun avec son scénario', () => {
     expect(DEMO_STAGES).toEqual(['to_prepare', 'ready', 'direct', 'signed', 'follow_up']);
     expect(DEMO_SEEDS).toEqual([

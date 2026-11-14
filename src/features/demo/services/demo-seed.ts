@@ -355,7 +355,11 @@ export function demoSeedPlan(key: DemoSeedKey, now: Date): DemoSeedPlan {
     language: stage === 'direct' ? DEMO_DIRECT_LANGUAGE : 'fr',
     property,
     isCondominium: subject.propertyType === 'apartment',
-    photoFiles: subject.photos.slice(0, 3),
+    // Mission 155 — un bien qui a son jeu (`<bien>/01-facade.jpg`…) montre toutes ses vues ; les
+    // photos partagées par famille restent trois, elles ne montrent pas toutes le même bien.
+    photoFiles: subject.photos.every((file) => file.includes('/'))
+      ? [...subject.photos]
+      : subject.photos.slice(0, 3),
     competitors,
     live,
     conclusion:
