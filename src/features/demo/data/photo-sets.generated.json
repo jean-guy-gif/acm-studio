@@ -11,14 +11,16 @@
     "01-facade.jpg",
     "02-sejour.jpg",
     "03-cuisine.jpg",
-    "04-chambre.jpg"
+    "04-chambre.jpg",
+    "05-balcon.jpg"
   ],
   "mandat-la-colle-sur-loup-maison": [
     "01-facade.jpg",
     "02-sejour.jpg",
     "03-cuisine.jpg",
     "04-chambre.jpg",
-    "05-salle-de-bain.jpg"
+    "05-salle-de-bain.jpg",
+    "06-terrasse.jpg"
   ],
   "mandat-mougins-villa": [
     "01-facade.jpg",
@@ -33,26 +35,30 @@
     "02-sejour.jpg",
     "03-cuisine.jpg",
     "04-chambre.jpg",
-    "05-salle-de-bain.jpg"
+    "05-salle-de-bain.jpg",
+    "06-jardin.jpg"
   ],
   "mandat-valbonne-villa": [
     "01-facade.jpg",
     "02-sejour.jpg",
     "03-cuisine.jpg",
     "04-chambre.jpg",
-    "05-salle-de-bain.jpg"
+    "05-salle-de-bain.jpg",
+    "06-piscine.jpg"
   ],
   "mandat-vence-maison": [
     "01-facade.jpg",
     "02-sejour.jpg",
     "03-cuisine.jpg",
     "04-chambre.jpg",
-    "05-salle-de-bain.jpg"
+    "05-salle-de-bain.jpg",
+    "06-jardin.jpg"
   ],
   "mandat-villeneuve-loubet-appartement": [
     "01-facade.jpg",
     "02-sejour.jpg",
     "03-chambre.jpg",
-    "04-salle-d-eau.jpg"
+    "04-salle-d-eau.jpg",
+    "05-balcon.jpg"
   ]
 }
