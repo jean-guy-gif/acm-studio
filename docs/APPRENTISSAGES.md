@@ -46,6 +46,7 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
 - 10/11 · M147 B · Un passage e2e lancé par la Bash tool au-delà de 10 minutes part en tâche de
   fond sans le dire tout de suite : lancer chaque lot (moins de 10 minutes) avec la sortie dans un
   fichier, puis lire ce fichier à la notification.
+- 14/11 · Correctif · Le parcours e2e rouge deux fois sur des coupures entre le poste et l'essai (`ERR_TIMED_OUT` sur `/synthese/…`, puis « L'inscription n'a pas été confirmée ») à des étapes que le correctif ne touchait pas, journal d'erreurs vide ; vert au troisième passage (3,3 min). Lire `app_errors` (colonnes `source`, `page`, pas `origin` ni `path`) avant de conclure à un défaut.
 
 ## La démo et les tests
 
@@ -567,6 +568,7 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 12/11 · M154 · Un interrupteur qui ouvre une fonction ailleurs qu'en production se teste avec sa
   valeur en paramètre (`tourVoucherOpen(env, lit)`) : l'allumer ne casse pas les tests qui prouvent
   qu'éteint, la production reste fermée.
+- 14/11 · Correctif · Un correctif urgent se fait dans un worktree depuis `main` pendant qu'une mission occupe le dépôt : Turbopack y refuse `node_modules` en lien symbolique (panique), le build se prouve donc par la CI ; `git diff` n'emporte pas les fichiers neufs, à copier à la main ; les tests unitaires locaux demandent les variables factices de la CI (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`), sans elles 8 fichiers tombent à l'import.
 
 ## La base
 
