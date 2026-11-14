@@ -1238,6 +1238,16 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // choix ») ; la présentation terminée, son lien est « Ce que nous avons vu ensemble », en lecture
     // seule (décision de Jean-Guy, 25/10) ; le lien retiré ne s'ouvre plus.
     await page.goto(buyerUrl);
+    // Correctif du 13/11 — la visite faite sur la fiche : sa suite se change ; « Pas pour moi »
+    // n'y propose pas « Offre envisagée ».
+    const doneOnBuyer = page.getByTestId('buyer-visits-done').getByTestId('visit-line');
+    await expect(doneOnBuyer).toHaveCount(1);
+    await expect(doneOnBuyer.getByTestId('visit-report')).toContainText('On continue à chercher');
+    await doneOnBuyer.getByTestId('visit-change-open').click();
+    const changeOnBuyer = doneOnBuyer.getByTestId('visit-next-step-form');
+    await expect(changeOnBuyer.getByTestId('visit-change-second_visit')).toBeVisible();
+    await expect(changeOnBuyer.getByTestId('visit-change-offer')).toHaveCount(0);
+    await changeOnBuyer.getByRole('button', { name: 'Annuler' }).click();
     await page.getByTestId('buyer-dossier').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/dossier$`));
     const dossier = page.getByTestId('buyer-dossier');

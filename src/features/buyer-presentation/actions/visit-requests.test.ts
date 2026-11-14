@@ -20,7 +20,7 @@ vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => s
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
 vi.mock('@/lib/app-errors/report-server-error', () => ({ reportServerError: async () => {} }));
 
-const { requestVisit, cancelVisitRequest, recordVisitDone } =
+const { requestVisit, cancelVisitRequest, recordVisitDone, changeVisitNextStep } =
   await import('@/features/buyer-presentation/actions/visit-requests');
 
 const requestRow = {
@@ -219,5 +219,126 @@ describe('les demandes de visite', () => {
         : { data: { ...requestRow, visited_at: '2026-10-25T10:00:00Z', outcome: 'visited' } };
     await recordVisitDone('r1', { ...REPORT, opinion: 'mixed', nextStep: 'second_visit' });
     expect(service.calls.filter((call) => call.method === 'insert')).toEqual([]);
+  });
+
+  // Correctif du 13/11 (essai de Jean-Guy) — un acquéreur qui change d'avis après la visite : la
+  // suite d'une visite faite se change, et « Offre envisagée » ouvre l'offre d'achat.
+  describe('changer la suite d’une visite faite', () => {
+    const doneRow = {
+      ...requestRow,
+      visited_at: '2026-11-10T10:00:00Z',
+      outcome: 'visited',
+      opinion: 'interested',
+      next_step: 'keep_searching',
+      buyers: { archived_at: null },
+    };
+    // La relecture de la visite (`maybeSingle` sans `update`), les offres signées sur elle
+    // (`buyer_document_visits`), l'écriture.
+    const respondWith =
+      (visit: unknown, offers: unknown[] | null = [], written: unknown = undefined) =>
+      (table: string, calls: { method: string; args: unknown[] }[]) => {
+        if (table === 'buyer_document_visits')
+          return offers === null ? { error: { message: 'boom' } } : { data: offers };
+        if (calls.some((call) => call.method === 'update'))
+          return { data: written ?? { ...doneRow, outcome: 'offer', next_step: 'offer' } };
+        if (calls.some((call) => call.method === 'limit')) return { data: [] };
+        return { data: visit };
+      };
+
+    it('« Offre envisagée » : l’issue offre, écrite sur la suite relue (jamais sur une autre)', async () => {
+      state.respond = respondWith(doneRow);
+      const result = await changeVisitNextStep('r1', 'offer');
+      expect(result.ok && result.request.outcome).toBe('offer');
+      const update = service.calls.find((call) => call.method === 'update')?.args[0];
+      expect(update).toEqual({ outcome: 'offer', next_step: 'offer' });
+      // La date et le compte rendu ne bougent pas ; l'écriture vise la suite lue.
+      expect(update).not.toHaveProperty('visited_at');
+      const eqs = service.calls.filter((call) => call.method === 'eq').map((call) => call.args);
+      expect(eqs).toContainEqual(['next_step', 'keep_searching']);
+      expect(eqs).toContainEqual(['agency_id', 'agency-a']);
+    });
+
+    it('une suite hors liste, une visite pas encore faite, annulée ou d’une fiche archivée : rien n’est écrit', async () => {
+      expect((await changeVisitNextStep('r1', 'bof')).ok).toBe(false);
+      state.respond = respondWith({ ...doneRow, visited_at: null });
+      expect(await changeVisitNextStep('r1', 'offer')).toEqual({
+        ok: false,
+        error: 'Cette visite n’est pas encore faite : notez d’abord son compte rendu.',
+      });
+      state.respond = respondWith({ ...doneRow, cancelled_at: '2026-11-11T10:00:00Z' });
+      expect((await changeVisitNextStep('r1', 'offer')).ok).toBe(false);
+      state.respond = respondWith({ ...doneRow, buyers: { archived_at: '2026-11-11' } });
+      expect((await changeVisitNextStep('r1', 'offer')).ok).toBe(false);
+      state.respond = respondWith(null);
+      expect((await changeVisitNextStep('r1', 'offer')).ok).toBe(false);
+      expect(service.writes()).toEqual([]);
+    });
+
+    it('« Pas pour moi » et « Offre envisagée » se contredisent : refusé', async () => {
+      state.respond = respondWith({ ...doneRow, opinion: 'not_for_me', outcome: 'declined' });
+      expect(await changeVisitNextStep('r1', 'offer')).toEqual({
+        ok: false,
+        error: 'Son avis était « Pas pour moi » : « Offre envisagée » le contredit.',
+      });
+      expect(service.writes()).toEqual([]);
+    });
+
+    it('quitter « Offre envisagée » : refusé si une offre est signée, ou si les offres ne se lisent pas', async () => {
+      const offerRow = { ...doneRow, outcome: 'offer', next_step: 'offer' };
+      state.respond = respondWith(offerRow, [{ document_id: 'd1' }]);
+      expect(await changeVisitNextStep('r1', 'keep_searching')).toEqual({
+        ok: false,
+        error: 'Une offre d’achat est signée sur cette visite : sa suite ne change plus.',
+      });
+      state.respond = respondWith(offerRow, null);
+      expect((await changeVisitNextStep('r1', 'keep_searching')).ok).toBe(false);
+      expect(service.writes()).toEqual([]);
+      // Sans offre signée : la suite change, l'issue redevient « Visité, à suivre ».
+      service.reset();
+      state.respond = respondWith(offerRow, [], { ...doneRow });
+      expect((await changeVisitNextStep('r1', 'keep_searching')).ok).toBe(true);
+      expect(service.calls.find((call) => call.method === 'update')?.args[0]).toEqual({
+        outcome: 'visited',
+        next_step: 'keep_searching',
+      });
+    });
+
+    it('une visite d’avant le compte rendu (sans suite) : « Pas pour lui » le reste hors offre', async () => {
+      state.respond = respondWith({
+        ...doneRow,
+        opinion: null,
+        next_step: null,
+        outcome: 'declined',
+      });
+      expect((await changeVisitNextStep('r1', 'offer')).ok).toBe(false);
+      expect(service.writes()).toEqual([]);
+      service.reset();
+      state.respond = respondWith(
+        { ...doneRow, opinion: null, next_step: null, outcome: 'declined' },
+        [],
+        { ...doneRow, outcome: 'declined', next_step: 'second_visit' },
+      );
+      await changeVisitNextStep('r1', 'second_visit');
+      expect(service.calls.find((call) => call.method === 'update')?.args[0]).toEqual({
+        outcome: 'declined',
+        next_step: 'second_visit',
+      });
+      expect(
+        service.calls.some((call) => call.method === 'is' && call.args[0] === 'next_step'),
+      ).toBe(true);
+      // « Deuxième visite » : une nouvelle demande, comme au compte rendu.
+      expect(service.calls.find((call) => call.method === 'insert')?.args[0]).toEqual({
+        agency_id: 'agency-a',
+        buyer_id: 'b1',
+        buyer_selection_item_id: 'i1',
+        requested_during: 'conseiller',
+      });
+    });
+
+    it('la même suite : rien n’est écrit', async () => {
+      state.respond = respondWith(doneRow);
+      expect((await changeVisitNextStep('r1', 'keep_searching')).ok).toBe(true);
+      expect(service.writes()).toEqual([]);
+    });
   });
 });

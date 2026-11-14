@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { backLink, card, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { legalIdentityGapsLabel } from '@/features/legal-identity/services/legal-identity';
 import { OfferForm } from '@/features/purchase-offer/components/offer-form';
+import { OfferSwitchButton } from '@/features/purchase-offer/components/offer-switch';
 import { getOfferContext } from '@/features/purchase-offer/queries/get-offer-context';
 
 export const metadata: Metadata = { title: 'Offre d’achat — ACM Studio' };
@@ -30,6 +31,8 @@ export default async function OfferPage({ params, searchParams }: Props) {
   }
   const { context } = read;
   const eligible = context.visits.filter((visit) => visit.eligible);
+  // Correctif du 13/11 — les visites faites qui peuvent passer en « Offre envisagée ».
+  const switchable = context.visits.filter((visit) => visit.switchable);
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -60,14 +63,45 @@ export default async function OfferPage({ params, searchParams }: Props) {
             <p className="text-sm text-zinc-700">Aucune visite pour cet acquéreur.</p>
           ) : (
             context.visits.map((visit) => (
-              <p key={visit.visitId} className="text-sm text-zinc-700">
-                {visit.label} : {visit.note}
-              </p>
+              <div key={visit.visitId} className="flex flex-col gap-2" data-testid="offer-visit">
+                <p className="text-sm text-zinc-700">
+                  {visit.label} : {visit.note}
+                </p>
+                {visit.switchable ? (
+                  <OfferSwitchButton
+                    buyerId={context.buyer.id}
+                    visitId={visit.visitId}
+                    primary={visit.visitId === switchable[0]?.visitId}
+                  />
+                ) : null}
+              </div>
             ))
           )}
         </div>
       ) : (
-        <OfferForm context={context} preselected={visite ?? null} />
+        <>
+          {switchable.length > 0 ? (
+            <div className={`${card} flex flex-col gap-3 p-5`} data-testid="offer-switchable">
+              <p className="text-sm font-semibold text-zinc-800">
+                Une offre sur une autre visite ?
+              </p>
+              {switchable.map((visit) => (
+                <div key={visit.visitId} className="flex flex-col gap-2" data-testid="offer-visit">
+                  <p className="text-sm text-zinc-700">
+                    {visit.label} : {visit.note}
+                  </p>
+                  <OfferSwitchButton
+                    buyerId={context.buyer.id}
+                    visitId={visit.visitId}
+                    primary={false}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {/* La visite choisie par l'adresse : le formulaire repart d'elle quand elle change. */}
+          <OfferForm key={visite ?? ''} context={context} preselected={visite ?? null} />
+        </>
       )}
     </div>
   );

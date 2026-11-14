@@ -19,7 +19,11 @@ import {
   type VisitReport,
 } from '@/features/buyer-messages/messages';
 import { spokenLanguage } from '@/lib/client-language';
-import { visitOutcomeOf, visitReportLine } from '@/features/buyer-messages/report';
+import {
+  canTurnIntoOffer,
+  visitOutcomeOf,
+  visitReportLine,
+} from '@/features/buyer-messages/report';
 import { visitReportSchema } from '@/features/buyer-messages/report-schema';
 import { meetingTasks, weeklyReportTasks } from '@/features/buyer-messages/report-tasks';
 import { VISIT_NEXT_STEPS, VISIT_OPINIONS } from '@/features/buyer-messages/templates/types';
@@ -194,6 +198,23 @@ describe('le compte rendu, relu au serveur', () => {
     expect(visitOutcomeOf({ opinion: 'love', nextStep: 'offer' })).toBe('offer');
     expect(visitOutcomeOf({ opinion: 'not_for_me', nextStep: 'keep_searching' })).toBe('declined');
     expect(visitOutcomeOf({ opinion: 'mixed', nextStep: 'second_visit' })).toBe('visited');
+  });
+
+  // Correctif du 13/11 — une visite faite passe en « Offre envisagée » quand l'acquéreur change
+  // d'avis ; jamais une visite pas faite, déjà en offre, ou « Pas pour moi ».
+  it('une visite faite, ni en offre ni « Pas pour moi », peut passer en « Offre envisagée »', () => {
+    const done = '2026-11-10T10:00:00Z';
+    expect(canTurnIntoOffer({ visitedAt: done, outcome: 'visited', opinion: 'interested' })).toBe(
+      true,
+    );
+    expect(canTurnIntoOffer({ visitedAt: done, outcome: 'visited', opinion: null })).toBe(true);
+    expect(canTurnIntoOffer({ visitedAt: null, outcome: 'to_plan', opinion: null })).toBe(false);
+    expect(canTurnIntoOffer({ visitedAt: done, outcome: 'offer', opinion: 'love' })).toBe(false);
+    expect(canTurnIntoOffer({ visitedAt: done, outcome: 'declined', opinion: 'not_for_me' })).toBe(
+      false,
+    );
+    // Avant le compte rendu (M119), « Pas pour lui » sans avis : hors de l'offre aussi.
+    expect(canTurnIntoOffer({ visitedAt: done, outcome: 'declined', opinion: null })).toBe(false);
   });
 
   it('« Pas pour moi » et « Offre envisagée » se contredisent ; les étiquettes dédoublonnées', () => {
