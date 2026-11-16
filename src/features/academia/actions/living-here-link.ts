@@ -56,6 +56,9 @@ const ACADEMIA_DOSSIER_FAILED =
   'Academia n’a pas pu préparer le dossier de cette adresse. Vérifiez l’adresse du bien, ou collez le lien vous-même.';
 const READ_FAILED = 'La demande à Academia n’a pas pu être lue. Réessayez dans un moment.';
 const SAVE_FAILED = 'Le lien n’a pas pu être enregistré. Réessayez.';
+const ADDRESS_MAX = 300;
+const ADDRESS_TOO_LONG =
+  'L’adresse du bien est trop longue pour Academia (300 caractères au plus) : raccourcissez-la sur la fiche.';
 
 type Admin = ReturnType<typeof createServiceRoleClient>;
 type DossierRow = {
@@ -215,6 +218,8 @@ async function run(
       })
     : null;
   if (!propertyAddress) return { state: 'no_address' };
+  // La base garde l'adresse sur 300 caractères au plus : au-delà, rien ne part.
+  if (propertyAddress.length > ADDRESS_MAX) return fail(ADDRESS_TOO_LONG, false);
 
   const { data: rowData, error: rowError } = await admin
     .from('project_academia_dossiers')

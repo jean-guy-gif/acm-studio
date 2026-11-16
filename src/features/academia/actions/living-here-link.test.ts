@@ -362,6 +362,18 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect(server.calls[0].authorization).toBe('Bearer msk_demo');
   });
 
+  it('une adresse de plus de 300 caractères : refusée avant tout appel, la cause dite', async () => {
+    state.subject = { ...state.subject, address: `${'1 chemin '.repeat(40)}Vence` };
+    expect(await createLivingHereLink(PROJECT)).toEqual({
+      state: 'failed',
+      message:
+        'L’adresse du bien est trop longue pour Academia (300 caractères au plus) : raccourcissez-la sur la fiche.',
+      retry: false,
+    });
+    expect(server.calls).toEqual([]);
+    expect(writes()).toEqual([]);
+  });
+
   it('la clé n’est jamais dans ce que rend l’action', async () => {
     const result = await createLivingHereLink(PROJECT);
     expect(JSON.stringify(result)).not.toContain('msk_');
