@@ -118,6 +118,14 @@ export function VisitConfirmForm({ visitId, buyerId }: { visitId: string; buyerI
           {prepared.livingHere.ageLine?.tone === 'warn' ? (
             <p className={AGE_WARN_CLASS} data-testid="visit-confirm-living-age">
               Lien « Vivre ici » {prepared.livingHere.ageLine.text.replace(/^Collé/, 'collé')}
+              {prepared.livingHere.shared ? (
+                <>
+                  {' '}
+                  <Link href={`/acquereurs/${buyerId}/dossier#vivre-ici`} className={linkStyle}>
+                    Coller un lien neuf sur le dossier acquéreur
+                  </Link>
+                </>
+              ) : null}
             </p>
           ) : null}
           {prepared.livingHere.shared ? <LivingHereInfo /> : null}

@@ -129,9 +129,13 @@ export async function prepareRelaunch(buyerId: unknown): Promise<PrepareRelaunch
   const living = livingHereEverywhereOpen()
     ? await readPropertyLivingLinks(client, agencyId, selection.items)
     : null;
+  // Les lettres du déroulé : celles des biens montrés (un concurrent supprimé depuis n'en a pas).
+  const sources = new Map(selection.items.map((item) => [item.id, item.source]));
   const livingHereLetters = living?.ok
-    ? selection.items.flatMap((item, index) =>
-        item.source !== 'project' && living.links.has(item.id) ? [deckLetter(index)] : [],
+    ? shown.flatMap((item, index) =>
+        sources.get(item.itemId) !== 'project' && living.links.has(item.itemId)
+          ? [deckLetter(index)]
+          : [],
       )
     : [];
   return {

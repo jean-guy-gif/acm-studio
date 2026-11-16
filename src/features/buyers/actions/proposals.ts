@@ -3,6 +3,9 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { readPropertyLivingLinks } from '@/features/academia/queries/read-property-living-links';
+import { deckLetter } from '@/features/academia/services/living-here-info';
+import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { loadAgencyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { loadLoopCatalog } from '@/features/buyers/queries/get-loop-properties';
@@ -20,8 +23,11 @@ import { getProfile } from '@/lib/auth/get-profile';
 import type { Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
+// Mission 156 — `livingHereLetters` : les biens hors mandat de la sélection dont le lien « Vivre
+// ici » part avec ce lien ; l'écran dit la ligne d'information au moment du partage.
 export type PrepareProposalResult =
-  { ok: true; url: string; selectionItemId: string } | { ok: false; error: string };
+  | { ok: true; url: string; selectionItemId: string; livingHereLetters: string[] }
+  | { ok: false; error: string };
 export type RecordProposalResult = { ok: true; sentAt: string } | { ok: false; error: string };
 
 const KEY = z.string().min(3).max(2100);
@@ -173,7 +179,7 @@ export async function prepareProposalLink(
   const { data: inserted, error: insertError } = await client
     .from('buyer_selection_items')
     .insert(rows)
-    .select('id, position');
+    .select('id, position, source, reference');
   const headId = inserted?.find((row) => row.position === 1)?.id ?? null;
   if (insertError || !headId) {
     await client.from('buyer_selections').delete().eq('id', selection.id);
@@ -184,8 +190,19 @@ export async function prepareProposalLink(
     await client.from('buyer_selections').delete().eq('id', selection.id);
     return { ok: false, error: link.error };
   }
+  // Une lecture en échec n'empêche pas l'envoi : la page de l'acquéreur s'ouvre sans « Vivre ici »
+  // (la lecture du dossier), et l'échec est au journal.
+  const ordered = [...(inserted ?? [])].sort((a, b) => a.position - b.position);
+  const living = livingHereEverywhereOpen()
+    ? await readPropertyLivingLinks(client, agencyId, ordered)
+    : null;
+  const livingHereLetters = living?.ok
+    ? ordered.flatMap((row, index) =>
+        row.source !== 'project' && living.links.has(row.id) ? [deckLetter(index)] : [],
+      )
+    : [];
   revalidatePath(`/acquereurs/${buyerIdOk}`);
-  return { ok: true, url: link.url, selectionItemId: headId };
+  return { ok: true, url: link.url, selectionItemId: headId, livingHereLetters };
 }
 
 // Mission 134 (§ 6, 7) — « Envoyé, suivant » : le bien est noté proposé à cet acquéreur, une fois,

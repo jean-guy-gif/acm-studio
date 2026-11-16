@@ -112,7 +112,14 @@ export async function selectionNeedsLivingHere(
 ): Promise<boolean> {
   const outside = items.filter((item) => item.source !== 'project');
   if (outside.length === 0) return false;
-  const read = await readPropertyLivingLinks(client, agencyId, outside);
-  if (!read.ok) return false;
-  return outside.some((item) => livingHereNeedsLink(read.links.get(item.id) ?? null, now));
+  // Seuls les biens qui ont une clé (un concurrent supprimé depuis n'en a pas, et le bloc du
+  // dossier ne lui donne pas de ligne).
+  const [keys, read] = await Promise.all([
+    livingHereKeys(client, agencyId, outside),
+    readPropertyLivingLinks(client, agencyId, outside),
+  ]);
+  if (!keys.ok || !read.ok) return false;
+  return outside.some(
+    (item) => keys.keys.has(item.id) && livingHereNeedsLink(read.links.get(item.id) ?? null, now),
+  );
 }

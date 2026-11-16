@@ -171,7 +171,14 @@ describe('le lien de sa sélection, ce bien en tête', () => {
     answers.buyer_selections = { id: 's-new', buyer_words: null };
     answers.buyer_selection_items = [{ id: ITEM_ID, position: 1 }];
     const result = await prepareProposalLink(BUYER, KEY);
-    expect(result).toEqual({ ok: true, url: 'https://acm/dossier/t', selectionItemId: ITEM_ID });
+    // Mission 156 — aucun lien « Vivre ici » collé sur les biens recopiés : aucune ligne
+    // d'information au partage.
+    expect(result).toEqual({
+      ok: true,
+      url: 'https://acm/dossier/t',
+      selectionItemId: ITEM_ID,
+      livingHereLetters: [],
+    });
     expect(fake.writes()).toEqual(['insert buyer_selections', 'insert buyer_selection_items']);
     const rows = fake.calls.filter((call) => call.method === 'insert')[1]?.args[0] as Record<
       string,

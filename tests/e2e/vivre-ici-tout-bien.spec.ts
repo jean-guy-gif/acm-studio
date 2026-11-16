@@ -6,7 +6,9 @@ import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './su
 // l'URL d'essai (l'interrupteur y est ouvert ; éteint en production tant que le texte A3 de
 // `/confidentialite` n'est pas en ligne), avec le compte de l'agence de démonstration, remise à zéro
 // d'abord. Les Wilson : un mandat signé à Antibes (A) et deux annonces du marché (B, C), une visite
-// demandée sur B.
+// demandée sur B. Le périmètre nommait les Keller ; leur sélection est masquée pendant leur vente
+// (« Sous offre », M143), d'où les Wilson. L'âge du lien (25e et 30e jours), la relance et la carte du
+// mandat sont prouvés par les tests unitaires.
 //   1. Leur fiche : « Ajouter « Vivre ici » » sous « Sa sélection », qui mène au bloc du dossier ;
 //   2. le dossier acquéreur : « « Vivre ici » de chaque bien », la ligne d'information une seule fois
 //      en tête, le mandat qui garde son lien, un autre site refusé, le lien d'Academia collé sur B ;
