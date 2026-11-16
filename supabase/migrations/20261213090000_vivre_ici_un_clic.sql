@@ -105,9 +105,13 @@ revoke all on public.project_academia_requests from anon, authenticated;
 grant select (id, agency_id, project_id, state, property_address, link_url, link_expires_at)
   on public.project_academia_requests to authenticated;
 
--- Le retrait du hors mandat de la mission 156.
+-- Le retrait du hors mandat de la mission 156. La table est verrouillée avant d'être comptée : une
+-- ligne écrite par l'essai entre le comptage et le `drop` serait sinon effacée sans rien dire. Le
+-- verrou se pose dans le bloc : la CLI passe le fichier en transaction implicite, où un `lock table`
+-- seul est refusé ; il tient jusqu'à la fin du fichier.
 do $$
 begin
+  lock table public.property_living_here_links in access exclusive mode;
   if (select count(*) from public.property_living_here_links) > 0 then
     raise exception 'property_living_here_links n''est pas vide : rien n''est retiré';
   end if;
