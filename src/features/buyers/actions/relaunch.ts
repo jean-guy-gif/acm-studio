@@ -4,12 +4,6 @@ import { clientTexts, textLanguage } from '@/lib/client-texts';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import { readPropertyLivingLinks } from '@/features/academia/queries/read-property-living-links';
-import {
-  deckLetter,
-  LIVING_HERE_UNREAD_SHARE,
-} from '@/features/academia/services/living-here-info';
-import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
 import { getRelaunchFacts } from '@/features/buyers/queries/get-relaunch-facts';
@@ -26,17 +20,8 @@ import { toSelection } from '@/features/ideal-properties/services/ideal-selectio
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
-// Mission 156 — `livingHereLetters` : les biens hors mandat dont le lien « Vivre ici » part avec le
-// lien de la sélection ; l'écran dit la ligne d'information au-dessus des boutons de partage.
 export type PrepareRelaunchResult =
-  | {
-      ok: true;
-      message: string;
-      phone: string | null;
-      email: string | null;
-      subject: string;
-      livingHereLetters: string[];
-    }
+  | { ok: true; message: string; phone: string | null; email: string | null; subject: string }
   | { ok: false; error: string };
 export type PlainRelaunchResult = { ok: true } | { ok: false; error: string };
 
@@ -125,24 +110,8 @@ export async function prepareRelaunch(buyerId: unknown): Promise<PrepareRelaunch
       },
     })),
   );
-  // Mission 156 — les liens « Vivre ici » des biens hors mandat, lus AVANT de créer le lien : la
-  // page de l'acquéreur les relit à son ouverture. Une lecture en échec ne crée rien et le dit :
-  // jamais un lien hors mandat parti sans la ligne d'information (Jean-Guy, 16/11).
-  const living = livingHereEverywhereOpen()
-    ? await readPropertyLivingLinks(client, agencyId, selection.items)
-    : null;
-  if (living && !living.ok) return { ok: false, error: LIVING_HERE_UNREAD_SHARE };
   const link = await createDossierLink(buyer.id, false);
   if (!link.ok) return { ok: false, error: link.error };
-  // Les lettres du déroulé : celles des biens montrés (un concurrent supprimé depuis n'en a pas).
-  const sources = new Map(selection.items.map((item) => [item.id, item.source]));
-  const livingHereLetters = living?.ok
-    ? shown.flatMap((item, index) =>
-        sources.get(item.itemId) !== 'project' && living.links.has(item.itemId)
-          ? [deckLetter(index)]
-          : [],
-      )
-    : [];
   return {
     ok: true,
     message: relaunchMessage({
@@ -157,7 +126,6 @@ export async function prepareRelaunch(buyerId: unknown): Promise<PrepareRelaunch
     subject: clientTexts(buyer.language).buyer.messages.relaunch.subject,
     phone: buyer.phone,
     email: buyer.email,
-    livingHereLetters,
   };
 }
 

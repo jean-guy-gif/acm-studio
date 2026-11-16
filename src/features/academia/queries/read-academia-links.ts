@@ -53,7 +53,7 @@ export async function readMandateAcademiaLinks(
   // plus ; l'adresse du bien changée depuis la demande, il est oublié (contrat §3.3). Un lien collé à
   // la main n'a ni l'une ni l'autre (ses avertissements aux 25e et 30e jours, M156).
   const created = await client
-    .from('project_academia_dossiers')
+    .from('project_academia_requests')
     .select('project_id, property_address, link_url, link_expires_at')
     .eq('agency_id', agencyId)
     .in('project_id', ids);

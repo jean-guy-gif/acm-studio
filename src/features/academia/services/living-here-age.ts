@@ -12,7 +12,6 @@ export const LIVING_HERE_OLD_DAYS = 30;
 
 export type LivingHereAge = { level: 'fresh' | 'soon' | 'old'; days: number };
 export type LivingHereAgeLine = { tone: 'hint' | 'warn'; text: string };
-export type PastedLivingHereLink = { url: string; pastedAt: string | null };
 
 const PARIS_DAY = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Europe/Paris',
@@ -46,13 +45,6 @@ export function livingHereAgeLine(pastedAt: string | null, now: Date): LivingHer
         ? `${head}. Collez bientôt un lien neuf.`
         : `${head}, il ne s’ouvre peut-être plus. Collez un lien neuf.`,
   };
-}
-
-// Le lien discret de la fiche se montre pour un bien sans lien, ou dont le lien a 30 jours et plus
-// (décision de Jean-Guy, 16/11).
-export function livingHereNeedsLink(link: PastedLivingHereLink | null, now: Date): boolean {
-  if (!link) return true;
-  return livingHereAge(link.pastedAt, now)?.level === 'old';
 }
 
 // Mission 157 — un lien créé par l'API a son expiration, donnée par Academia : « valable jusqu'au

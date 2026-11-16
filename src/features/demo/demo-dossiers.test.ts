@@ -198,7 +198,6 @@ describe('la première étape : supprimer, recompter à zéro, préparer l’age
     // inventé (M155) ; jamais celle d'un manager.
     expect(service.writes()).toEqual([
       'delete buyers',
-      'delete property_living_here_links',
       'update agencies',
       'update agency_branding',
       'update agency_branding',
@@ -454,15 +453,7 @@ describe('les acquéreurs de la démo', () => {
     state.respond = (table) =>
       table === 'buyers' ? { data: [{ id: 'b1' }, { id: 'b2' }] } : { data: [] };
     expect(await deleteDemoBuyers(service.client as never, CLOSER)).toBe(true);
-    // Mission 156 — et les liens « Vivre ici » collés dans l'agence de démonstration.
-    expect(service.writes()).toEqual(['delete buyers', 'delete property_living_here_links']);
-    const living = service.calls.findIndex(
-      (call) => call.method === 'from' && call.args[0] === 'property_living_here_links',
-    );
-    expect(service.calls.slice(living, living + 3)).toContainEqual({
-      method: 'eq',
-      args: ['agency_id', AGENCY],
-    });
+    expect(service.writes()).toEqual(['delete buyers']);
     // Les filtres de la suppression des fiches : de son `from('buyers')` à la suivante.
     const deletion = service.calls.findIndex((call) => call.method === 'delete');
     const from = service.calls
@@ -521,11 +512,7 @@ describe('les acquéreurs de la démo', () => {
           ? { data: [{ prospect_id: 'p-vise' }] }
           : { data: [] };
     expect(await deleteDemoBuyers(service.client as never, CLOSER)).toBe(true);
-    expect(service.writes()).toEqual([
-      'delete buyers',
-      'delete property_living_here_links',
-      'delete buyer_prospects',
-    ]);
+    expect(service.writes()).toEqual(['delete buyers', 'delete buyer_prospects']);
     const deletion = service.calls.slice(
       service.calls.map((call) => call.method).lastIndexOf('delete'),
     );

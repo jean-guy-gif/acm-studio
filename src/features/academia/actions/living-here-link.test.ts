@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fakeSupabase } from '@/test-fixtures/fake-supabase';
-import { FAKE_DOSSIER_ID, FAKE_LINK, fakeAcademia } from '@/test-fixtures/fake-academia';
+import { FAKE_ACADEMIA_ID, FAKE_LINK, fakeAcademia } from '@/test-fixtures/fake-academia';
 
 // Mission 157 — « Créer le lien « Vivre ici » », sur le bien vendeur seulement : l'action appelée POUR
 // DE VRAI, contre un faux serveur Academia et un faux Supabase. Tout est relu au serveur (le
@@ -32,7 +32,7 @@ const state = vi.hoisted(() => ({
     rooms_count: 5,
     surface_area: 135,
   } as Row,
-  dossier: null as Row,
+  request: null as Row,
   writeError: null as unknown,
 }));
 const db = fakeSupabase((calls) => {
@@ -43,7 +43,7 @@ const db = fakeSupabase((calls) => {
   if (writing) return state.writeError ? { error: state.writeError } : { data: [{ id: 'x' }] };
   if (table === 'projects') return { data: state.project };
   if (table === 'subject_properties') return { data: state.subject };
-  if (table === 'project_academia_dossiers') return { data: state.dossier };
+  if (table === 'project_academia_requests') return { data: state.request };
   return { data: null };
 });
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
@@ -89,7 +89,7 @@ beforeEach(() => {
     rooms_count: 5,
     surface_area: 135,
   };
-  state.dossier = null;
+  state.request = null;
   state.writeError = null;
 });
 
@@ -102,18 +102,18 @@ describe('« Créer le lien « Vivre ici » »', () => {
     });
     expect(server.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
       'POST /api/v1/dossiers',
-      `POST /api/v1/dossiers/${FAKE_DOSSIER_ID}/liens-client`,
+      `POST /api/v1/dossiers/${FAKE_ACADEMIA_ID}/liens-client`,
     ]);
-    expect(written('project_academia_dossiers')).toMatchObject({
+    expect(written('project_academia_requests')).toMatchObject({
       agency_id: 'agency-a',
       project_id: PROJECT,
-      academia_dossier_id: FAKE_DOSSIER_ID,
+      academia_id: FAKE_ACADEMIA_ID,
       state: 'pret',
       property_address: ADDRESS,
       address_sent: ADDRESS,
       requested_by: 'u1',
     });
-    expect(written('project_academia_dossiers', 'update')).toEqual({
+    expect(written('project_academia_requests', 'update')).toEqual({
       link_url: FAKE_LINK,
       link_expires_at: '2026-12-16T00:00:00.000Z',
     });
@@ -134,17 +134,17 @@ describe('« Créer le lien « Vivre ici » »', () => {
 
   it('en préparation (202) : « en attente », rien de rangé sur le mandat', async () => {
     server = fakeAcademia({
-      createDossier: [{ status: 202, body: { id: FAKE_DOSSIER_ID, etat: 'en_cours' } }],
+      createRequest: [{ status: 202, body: { id: FAKE_ACADEMIA_ID, etat: 'en_cours' } }],
     });
     vi.stubGlobal('fetch', server.fetch);
     expect(await createLivingHereLink(PROJECT)).toEqual({ state: 'waiting' });
-    expect(written('project_academia_dossiers')).toMatchObject({ state: 'en_cours' });
+    expect(written('project_academia_requests')).toMatchObject({ state: 'en_cours' });
     expect(written('projects', 'update')).toBeNull();
   });
 
   it('la suite : le dossier devenu prêt, sans nouvelle demande de dossier', async () => {
-    state.dossier = {
-      academia_dossier_id: FAKE_DOSSIER_ID,
+    state.request = {
+      academia_id: FAKE_ACADEMIA_ID,
       state: 'en_cours',
       property_address: ADDRESS,
       link_url: null,
@@ -152,8 +152,8 @@ describe('« Créer le lien « Vivre ici » »', () => {
     };
     expect(await refreshLivingHereLink(PROJECT)).toMatchObject({ state: 'ready', url: FAKE_LINK });
     expect(server.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
-      `GET /api/v1/dossiers/${FAKE_DOSSIER_ID}`,
-      `POST /api/v1/dossiers/${FAKE_DOSSIER_ID}/liens-client`,
+      `GET /api/v1/dossiers/${FAKE_ACADEMIA_ID}`,
+      `POST /api/v1/dossiers/${FAKE_ACADEMIA_ID}/liens-client`,
     ]);
   });
 
@@ -164,8 +164,8 @@ describe('« Créer le lien « Vivre ici » »', () => {
 
   it('un lien valable déjà rangé : rendu tel quel, sans appel', async () => {
     state.project = { ...state.project, academia_living_here_url: FAKE_LINK };
-    state.dossier = {
-      academia_dossier_id: FAKE_DOSSIER_ID,
+    state.request = {
+      academia_id: FAKE_ACADEMIA_ID,
       state: 'pret',
       property_address: ADDRESS,
       link_url: FAKE_LINK,
@@ -177,8 +177,8 @@ describe('« Créer le lien « Vivre ici » »', () => {
 
   it('un lien expiré : un lien neuf sur le même dossier, sans nouveau dossier (il ne compte pas)', async () => {
     state.project = { ...state.project, academia_living_here_url: FAKE_LINK };
-    state.dossier = {
-      academia_dossier_id: FAKE_DOSSIER_ID,
+    state.request = {
+      academia_id: FAKE_ACADEMIA_ID,
       state: 'pret',
       property_address: ADDRESS,
       link_url: FAKE_LINK,
@@ -186,13 +186,13 @@ describe('« Créer le lien « Vivre ici » »', () => {
     };
     expect((await createLivingHereLink(PROJECT)).state).toBe('ready');
     expect(server.calls.map((call) => call.path)).toEqual([
-      `/api/v1/dossiers/${FAKE_DOSSIER_ID}/liens-client`,
+      `/api/v1/dossiers/${FAKE_ACADEMIA_ID}/liens-client`,
     ]);
   });
 
   it('l’adresse du bien a changé : un nouveau dossier', async () => {
-    state.dossier = {
-      academia_dossier_id: 'dos_ancien',
+    state.request = {
+      academia_id: 'dos_ancien',
       state: 'pret',
       property_address: '2 rue Ancienne, 06140 Vence',
       link_url: null,
@@ -206,10 +206,10 @@ describe('« Créer le lien « Vivre ici » »', () => {
   it('adresse ambiguë (422) : les propositions ; le choix du conseiller, revérifié, part ; la fiche ne change pas', async () => {
     const CHOSEN = '4 chemin des Restanques, 06140 Vence';
     server = fakeAcademia({
-      createDossier: [
+      createRequest: [
         { status: 422, body: { propositions: [CHOSEN] } },
         { status: 422, body: { propositions: [CHOSEN] } },
-        { status: 200, body: { id: FAKE_DOSSIER_ID, etat: 'pret' } },
+        { status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'pret' } },
       ],
     });
     vi.stubGlobal('fetch', server.fetch);
@@ -223,7 +223,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect(
       server.calls.slice(1, 3).map((call) => (call.body as { adresse: string }).adresse),
     ).toEqual([ADDRESS, CHOSEN]);
-    expect(written('project_academia_dossiers')).toMatchObject({
+    expect(written('project_academia_requests')).toMatchObject({
       property_address: ADDRESS,
       address_sent: CHOSEN,
     });
@@ -232,7 +232,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
 
   it('une adresse « choisie » qu’Academia n’a pas proposée ne part jamais (ni un nom, ni une autre adresse)', async () => {
     server = fakeAcademia({
-      createDossier: [
+      createRequest: [
         { status: 422, body: { propositions: ['4 chemin des Restanques, 06140 Vence'] } },
       ],
     });
@@ -248,8 +248,8 @@ describe('« Créer le lien « Vivre ici » »', () => {
   });
 
   it('après une adresse choisie et un dossier en préparation, la suite reconnaît le dossier du bien', async () => {
-    state.dossier = {
-      academia_dossier_id: FAKE_DOSSIER_ID,
+    state.request = {
+      academia_id: FAKE_ACADEMIA_ID,
       state: 'en_cours',
       property_address: ADDRESS,
       link_url: null,
@@ -259,17 +259,17 @@ describe('« Créer le lien « Vivre ici » »', () => {
   });
 
   it('un dossier qu’Academia n’a plus (404) : le dire, et le geste suivant en redemande un', async () => {
-    state.dossier = {
-      academia_dossier_id: FAKE_DOSSIER_ID,
+    state.request = {
+      academia_id: FAKE_ACADEMIA_ID,
       state: 'en_cours',
       property_address: ADDRESS,
       link_url: null,
       link_expires_at: null,
     };
-    server = fakeAcademia({ readDossier: [{ status: 404, body: { erreur: 'x' } }] });
+    server = fakeAcademia({ readRequest: [{ status: 404, body: { erreur: 'x' } }] });
     vi.stubGlobal('fetch', server.fetch);
     expect((await refreshLivingHereLink(PROJECT)).state).toBe('failed');
-    expect(written('project_academia_dossiers', 'update')).toEqual({ state: 'erreur' });
+    expect(written('project_academia_requests', 'update')).toEqual({ state: 'erreur' });
   });
 
   it('Academia en panne, au plafond, ou qui refuse : le message, rien de rangé sur le mandat', async () => {
@@ -295,7 +295,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     for (const [status, message, retry] of cases) {
       db.reset();
       vi.mocked(reportServerError).mockClear();
-      server = fakeAcademia({ createDossier: [{ status }, { status }] });
+      server = fakeAcademia({ createRequest: [{ status }, { status }] });
       vi.stubGlobal('fetch', server.fetch);
       expect(await createLivingHereLink(PROJECT)).toEqual({ state: 'failed', message, retry });
       expect(writes()).toEqual([]);
@@ -305,15 +305,15 @@ describe('« Créer le lien « Vivre ici » »', () => {
   });
 
   it('le dossier en erreur chez Academia : le dire, et une nouvelle demande au geste suivant', async () => {
-    state.dossier = {
-      academia_dossier_id: FAKE_DOSSIER_ID,
+    state.request = {
+      academia_id: FAKE_ACADEMIA_ID,
       state: 'en_cours',
       property_address: ADDRESS,
       link_url: null,
       link_expires_at: null,
     };
     server = fakeAcademia({
-      readDossier: [{ status: 200, body: { id: FAKE_DOSSIER_ID, etat: 'erreur' } }],
+      readRequest: [{ status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'erreur' } }],
     });
     vi.stubGlobal('fetch', server.fetch);
     expect(await refreshLivingHereLink(PROJECT)).toEqual({
@@ -322,7 +322,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
         'Academia n’a pas pu préparer le dossier de cette adresse. Vérifiez l’adresse du bien, ou collez le lien vous-même.',
       retry: true,
     });
-    expect(written('project_academia_dossiers', 'update')).toEqual({ state: 'erreur' });
+    expect(written('project_academia_requests', 'update')).toEqual({ state: 'erreur' });
   });
 
   it('refusé sans appel ni écriture : membre retiré, dossier d’une autre agence ou archivé, accès fermé, sans adresse', async () => {

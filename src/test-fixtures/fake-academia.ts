@@ -14,24 +14,24 @@ export type FakeAcademiaReply =
   { status: number; body?: unknown; headers?: Record<string, string> } | 'timeout';
 
 export type FakeAcademiaRoutes = {
-  createDossier?: FakeAcademiaReply[];
-  readDossier?: FakeAcademiaReply[];
+  createRequest?: FakeAcademiaReply[];
+  readRequest?: FakeAcademiaReply[];
   createLink?: FakeAcademiaReply[];
 };
 
-export const FAKE_DOSSIER_ID = 'dos_8f2c1a9e';
+export const FAKE_ACADEMIA_ID = 'dos_8f2c1a9e';
 export const FAKE_LINK = 'https://app.myacademia.ai/l/Vb4nT8wLp2';
 
 export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
   const calls: FakeAcademiaCall[] = [];
   const queues: Required<FakeAcademiaRoutes> = {
-    createDossier: [
-      ...(routes.createDossier ?? [
-        { status: 200, body: { id: FAKE_DOSSIER_ID, etat: 'pret', reutilise: false } },
+    createRequest: [
+      ...(routes.createRequest ?? [
+        { status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'pret', reutilise: false } },
       ]),
     ],
-    readDossier: [
-      ...(routes.readDossier ?? [{ status: 200, body: { id: FAKE_DOSSIER_ID, etat: 'pret' } }]),
+    readRequest: [
+      ...(routes.readRequest ?? [{ status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'pret' } }]),
     ],
     createLink: [
       ...(routes.createLink ?? [
@@ -51,9 +51,9 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
     calls.push({ method, path: url.pathname, authorization: headers.get('authorization'), body });
     let reply: FakeAcademiaReply = { status: 404, body: { erreur: 'introuvable' } };
     if (method === 'POST' && url.pathname === '/api/v1/dossiers')
-      reply = next(queues.createDossier);
+      reply = next(queues.createRequest);
     else if (method === 'GET' && /^\/api\/v1\/dossiers\/[^/]+$/.test(url.pathname))
-      reply = next(queues.readDossier);
+      reply = next(queues.readRequest);
     else if (method === 'POST' && /^\/api\/v1\/dossiers\/[^/]+\/liens-client$/.test(url.pathname))
       reply = next(queues.createLink);
     if (reply === 'timeout') {

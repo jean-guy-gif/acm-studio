@@ -6,7 +6,6 @@ import {
   livingHereAge,
   livingHereAgeLine,
   livingHereExpiry,
-  livingHereNeedsLink,
 } from '@/features/academia/services/living-here-age';
 
 // Mission 156 — un lien client d'Academia vaut 30 jours (Laurent, 15/11). ACM compte les jours de
@@ -73,24 +72,6 @@ describe('livingHereAgeLine', () => {
 
   it('sans date : aucune ligne', () => {
     expect(livingHereAgeLine(null, NOW)).toBeNull();
-  });
-});
-
-describe('livingHereNeedsLink — le lien discret « Ajouter « Vivre ici » » de la fiche', () => {
-  it('sans lien, ou un lien de 30 jours et au-delà ; jamais avant', () => {
-    expect(livingHereNeedsLink(null, NOW)).toBe(true);
-    expect(
-      livingHereNeedsLink({ url: 'https://app.myacademia.ai/l/a', pastedAt: daysAgo(29) }, NOW),
-    ).toBe(false);
-    expect(
-      livingHereNeedsLink({ url: 'https://app.myacademia.ai/l/a', pastedAt: daysAgo(30) }, NOW),
-    ).toBe(true);
-  });
-
-  it('un lien sans date n’appelle pas le lien discret (son âge est inconnu)', () => {
-    expect(livingHereNeedsLink({ url: 'https://app.myacademia.ai/l/a', pastedAt: null }, NOW)).toBe(
-      false,
-    );
   });
 });
 

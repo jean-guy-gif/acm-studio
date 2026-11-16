@@ -29,11 +29,11 @@ export type AcademiaPropertyFacts = {
   surface?: number;
 };
 
-export type AcademiaDossierState = 'en_cours' | 'pret' | 'erreur';
+export type AcademiaRequestState = 'en_cours' | 'pret' | 'erreur';
 
-const DOSSIER_ID = /^[A-Za-z0-9_-]{1,100}$/;
-const dossierReply = z.object({
-  id: z.string().regex(DOSSIER_ID),
+const ACADEMIA_ID = /^[A-Za-z0-9_-]{1,100}$/;
+const requestReply = z.object({
+  id: z.string().regex(ACADEMIA_ID),
   etat: z.enum(['en_cours', 'pret', 'erreur']),
 });
 const linkReply = z.object({ url: z.string(), expire_le: z.string() });
@@ -120,7 +120,7 @@ function propositions(json: unknown): string[] {
     .slice(0, 5);
 }
 
-export async function createAcademiaDossier(
+export async function createAcademiaRequest(
   input: {
     key: string;
     adresse: string;
@@ -130,7 +130,7 @@ export async function createAcademiaDossier(
   fetchImpl: AcademiaFetch = fetch,
   timeoutMs: number = ACADEMIA_API_TIMEOUT_MS,
 ): Promise<
-  | { ok: true; id: string; etat: AcademiaDossierState }
+  | { ok: true; id: string; etat: AcademiaRequestState }
   | { ok: false; reason: 'ambiguous'; propositions: string[] }
   | AcademiaFailure
 > {
@@ -141,7 +141,7 @@ export async function createAcademiaDossier(
   };
   const raw = await send(fetchImpl, input.key, 'POST', '/dossiers', body, timeoutMs);
   if (raw && (raw.status === 200 || raw.status === 202)) {
-    const parsed = dossierReply.safeParse(raw.json);
+    const parsed = requestReply.safeParse(raw.json);
     return parsed.success
       ? { ok: true, id: parsed.data.id, etat: parsed.data.etat }
       : { ok: false, reason: 'unavailable' };
@@ -152,16 +152,16 @@ export async function createAcademiaDossier(
   return failure(raw);
 }
 
-export async function readAcademiaDossier(
+export async function readAcademiaRequest(
   key: string,
   id: string,
   fetchImpl: AcademiaFetch = fetch,
   timeoutMs: number = ACADEMIA_API_TIMEOUT_MS,
-): Promise<{ ok: true; etat: AcademiaDossierState } | AcademiaFailure> {
-  if (!DOSSIER_ID.test(id)) return { ok: false, reason: 'not_found' };
+): Promise<{ ok: true; etat: AcademiaRequestState } | AcademiaFailure> {
+  if (!ACADEMIA_ID.test(id)) return { ok: false, reason: 'not_found' };
   const raw = await send(fetchImpl, key, 'GET', `/dossiers/${id}`, undefined, timeoutMs);
   if (raw?.status === 200) {
-    const parsed = dossierReply.safeParse(raw.json);
+    const parsed = requestReply.safeParse(raw.json);
     return parsed.success
       ? { ok: true, etat: parsed.data.etat }
       : { ok: false, reason: 'unavailable' };
@@ -175,7 +175,7 @@ export async function createAcademiaClientLink(
   fetchImpl: AcademiaFetch = fetch,
   timeoutMs: number = ACADEMIA_API_TIMEOUT_MS,
 ): Promise<{ ok: true; url: string; expiresAt: string } | AcademiaFailure> {
-  if (!DOSSIER_ID.test(id)) return { ok: false, reason: 'not_found' };
+  if (!ACADEMIA_ID.test(id)) return { ok: false, reason: 'not_found' };
   const raw = await send(
     fetchImpl,
     key,

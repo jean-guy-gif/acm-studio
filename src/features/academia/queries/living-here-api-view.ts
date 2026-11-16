@@ -32,7 +32,7 @@ export async function livingHereApiInitial(
   now: Date = new Date(),
 ): Promise<LivingHereApiInitial> {
   const { data, error } = await client
-    .from('project_academia_dossiers')
+    .from('project_academia_requests')
     .select('state, property_address, link_url, link_expires_at')
     .eq('project_id', projectId)
     .eq('agency_id', agencyId)

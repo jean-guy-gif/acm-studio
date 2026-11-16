@@ -14,7 +14,7 @@ const PASTED = 'https://app.myacademia.ai/l/colle';
 const NOW = new Date('2026-11-16T10:00:00Z');
 const state = vi.hoisted(() => ({
   projects: [] as Record<string, unknown>[],
-  dossiers: [] as Record<string, unknown>[] | null,
+  requests: [] as Record<string, unknown>[] | null,
   subjects: [
     {
       project_id: 'p1',
@@ -31,8 +31,8 @@ const db = fakeSupabase((calls) => {
   if (table === 'project_meeting_conclusions')
     return { data: [{ project_id: 'p1' }, { project_id: 'p2' }] };
   if (table === 'subject_properties') return { data: state.subjects };
-  if (table === 'project_academia_dossiers') {
-    return state.dossiers ? { data: state.dossiers } : { error: { message: 'lecture impossible' } };
+  if (table === 'project_academia_requests') {
+    return state.requests ? { data: state.requests } : { error: { message: 'lecture impossible' } };
   }
   return { data: null };
 });
@@ -59,7 +59,7 @@ beforeEach(() => {
       academia_living_here_pasted_at: '2026-10-10T09:00:00Z',
     },
   ];
-  state.dossiers = [
+  state.requests = [
     {
       project_id: 'p1',
       property_address: '4 chemin des Restanques Hautes, 06140 Vence',
@@ -86,7 +86,7 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
   });
 
   it('créé par l’API et expiré : il ne part plus', async () => {
-    state.dossiers = [
+    state.requests = [
       {
         project_id: 'p1',
         property_address: '4 chemin des Restanques Hautes, 06140 Vence',
@@ -106,7 +106,7 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
         academia_living_here_pasted_at: '2026-11-14T09:00:00Z',
       },
     ];
-    state.dossiers = [
+    state.requests = [
       {
         project_id: 'p1',
         property_address: '4 chemin des Restanques Hautes, 06140 Vence',
@@ -133,7 +133,7 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
   });
 
   it('les expirations illisibles : une lecture en échec, jamais « pas de lien »', async () => {
-    state.dossiers = null;
+    state.requests = null;
     expect(await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1'], NOW)).toEqual({
       ok: false,
     });

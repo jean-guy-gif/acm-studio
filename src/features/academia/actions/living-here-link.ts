@@ -7,8 +7,8 @@ import { revalidatePath } from 'next/cache';
 import {
   academiaPropertyType,
   createAcademiaClientLink,
-  createAcademiaDossier,
-  readAcademiaDossier,
+  createAcademiaRequest,
+  readAcademiaRequest,
   type AcademiaFailure,
 } from '@/features/academia/services/academia-api';
 import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
@@ -22,7 +22,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 // 16/11, maquette M157-1) : ACM demande à Mon secteur le dossier de l'adresse du bien
 // (`POST /dossiers`), suit sa préparation (`GET /dossiers/{id}`), puis son lien client
 // (`POST /dossiers/{id}/liens-client`), et le range sur le mandat (`projects.academia_living_here_url`,
-// M147 A) avec son expiration (`project_academia_dossiers`). Le lien sert au vendeur et à chaque
+// M147 A) avec son expiration (`project_academia_requests`). Le lien sert au vendeur et à chaque
 // acquéreur à qui ce bien est proposé. Un geste, un bien : jamais pour plusieurs biens d'un coup.
 //
 // Tout est relu ici : le conseiller (non retiré), le dossier de son agence (non archivé), l'accès à
@@ -52,7 +52,7 @@ const ACADEMIA_QUOTA =
   'Academia a atteint sa limite du jour : réessayez demain, ou collez le lien vous-même.';
 const ACADEMIA_REFUSED =
   'Academia refuse la demande pour l’instant : l’équipe ACM Studio est prévenue. Collez le lien vous-même.';
-const ACADEMIA_DOSSIER_FAILED =
+const ACADEMIA_PREPARATION_FAILED =
   'Academia n’a pas pu préparer le dossier de cette adresse. Vérifiez l’adresse du bien, ou collez le lien vous-même.';
 const READ_FAILED = 'La demande à Academia n’a pas pu être lue. Réessayez dans un moment.';
 const SAVE_FAILED = 'Le lien n’a pas pu être enregistré. Réessayez.';
@@ -61,8 +61,8 @@ const ADDRESS_TOO_LONG =
   'L’adresse du bien est trop longue pour Academia (300 caractères au plus) : raccourcissez-la sur la fiche.';
 
 type Admin = ReturnType<typeof createServiceRoleClient>;
-type DossierRow = {
-  academia_dossier_id: string;
+type RequestRow = {
+  academia_id: string;
   state: string;
   property_address: string;
   link_url: string | null;
@@ -102,7 +102,7 @@ async function context(projectId: unknown) {
 
 async function markError(admin: Admin, agencyId: string, projectId: string) {
   const { error } = await admin
-    .from('project_academia_dossiers')
+    .from('project_academia_requests')
     .update({ state: 'erreur' })
     .eq('project_id', projectId)
     .eq('agency_id', agencyId);
@@ -115,7 +115,7 @@ async function linkFor(
   agencyId: string,
   projectId: string,
   key: string,
-  row: { academia_dossier_id: string; link_url: string | null; link_expires_at: string | null },
+  row: { academia_id: string; link_url: string | null; link_expires_at: string | null },
   currentUrl: string | null,
 ): Promise<LivingHereLinkState> {
   if (
@@ -126,14 +126,14 @@ async function linkFor(
   ) {
     return { state: 'ready', url: row.link_url, expiresAt: row.link_expires_at };
   }
-  const link = await createAcademiaClientLink(key, row.academia_dossier_id);
+  const link = await createAcademiaClientLink(key, row.academia_id);
   if (!link.ok) {
     // Un dossier qu'Academia n'a plus : le geste suivant en redemande un.
     if (link.reason === 'not_found') await markError(admin, agencyId, projectId);
     return failed(link, 'client-link');
   }
   const { error: rowError } = await admin
-    .from('project_academia_dossiers')
+    .from('project_academia_requests')
     .update({ link_url: link.url, link_expires_at: link.expiresAt })
     .eq('project_id', projectId)
     .eq('agency_id', agencyId);
@@ -157,20 +157,20 @@ async function follow(
   agencyId: string,
   projectId: string,
   key: string,
-  row: DossierRow,
+  row: RequestRow,
   currentUrl: string | null,
 ): Promise<LivingHereLinkState> {
   let state = row.state;
   if (state === 'en_cours') {
-    const read = await readAcademiaDossier(key, row.academia_dossier_id);
+    const read = await readAcademiaRequest(key, row.academia_id);
     if (!read.ok) {
       if (read.reason === 'not_found') await markError(admin, agencyId, projectId);
-      return failed(read, 'read-dossier');
+      return failed(read, 'read-request');
     }
     state = read.etat;
     if (state !== 'en_cours') {
       const { error } = await admin
-        .from('project_academia_dossiers')
+        .from('project_academia_requests')
         .update({ state })
         .eq('project_id', projectId)
         .eq('agency_id', agencyId);
@@ -181,7 +181,7 @@ async function follow(
     }
   }
   if (state === 'en_cours') return { state: 'waiting' };
-  if (state === 'erreur') return fail(ACADEMIA_DOSSIER_FAILED);
+  if (state === 'erreur') return fail(ACADEMIA_PREPARATION_FAILED);
   return linkFor(admin, agencyId, projectId, key, row, currentUrl);
 }
 
@@ -222,16 +222,16 @@ async function run(
   if (propertyAddress.length > ADDRESS_MAX) return fail(ADDRESS_TOO_LONG, false);
 
   const { data: rowData, error: rowError } = await admin
-    .from('project_academia_dossiers')
-    .select('academia_dossier_id, state, property_address, link_url, link_expires_at')
+    .from('project_academia_requests')
+    .select('academia_id, state, property_address, link_url, link_expires_at')
     .eq('project_id', project.id)
     .eq('agency_id', profile.agency_id)
     .maybeSingle();
   if (rowError) {
-    await reportServerError('academia:read-dossier-row', rowError);
+    await reportServerError('academia:read-request-row', rowError);
     return fail(READ_FAILED);
   }
-  const row = (rowData as DossierRow | null) ?? null;
+  const row = (rowData as RequestRow | null) ?? null;
   const currentUrl = project.academia_living_here_url ?? null;
   // Le dossier de l'adresse du bien, encore valable : on le suit, sans nouvelle demande (un dossier
   // compte dans le plafond commun ; un lien, non).
@@ -240,7 +240,7 @@ async function run(
   }
   if (!create) {
     return row && row.property_address === propertyAddress
-      ? fail(ACADEMIA_DOSSIER_FAILED)
+      ? fail(ACADEMIA_PREPARATION_FAILED)
       : { state: 'idle' };
   }
 
@@ -255,39 +255,39 @@ async function run(
     ? { type, ...(pieces ? { pieces } : {}), ...(surface ? { surface } : {}) }
     : null;
   let sent = access.demoAddress ?? propertyAddress;
-  let dossier = await createAcademiaDossier({
+  let request = await createAcademiaRequest({
     key: access.key,
     adresse: sent,
     bien,
     idempotence: idempotence(project.id, sent),
   });
-  if (!dossier.ok && dossier.reason === 'ambiguous') {
+  if (!request.ok && request.reason === 'ambiguous') {
     // Une adresse choisie n'est envoyée que si Academia vient de la proposer pour celle du bien :
     // revérifiée ici, jamais crue du navigateur (CLAUDE.md).
     const chosen = typeof chosenAddress === 'string' ? chosenAddress.trim() : '';
-    if (!access.demoAddress && chosen && dossier.propositions.includes(chosen)) {
+    if (!access.demoAddress && chosen && request.propositions.includes(chosen)) {
       sent = chosen;
-      dossier = await createAcademiaDossier({
+      request = await createAcademiaRequest({
         key: access.key,
         adresse: sent,
         bien,
         idempotence: idempotence(project.id, sent),
       });
     }
-    if (!dossier.ok && dossier.reason === 'ambiguous') {
-      return { state: 'ambiguous', propositions: dossier.propositions };
+    if (!request.ok && request.reason === 'ambiguous') {
+      return { state: 'ambiguous', propositions: request.propositions };
     }
   }
-  if (!dossier.ok) return failed(dossier, 'create-dossier');
+  if (!request.ok) return failed(request, 'create-request');
   const saved = {
-    academia_dossier_id: dossier.id,
-    state: dossier.etat,
+    academia_id: request.id,
+    state: request.etat,
     property_address: propertyAddress,
     address_sent: sent,
     link_url: null,
     link_expires_at: null,
   };
-  const { error } = await admin.from('project_academia_dossiers').upsert(
+  const { error } = await admin.from('project_academia_requests').upsert(
     {
       agency_id: profile.agency_id,
       project_id: project.id,
@@ -297,11 +297,11 @@ async function run(
     { onConflict: 'project_id' },
   );
   if (error) {
-    await reportServerError('academia:save-dossier', error);
+    await reportServerError('academia:save-request', error);
     return fail(SAVE_FAILED);
   }
-  if (dossier.etat === 'en_cours') return { state: 'waiting' };
-  if (dossier.etat === 'erreur') return fail(ACADEMIA_DOSSIER_FAILED);
+  if (request.etat === 'en_cours') return { state: 'waiting' };
+  if (request.etat === 'erreur') return fail(ACADEMIA_PREPARATION_FAILED);
   return linkFor(admin, profile.agency_id, project.id, access.key, saved, currentUrl);
 }
 

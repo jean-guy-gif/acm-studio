@@ -2757,9 +2757,9 @@ export type Database = {
           },
         ];
       };
-      project_academia_dossiers: {
+      project_academia_requests: {
         Row: {
-          academia_dossier_id: string;
+          academia_id: string;
           address_sent: string;
           agency_id: string;
           created_at: string;
@@ -2775,7 +2775,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
-          academia_dossier_id: string;
+          academia_id: string;
           address_sent: string;
           agency_id: string;
           created_at?: string;
@@ -2790,7 +2790,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          academia_dossier_id?: string;
+          academia_id?: string;
           address_sent?: string;
           agency_id?: string;
           created_at?: string;
@@ -2806,21 +2806,21 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'project_academia_dossiers_agency_id_fkey';
+            foreignKeyName: 'project_academia_requests_agency_id_fkey';
             columns: ['agency_id'];
             isOneToOne: false;
             referencedRelation: 'agencies';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'project_academia_dossiers_project_id_fkey';
+            foreignKeyName: 'project_academia_requests_project_id_fkey';
             columns: ['project_id'];
             isOneToOne: true;
             referencedRelation: 'projects';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'project_academia_dossiers_requested_by_fkey';
+            foreignKeyName: 'project_academia_requests_requested_by_fkey';
             columns: ['requested_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
@@ -3252,65 +3252,6 @@ export type Database = {
           {
             foreignKeyName: 'projects_live_confirmed_by_fkey';
             columns: ['live_confirmed_by'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      property_living_here_links: {
-        Row: {
-          agency_id: string;
-          comparable_id: string | null;
-          created_at: string;
-          id: string;
-          pasted_at: string;
-          pasted_by: string | null;
-          property_key: string;
-          updated_at: string;
-          url: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          agency_id: string;
-          comparable_id?: string | null;
-          created_at?: string;
-          id?: string;
-          pasted_at?: string;
-          pasted_by?: string | null;
-          property_key: string;
-          updated_at?: string;
-          url: string;
-        };
-        Update: {
-          agency_id?: string;
-          comparable_id?: string | null;
-          created_at?: string;
-          id?: string;
-          pasted_at?: string;
-          pasted_by?: string | null;
-          property_key?: string;
-          updated_at?: string;
-          url?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'property_living_here_links_agency_id_fkey';
-            columns: ['agency_id'];
-            isOneToOne: false;
-            referencedRelation: 'agencies';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'property_living_here_links_comparable_id_fkey';
-            columns: ['comparable_id'];
-            isOneToOne: false;
-            referencedRelation: 'comparables';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'property_living_here_links_pasted_by_fkey';
-            columns: ['pasted_by'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
@@ -4018,7 +3959,6 @@ export type Database = {
       purge_stale_buyer_prospect_addresses: { Args: Record<PropertyKey, never>; Returns: number };
       purge_stale_listing_copies: { Args: Record<PropertyKey, never>; Returns: number };
       purge_stale_listing_texts: { Args: Record<PropertyKey, never>; Returns: number };
-      purge_stale_living_here_links: { Args: Record<PropertyKey, never>; Returns: number };
       purge_stale_owner_addresses: { Args: Record<PropertyKey, never>; Returns: number };
       reopen_live: {
         Args: {

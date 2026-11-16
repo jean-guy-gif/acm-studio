@@ -16,9 +16,9 @@ import {
 } from '@/features/academia/services/living-here-age';
 import { ACADEMIA_LIVING_HERE_ERROR, academiaLivingHereUrl } from '@/lib/academia';
 
-// Mission 147 (partie A), généralisé en mission 156 — le champ du lien client « Vivre ici »
-// d'Academia : coller, « Enregistrer le lien » (en contour), « Retirer ». Il sert à la carte du
-// mandat (onglet Bien vendeur) et à chaque bien hors mandat du dossier acquéreur. Mission 156 —
+// Mission 147 (partie A), repris en mission 156 — le champ du lien client « Vivre ici » d'Academia,
+// sur la carte du mandat (onglet Bien vendeur) : coller, « Enregistrer le lien » (en contour),
+// « Retirer » ; depuis la mission 157, le repli quand l'API ne répond pas. Mission 156 —
 // l'âge du lien sous le champ : « Collé il y a 2 jours », puis en orange du 25e au 29e jour et à
 // 30 jours et au-delà ; le lien reste montré (décisions de Jean-Guy, 15 et 16/11).
 
@@ -59,7 +59,6 @@ export function LivingHereField({
   save,
   testId,
   containerTestId = testId,
-  openable = false,
 }: {
   inputId: string;
   label: string;
@@ -73,8 +72,6 @@ export function LivingHereField({
   // Le préfixe des repères des tests (`…-input`, `…-save`…), et celui du bloc entier.
   testId: string;
   containerTestId?: string;
-  // « Ouvrir ↗ » le lien enregistré (le dossier acquéreur ; la carte du mandat ne l'a pas).
-  openable?: boolean;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(savedUrl ?? '');
@@ -161,17 +158,6 @@ export function LivingHereField({
           >
             ✓ Lien enregistré
           </span>
-        ) : null}
-        {saved && openable ? (
-          <a
-            href={saved}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${linkStyle} text-sm`}
-            data-testid={`${testId}-open`}
-          >
-            Ouvrir ↗
-          </a>
         ) : null}
         {saved ? (
           <button

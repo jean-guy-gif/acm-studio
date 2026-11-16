@@ -110,14 +110,11 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'competitor_listing_copies.source' then $v$'page'$v$
     -- Mission 151 — la lecture par l'IA : son usage, de la liste.
     when 'ai_usage.purpose' then $v$'notes'$v$
-    -- Mission 156 — le lien « Vivre ici » d'un bien hors mandat : une annonce et un lien d'Academia.
-    when 'property_living_here_links.property_key' then $v$'listing:exemple:' || substr(md5(random()::text), 1, 8)$v$
-    when 'property_living_here_links.url' then $v$'https://app.myacademia.ai/l/essai'$v$
     -- Mission 157 — le dossier Academia du bien vendeur : un identifiant, un état, une adresse.
-    when 'project_academia_dossiers.academia_dossier_id' then $v$'dos_' || substr(md5(random()::text), 1, 8)$v$
-    when 'project_academia_dossiers.state' then $v$'en_cours'$v$
-    when 'project_academia_dossiers.property_address' then $v$'1 rue de l''Essai, 06000 Nice'$v$
-    when 'project_academia_dossiers.address_sent' then $v$'1 rue de l''Essai, 06000 Nice'$v$
+    when 'project_academia_requests.academia_id' then $v$'dos_' || substr(md5(random()::text), 1, 8)$v$
+    when 'project_academia_requests.state' then $v$'en_cours'$v$
+    when 'project_academia_requests.property_address' then $v$'1 rue de l''Essai, 06000 Nice'$v$
+    when 'project_academia_requests.address_sent' then $v$'1 rue de l''Essai, 06000 Nice'$v$
     else null
   end
 $$;

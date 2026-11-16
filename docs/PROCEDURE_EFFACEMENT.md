@@ -70,8 +70,8 @@ select
   (select count(*) from buyer_dismissals where property_key = 'project:' || ':dossier') as biens_ecartes,
   -- Mission 157 : le dossier Academia du bien et son lien « Vivre ici » ; ils partent avec le dossier
   -- (cascade). Le dossier lui-même vit chez Mon secteur (Academia) : relever son identifiant
-  -- (`academia_dossier_id`) AVANT d'effacer, et demander à Laurent de l'effacer de son côté.
-  (select count(*) from project_academia_dossiers where project_id = ':dossier') as dossier_academia,
+  -- (`academia_id`) AVANT d'effacer, et demander à Laurent de l'effacer de son côté.
+  (select count(*) from project_academia_requests where project_id = ':dossier') as dossier_academia,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;
@@ -183,14 +183,6 @@ select
   (select count(*) from competitor_prospecting_files where comparable_id in (:liste)) as dossiers_prospection,
   -- Mission 152 : la copie de son annonce (prix, dates, photos, caractéristiques ; jamais le texte).
   (select count(*) from competitor_listing_copies where comparable_id in (:liste)) as copies_annonces,
-  -- Mission 156 : le lien « Vivre ici » d'Academia collé sur ce bien (sa page montre la rue, sans
-  -- numéro) — par le concurrent, ou par l'identité de son annonce (`listing:portail:numéro`, la
-  -- même qu'au point 3), ou, pour une annonce sans identité reconnue, son adresse
-  -- (`listing:` suivi de `listing_url`).
-  (select count(*) from property_living_here_links where comparable_id in (:liste)
-     or property_key in (:cles_annonces)
-     or property_key in (select 'listing:' || btrim(listing_url) from comparables
-                          where id in (:liste) and listing_url is not null)) as liens_vivre_ici,
   (select count(*) from comparables where id in (:liste) and is_selected) as retenus,
   -- Mission 120 — les courriers d'une recherche acquéreur qui visent ce bien : par son concurrent,
   -- ou par son annonce (un bien démarché sans concurrent, `buyer_prospects`).
@@ -268,13 +260,6 @@ begin;
 delete from competitor_prospecting_files where comparable_id in (:liste);
 -- Mission 152 : la copie de l'annonce part aussi ; la base n'en modifie jamais une, elle se supprime.
 delete from competitor_listing_copies where comparable_id in (:liste);
--- Mission 156 : le lien « Vivre ici » collé sur ce bien, par le concurrent ou par son annonce
--- (`:cles_annonces` = 'listing:portail:numéro' de chaque annonce, relevées au point 3), ou par
--- l'adresse d'une annonce sans identité reconnue.
-delete from property_living_here_links where comparable_id in (:liste)
-  or property_key in (:cles_annonces)
-  or property_key in (select 'listing:' || btrim(listing_url) from comparables
-                       where id in (:liste) and listing_url is not null);
 update comparables set
   address = null,
   locator_address = null, locator_latitude = null, locator_longitude = null,

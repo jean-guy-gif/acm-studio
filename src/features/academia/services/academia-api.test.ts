@@ -4,10 +4,10 @@ import {
   ACADEMIA_API_BASE,
   academiaPropertyType,
   createAcademiaClientLink,
-  createAcademiaDossier,
-  readAcademiaDossier,
+  createAcademiaRequest,
+  readAcademiaRequest,
 } from '@/features/academia/services/academia-api';
-import { FAKE_DOSSIER_ID, FAKE_LINK, fakeAcademia } from '@/test-fixtures/fake-academia';
+import { FAKE_ACADEMIA_ID, FAKE_LINK, fakeAcademia } from '@/test-fixtures/fake-academia';
 
 // Mission 157 — le client de l'API de Laurent (contrat v1 du 14/11), contre un faux serveur : la clé
 // dans l'en-tête, seule l'adresse du bien et ses caractéristiques envoyées, chaque réponse relue par
@@ -23,9 +23,9 @@ const input = {
 describe('POST /dossiers', () => {
   it('la clé dans l’en-tête, et seulement l’adresse, le bien et l’idempotence dans le corps', async () => {
     const server = fakeAcademia();
-    expect(await createAcademiaDossier(input, server.fetch)).toEqual({
+    expect(await createAcademiaRequest(input, server.fetch)).toEqual({
       ok: true,
-      id: FAKE_DOSSIER_ID,
+      id: FAKE_ACADEMIA_ID,
       etat: 'pret',
     });
     expect(server.calls).toHaveLength(1);
@@ -43,7 +43,7 @@ describe('POST /dossiers', () => {
 
   it('un bien sans caractéristiques connues part sans « bien »', async () => {
     const server = fakeAcademia();
-    await createAcademiaDossier({ ...input, bien: null }, server.fetch);
+    await createAcademiaRequest({ ...input, bien: null }, server.fetch);
     expect(server.calls[0].body).toEqual({
       adresse: input.adresse,
       idempotence: input.idempotence,
@@ -52,16 +52,16 @@ describe('POST /dossiers', () => {
 
   it('202 : en préparation ; « reutilise » n’est jamais rendu', async () => {
     const server = fakeAcademia({
-      createDossier: [{ status: 202, body: { id: FAKE_DOSSIER_ID, etat: 'en_cours' } }],
+      createRequest: [{ status: 202, body: { id: FAKE_ACADEMIA_ID, etat: 'en_cours' } }],
     });
-    const result = await createAcademiaDossier(input, server.fetch);
-    expect(result).toEqual({ ok: true, id: FAKE_DOSSIER_ID, etat: 'en_cours' });
+    const result = await createAcademiaRequest(input, server.fetch);
+    expect(result).toEqual({ ok: true, id: FAKE_ACADEMIA_ID, etat: 'en_cours' });
     expect(JSON.stringify(result)).not.toContain('reutilise');
   });
 
   it('422 : les adresses proposées par Academia, jamais devinées', async () => {
     const server = fakeAcademia({
-      createDossier: [
+      createRequest: [
         {
           status: 422,
           body: {
@@ -75,7 +75,7 @@ describe('POST /dossiers', () => {
         },
       ],
     });
-    expect(await createAcademiaDossier(input, server.fetch)).toEqual({
+    expect(await createAcademiaRequest(input, server.fetch)).toEqual({
       ok: false,
       reason: 'ambiguous',
       propositions: [
@@ -93,16 +93,16 @@ describe('POST /dossiers', () => {
       [404, 'not_found'],
     ];
     for (const [status, reason] of cases) {
-      const server = fakeAcademia({ createDossier: [{ status, body: { erreur: 'x' } }] });
-      expect(await createAcademiaDossier(input, server.fetch)).toEqual({ ok: false, reason });
+      const server = fakeAcademia({ createRequest: [{ status, body: { erreur: 'x' } }] });
+      expect(await createAcademiaRequest(input, server.fetch)).toEqual({ ok: false, reason });
       expect(server.calls).toHaveLength(1);
     }
     const limited = fakeAcademia({
-      createDossier: [
+      createRequest: [
         { status: 429, body: { code: 'plafond_jour' }, headers: { 'retry-after': '3600' } },
       ],
     });
-    expect(await createAcademiaDossier(input, limited.fetch)).toEqual({
+    expect(await createAcademiaRequest(input, limited.fetch)).toEqual({
       ok: false,
       reason: 'quota',
       retryAfter: 3600,
@@ -113,15 +113,15 @@ describe('POST /dossiers', () => {
 
   it('une 5xx : un seul nouvel essai ; deux de suite : indisponible', async () => {
     const once = fakeAcademia({
-      createDossier: [
+      createRequest: [
         { status: 503 },
-        { status: 200, body: { id: FAKE_DOSSIER_ID, etat: 'pret' } },
+        { status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'pret' } },
       ],
     });
-    expect((await createAcademiaDossier(input, once.fetch)).ok).toBe(true);
+    expect((await createAcademiaRequest(input, once.fetch)).ok).toBe(true);
     expect(once.calls).toHaveLength(2);
-    const twice = fakeAcademia({ createDossier: [{ status: 500 }, { status: 502 }] });
-    expect(await createAcademiaDossier(input, twice.fetch)).toEqual({
+    const twice = fakeAcademia({ createRequest: [{ status: 500 }, { status: 502 }] });
+    expect(await createAcademiaRequest(input, twice.fetch)).toEqual({
       ok: false,
       reason: 'unavailable',
     });
@@ -129,8 +129,8 @@ describe('POST /dossiers', () => {
   });
 
   it('pas de réponse en 8 s : un seul nouvel essai, puis indisponible', async () => {
-    const server = fakeAcademia({ createDossier: ['timeout'] });
-    expect(await createAcademiaDossier(input, server.fetch, 20)).toEqual({
+    const server = fakeAcademia({ createRequest: ['timeout'] });
+    expect(await createAcademiaRequest(input, server.fetch, 20)).toEqual({
       ok: false,
       reason: 'unavailable',
     });
@@ -140,12 +140,12 @@ describe('POST /dossiers', () => {
   it('une réponse hors du contrat n’est jamais crue : indisponible', async () => {
     for (const body of [
       { id: '../autre', etat: 'pret' },
-      { id: FAKE_DOSSIER_ID, etat: 'peut-etre' },
+      { id: FAKE_ACADEMIA_ID, etat: 'peut-etre' },
       'pas du json',
       null,
     ]) {
-      const server = fakeAcademia({ createDossier: [{ status: 200, body }] });
-      expect(await createAcademiaDossier(input, server.fetch)).toEqual({
+      const server = fakeAcademia({ createRequest: [{ status: 200, body }] });
+      expect(await createAcademiaRequest(input, server.fetch)).toEqual({
         ok: false,
         reason: 'unavailable',
       });
@@ -156,22 +156,22 @@ describe('POST /dossiers', () => {
 describe('GET /dossiers/{id}', () => {
   it('l’état de la préparation, par l’identifiant du dossier', async () => {
     const server = fakeAcademia({
-      readDossier: [{ status: 200, body: { id: FAKE_DOSSIER_ID, etat: 'en_cours', sources: [] } }],
+      readRequest: [{ status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'en_cours', sources: [] } }],
     });
-    expect(await readAcademiaDossier(KEY, FAKE_DOSSIER_ID, server.fetch)).toEqual({
+    expect(await readAcademiaRequest(KEY, FAKE_ACADEMIA_ID, server.fetch)).toEqual({
       ok: true,
       etat: 'en_cours',
     });
     expect(server.calls[0]).toMatchObject({
       method: 'GET',
-      path: `/api/v1/dossiers/${FAKE_DOSSIER_ID}`,
+      path: `/api/v1/dossiers/${FAKE_ACADEMIA_ID}`,
       authorization: `Bearer ${KEY}`,
     });
   });
 
   it('un identifiant de forme inconnue ne part pas', async () => {
     const server = fakeAcademia();
-    expect(await readAcademiaDossier(KEY, '../moi', server.fetch)).toEqual({
+    expect(await readAcademiaRequest(KEY, '../moi', server.fetch)).toEqual({
       ok: false,
       reason: 'not_found',
     });
@@ -182,14 +182,14 @@ describe('GET /dossiers/{id}', () => {
 describe('POST /dossiers/{id}/liens-client', () => {
   it('le lien « Vivre ici » et son expiration', async () => {
     const server = fakeAcademia();
-    expect(await createAcademiaClientLink(KEY, FAKE_DOSSIER_ID, server.fetch)).toEqual({
+    expect(await createAcademiaClientLink(KEY, FAKE_ACADEMIA_ID, server.fetch)).toEqual({
       ok: true,
       url: FAKE_LINK,
       expiresAt: '2026-12-16T00:00:00.000Z',
     });
     expect(server.calls[0]).toMatchObject({
       method: 'POST',
-      path: `/api/v1/dossiers/${FAKE_DOSSIER_ID}/liens-client`,
+      path: `/api/v1/dossiers/${FAKE_ACADEMIA_ID}/liens-client`,
       body: { type: 'vivre-ici' },
     });
   });
@@ -202,7 +202,7 @@ describe('POST /dossiers/{id}/liens-client', () => {
       { url: FAKE_LINK },
     ]) {
       const server = fakeAcademia({ createLink: [{ status: 201, body }] });
-      expect(await createAcademiaClientLink(KEY, FAKE_DOSSIER_ID, server.fetch)).toEqual({
+      expect(await createAcademiaClientLink(KEY, FAKE_ACADEMIA_ID, server.fetch)).toEqual({
         ok: false,
         reason: 'unavailable',
       });
@@ -211,7 +211,7 @@ describe('POST /dossiers/{id}/liens-client', () => {
 
   it('sans le droit au lien client (403) : refusé, dit tel quel', async () => {
     const server = fakeAcademia({ createLink: [{ status: 403, body: { erreur: 'offre' } }] });
-    expect(await createAcademiaClientLink(KEY, FAKE_DOSSIER_ID, server.fetch)).toEqual({
+    expect(await createAcademiaClientLink(KEY, FAKE_ACADEMIA_ID, server.fetch)).toEqual({
       ok: false,
       reason: 'forbidden',
     });
