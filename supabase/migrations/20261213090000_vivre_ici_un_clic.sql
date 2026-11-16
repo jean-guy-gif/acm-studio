@@ -11,7 +11,8 @@
 --   l'oublier quand l'adresse du bien change, contrat §3.3), le lien client créé par l'API et sa
 --   date d'expiration donnée par Academia (`expire_le`), qui l'auteur de la demande, et quand.
 --   Écrite par le serveur seul (le navigateur peut écrire `projects`, M88 : un identifiant de dossier
---   Academia n'y est donc jamais rangé). Lue par les membres non retirés de l'agence. Elle part avec
+--   Academia n'y est donc jamais rangé). Lue par les membres non retirés de l'agence, colonne par
+--   colonne : l'état, le lien et son expiration, jamais l'adresse envoyée ni l'identifiant Academia. Elle part avec
 --   son dossier (cascade) ; le dossier et l'auteur sont de cette agence, vérifiés par la base.
 --
 -- Compatible avec le code de `main` : une table neuve qu'il ne lit pas. Aucune ligne modifiée.
@@ -87,5 +88,8 @@ alter table public.project_academia_dossiers enable row level security;
 create policy project_academia_dossiers_agency_read on public.project_academia_dossiers
   for select to authenticated
   using (agency_id = public.get_current_agency_id());
+-- Le navigateur ne lit que ce que la carte et les liens montrent : l'état de la demande, le lien et
+-- son expiration ; jamais l'adresse envoyée ni l'identifiant du dossier chez Academia.
 revoke all on public.project_academia_dossiers from anon, authenticated;
-grant select on public.project_academia_dossiers to authenticated;
+grant select (id, agency_id, project_id, state, link_url, link_expires_at)
+  on public.project_academia_dossiers to authenticated;

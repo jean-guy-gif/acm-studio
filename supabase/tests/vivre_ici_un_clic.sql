@@ -1,6 +1,7 @@
 -- Mission 157 — le dossier Academia du bien vendeur et son lien « Vivre ici » créé par l'API,
 -- prouvés dans la base :
---   §1 l'agence lit ; une autre agence, un membre retiré et un visiteur non connecté, rien ; le
+--   §1 l'agence lit l'état, le lien et son expiration, jamais l'adresse envoyée ni l'identifiant
+--      Academia ; une autre agence, un membre retiré et un visiteur non connecté, rien ; le
 --      navigateur n'écrit, ne modifie ni ne supprime rien ;
 --   §2 la clé de service écrit : un dossier Academia par dossier vendeur, de cette agence ; un
 --      identifiant de forme fermée ; un état de la liste ; seulement un lien d'Academia, toujours
@@ -99,11 +100,18 @@ select pg_temp.expect('§2 un lien sans son expiration : refusé',
 select pg_temp.expect('§2 un lien qui n''est pas d''Academia : refusé',
   pg_temp.attempt($q$update public.project_academia_dossiers set state = 'pret', link_url = 'https://exemple.fr/l/x', link_expires_at = now() + interval '30 days'
     where project_id = '157aaaaa-1111-0000-0000-000000000000'$q$), 'contrainte');
-select pg_temp.expect('§2 le dossier prêt, le lien et son expiration',
-  pg_temp.attempt($q$update public.project_academia_dossiers set state = 'pret', link_url = 'https://app.myacademia.ai/l/Vb4nT8wLp2', link_expires_at = now() + interval '30 days'
+-- La demande vieillie de 2 jours (déclencheur coupé) : `now()` est figé dans la transaction.
+reset role;
+alter table public.project_academia_dossiers disable trigger project_academia_dossiers_check;
+update public.project_academia_dossiers set requested_at = now() - interval '2 days'
+  where project_id = '157aaaaa-1111-0000-0000-000000000000';
+alter table public.project_academia_dossiers enable trigger project_academia_dossiers_check;
+select pg_temp.act_as_service();
+select pg_temp.expect('§2 le dossier prêt, le lien et son expiration (une heure de demande envoyée)',
+  pg_temp.attempt($q$update public.project_academia_dossiers set state = 'pret', link_url = 'https://app.myacademia.ai/l/Vb4nT8wLp2', link_expires_at = now() + interval '30 days', requested_at = now()
     where project_id = '157aaaaa-1111-0000-0000-000000000000'$q$), '1');
 select pg_temp.expect('§2 … l''heure de la demande ne bouge pas avec le même dossier',
-  (select (requested_at = now())::text from public.project_academia_dossiers where project_id = '157aaaaa-1111-0000-0000-000000000000'), 'true');
+  (select (requested_at = now() - interval '2 days')::text from public.project_academia_dossiers where project_id = '157aaaaa-1111-0000-0000-000000000000'), 'true');
 select pg_temp.expect('§2 le dossier vendeur d''un dossier Academia ne change pas',
   pg_temp.attempt($q$update public.project_academia_dossiers set project_id = '157aaaaa-1111-0000-0000-000000000002'
     where project_id = '157aaaaa-1111-0000-0000-000000000000'$q$), 'contrainte');
@@ -115,8 +123,12 @@ select pg_temp.expect('§2 un dossier dans l''autre agence, pour §1',
 
 -- §1 — lectures et écritures du navigateur.
 select pg_temp.act_as('15711111-0000-0000-0000-0000000000a1');
-select pg_temp.expect('§1 le conseiller lit le dossier Academia de son agence',
-  (select string_agg(academia_dossier_id, ',') from public.project_academia_dossiers), 'dos_8f2c1a9e');
+select pg_temp.expect('§1 le conseiller lit l''état et le lien du dossier Academia de son agence',
+  (select string_agg(state || ' ' || link_url, ',') from public.project_academia_dossiers), 'pret https://app.myacademia.ai/l/Vb4nT8wLp2');
+select pg_temp.expect('§1 … jamais l''identifiant du dossier chez Academia',
+  pg_temp.attempt($q$select academia_dossier_id from public.project_academia_dossiers$q$), 'refus');
+select pg_temp.expect('§1 … ni l''adresse envoyée',
+  pg_temp.attempt($q$select address_sent from public.project_academia_dossiers$q$), 'refus');
 select pg_temp.expect('§1 le navigateur n''écrit pas de dossier Academia',
   pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent)
     values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos_z', 'en_cours', '2 rue de A, 06140 Vence')$q$), 'refus');
