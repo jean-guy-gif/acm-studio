@@ -20,6 +20,7 @@ export async function readMandateAcademiaLinks(
   client: SupabaseClient<Database>,
   agencyId: string,
   projectIds: string[],
+  now: Date = new Date(),
 ): Promise<AcademiaLinksRead> {
   const ids = [...new Set(projectIds)];
   if (ids.length === 0) return { ok: true, links: new Map(), dates: new Map() };
@@ -48,11 +49,33 @@ export async function readMandateAcademiaLinks(
     return { ok: false };
   }
   const signed = new Set((conclusions.data ?? []).map((row) => row.project_id));
+  // Mission 157 — un lien créé par l'API a son expiration, donnée par Academia : expiré, il ne part
+  // plus. Un lien collé à la main n'en a pas (ses avertissements aux 25e et 30e jours, M156).
+  const created = await client
+    .from('project_academia_dossiers')
+    .select('project_id, link_url, link_expires_at')
+    .eq('agency_id', agencyId)
+    .in('project_id', ids);
+  if (created.error) {
+    await reportServerError('academia:read-links', created.error);
+    return { ok: false };
+  }
+  const expiries = new Map(
+    (created.data ?? []).flatMap((row) =>
+      row.link_url && row.link_expires_at ? [[row.project_id, row]] : [],
+    ),
+  );
   const links = new Map<string, string>();
   const dates = new Map<string, string | null>();
   for (const row of projects.data ?? []) {
     const url = academiaLivingHereUrl(row.academia_living_here_url);
-    if (url && signed.has(row.id)) {
+    if (!url || !signed.has(row.id)) continue;
+    const api = expiries.get(row.id);
+    if (api && api.link_url === url) {
+      if (new Date(api.link_expires_at as string).getTime() <= now.getTime()) continue;
+      links.set(row.id, url);
+      dates.set(row.id, null);
+    } else {
       links.set(row.id, url);
       dates.set(row.id, row.academia_living_here_pasted_at ?? null);
     }

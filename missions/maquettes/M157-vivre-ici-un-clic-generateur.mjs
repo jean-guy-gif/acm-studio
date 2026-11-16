@@ -17,7 +17,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fonts = pathToFileURL(join(here, '../../src/features/branding/fonts')).href;
-const photos = pathToFileURL(join(here, '../../public/demo/photos')).href;
 
 const C = {
   deep: '#00527a',
@@ -38,14 +37,7 @@ const C = {
   noteInk: '#5b4a00',
 };
 
-const INFO = 'Ce lien montre la rue (sans numéro) et un repère à environ 100 m.';
-const LINK_B = 'https://app.myacademia.ai/l/k7Qx2mRv9a';
 
-const BIENS = {
-  A: { label: 'Villa · 7 pièces · 240 m² · Mougins', origin: 'Mandat signé', photo: 'mandat-mougins-villa/01-facade.jpg' },
-  B: { label: 'Maison · 6 pièces · 220 m² · Mougins', origin: 'Annonce du marché', photo: 'villa-03.jpg' },
-  C: { label: 'Maison · 5 pièces · 180 m² · Mouans-Sartoux', origin: 'Annonce du marché', photo: 'maison-04.jpg' },
-};
 
 // ---------------------------------------------------------------------------------------------
 // Le cadre : menu de gauche (ordinateur, tablette) ou barre compacte (téléphone), comme la M153.
@@ -75,10 +67,6 @@ const frame = (device, body, on) =>
     ? `<div class="frame phone"><div class="topbar">${logo}<span class="pb">3</span><span class="burger">☰</span></div><div class="main">${body}</div></div>`
     : `<div class="frame ${device}">${side(on)}<div class="main">${body}</div></div>`;
 
-// La page du dossier acquéreur est une page d'impression (sans menu) : son en-tête conseiller
-// au-dessus de la feuille A4.
-const printFrame = (device, body) =>
-  `<div class="frame ${device} print"><div class="main">${body}<div class="a4">Le dossier imprimé (A4), inchangé : ni « Vivre ici », ni adresse, ni lien.</div></div></div>`;
 
 const DEVICE = { desk: 'Ordinateur · 1280', tab: 'Tablette · 820', phone: 'Téléphone · 390' };
 const titled = (device, html, extra = '', state = 'APRÈS') =>

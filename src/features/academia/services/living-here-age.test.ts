@@ -5,6 +5,7 @@ import {
   LIVING_HERE_SOON_DAYS,
   livingHereAge,
   livingHereAgeLine,
+  livingHereExpiry,
   livingHereNeedsLink,
 } from '@/features/academia/services/living-here-age';
 
@@ -90,5 +91,15 @@ describe('livingHereNeedsLink — le lien discret « Ajouter « Vivre ici » » 
     expect(livingHereNeedsLink({ url: 'https://app.myacademia.ai/l/a', pastedAt: null }, NOW)).toBe(
       false,
     );
+  });
+});
+
+describe('livingHereExpiry — un lien créé par l’API, avec son expiration', () => {
+  it('valable, bientôt (trois jours au plus), expiré', () => {
+    expect(livingHereExpiry('2026-12-16T00:00:00Z', NOW)).toEqual({ level: 'ok', days: 30 });
+    expect(livingHereExpiry('2026-11-19T12:00:00Z', NOW)).toEqual({ level: 'soon', days: 3 });
+    expect(livingHereExpiry('2026-11-16T10:00:00Z', NOW)).toEqual({ level: 'expired', days: 0 });
+    expect(livingHereExpiry('2026-11-14T00:00:00Z', NOW)).toEqual({ level: 'expired', days: 0 });
+    expect(livingHereExpiry('jamais', NOW)).toBeNull();
   });
 });

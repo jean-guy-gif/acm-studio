@@ -2,7 +2,9 @@
 
 import { card, hintText, sectionTitle } from '@/components/ui/styles';
 import { AcademiaLinks } from '@/features/academia/components/academia-links';
+import { LivingHereApiPanel } from '@/features/academia/components/living-here-api-panel';
 import { LivingHereField } from '@/features/academia/components/living-here-field';
+import type { LivingHereApiInitial } from '@/features/academia/queries/living-here-api-view';
 import type { LivingHereAgeLine } from '@/features/academia/services/living-here-age';
 import { setAcademiaLivingHereLink } from '@/features/projects/actions/set-academia-link';
 import type { AcademiaLink } from '@/lib/academia';
@@ -11,7 +13,9 @@ import type { AcademiaLink } from '@/lib/academia';
 // seul (planches M147-1 et 6 bis) : le dossier d'adresse et « Vivre ici » s'ouvrent dans Academia,
 // et le lien client « Vivre ici » qu'Academia donne pour ce bien se colle une fois, pour les
 // acquéreurs qui le visiteront. Mission 156 — l'âge du lien : en orange du 25e au 29e jour, puis à
-// 30 jours et au-delà ; le lien reste montré (décisions de Jean-Guy, 15 et 16/11).
+// 30 jours et au-delà ; le lien reste montré (décisions de Jean-Guy, 15 et 16/11). Mission 157 —
+// l'API ouverte (la démo par sa clé d'essai ; une vraie agence, l'interrupteur allumé) : « Créer le
+// lien « Vivre ici » » en un clic (planche M157-1) ; le champ à coller devient le repli.
 export function AcademiaCard({
   projectId,
   addressLink,
@@ -19,6 +23,7 @@ export function AcademiaCard({
   savedUrl,
   savedLine,
   signed,
+  api = null,
 }: {
   projectId: string;
   addressLink: AcademiaLink | null;
@@ -26,7 +31,25 @@ export function AcademiaCard({
   savedUrl: string | null;
   savedLine: LivingHereAgeLine | null;
   signed: boolean;
+  api?: { address: string | null; initial: LivingHereApiInitial } | null;
 }) {
+  const field = (
+    <LivingHereField
+      inputId="academia-living-url"
+      label="Lien « Vivre ici » montré aux acquéreurs"
+      emptyLabel="Lien « Vivre ici » à montrer aux acquéreurs (facultatif)"
+      hint={
+        signed
+          ? 'Montré sur le lien de chaque acquéreur qui a ce bien dans sa sélection, et dans « Confirmer la visite ».'
+          : 'Montré aux acquéreurs une fois le mandat signé.'
+      }
+      savedUrl={savedUrl}
+      savedLine={savedLine}
+      save={(next) => setAcademiaLivingHereLink(projectId, next)}
+      testId="academia-living"
+      containerTestId="academia-living-link"
+    />
+  );
   return (
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`} data-testid="academia-card">
       <h2 className={sectionTitle}>Le bien dans Academia</h2>
@@ -40,21 +63,17 @@ export function AcademiaCard({
         missingHref="#champ-address"
       />
       <div className="border-t border-zinc-100 pt-3 stage:border-white/10">
-        <LivingHereField
-          inputId="academia-living-url"
-          label="Lien « Vivre ici » montré aux acquéreurs"
-          emptyLabel="Lien « Vivre ici » à montrer aux acquéreurs (facultatif)"
-          hint={
-            signed
-              ? 'Montré sur le lien de chaque acquéreur qui a ce bien dans sa sélection, et dans « Confirmer la visite ».'
-              : 'Montré aux acquéreurs une fois le mandat signé.'
-          }
-          savedUrl={savedUrl}
-          savedLine={savedLine}
-          save={(next) => setAcademiaLivingHereLink(projectId, next)}
-          testId="academia-living"
-          containerTestId="academia-living-link"
-        />
+        {api ? (
+          <LivingHereApiPanel
+            projectId={projectId}
+            address={api.address}
+            initial={api.initial}
+            fallback={field}
+            pasted={api.initial.kind === 'idle' && savedUrl !== null}
+          />
+        ) : (
+          field
+        )}
       </div>
     </section>
   );

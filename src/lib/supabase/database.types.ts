@@ -2757,6 +2757,74 @@ export type Database = {
           },
         ];
       };
+      project_academia_dossiers: {
+        Row: {
+          academia_dossier_id: string;
+          address_sent: string;
+          agency_id: string;
+          created_at: string;
+          id: string;
+          link_expires_at: string | null;
+          link_url: string | null;
+          project_id: string;
+          requested_at: string;
+          requested_by: string | null;
+          state: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          academia_dossier_id: string;
+          address_sent: string;
+          agency_id: string;
+          created_at?: string;
+          id?: string;
+          link_expires_at?: string | null;
+          link_url?: string | null;
+          project_id: string;
+          requested_at?: string;
+          requested_by?: string | null;
+          state: string;
+          updated_at?: string;
+        };
+        Update: {
+          academia_dossier_id?: string;
+          address_sent?: string;
+          agency_id?: string;
+          created_at?: string;
+          id?: string;
+          link_expires_at?: string | null;
+          link_url?: string | null;
+          project_id?: string;
+          requested_at?: string;
+          requested_by?: string | null;
+          state?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_academia_dossiers_agency_id_fkey';
+            columns: ['agency_id'];
+            isOneToOne: false;
+            referencedRelation: 'agencies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_academia_dossiers_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: true;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_academia_dossiers_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       project_market_update_links: {
         Row: {
           agency_id: string;

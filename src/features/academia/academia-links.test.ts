@@ -8,6 +8,10 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => undefined
 vi.mock('@/features/projects/actions/set-academia-link', () => ({
   setAcademiaLivingHereLink: async () => ({ ok: true, url: null, pastedAt: null }),
 }));
+vi.mock('@/features/academia/actions/living-here-link', () => ({
+  createLivingHereLink: async () => ({ state: 'idle' }),
+  refreshLivingHereLink: async () => ({ state: 'idle' }),
+}));
 
 const { AcademiaLinks, AcademiaSalesLink, copyAddress } =
   await import('@/features/academia/components/academia-links');
@@ -170,5 +174,99 @@ describe('AcademiaCard', () => {
     expect(card(true, 'https://app.myacademia.ai/l/abc', null)).not.toContain('Collé');
     // La carte n'a pas « Ouvrir ↗ » (la maquette ne le montre pas).
     expect(old).not.toContain('Ouvrir ↗');
+  });
+});
+
+// Mission 157 — « Vivre ici » en un clic (planche M157-1), l'API ouverte : le bouton, l'attente, le
+// lien et sa validité, bientôt expiré, expiré, sans adresse ; le champ à coller devient le repli.
+describe('AcademiaCard, l’API ouverte', () => {
+  const LINK = 'https://app.myacademia.ai/l/Vb4nT8wLp2';
+  const withApi = (
+    initial:
+      | { kind: 'idle' }
+      | { kind: 'waiting' }
+      | {
+          kind: 'ready';
+          url: string;
+          expiresAt: string;
+          expiry: { level: 'ok' | 'soon' | 'expired'; days: number };
+        },
+    address: string | null = ADDRESS,
+    savedUrl: string | null = null,
+  ) =>
+    plain(
+      renderToStaticMarkup(
+        createElement(AcademiaCard, {
+          projectId: 'p1',
+          addressLink: live,
+          livingLink: live,
+          savedUrl,
+          savedLine: null,
+          signed: true,
+          api: { address, initial },
+        }),
+      ),
+    );
+
+  it('rien encore : l’adresse enregistrée, le bouton en contour, le champ à coller replié', () => {
+    const html = withApi({ kind: 'idle' });
+    expect(html).toContain('Créer le lien « Vivre ici »');
+    expect(html).toContain(ADDRESS);
+    expect(html).toContain('Coller le lien à la main');
+    expect(html).not.toContain(
+      '<details class="text-sm text-zinc-600" data-testid="living-here-fallback" open',
+    );
+    expect(html).not.toContain('btn-filled');
+  });
+
+  it('un lien collé à la main : le repli ouvert, pour le voir', () => {
+    expect(withApi({ kind: 'idle' }, ADDRESS, LINK)).toMatch(
+      /data-testid="living-here-fallback" open/,
+    );
+  });
+
+  it('le lien créé : sa validité, Ouvrir, Copier, Retirer', () => {
+    const html = withApi({
+      kind: 'ready',
+      url: LINK,
+      expiresAt: '2026-12-16T00:00:00Z',
+      expiry: { level: 'ok', days: 30 },
+    });
+    expect(html).toContain(LINK);
+    expect(html).toContain('Valable jusqu’au 16/12');
+    expect(html).toContain('Ouvrir ↗');
+    expect(html).toContain('Copier');
+    expect(html).toContain('Retirer');
+    expect(html).not.toContain('Créer le lien « Vivre ici »');
+  });
+
+  it('bientôt expiré : en orange, « Créer un lien neuf » ; expiré : plus montré', () => {
+    const soon = withApi({
+      kind: 'ready',
+      url: LINK,
+      expiresAt: '2026-11-19T12:00:00Z',
+      expiry: { level: 'soon', days: 3 },
+    });
+    expect(soon).toContain('Valable jusqu’au 19/11, dans 3 jours.');
+    expect(soon).toContain('Créer un lien neuf');
+    const expired = withApi({
+      kind: 'ready',
+      url: LINK,
+      expiresAt: '2026-11-14T00:00:00Z',
+      expiry: { level: 'expired', days: 0 },
+    });
+    expect(expired).toContain('Le lien a expiré le 14/11 : il n’est plus montré aux acquéreurs.');
+    expect(expired).not.toContain(LINK);
+    expect(expired).toContain('Créer un lien neuf');
+  });
+
+  it('sans adresse : « Ajoutez l’adresse du bien », aucun bouton', () => {
+    const html = withApi({ kind: 'idle' }, null);
+    expect(html).toContain('Il faut l’adresse du bien pour créer le lien.');
+    expect(html).not.toContain('Créer le lien « Vivre ici »');
+  });
+
+  it('en préparation : l’attente, dite', () => {
+    expect(withApi({ kind: 'waiting' })).toContain('Academia prépare le dossier de l’adresse…');
   });
 });

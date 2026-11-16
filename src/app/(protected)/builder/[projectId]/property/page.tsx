@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 
 import { kickerLabel, pageTitle } from '@/components/ui/styles';
 import { AcademiaCard } from '@/features/academia/components/academia-card';
+import { livingHereApiInitial } from '@/features/academia/queries/living-here-api-view';
+import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
 import { livingHereAgeLine } from '@/features/academia/services/living-here-age';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
@@ -28,6 +30,7 @@ import {
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { academiaLinkView, academiaLivingHereUrl, propertyAddressLine } from '@/lib/academia';
 import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
 
 type PropertyPageProps = {
   params: Promise<{ projectId: string }>;
@@ -51,7 +54,8 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // Mission 114 — l'agence de démonstration : « Importer une annonce » lit le jeu de données (même
   // signature, action liée par la page), les annonces des scénarios sont proposées d'avance, et la
   // fiche PDF de démonstration est à un clic. Décidé sur le repère de l'agence, lu en base.
-  const demo = await isDemoAgency((await getProfile())?.agency_id);
+  const profile = await getProfile();
+  const demo = await isDemoAgency(profile?.agency_id);
   const save = saveSubjectPropertySheet.bind(null, projectId);
   const uploadPhotos = uploadPropertyPhotos.bind(null, projectId);
   const updatePhotos = updatePropertyPhotos.bind(null, projectId);
@@ -68,6 +72,19 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     postalCode: property?.postal_code,
     city: property?.city,
   });
+  // Mission 157 — « Vivre ici » en un clic, l'API ouverte (décidé au serveur : la démo par sa clé
+  // d'essai et l'adresse de son dossier fixe ; une vraie agence, l'interrupteur allumé). Fermée : la
+  // carte d'aujourd'hui.
+  const access = academiaApiAccess(demo);
+  const apiInitial =
+    access && profile
+      ? await livingHereApiInitial(
+          await createClient(),
+          profile.agency_id,
+          projectId,
+          project.academia_living_here_url,
+        )
+      : null;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -109,6 +126,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             : null
         }
         signed={conclusion?.outcome === 'signed'}
+        api={
+          access && apiInitial
+            ? { address: access.demoAddress ?? address, initial: apiInitial }
+            : null
+        }
       />
     </div>
   );
