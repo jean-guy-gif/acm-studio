@@ -100,7 +100,23 @@ vi.mock('@/features/buyers/queries/get-relaunch-facts', () => ({
   }),
 }));
 
-const { recordBuyerRelaunch, recordLinkShared } =
+// Mission 156 — les liens « Vivre ici » des biens hors mandat, lus avant de créer le lien.
+const living = vi.hoisted(() => ({ ok: true }));
+const createLink = vi.hoisted(() => ({ calls: 0 }));
+vi.mock('@/features/academia/queries/read-property-living-links', () => ({
+  readPropertyLivingLinks: async () => (living.ok ? { ok: true, links: new Map() } : { ok: false }),
+}));
+vi.mock('@/features/buyer-presentation/queries/load-presentation', () => ({
+  presentedItems: async () => [],
+}));
+vi.mock('@/features/buyer-dossier/actions/dossier-links', () => ({
+  createDossierLink: async () => {
+    createLink.calls += 1;
+    return { ok: true, url: 'https://acm/dossier/t', linkId: 'l', expiresAt: '' };
+  },
+}));
+
+const { prepareRelaunch, recordBuyerRelaunch, recordLinkShared } =
   await import('@/features/buyers/actions/relaunch');
 const BUYER = buyerRow.id;
 const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
@@ -120,6 +136,29 @@ beforeEach(() => {
   writes.list = [];
   writes.insertError = null;
   writes.linkValid = true;
+  living.ok = true;
+  createLink.calls = 0;
+});
+
+// Mission 156 — la page de l'acquéreur relit les liens « Vivre ici » de ses biens à son ouverture :
+// une lecture en échec au moment de la relance ne crée aucun lien, jamais un lien hors mandat parti
+// sans la ligne d'information (Jean-Guy, 16/11).
+describe('« Préparer le message » de la relance', () => {
+  it('les liens « Vivre ici » lus : le lien est créé, sans ligne d’information s’il n’y en a pas', async () => {
+    const result = await prepareRelaunch(BUYER);
+    expect(result.ok && result.livingHereLetters).toEqual([]);
+    expect(createLink.calls).toBe(1);
+  });
+
+  it('les liens « Vivre ici » illisibles : aucun lien créé, le message le dit', async () => {
+    living.ok = false;
+    expect(await prepareRelaunch(BUYER)).toEqual({
+      ok: false,
+      error: 'Les liens « Vivre ici » des biens n’ont pas pu être lus. Réessayez dans un instant.',
+    });
+    expect(createLink.calls).toBe(0);
+    expect(writes.list).toEqual([]);
+  });
 });
 
 describe('« J’ai relancé »', () => {

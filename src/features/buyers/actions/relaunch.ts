@@ -5,7 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { readPropertyLivingLinks } from '@/features/academia/queries/read-property-living-links';
-import { deckLetter } from '@/features/academia/services/living-here-info';
+import {
+  deckLetter,
+  LIVING_HERE_UNREAD_SHARE,
+} from '@/features/academia/services/living-here-info';
 import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
@@ -122,13 +125,15 @@ export async function prepareRelaunch(buyerId: unknown): Promise<PrepareRelaunch
       },
     })),
   );
-  const link = await createDossierLink(buyer.id, false);
-  if (!link.ok) return { ok: false, error: link.error };
-  // Une lecture en échec n'empêche pas la relance : le lien de l'acquéreur s'ouvre sans « Vivre
-  // ici » (la lecture du dossier), et l'échec est au journal.
+  // Mission 156 — les liens « Vivre ici » des biens hors mandat, lus AVANT de créer le lien : la
+  // page de l'acquéreur les relit à son ouverture. Une lecture en échec ne crée rien et le dit :
+  // jamais un lien hors mandat parti sans la ligne d'information (Jean-Guy, 16/11).
   const living = livingHereEverywhereOpen()
     ? await readPropertyLivingLinks(client, agencyId, selection.items)
     : null;
+  if (living && !living.ok) return { ok: false, error: LIVING_HERE_UNREAD_SHARE };
+  const link = await createDossierLink(buyer.id, false);
+  if (!link.ok) return { ok: false, error: link.error };
   // Les lettres du déroulé : celles des biens montrés (un concurrent supprimé depuis n'en a pas).
   const sources = new Map(selection.items.map((item) => [item.id, item.source]));
   const livingHereLetters = living?.ok

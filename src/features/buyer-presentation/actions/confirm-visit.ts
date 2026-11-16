@@ -9,6 +9,10 @@ import {
   livingHereAgeLine,
   type LivingHereAgeLine,
 } from '@/features/academia/services/living-here-age';
+import {
+  deckLetter,
+  LIVING_HERE_UNREAD_SHARE,
+} from '@/features/academia/services/living-here-info';
 import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
@@ -46,11 +50,13 @@ async function liveVisit(visitId: unknown) {
   return { profile, visit: data, buyer };
 }
 
-// Mission 156 — ce que le formulaire dit du lien « Vivre ici » sous le message : `shared`, le lien
-// d'un bien HORS MANDAT est dans le message (la ligne d'information, au-dessus des boutons) ;
-// `ageLine`, l'âge du lien (orange du 25e au 29e jour, puis à 30 jours et au-delà) ; `missing`, un
-// bien hors mandat sans lien (« Le coller sur le dossier acquéreur »).
+// Mission 156 — ce que le formulaire dit du lien « Vivre ici » sous le message : `infoLetters`, les
+// biens hors mandat de la sélection dont le lien « Vivre ici » part avec ce message (la ligne
+// d'information, au-dessus des boutons) ; `shared`, celui du bien visité est dans le message ;
+// `ageLine`, l'âge du lien du bien visité (orange du 25e au 29e jour, puis à 30 jours et au-delà) ;
+// `missing`, un bien hors mandat sans lien (« Le coller sur le dossier acquéreur »).
 export type ConfirmVisitLivingHere = {
+  infoLetters: string[];
   shared: boolean;
   ageLine: LivingHereAgeLine | null;
   missing: boolean;
@@ -100,9 +106,36 @@ export async function confirmVisit(
     (await presentedItems(admin, [toSelectionItem(item)], context.profile.agency_id))[0] ?? null;
   let livingHereUrl: string | null = null;
   let livingHerePastedAt: string | null = null;
-  // Mission 156 — un bien hors mandat, l'interrupteur ouvert (jamais en production avant le texte A3
-  // de `/confidentialite`) : son lien collé sur le dossier acquéreur.
-  const outside = item.source !== 'project' && livingHereEverywhereOpen();
+  // Mission 156 — l'interrupteur ouvert (jamais en production avant le texte A3 de
+  // `/confidentialite`) : le lien de la sélection que ce message envoie ouvre TOUS ses biens, et
+  // la page de l'acquéreur relit leurs liens « Vivre ici » ; ils sont lus ici, avant de créer le
+  // lien. Une lecture en échec ne crée rien et le dit, sans « préparer sans le lien » : jamais un
+  // lien hors mandat parti sans la ligne d'information (Jean-Guy, 16/11).
+  const open = livingHereEverywhereOpen();
+  const outside = item.source !== 'project' && open;
+  let infoLetters: string[] = [];
+  if (open) {
+    const { data: rows, error: rowsError } = await admin
+      .from('buyer_selection_items')
+      .select('id, source, reference, position')
+      .eq('selection_id', item.selection_id)
+      .eq('agency_id', context.profile.agency_id)
+      .is('removed_at', null)
+      .order('position');
+    const items = rowsError ? null : (rows ?? []);
+    const read = items
+      ? await readPropertyLivingLinks(admin, context.profile.agency_id, items)
+      : ({ ok: false } as const);
+    if (!items || !read.ok) return { ok: false, error: LIVING_HERE_UNREAD_SHARE };
+    infoLetters = items.flatMap((row, index) =>
+      row.source !== 'project' && read.links.has(row.id) ? [deckLetter(index)] : [],
+    );
+    if (outside) {
+      const pasted = read.links.get(item.id) ?? null;
+      livingHereUrl = pasted?.url ?? null;
+      livingHerePastedAt = pasted?.pastedAt ?? null;
+    }
+  }
   if (item.source === 'project' && withoutLivingHere !== true) {
     const read = await readMandateAcademiaLinks(admin, context.profile.agency_id, [item.reference]);
     // Jamais un message sans le lien EN SILENCE parce qu'il n'a pas pu être lu (M98) : l'échec est
@@ -110,14 +143,6 @@ export async function confirmVisit(
     if (!read.ok) return { ok: false, error: LIVING_HERE_UNREAD, livingHereUnread: true };
     livingHereUrl = read.links.get(item.reference) ?? null;
     livingHerePastedAt = read.dates.get(item.reference) ?? null;
-  } else if (outside && withoutLivingHere !== true) {
-    const read = await readPropertyLivingLinks(admin, context.profile.agency_id, [
-      { id: item.id, source: item.source, reference: item.reference },
-    ]);
-    if (!read.ok) return { ok: false, error: LIVING_HERE_UNREAD, livingHereUnread: true };
-    const pasted = read.links.get(item.id) ?? null;
-    livingHereUrl = pasted?.url ?? null;
-    livingHerePastedAt = pasted?.pastedAt ?? null;
   }
   // Un lien vers la sélection de CE bien (relecture du 07/11), créé avant d'écrire le jour : un
   // lien en échec ne laisse rien d'écrit.
@@ -154,6 +179,7 @@ export async function confirmVisit(
     email: context.buyer.email,
     subject: t.visitConfirm.subject,
     livingHere: {
+      infoLetters,
       shared: outside && livingHereUrl !== null,
       ageLine: livingHereUrl ? livingHereAgeLine(livingHerePastedAt, new Date()) : null,
       missing: outside && livingHereUrl === null && withoutLivingHere !== true,

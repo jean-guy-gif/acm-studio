@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/styles';
 import { LivingHereInfo } from '@/features/academia/components/living-here-info-line';
 import { AGE_WARN_CLASS } from '@/features/academia/components/living-here-field';
+import { livingHereSharePrefix } from '@/features/academia/services/living-here-info';
 import {
   confirmVisit,
   type ConfirmVisitLivingHere,
@@ -128,7 +129,9 @@ export function VisitConfirmForm({ visitId, buyerId }: { visitId: string; buyerI
               ) : null}
             </p>
           ) : null}
-          {prepared.livingHere.shared ? <LivingHereInfo /> : null}
+          {prepared.livingHere.infoLetters.length > 0 ? (
+            <LivingHereInfo prefix={livingHereSharePrefix(prepared.livingHere.infoLetters)} />
+          ) : null}
           {prepared.livingHere.missing ? (
             <p className={hintText} data-testid="visit-confirm-living-missing">
               Ce bien n’a pas de lien « Vivre ici ».{' '}

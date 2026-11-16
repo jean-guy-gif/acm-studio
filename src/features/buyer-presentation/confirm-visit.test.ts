@@ -17,6 +17,7 @@ const state = vi.hoisted(() => ({
   readFails: false,
   // Mission 156 — l'interrupteur du hors mandat, et le lien collé sur un bien hors mandat.
   open: true,
+  itemsFail: false,
   outsideLink: null as { property_key: string; url: string; pasted_at: string } | null,
 }));
 
@@ -29,8 +30,15 @@ const service = fakeSupabase((calls): FakeResponse => {
   switch (lastTable(calls)) {
     case 'buyer_visit_requests':
       return { data: state.visit };
-    case 'buyer_selection_items':
-      return { data: state.item };
+    case 'buyer_selection_items': {
+      // Le bien de la visite (`maybeSingle`), ou les biens de sa sélection (M156).
+      const last = calls.map((call) => call.method).lastIndexOf('from');
+      const single = calls.slice(last).some((call) => call.method === 'maybeSingle');
+      if (single) return { data: state.item };
+      return state.itemsFail
+        ? { error: { message: 'lecture impossible' } }
+        : { data: [state.item] };
+    }
     case 'projects':
       return state.readFails
         ? { error: { message: 'lecture impossible' } }
@@ -103,6 +111,7 @@ beforeEach(() => {
   state.signed = true;
   state.readFails = false;
   state.open = true;
+  state.itemsFail = false;
   state.outsideLink = null;
 });
 
@@ -258,6 +267,7 @@ describe('« Confirmer la visite » d’un bien hors mandat', () => {
     const result = await confirmVisit(VISIT, tomorrow(), '10:00');
     expect(result.ok && result.message).toContain(`Vivre ici, autour du bien : ${LINK}`);
     expect(result.ok && result.livingHere).toEqual({
+      infoLetters: ['A'],
       shared: true,
       ageLine: { tone: 'hint', text: 'Collé aujourd’hui' },
       missing: false,
@@ -284,7 +294,12 @@ describe('« Confirmer la visite » d’un bien hors mandat', () => {
     state.item = listingItem;
     const result = await confirmVisit(VISIT, tomorrow(), '10:00');
     expect(result.ok && result.message).not.toContain('Vivre ici');
-    expect(result.ok && result.livingHere).toEqual({ shared: false, ageLine: null, missing: true });
+    expect(result.ok && result.livingHere).toEqual({
+      infoLetters: [],
+      shared: false,
+      ageLine: null,
+      missing: true,
+    });
   });
 
   it('interrupteur éteint (production avant le texte A3) : aucun lien hors mandat lu ni envoyé', async () => {
@@ -299,6 +314,7 @@ describe('« Confirmer la visite » d’un bien hors mandat', () => {
     const result = await confirmVisit(VISIT, tomorrow(), '10:00');
     expect(result.ok && result.message).not.toContain('myacademia');
     expect(result.ok && result.livingHere).toEqual({
+      infoLetters: [],
       shared: false,
       ageLine: null,
       missing: false,
@@ -317,5 +333,23 @@ describe('« Confirmer la visite » d’un bien hors mandat', () => {
     expect(result.ok && result.livingHere.shared).toBe(false);
     // Un lien de mandat d'avant la mission n'a pas de date : aucune ligne d'âge.
     expect(result.ok && result.livingHere.ageLine).toBeNull();
+  });
+
+  it('les liens de sa sélection illisibles : rien de créé ni d’écrit, et pas de « sans le lien »', async () => {
+    const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
+    const { createDossierLink } = await import('@/features/buyer-dossier/actions/dossier-links');
+    vi.mocked(createDossierLink).mockClear();
+    state.item = listingItem;
+    state.itemsFail = true;
+    const unread = {
+      ok: false,
+      error: 'Les liens « Vivre ici » des biens n’ont pas pu être lus. Réessayez dans un instant.',
+    };
+    expect(await confirmVisit(VISIT, tomorrow(), '10:00')).toEqual(unread);
+    // « Préparer le message sans le lien » ne passe pas outre : le lien de la sélection ouvrirait
+    // les liens hors mandat sans la ligne d'information.
+    expect(await confirmVisit(VISIT, tomorrow(), '10:00', true)).toEqual(unread);
+    expect(createDossierLink).not.toHaveBeenCalled();
+    expect(service.writes()).toEqual([]);
   });
 });

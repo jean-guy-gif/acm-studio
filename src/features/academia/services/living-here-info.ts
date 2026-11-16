@@ -12,6 +12,12 @@ export function livingHereSharePrefix(letters: string[]): string {
   return `« Vivre ici » des biens ${list}, sur ce lien : `;
 }
 
+// Les liens « Vivre ici » n'ont pas pu être lus au moment de préparer un lien de sélection : rien
+// n'est créé, le conseiller réessaie (un lien hors mandat ne part jamais sans la ligne
+// d'information, Jean-Guy, 16/11).
+export const LIVING_HERE_UNREAD_SHARE =
+  'Les liens « Vivre ici » des biens n’ont pas pu être lus. Réessayez dans un instant.';
+
 // La lettre d'un bien, celle du déroulé (A, B, C…, M122).
 export function deckLetter(index: number): string {
   return ['A', 'B', 'C', 'D', 'E'][index] ?? String(index + 1);

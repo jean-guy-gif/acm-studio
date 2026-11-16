@@ -4,7 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { readPropertyLivingLinks } from '@/features/academia/queries/read-property-living-links';
-import { deckLetter } from '@/features/academia/services/living-here-info';
+import {
+  deckLetter,
+  LIVING_HERE_UNREAD_SHARE,
+} from '@/features/academia/services/living-here-info';
 import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { loadAgencyBuyers } from '@/features/buyers/queries/get-property-buyers';
@@ -124,6 +127,25 @@ export async function prepareProposalLink(
     .filter((row) => row.source !== 'project' || proposableKeys.has(`project:${row.reference}`))
     .slice(0, MAX_IDEAL_SELECTION - 1);
 
+  // Mission 156 — les biens hors mandat de la nouvelle sélection dont le lien « Vivre ici » part
+  // avec ce lien (la page de l'acquéreur les relit à son ouverture) : lus AVANT d'écrire. Une
+  // lecture en échec n'écrit rien et le dit : jamais un lien hors mandat parti sans la ligne
+  // d'information (Jean-Guy, 16/11).
+  const refs = [item, ...kept].map((row, index) => ({
+    id: `bien-${index}`,
+    source: row.source,
+    reference: row.reference,
+  }));
+  const living = livingHereEverywhereOpen()
+    ? await readPropertyLivingLinks(client, agencyId, refs)
+    : null;
+  if (living && !living.ok) return { ok: false, error: LIVING_HERE_UNREAD_SHARE };
+  const livingHereLetters = living?.ok
+    ? refs.flatMap((ref, index) =>
+        ref.source !== 'project' && living.links.has(ref.id) ? [deckLetter(index)] : [],
+      )
+    : [];
+
   const { data: selection, error } = await client
     .from('buyer_selections')
     .insert({
@@ -179,7 +201,7 @@ export async function prepareProposalLink(
   const { data: inserted, error: insertError } = await client
     .from('buyer_selection_items')
     .insert(rows)
-    .select('id, position, source, reference');
+    .select('id, position');
   const headId = inserted?.find((row) => row.position === 1)?.id ?? null;
   if (insertError || !headId) {
     await client.from('buyer_selections').delete().eq('id', selection.id);
@@ -190,17 +212,6 @@ export async function prepareProposalLink(
     await client.from('buyer_selections').delete().eq('id', selection.id);
     return { ok: false, error: link.error };
   }
-  // Une lecture en échec n'empêche pas l'envoi : la page de l'acquéreur s'ouvre sans « Vivre ici »
-  // (la lecture du dossier), et l'échec est au journal.
-  const ordered = [...(inserted ?? [])].sort((a, b) => a.position - b.position);
-  const living = livingHereEverywhereOpen()
-    ? await readPropertyLivingLinks(client, agencyId, ordered)
-    : null;
-  const livingHereLetters = living?.ok
-    ? ordered.flatMap((row, index) =>
-        row.source !== 'project' && living.links.has(row.id) ? [deckLetter(index)] : [],
-      )
-    : [];
   revalidatePath(`/acquereurs/${buyerIdOk}`);
   return { ok: true, url: link.url, selectionItemId: headId, livingHereLetters };
 }
