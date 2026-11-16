@@ -5,7 +5,10 @@ sur :
 - le contrat « API Mon secteur × ACM Studio — v1, projet » de Laurent (14/11) ;
 - la réponse finale de Jean-Guy (14/11) : les décisions D1 à D7 et les ajouts A2 à A4 ;
 - les nouvelles de Laurent et la décision de Jean-Guy du 15/11 : une seule clé pour ACM, un plafond
-  commun, la route bien-client, et le lien « Vivre ici » hors mandat ouvert.
+  commun, la route bien-client ;
+- la décision de Jean-Guy du 16/11 : tout en un clic dans ACM, sans ouvrir Mon secteur, et
+  « Vivre ici » seulement pour le bien vendeur. Aucun bien hors mandat ne part vers Academia : ni
+  bouton, ni lien collé, ni adresse (le plan : `PLAN_ACADEMIA_EN_UN_CLIC.md`).
 
 Elle dit ce qu'ACM attend de chaque route, comment ACM reste utilisable tant qu'une marche n'est pas
 ouverte, et ce qui doit être tranché avant le gel du 24/11. Rien n'est codé avant le contrat gelé,
@@ -39,7 +42,6 @@ avant le code.
 | CLAUDE.md : « ne jamais construire de fonction qui estime le prix du bien vendeur » ; « jamais le mot estimation à l'écran » (M105, test de vocabulaire) | **D1** : la valeur indicative d'Academia s'affiche, pour le conseiller seul, sur « Avant le rendez-vous » | Jean-Guy réécrit la règle de CLAUDE.md. Un test prouve que la valeur n'atteint ni le Live, ni la présentation, ni un document, ni un lien client, et qu'ACM ne la garde pas. Le test de vocabulaire continue de refuser « estimation » : le nom affiché est « Valeur indicative d'Academia », et la mention d'Academia est relue |
 | M147 A et `never-seller-side.test.ts` : rien d'Academia devant le vendeur | **D2** : « Vivre ici » au vendeur par le lien client. **D7** : les blocs cochés par le conseiller, lus sur la route bien-client | Le test s'ouvre au lien client et aux blocs de D7, et seulement à eux. L'estimation, le DPE, un numéro de rue et une vente à l'adresse même restent interdits côté vendeur, prouvé par un test avec des valeurs pièges |
 | M147 A : « ACM ne garde pas ses propres versions » | **D4** : aucune copie à l'écran, sauf dans un document remis au vendeur, où les blocs sont figés avec leur source et leur date de lecture | Une décision écrite. Le document figé suit la conservation du dossier et part avec lui ; les procédures d'effacement A et B le comptent |
-| M119 : jamais l'adresse exacte d'un bien hors mandat devant l'acquéreur. M147 A : le lien « Vivre ici » part vers l'acquéreur pour un mandat signé seulement | **A3, décision de Jean-Guy du 15/11** : le lien « Vivre ici » se colle sur tout bien d'une sélection acquéreur, hors mandat compris, sans attendre de version « quartier ». La page client montre la rue sans numéro et un repère à environ 100 m (vérifié par Laurent dans son code) ; c'est le conseiller qui choisit de partager le lien | Une exception assumée à M119, écrite dans DECISIONS.md avec son test avant le code. Au partage du lien d'un bien hors mandat, ACM affiche : « Ce lien montre la rue (sans numéro) et un repère à environ 100 m. » Une migration : le lien est rangé sur le bien de la sélection, pas sur le dossier vendeur. Le gardien-sql la relit |
 | La clé par conseiller (version 2 de ce document, D3) | **15/11** : une seule clé pour tout ACM, sur un compte technique de Mon secteur. Plus de clé par conseiller, plus d'écran Profil → « Academia », plus de quota par conseiller | Plus de table ni de chiffrement : la clé est un secret du serveur, posé dans Vercel par Jean-Guy (§3.1). Aucune migration pour la clé |
 | `/confidentialite` : « ACM Studio n'envoie rien à Academia » | Ce qui part : l'adresse, le type, les pièces, la surface et une référence opaque du bien, au nom d'ACM Studio. Et D7 : des données publiques choisies peuvent figurer dans le document du vendeur | Le texte proposé, mis à jour (`missions/ACADEMIA_API-confidentialite-pour-le-juriste.md`). Rien ne s'allume avant qu'il soit en ligne |
 
@@ -54,18 +56,10 @@ avant le code.
 **Ce qu'ACM envoie et ce qu'il garde :**
 - **Il envoie** l'adresse, le type, les pièces, la surface et une **référence opaque du bien**,
   jamais un nom (décision de Jean-Guy, 15/11) :
-  - un bien vendeur, et un mandat signé dans une sélection acquéreur : l'identifiant du bien vendeur
+  - le bien vendeur : l'identifiant du bien vendeur
     dans ACM (un UUID tiré au hasard, sans nom ni signification). Un même bien garde la même
     référence des deux côtés, donc un seul dossier Academia ;
-  - un bien hors mandat d'une sélection (concurrent, bien démarché, annonce du marché) : un UUID tiré
-    au hasard par ACM la première fois, un par bien et par agence, gardé dans la table du lien
-    collé de la mission A3, repérée par la clé du bien de la boucle (M134, M139). Ni la clé
-    elle-même (`listing:<portail>:<numéro>` désigne l'annonce suivie), ni l'identifiant d'un
-    concurrent (une annonce a plusieurs copies, M98 ; une annonce du marché n'a pas de ligne), ni
-    celui d'un bien de sélection (il change à chaque nouvelle sélection, M134). **Une migration** :
-    une colonne de plus sur la table de l'A3, avec l'identifiant du dossier Academia, au lot D ;
-  - pour un bien hors mandat, ACM n'envoie qu'une adresse confirmée (Localisateur ou conseiller,
-    M75, M84). Sans elle, aucun appel : le conseiller colle le lien à la main, comme dans l'A3.
+  - aucun bien hors mandat (décision de Jean-Guy, 16/11).
 
   Jamais Jamais le titre, le texte ou le lien d'une annonce, ni le nom, le téléphone ou l'e-mail
   d'une personne (règle 1 du contrat). Un test d'ACM le prouve sur la charge envoyée.
@@ -98,12 +92,9 @@ avant le code.
 l'affiche qu'aux opérateurs, en bas de `/erreurs`, à côté des budgets (M100, M151). Plus rien sur Mon
 profil.
 
-**Le suivi des opérateurs distingue les dossiers créés côté vendeur et côté acquéreur** (décision de
-Jean-Guy, 15/11). `GET /moi` ne donne que le total : ACM compte donc lui-même chaque `POST /dossiers`
-qui a créé un dossier (`reutilise` faux : lu pour compter, jamais affiché), avec son côté (vendeur ou
-acquéreur), son agence et l'heure de la base, dans une trace sur le modèle de `ai_usage` (M151).
-`/erreurs` dit alors « Aujourd'hui : 37 dossiers sur 200 · 22 côté vendeur, 15 côté acquéreur », et
-par agence. **Une migration**, au premier lot qui crée des dossiers (lot B).
+**Le suivi des opérateurs.** Depuis le 16/11, seul le bien vendeur part vers Academia : le côté
+acquéreur n'existe plus, et `GET /moi` (`utilises_aujourdhui`) suffit. `/erreurs` dit
+« Aujourd'hui : 37 dossiers sur 200 ». Aucune trace propre à ACM, aucune migration pour cela.
 
 **Ce que fait ACM selon la réponse :**
 - les droits décident des boutons : sans `lien_client`, pas de « Créer le lien » ;
@@ -164,7 +155,6 @@ d'aujourd'hui sans le changer, et `expire_le`. **Un lien client dure 30 jours** 
 
 **Ce que fait ACM :**
 - **pour un mandat signé**, il pose le lien sur le dossier vendeur ;
-- **pour un bien de sélection (A3)**, il pose le lien sur le bien de la sélection ;
 - **un lien expiré** n'est plus envoyé. ACM propose de le prolonger si Laurent l'ouvre, sinon d'en
   créer un nouveau, et le dit au conseiller (« Le lien « Vivre ici » a expiré le … »). La date vient
   de `expire_le`, jamais d'un calcul d'ACM.
@@ -191,8 +181,8 @@ Aucun code avant l'accord sur les maquettes, sur tablette, téléphone et ordina
    l'aperçu de ce que le vendeur verra.
 4. **D7, le ou les écrans du Live** qui montrent ces blocs. Leur place est à trancher (§5, point 1).
 5. **D7, la section du document final** (synthèse ou Étude de marché), avec sa source et sa date.
-6. **A3** : le champ « Vivre ici » sur un bien de sélection acquéreur, et, au partage du lien d'un
-   bien hors mandat, la ligne « Ce lien montre la rue (sans numéro) et un repère à environ 100 m. »
+6. Le lien « Vivre ici » du mandat montré au vendeur, dans la présentation et le document final
+   (décision de Jean-Guy du 14/11).
 7. `/erreurs`, pour les opérateurs : l'offre, le plafond du jour et ce qui en est utilisé.
 
 L'écran Mon profil → « Academia » disparaît du périmètre.
@@ -220,25 +210,22 @@ L'écran Mon profil → « Academia » disparaît du périmètre.
    ou seulement « Créer un nouveau lien ».
 6. **D4** : un document remis au vendeur fige ses blocs. Gardés combien de temps ? Ma proposition :
    comme la synthèse, avec le dossier, et effacés avec lui.
-7. **A4** : la conservation chez Mon secteur du dossier et de l'adresse, y compris celle d'un bien
-   hors mandat trouvée par le Localisateur. C'est la réponse de Laurent, attendue pour le texte de
+7. **A4** : la conservation chez Mon secteur du dossier et de l'adresse du bien vendeur. C'est la réponse de Laurent, attendue pour le texte de
    la juriste.
 8. **L'éditeur des deux outils** (contrat §6) : s'ils ne sont pas la même société, il faut un
    accord entre les deux éditeurs. Cela conditionne le texte de confidentialité.
 
 Réglés le 15/11 :
-- le repère de la page « Vivre ici » (A3, ouvert hors mandat) ;
 - les ventes à l'adresse même, absentes de la route bien-client ;
-- le plafond commun : rien pendant la bêta, les opérateurs suivent la consommation, côté vendeur et
-  côté acquéreur (§3.2). Un lien ne compte pas, la création du dossier d'une adresse nouvelle
+- le plafond commun : rien pendant la bêta, les opérateurs suivent la consommation (§3.2). Un lien ne compte pas, la création du dossier d'une adresse nouvelle
   compte une fois (Laurent) ;
-- la référence d'un bien de sélection acquéreur (§3) ;
 - les noms des clés : `ACADEMIA_API_KEY` et `ACADEMIA_API_KEY_DEMO`, posées par Jean-Guy dans
   Vercel quand Laurent les donnera.
 
-Réglé le 16/11 : avant l'API, ACM ne vérifie pas qu'un lien collé est expiré ; il prévient le
-conseiller aux 25e et 30e jours et le lien reste montré (A3). La date d'expiration viendra de
-`expire_le` (§3.5).
+Réglé le 16/11 : « Vivre ici » seulement pour le bien vendeur ; le lien créé par l'API sert au
+vendeur et à chaque acquéreur à qui le bien est proposé. Un lien collé à la main (le repli, sans
+clé) n'a pas de date d'expiration connue : ACM prévient le conseiller aux 25e et 30e jours ; un lien
+créé par l'API suit `expire_le` (§3.5).
 
 ## 6. La mission côté ACM, une fois le contrat gelé
 
@@ -251,14 +238,5 @@ conseiller aux 25e et 30e jours et le lien reste montré (A3). La date d'expirat
   valeur indicative (D1, avec la règle de CLAUDE.md réécrite et son test).
 - **Lot C** (maquette d'abord) : D7. Le choix des blocs, le Live, le document figé, la route
   bien-client doublement relue, et `never-seller-side` ouvert bloc par bloc.
-- **Lot D** : le lien client par l'API, puis la marche 2 côté acquéreur. Une migration : la
-  référence opaque et l'identifiant du dossier Academia sur la table de l'A3 (§3).
-
-**La mission du lien collable sur tout bien d'une sélection acquéreur (A3)** : son périmètre est
-`missions/A3-VIVRE_ICI_SUR_TOUT_BIEN-perimetre.md`, ses maquettes `missions/maquettes/A3-*`. Elle **reprend dès maintenant,
-hors mandat compris**, sans attendre l'API : elle colle le lien à la main jusqu'à la marche 2. Son
-ordre : le périmètre et la maquette d'abord, puis le feu vert de Jean-Guy ; ensuite l'exception à
-M119 écrite dans DECISIONS.md avec son test, la migration relue par le gardien-sql, et le code.
-
-**Avant tout lot de l'API** : le dépôt passé en privé (D6). Ni le contrat ni une clé ne sont écrits
-dans le dépôt avant. Les tests jouent l'exemple et le schéma de Laurent, jamais le vrai service.
+Le découpage en lots du 16/11 (« Vivre ici » en un clic d'abord, puis le dossier d'adresse pour le
+conseiller, puis les pièces montrées au vendeur) remplace celui-ci : `PLAN_ACADEMIA_EN_UN_CLIC.md`.
