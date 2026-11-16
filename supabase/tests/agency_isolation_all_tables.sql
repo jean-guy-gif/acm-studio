@@ -110,6 +110,9 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'competitor_listing_copies.source' then $v$'page'$v$
     -- Mission 151 — la lecture par l'IA : son usage, de la liste.
     when 'ai_usage.purpose' then $v$'notes'$v$
+    -- Mission 156 — le lien « Vivre ici » d'un bien hors mandat : une annonce et un lien d'Academia.
+    when 'property_living_here_links.property_key' then $v$'listing:exemple:' || substr(md5(random()::text), 1, 8)$v$
+    when 'property_living_here_links.url' then $v$'https://app.myacademia.ai/l/essai'$v$
     else null
   end
 $$;

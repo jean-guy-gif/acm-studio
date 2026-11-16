@@ -9,6 +9,8 @@ import {
   createDossierLink,
   removeDossierLink,
 } from '@/features/buyer-dossier/actions/dossier-links';
+import { LivingHereInfo } from '@/features/academia/components/living-here-info-line';
+import { livingHereSharePrefix } from '@/features/academia/services/living-here-info';
 import { BuyerGoneNotice } from '@/features/buyer-dossier/components/buyer-gone-notice';
 import { recordLinkShared } from '@/features/buyers/actions/relaunch';
 import {
@@ -29,12 +31,15 @@ export function DossierLinkButton({
   links,
   advisorFirstName,
   language = 'fr',
+  livingHereLetters = [],
 }: {
   buyerId: string;
   links: DossierLinkView[];
   advisorFirstName: string | null;
   // Mission 140 — le message prérempli, dans la langue de l'acquéreur.
   language?: TextLanguage;
+  // Mission 156 — les biens hors mandat dont le lien « Vivre ici » part avec ce lien.
+  livingHereLetters?: string[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -86,6 +91,7 @@ export function DossierLinkButton({
           advisorFirstName={advisorFirstName}
           buyerId={buyerId}
           language={language}
+          livingHereLetters={livingHereLetters}
         />
       ) : null}
       {links.length > 0 ? (
@@ -132,10 +138,14 @@ export function DossierLinkShare({
   advisorFirstName,
   buyerId = null,
   language = 'fr',
+  livingHereLetters = [],
 }: {
   url: string;
   advisorFirstName: string | null;
   language?: TextLanguage;
+  // Mission 156 — la ligne d'information, une fois, au moment du partage, quand le lien porte le
+  // « Vivre ici » d'un bien hors mandat (planche A3-1 ; retouche de Jean-Guy, 16/11).
+  livingHereLetters?: string[];
   // Mission 135 — le premier partage est noté : c'est lui qui « envoie » la sélection (relance à
   // 48 h sans réponse). En fond, sans retenir le geste.
   buyerId?: string | null;
@@ -157,6 +167,9 @@ export function DossierLinkShare({
       >
         {text}
       </p>
+      {livingHereLetters.length > 0 ? (
+        <LivingHereInfo prefix={livingHereSharePrefix(livingHereLetters)} />
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"

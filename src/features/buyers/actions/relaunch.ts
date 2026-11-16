@@ -4,6 +4,9 @@ import { clientTexts, textLanguage } from '@/lib/client-texts';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { readPropertyLivingLinks } from '@/features/academia/queries/read-property-living-links';
+import { deckLetter } from '@/features/academia/services/living-here-info';
+import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
 import { getRelaunchFacts } from '@/features/buyers/queries/get-relaunch-facts';
@@ -20,8 +23,17 @@ import { toSelection } from '@/features/ideal-properties/services/ideal-selectio
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
+// Mission 156 — `livingHereLetters` : les biens hors mandat dont le lien « Vivre ici » part avec le
+// lien de la sélection ; l'écran dit la ligne d'information au-dessus des boutons de partage.
 export type PrepareRelaunchResult =
-  | { ok: true; message: string; phone: string | null; email: string | null; subject: string }
+  | {
+      ok: true;
+      message: string;
+      phone: string | null;
+      email: string | null;
+      subject: string;
+      livingHereLetters: string[];
+    }
   | { ok: false; error: string };
 export type PlainRelaunchResult = { ok: true } | { ok: false; error: string };
 
@@ -112,6 +124,16 @@ export async function prepareRelaunch(buyerId: unknown): Promise<PrepareRelaunch
   );
   const link = await createDossierLink(buyer.id, false);
   if (!link.ok) return { ok: false, error: link.error };
+  // Une lecture en échec n'empêche pas la relance : le lien de l'acquéreur s'ouvre sans « Vivre
+  // ici » (la lecture du dossier), et l'échec est au journal.
+  const living = livingHereEverywhereOpen()
+    ? await readPropertyLivingLinks(client, agencyId, selection.items)
+    : null;
+  const livingHereLetters = living?.ok
+    ? selection.items.flatMap((item, index) =>
+        item.source !== 'project' && living.links.has(item.id) ? [deckLetter(index)] : [],
+      )
+    : [];
   return {
     ok: true,
     message: relaunchMessage({
@@ -126,6 +148,7 @@ export async function prepareRelaunch(buyerId: unknown): Promise<PrepareRelaunch
     subject: clientTexts(buyer.language).buyer.messages.relaunch.subject,
     phone: buyer.phone,
     email: buyer.email,
+    livingHereLetters,
   };
 }
 

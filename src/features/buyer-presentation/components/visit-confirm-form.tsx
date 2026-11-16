@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
@@ -10,8 +11,14 @@ import {
   fieldLabel,
   hintText,
   inputBase,
+  link as linkStyle,
 } from '@/components/ui/styles';
-import { confirmVisit } from '@/features/buyer-presentation/actions/confirm-visit';
+import { LivingHereInfo } from '@/features/academia/components/living-here-info-line';
+import { AGE_WARN_CLASS } from '@/features/academia/components/living-here-field';
+import {
+  confirmVisit,
+  type ConfirmVisitLivingHere,
+} from '@/features/buyer-presentation/actions/confirm-visit';
 import {
   LIVING_HERE_RETRY,
   LIVING_HERE_SKIP,
@@ -23,8 +30,10 @@ const LOST = 'Connexion perdue — réessayez.';
 // Mission 142 — « Confirmer la visite » : le jour et l'heure, un message dans la langue de
 // l'acquéreur avec un lien vers sa sélection. L'outil n'envoie rien. Mission 146 (partie B) —
 // l'étape ou le lien de la carte l'ouvre (`VisitActions`). Mission 147 (partie A) — et le lien
-// « Vivre ici » d'Academia du bien, s'il est collé sur le mandat.
-export function VisitConfirmForm({ visitId }: { visitId: string }) {
+// « Vivre ici » d'Academia du bien, s'il est collé sur le mandat. Mission 156 — ou sur le dossier
+// acquéreur, pour un bien hors mandat : la ligne d'information au-dessus des boutons de partage,
+// l'âge du lien sous le message (planche A3-2).
+export function VisitConfirmForm({ visitId, buyerId }: { visitId: string; buyerId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +44,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
     phone: string | null;
     email: string | null;
     subject: string;
+    livingHere: ConfirmVisitLivingHere;
   } | null>(null);
   const [note, setNote] = useState<string | null>(null);
   // Mission 147 (partie A) — le lien « Vivre ici » du mandat n'a pas pu être lu : le conseiller
@@ -105,6 +115,20 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
           >
             {prepared.message}
           </p>
+          {prepared.livingHere.ageLine?.tone === 'warn' ? (
+            <p className={AGE_WARN_CLASS} data-testid="visit-confirm-living-age">
+              Lien « Vivre ici » {prepared.livingHere.ageLine.text.replace(/^Collé/, 'collé')}
+            </p>
+          ) : null}
+          {prepared.livingHere.shared ? <LivingHereInfo /> : null}
+          {prepared.livingHere.missing ? (
+            <p className={hintText} data-testid="visit-confirm-living-missing">
+              Ce bien n’a pas de lien « Vivre ici ».{' '}
+              <Link href={`/acquereurs/${buyerId}/dossier#vivre-ici`} className={linkStyle}>
+                Le coller sur le dossier acquéreur
+              </Link>
+            </p>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"

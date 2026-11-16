@@ -49,6 +49,8 @@ const CLEANED = [
   'competitor_decisions',
   // Mission 152 — la copie de l'annonce de chaque concurrent part avec lui.
   'competitor_listing_copies',
+  // Mission 156 — les liens « Vivre ici » collés sur les biens hors mandat.
+  'property_living_here_links',
   'competitor_prospecting_files',
   'follow_up_contacts',
   'listing_observations',
@@ -238,6 +240,9 @@ begin
   delete from public.stream_estate_results where agency_id = v_agency;
   -- Mission 152 — la copie de l'annonce part avec son concurrent (cascade), supprimée ici aussi.
   delete from public.competitor_listing_copies where agency_id = v_agency;
+  -- Mission 156 — les liens « Vivre ici » des biens hors mandat (ceux d'un concurrent partent avec
+  -- lui ; ceux d'une annonce, ici).
+  delete from public.property_living_here_links where agency_id = v_agency;
   delete from public.comparables where agency_id = v_agency;
   delete from public.subject_properties where agency_id = v_agency;
   delete from public.projects where agency_id = v_agency;

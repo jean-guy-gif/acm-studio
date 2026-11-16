@@ -275,7 +275,7 @@ export function VisitActions({
         ) : null}
       </div>
 
-      {opened === 'confirm' ? <VisitConfirmForm visitId={visitId} /> : null}
+      {opened === 'confirm' ? <VisitConfirmForm visitId={visitId} buyerId={buyerId} /> : null}
       {opened === 'done' ? (
         <VisitDoneForm requestId={visitId} onCancel={() => setOpened(null)} />
       ) : null}
