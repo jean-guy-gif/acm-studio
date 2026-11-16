@@ -83,6 +83,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           profile.agency_id,
           projectId,
           project.academia_living_here_url,
+          address,
         )
       : null;
 
@@ -126,11 +127,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             : null
         }
         signed={conclusion?.outcome === 'signed'}
-        api={
-          access && apiInitial
-            ? { address: access.demoAddress ?? address, initial: apiInitial }
-            : null
-        }
+        api={access && apiInitial ? { address, initial: apiInitial } : null}
       />
     </div>
   );

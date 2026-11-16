@@ -2767,6 +2767,7 @@ export type Database = {
           link_expires_at: string | null;
           link_url: string | null;
           project_id: string;
+          property_address: string;
           requested_at: string;
           requested_by: string | null;
           state: string;
@@ -2782,6 +2783,7 @@ export type Database = {
           link_expires_at?: string | null;
           link_url?: string | null;
           project_id: string;
+          property_address: string;
           requested_at?: string;
           requested_by?: string | null;
           state: string;
@@ -2796,6 +2798,7 @@ export type Database = {
           link_expires_at?: string | null;
           link_url?: string | null;
           project_id?: string;
+          property_address?: string;
           requested_at?: string;
           requested_by?: string | null;
           state?: string;

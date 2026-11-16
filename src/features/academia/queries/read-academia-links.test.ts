@@ -15,6 +15,14 @@ const NOW = new Date('2026-11-16T10:00:00Z');
 const state = vi.hoisted(() => ({
   projects: [] as Record<string, unknown>[],
   dossiers: [] as Record<string, unknown>[] | null,
+  subjects: [
+    {
+      project_id: 'p1',
+      address: '4 chemin des Restanques Hautes',
+      postal_code: '06140',
+      city: 'Vence',
+    },
+  ] as Record<string, unknown>[],
 }));
 const db = fakeSupabase((calls) => {
   const last = calls.map((call) => call.method).lastIndexOf('from');
@@ -22,6 +30,7 @@ const db = fakeSupabase((calls) => {
   if (table === 'projects') return { data: state.projects };
   if (table === 'project_meeting_conclusions')
     return { data: [{ project_id: 'p1' }, { project_id: 'p2' }] };
+  if (table === 'subject_properties') return { data: state.subjects };
   if (table === 'project_academia_dossiers') {
     return state.dossiers ? { data: state.dossiers } : { error: { message: 'lecture impossible' } };
   }
@@ -30,6 +39,14 @@ const db = fakeSupabase((calls) => {
 
 beforeEach(() => {
   db.reset();
+  state.subjects = [
+    {
+      project_id: 'p1',
+      address: '4 chemin des Restanques Hautes',
+      postal_code: '06140',
+      city: 'Vence',
+    },
+  ];
   state.projects = [
     {
       id: 'p1',
@@ -43,7 +60,12 @@ beforeEach(() => {
     },
   ];
   state.dossiers = [
-    { project_id: 'p1', link_url: API_LINK, link_expires_at: '2026-12-10T00:00:00Z' },
+    {
+      project_id: 'p1',
+      property_address: '4 chemin des Restanques Hautes, 06140 Vence',
+      link_url: API_LINK,
+      link_expires_at: '2026-12-10T00:00:00Z',
+    },
   ];
 });
 
@@ -65,7 +87,12 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
 
   it('créé par l’API et expiré : il ne part plus', async () => {
     state.dossiers = [
-      { project_id: 'p1', link_url: API_LINK, link_expires_at: '2026-11-15T00:00:00Z' },
+      {
+        project_id: 'p1',
+        property_address: '4 chemin des Restanques Hautes, 06140 Vence',
+        link_url: API_LINK,
+        link_expires_at: '2026-11-15T00:00:00Z',
+      },
     ];
     const read = await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1', 'p2'], NOW);
     expect(read.ok && [...read.links.keys()]).toEqual(['p2']);
@@ -80,11 +107,29 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
       },
     ];
     state.dossiers = [
-      { project_id: 'p1', link_url: API_LINK, link_expires_at: '2026-11-15T00:00:00Z' },
+      {
+        project_id: 'p1',
+        property_address: '4 chemin des Restanques Hautes, 06140 Vence',
+        link_url: API_LINK,
+        link_expires_at: '2026-11-15T00:00:00Z',
+      },
     ];
     const read = await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1'], NOW);
     expect(read.ok && read.links.get('p1')).toBe(PASTED);
     expect(read.ok && read.dates.get('p1')).toBe('2026-11-14T09:00:00Z');
+  });
+
+  it('l’adresse du bien changée depuis la demande : le lien de l’ancienne adresse ne part plus', async () => {
+    state.subjects = [
+      {
+        project_id: 'p1',
+        address: '6 chemin des Restanques Hautes',
+        postal_code: '06140',
+        city: 'Vence',
+      },
+    ];
+    const read = await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1', 'p2'], NOW);
+    expect(read.ok && [...read.links.keys()]).toEqual(['p2']);
   });
 
   it('les expirations illisibles : une lecture en échec, jamais « pas de lien »', async () => {

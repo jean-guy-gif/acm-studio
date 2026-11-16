@@ -69,7 +69,8 @@ export function AcademiaCard({
             address={api.address}
             initial={api.initial}
             fallback={field}
-            pasted={api.initial.kind === 'idle' && savedUrl !== null}
+            pasted={api.initial.kind === 'idle' && !api.initial.stale && savedUrl !== null}
+            signed={signed}
           />
         ) : (
           field

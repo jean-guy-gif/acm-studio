@@ -109,6 +109,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
       project_id: PROJECT,
       academia_dossier_id: FAKE_DOSSIER_ID,
       state: 'pret',
+      property_address: ADDRESS,
       address_sent: ADDRESS,
       requested_by: 'u1',
     });
@@ -145,7 +146,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     state.dossier = {
       academia_dossier_id: FAKE_DOSSIER_ID,
       state: 'en_cours',
-      address_sent: ADDRESS,
+      property_address: ADDRESS,
       link_url: null,
       link_expires_at: null,
     };
@@ -166,7 +167,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     state.dossier = {
       academia_dossier_id: FAKE_DOSSIER_ID,
       state: 'pret',
-      address_sent: ADDRESS,
+      property_address: ADDRESS,
       link_url: FAKE_LINK,
       link_expires_at: new Date(Date.now() + 10 * 86_400_000).toISOString(),
     };
@@ -179,7 +180,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     state.dossier = {
       academia_dossier_id: FAKE_DOSSIER_ID,
       state: 'pret',
-      address_sent: ADDRESS,
+      property_address: ADDRESS,
       link_url: FAKE_LINK,
       link_expires_at: new Date(Date.now() - 86_400_000).toISOString(),
     };
@@ -193,7 +194,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     state.dossier = {
       academia_dossier_id: 'dos_ancien',
       state: 'pret',
-      address_sent: '2 rue Ancienne, 06140 Vence',
+      property_address: '2 rue Ancienne, 06140 Vence',
       link_url: null,
       link_expires_at: null,
     };
@@ -202,47 +203,104 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect((server.calls[0].body as { adresse: string }).adresse).toBe(ADDRESS);
   });
 
-  it('adresse ambiguë (422) : les propositions ; le choix du conseiller part, la fiche ne change pas', async () => {
+  it('adresse ambiguë (422) : les propositions ; le choix du conseiller, revérifié, part ; la fiche ne change pas', async () => {
+    const CHOSEN = '4 chemin des Restanques, 06140 Vence';
     server = fakeAcademia({
       createDossier: [
-        { status: 422, body: { propositions: ['4 chemin des Restanques, 06140 Vence'] } },
+        { status: 422, body: { propositions: [CHOSEN] } },
+        { status: 422, body: { propositions: [CHOSEN] } },
         { status: 200, body: { id: FAKE_DOSSIER_ID, etat: 'pret' } },
       ],
     });
     vi.stubGlobal('fetch', server.fetch);
     expect(await createLivingHereLink(PROJECT)).toEqual({
       state: 'ambiguous',
-      propositions: ['4 chemin des Restanques, 06140 Vence'],
+      propositions: [CHOSEN],
     });
     expect(writes()).toEqual([]);
-    await createLivingHereLink(PROJECT, '4 chemin des Restanques, 06140 Vence');
-    expect((server.calls[1].body as { adresse: string }).adresse).toBe(
-      '4 chemin des Restanques, 06140 Vence',
-    );
+    await createLivingHereLink(PROJECT, CHOSEN);
+    // L'adresse du bien d'abord (Academia redit ses propositions), puis l'adresse choisie.
+    expect(
+      server.calls.slice(1, 3).map((call) => (call.body as { adresse: string }).adresse),
+    ).toEqual([ADDRESS, CHOSEN]);
+    expect(written('project_academia_dossiers')).toMatchObject({
+      property_address: ADDRESS,
+      address_sent: CHOSEN,
+    });
     expect(writes()).not.toContain('update subject_properties');
   });
 
+  it('une adresse « choisie » qu’Academia n’a pas proposée ne part jamais (ni un nom, ni une autre adresse)', async () => {
+    server = fakeAcademia({
+      createDossier: [
+        { status: 422, body: { propositions: ['4 chemin des Restanques, 06140 Vence'] } },
+      ],
+    });
+    vi.stubGlobal('fetch', server.fetch);
+    for (const chosen of ['M. et Mme Lopez', '12 rue de Paris, 75001 Paris']) {
+      expect(await createLivingHereLink(PROJECT, chosen)).toMatchObject({ state: 'ambiguous' });
+    }
+    expect(server.calls.map((call) => (call.body as { adresse: string }).adresse)).toEqual([
+      ADDRESS,
+      ADDRESS,
+    ]);
+    expect(writes()).toEqual([]);
+  });
+
+  it('après une adresse choisie et un dossier en préparation, la suite reconnaît le dossier du bien', async () => {
+    state.dossier = {
+      academia_dossier_id: FAKE_DOSSIER_ID,
+      state: 'en_cours',
+      property_address: ADDRESS,
+      link_url: null,
+      link_expires_at: null,
+    };
+    expect(await refreshLivingHereLink(PROJECT)).toMatchObject({ state: 'ready', url: FAKE_LINK });
+  });
+
+  it('un dossier qu’Academia n’a plus (404) : le dire, et le geste suivant en redemande un', async () => {
+    state.dossier = {
+      academia_dossier_id: FAKE_DOSSIER_ID,
+      state: 'en_cours',
+      property_address: ADDRESS,
+      link_url: null,
+      link_expires_at: null,
+    };
+    server = fakeAcademia({ readDossier: [{ status: 404, body: { erreur: 'x' } }] });
+    vi.stubGlobal('fetch', server.fetch);
+    expect((await refreshLivingHereLink(PROJECT)).state).toBe('failed');
+    expect(written('project_academia_dossiers', 'update')).toEqual({ state: 'erreur' });
+  });
+
   it('Academia en panne, au plafond, ou qui refuse : le message, rien de rangé sur le mandat', async () => {
-    const cases: [number, string][] = [
+    const { reportServerError } = await import('@/lib/app-errors/report-server-error');
+    const cases: [number, string, boolean][] = [
       [
         503,
         'Academia ne répond pas pour l’instant. Réessayez dans un moment, ou collez le lien vous-même.',
+        true,
       ],
+      // Au plafond du jour : « réessayez demain », sans « Réessayer » (Retry-After, contrat §3).
       [
         429,
         'Academia a atteint sa limite du jour : réessayez demain, ou collez le lien vous-même.',
+        false,
       ],
       [
         401,
         'Academia refuse la demande pour l’instant : l’équipe ACM Studio est prévenue. Collez le lien vous-même.',
+        true,
       ],
     ];
-    for (const [status, message] of cases) {
+    for (const [status, message, retry] of cases) {
       db.reset();
+      vi.mocked(reportServerError).mockClear();
       server = fakeAcademia({ createDossier: [{ status }, { status }] });
       vi.stubGlobal('fetch', server.fetch);
-      expect(await createLivingHereLink(PROJECT)).toEqual({ state: 'failed', message });
+      expect(await createLivingHereLink(PROJECT)).toEqual({ state: 'failed', message, retry });
       expect(writes()).toEqual([]);
+      // Chaque échec d'Academia part au journal (M100).
+      expect(reportServerError).toHaveBeenCalled();
     }
   });
 
@@ -250,7 +308,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     state.dossier = {
       academia_dossier_id: FAKE_DOSSIER_ID,
       state: 'en_cours',
-      address_sent: ADDRESS,
+      property_address: ADDRESS,
       link_url: null,
       link_expires_at: null,
     };
@@ -262,6 +320,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
       state: 'failed',
       message:
         'Academia n’a pas pu préparer le dossier de cette adresse. Vérifiez l’adresse du bien, ou collez le lien vous-même.',
+      retry: true,
     });
     expect(written('project_academia_dossiers', 'update')).toEqual({ state: 'erreur' });
   });
@@ -293,10 +352,13 @@ describe('« Créer le lien « Vivre ici » »', () => {
     state.demo = true;
     state.access = { key: 'msk_demo', demoAddress: '1 place de la Démonstration, 06000 Nice' };
     await createLivingHereLink(PROJECT);
-    expect((server.calls[0].body as { adresse: string }).adresse).toBe(
-      '1 place de la Démonstration, 06000 Nice',
-    );
+    expect(server.calls[0].body).toEqual({
+      adresse: '1 place de la Démonstration, 06000 Nice',
+      idempotence: expect.any(String),
+    });
+    // Ni l'adresse ni les caractéristiques du bien de la démo.
     expect(JSON.stringify(server.calls)).not.toContain('Restanques');
+    expect(JSON.stringify(server.calls)).not.toContain('maison');
     expect(server.calls[0].authorization).toBe('Bearer msk_demo');
   });
 

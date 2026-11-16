@@ -116,6 +116,7 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     -- Mission 157 — le dossier Academia du bien vendeur : un identifiant, un état, une adresse.
     when 'project_academia_dossiers.academia_dossier_id' then $v$'dos_' || substr(md5(random()::text), 1, 8)$v$
     when 'project_academia_dossiers.state' then $v$'en_cours'$v$
+    when 'project_academia_dossiers.property_address' then $v$'1 rue de l''Essai, 06000 Nice'$v$
     when 'project_academia_dossiers.address_sent' then $v$'1 rue de l''Essai, 06000 Nice'$v$
     else null
   end

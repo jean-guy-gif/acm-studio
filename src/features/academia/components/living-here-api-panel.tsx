@@ -27,20 +27,20 @@ import { formatDay } from '@/lib/format';
 // Mission 157 — le lien « Vivre ici » en un clic, sur la carte « Le bien dans Academia » du bien
 // vendeur (planche M157-1) : « Créer le lien « Vivre ici » » (en contour : le seul plein de la page
 // reste « Enregistrer »), l'attente pendant qu'Academia prépare le dossier (relancée toutes les
-// 10 s, 2 minutes au plus, puis à l'ouverture suivante), le lien et sa date de validité, trois jours
-// avant l'expiration en orange, expiré « Créer un lien neuf », une adresse ambiguë à choisir, et le
-// repli : le champ à coller d'aujourd'hui, replié.
+// 10 s, une demande à la fois, 2 minutes au plus, puis à l'ouverture suivante), le lien et sa date
+// de validité, trois jours avant l'expiration en orange, expiré « Créer un lien neuf », une adresse
+// ambiguë à choisir, et toujours le repli : le champ à coller d'aujourd'hui, replié.
 
 const POLL_EVERY_MS = 10_000;
 const POLL_MAX = 12;
 
 type View =
-  | { kind: 'idle' }
+  | { kind: 'idle'; stale: boolean }
   | { kind: 'waiting'; gaveUp: boolean }
   | { kind: 'ready'; url: string; expiresAt: string; expiry: LivingHereExpiry | null }
   | { kind: 'ambiguous'; propositions: string[] }
   | { kind: 'no_address' }
-  | { kind: 'failed'; message: string };
+  | { kind: 'failed'; message: string; retry: boolean };
 
 function fromState(result: LivingHereLinkState, previous: View): View {
   switch (result.state) {
@@ -58,15 +58,29 @@ function fromState(result: LivingHereLinkState, previous: View): View {
     case 'no_address':
       return { kind: 'no_address' };
     case 'failed':
-      return { kind: 'failed', message: result.message };
+      return { kind: 'failed', message: result.message, retry: result.retry };
     case 'closed':
       return {
         kind: 'failed',
         message: 'Academia n’est pas ouvert pour votre agence : collez le lien vous-même.',
+        retry: false,
       };
     case 'idle':
-      return previous.kind === 'waiting' ? { kind: 'idle' } : previous;
+      return previous.kind === 'waiting' ? { kind: 'idle', stale: false } : previous;
   }
+}
+
+function initialView(address: string | null, initial: LivingHereApiInitial): View {
+  if (!address) return { kind: 'no_address' };
+  if (initial.kind === 'waiting') return { kind: 'waiting', gaveUp: false };
+  if (initial.kind === 'unread') {
+    return {
+      kind: 'failed',
+      message: 'La demande à Academia n’a pas pu être lue : rechargez la page.',
+      retry: false,
+    };
+  }
+  return initial;
 }
 
 export function LivingHereApiPanel({
@@ -75,6 +89,7 @@ export function LivingHereApiPanel({
   initial,
   fallback,
   pasted = false,
+  signed,
 }: {
   projectId: string;
   address: string | null;
@@ -82,19 +97,20 @@ export function LivingHereApiPanel({
   // Le champ à coller d'aujourd'hui (M147 A, M156), le repli ; ouvert quand un lien y est collé.
   fallback: ReactNode;
   pasted?: boolean;
+  // Le lien ne part vers les acquéreurs que pour un mandat signé (M147 A).
+  signed: boolean;
 }) {
   const router = useRouter();
-  const [view, setView] = useState<View>(() =>
-    !address
-      ? { kind: 'no_address' }
-      : initial.kind === 'waiting'
-        ? { kind: 'waiting', gaveUp: false }
-        : initial,
-  );
+  const [view, setView] = useState<View>(() => initialView(address, initial));
   const [chosen, setChosen] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [pending, startTransition] = useTransition();
   const polls = useRef(0);
+  const inFlight = useRef(false);
+
+  const shownTo = signed
+    ? 'montré à chaque acquéreur qui a ce bien dans sa sélection'
+    : 'montré aux acquéreurs une fois le mandat signé';
 
   const create = (choice: string | null = null) =>
     startTransition(async () => {
@@ -103,6 +119,7 @@ export function LivingHereApiPanel({
         (): LivingHereLinkState => ({
           state: 'failed',
           message: 'Connexion perdue : réessayez dans un moment.',
+          retry: true,
         }),
       );
       polls.current = 0;
@@ -114,24 +131,26 @@ export function LivingHereApiPanel({
     startTransition(async () => {
       const result = await setAcademiaLivingHereLink(projectId, null);
       if (result.ok) {
-        setView({ kind: 'idle' });
+        setView({ kind: 'idle', stale: false });
         router.refresh();
       } else {
-        setView({ kind: 'failed', message: result.error });
+        setView({ kind: 'failed', message: result.error, retry: false });
       }
     });
 
-  // La préparation chez Academia : relancée toutes les 10 s, 2 minutes au plus.
+  // La préparation chez Academia : relancée toutes les 10 s, une demande à la fois, 2 minutes au plus.
   const waiting = view.kind === 'waiting' && !view.gaveUp;
   useEffect(() => {
     if (!waiting) return;
     const timer = setInterval(() => {
+      if (inFlight.current) return;
       if (polls.current >= POLL_MAX) {
         clearInterval(timer);
         setView({ kind: 'waiting', gaveUp: true });
         return;
       }
       polls.current += 1;
+      inFlight.current = true;
       void refreshLivingHereLink(projectId)
         .then((result) => {
           if (result.state !== 'waiting') {
@@ -140,7 +159,10 @@ export function LivingHereApiPanel({
             if (result.state === 'ready') router.refresh();
           }
         })
-        .catch(() => undefined);
+        .catch(() => undefined)
+        .finally(() => {
+          inFlight.current = false;
+        });
     }, POLL_EVERY_MS);
     return () => clearInterval(timer);
   }, [waiting, projectId, router]);
@@ -157,26 +179,34 @@ export function LivingHereApiPanel({
     </button>
   );
 
+  const repli = (
+    <details
+      className="text-sm text-zinc-600"
+      data-testid="living-here-fallback"
+      open={(view.kind === 'idle' && pasted) || undefined}
+    >
+      <summary className="cursor-pointer">Coller le lien à la main</summary>
+      <div className="pt-2">{fallback}</div>
+    </details>
+  );
+
   return (
     <div className="flex flex-col gap-2" data-testid="living-here-api">
       <span className={fieldLabel}>Lien « Vivre ici » pour les acquéreurs</span>
       {view.kind === 'idle' ? (
         <>
+          {view.stale ? (
+            <p className={AGE_WARN_CLASS} data-testid="living-here-stale">
+              L’adresse du bien a changé : le lien de l’ancienne adresse n’est plus montré. Créez
+              celui de la nouvelle adresse.
+            </p>
+          ) : null}
           <p className={hintText}>
             Academia prépare la page du quartier de{' '}
             <b className="font-semibold text-zinc-800">{address}</b> : les écoles, les commerces,
-            les transports. Montrée sur le lien de chaque acquéreur qui a ce bien dans sa sélection,
-            et dans « Confirmer la visite ».
+            les transports. Le lien est {shownTo}, et dans « Confirmer la visite ».
           </p>
           {button('Créer le lien « Vivre ici »')}
-          <details
-            className="text-sm text-zinc-600"
-            data-testid="living-here-fallback"
-            open={pasted || undefined}
-          >
-            <summary className="cursor-pointer">Coller le lien à la main</summary>
-            <div className="pt-2">{fallback}</div>
-          </details>
         </>
       ) : null}
       {view.kind === 'waiting' ? (
@@ -249,8 +279,7 @@ export function LivingHereApiPanel({
               </p>
             ) : (
               <p className="text-xs text-zinc-500" data-testid="living-here-valid">
-                Valable jusqu’au {formatDay(view.expiresAt, 'fr', 'short')} · montré à chaque
-                acquéreur qui a ce bien dans sa sélection
+                Valable jusqu’au {formatDay(view.expiresAt, 'fr', 'short')} · {shownTo}
               </p>
             )}
             <button
@@ -309,13 +338,10 @@ export function LivingHereApiPanel({
           <p className={errorText} role="alert" data-testid="living-here-failed">
             {view.message}
           </p>
-          {button('Réessayer')}
-          <details className="text-sm text-zinc-600" data-testid="living-here-fallback">
-            <summary className="cursor-pointer">Coller le lien à la main</summary>
-            <div className="pt-2">{fallback}</div>
-          </details>
+          {view.retry ? button('Réessayer') : null}
         </>
       ) : null}
+      {view.kind === 'ready' && view.expiry?.level !== 'expired' ? null : repli}
     </div>
   );
 }

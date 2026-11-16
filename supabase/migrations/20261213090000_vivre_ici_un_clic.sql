@@ -7,12 +7,16 @@
 -- bien hors mandat (décision de Jean-Guy, 16/11).
 --
 --   `project_academia_dossiers` : le dossier Academia d'un dossier vendeur, un au plus — son
---   identifiant chez Academia, son état (`en_cours`, `pret`, `erreur`), l'adresse envoyée (pour
---   l'oublier quand l'adresse du bien change, contrat §3.3), le lien client créé par l'API et sa
+--   identifiant chez Academia, son état (`en_cours`, `pret`, `erreur`), l'adresse du bien au moment
+--   de la demande (`property_address` : le dossier et son lien sont oubliés quand l'adresse du bien
+--   change, contrat §3.3), l'adresse envoyée (`address_sent` : la même, une adresse proposée par
+--   Academia et choisie par le conseiller, ou, dans la démo, celle de son dossier fixe), le lien
+--   client créé par l'API et sa
 --   date d'expiration donnée par Academia (`expire_le`), qui l'auteur de la demande, et quand.
 --   Écrite par le serveur seul (le navigateur peut écrire `projects`, M88 : un identifiant de dossier
 --   Academia n'y est donc jamais rangé). Lue par les membres non retirés de l'agence, colonne par
---   colonne : l'état, le lien et son expiration, jamais l'adresse envoyée ni l'identifiant Academia. Elle part avec
+--   colonne : l'état, l'adresse du bien (déjà la sienne), le lien et son expiration ; jamais l'adresse
+--   envoyée ni l'identifiant Academia. Elle part avec
 --   son dossier (cascade) ; le dossier et l'auteur sont de cette agence, vérifiés par la base.
 --
 -- Compatible avec le code de `main` : une table neuve qu'il ne lit pas. Aucune ligne modifiée.
@@ -28,6 +32,7 @@ create table public.project_academia_dossiers (
   academia_dossier_id text not null
     check (academia_dossier_id ~ '^[A-Za-z0-9_-]{1,100}$'),
   state text not null check (state in ('en_cours', 'pret', 'erreur')),
+  property_address text not null check (char_length(property_address) between 5 and 300),
   address_sent text not null check (char_length(address_sent) between 5 and 300),
   link_url text
     check (link_url is null
@@ -91,5 +96,5 @@ create policy project_academia_dossiers_agency_read on public.project_academia_d
 -- Le navigateur ne lit que ce que la carte et les liens montrent : l'état de la demande, le lien et
 -- son expiration ; jamais l'adresse envoyée ni l'identifiant du dossier chez Academia.
 revoke all on public.project_academia_dossiers from anon, authenticated;
-grant select (id, agency_id, project_id, state, link_url, link_expires_at)
+grant select (id, agency_id, project_id, state, property_address, link_url, link_expires_at)
   on public.project_academia_dossiers to authenticated;

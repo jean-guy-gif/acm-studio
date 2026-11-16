@@ -75,31 +75,34 @@ grant execute on function pg_temp.expect(text, text, text) to authenticated, ano
 -- §2 — la clé de service écrit.
 select pg_temp.act_as_service();
 select pg_temp.expect('§2 le dossier Academia du bien vendeur s''écrit, en préparation',
-  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent, requested_by, requested_at)
-    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000000', 'dos_8f2c1a9e', 'en_cours', '4 chemin des Restanques Hautes, 06140 Vence', '15711111-0000-0000-0000-0000000000a3', now() - interval '3 days')$q$), '1');
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent, requested_by, requested_at)
+    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000000', 'dos_8f2c1a9e', 'en_cours', '4 chemin des Restanques Hautes, 06140 Vence', '4 chemin des Restanques Hautes, 06140 Vence', '15711111-0000-0000-0000-0000000000a3', now() - interval '3 days')$q$), '1');
 select pg_temp.expect('§2 l''heure de la demande est celle de la base',
   (select (requested_at = now())::text from public.project_academia_dossiers where project_id = '157aaaaa-1111-0000-0000-000000000000'), 'true');
 select pg_temp.expect('§2 un dossier Academia par dossier vendeur',
-  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent)
-    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000000', 'dos_autre', 'en_cours', '4 chemin des Restanques Hautes, 06140 Vence')$q$), 'doublon');
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent)
+    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000000', 'dos_autre', 'en_cours', '4 chemin des Restanques Hautes, 06140 Vence', '4 chemin des Restanques Hautes, 06140 Vence')$q$), 'doublon');
 select pg_temp.expect('§2 le dossier vendeur d''une autre agence : refusé',
-  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent)
-    values ('157aaaaa-0000-0000-0000-000000000000', '157bbbbb-1111-0000-0000-000000000000', 'dos_x', 'en_cours', '1 rue de B, 06000 Nice')$q$), 'contrainte');
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent)
+    values ('157aaaaa-0000-0000-0000-000000000000', '157bbbbb-1111-0000-0000-000000000000', 'dos_x', 'en_cours', '1 rue de B, 06000 Nice', '1 rue de B, 06000 Nice')$q$), 'contrainte');
 select pg_temp.expect('§2 un identifiant Academia de forme inconnue : refusé',
-  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent)
-    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos/../x', 'en_cours', '2 rue de A, 06140 Vence')$q$), 'contrainte');
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent)
+    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos/../x', 'en_cours', '2 rue de A, 06140 Vence', '2 rue de A, 06140 Vence')$q$), 'contrainte');
 select pg_temp.expect('§2 un état hors liste : refusé',
-  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent)
-    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos_y', 'reutilise', '2 rue de A, 06140 Vence')$q$), 'contrainte');
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent)
+    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos_y', 'reutilise', '2 rue de A, 06140 Vence', '2 rue de A, 06140 Vence')$q$), 'contrainte');
 select pg_temp.expect('§2 un auteur d''une autre agence : refusé',
-  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent, requested_by)
-    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos_y', 'en_cours', '2 rue de A, 06140 Vence', '15711111-0000-0000-0000-0000000000b1')$q$), 'contrainte');
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent, requested_by)
+    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos_y', 'en_cours', '2 rue de A, 06140 Vence', '2 rue de A, 06140 Vence', '15711111-0000-0000-0000-0000000000b1')$q$), 'contrainte');
 select pg_temp.expect('§2 un lien sans son expiration : refusé',
   pg_temp.attempt($q$update public.project_academia_dossiers set state = 'pret', link_url = 'https://app.myacademia.ai/l/Vb4nT8wLp2'
     where project_id = '157aaaaa-1111-0000-0000-000000000000'$q$), 'contrainte');
 select pg_temp.expect('§2 un lien qui n''est pas d''Academia : refusé',
   pg_temp.attempt($q$update public.project_academia_dossiers set state = 'pret', link_url = 'https://exemple.fr/l/x', link_expires_at = now() + interval '30 days'
     where project_id = '157aaaaa-1111-0000-0000-000000000000'$q$), 'contrainte');
+select pg_temp.expect('§2 une adresse du bien trop courte : refusée',
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent)
+    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos_w', 'en_cours', 'x', '2 rue de A, 06140 Vence')$q$), 'contrainte');
 -- La demande vieillie de 2 jours (déclencheur coupé) : `now()` est figé dans la transaction.
 reset role;
 alter table public.project_academia_dossiers disable trigger project_academia_dossiers_check;
@@ -118,8 +121,8 @@ select pg_temp.expect('§2 le dossier vendeur d''un dossier Academia ne change p
 select pg_temp.expect('§2 la fonction du déclencheur est fermée au navigateur',
   has_function_privilege('authenticated', 'public.check_project_academia_dossier()', 'execute')::text, 'false');
 select pg_temp.expect('§2 un dossier dans l''autre agence, pour §1',
-  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent)
-    values ('157bbbbb-0000-0000-0000-000000000000', '157bbbbb-1111-0000-0000-000000000000', 'dos_b', 'en_cours', '1 rue de B, 06000 Nice')$q$), '1');
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent)
+    values ('157bbbbb-0000-0000-0000-000000000000', '157bbbbb-1111-0000-0000-000000000000', 'dos_b', 'en_cours', '1 rue de B, 06000 Nice', '1 rue de B, 06000 Nice')$q$), '1');
 
 -- §1 — lectures et écritures du navigateur.
 select pg_temp.act_as('15711111-0000-0000-0000-0000000000a1');
@@ -127,11 +130,13 @@ select pg_temp.expect('§1 le conseiller lit l''état et le lien du dossier Acad
   (select string_agg(state || ' ' || link_url, ',') from public.project_academia_dossiers), 'pret https://app.myacademia.ai/l/Vb4nT8wLp2');
 select pg_temp.expect('§1 … jamais l''identifiant du dossier chez Academia',
   pg_temp.attempt($q$select academia_dossier_id from public.project_academia_dossiers$q$), 'refus');
+select pg_temp.expect('§1 … l''adresse du bien, la sienne, se lit',
+  (select property_address from public.project_academia_dossiers), '4 chemin des Restanques Hautes, 06140 Vence');
 select pg_temp.expect('§1 … ni l''adresse envoyée',
   pg_temp.attempt($q$select address_sent from public.project_academia_dossiers$q$), 'refus');
 select pg_temp.expect('§1 le navigateur n''écrit pas de dossier Academia',
-  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, address_sent)
-    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos_z', 'en_cours', '2 rue de A, 06140 Vence')$q$), 'refus');
+  pg_temp.attempt($q$insert into public.project_academia_dossiers (agency_id, project_id, academia_dossier_id, state, property_address, address_sent)
+    values ('157aaaaa-0000-0000-0000-000000000000', '157aaaaa-1111-0000-0000-000000000002', 'dos_z', 'en_cours', '2 rue de A, 06140 Vence', '2 rue de A, 06140 Vence')$q$), 'refus');
 select pg_temp.expect('§1 ni n''en modifie (ni l''identifiant, ni le lien)',
   pg_temp.attempt($q$update public.project_academia_dossiers set academia_dossier_id = 'dos_b'$q$), 'refus');
 select pg_temp.expect('§1 ni n''en supprime',
@@ -151,7 +156,7 @@ update public.project_academia_dossiers set requested_at = now() - interval '5 d
 alter table public.project_academia_dossiers enable trigger project_academia_dossiers_check;
 select pg_temp.act_as_service();
 select pg_temp.expect('§2 un nouveau dossier Academia',
-  pg_temp.attempt($q$update public.project_academia_dossiers set academia_dossier_id = 'dos_neuf', state = 'en_cours', link_url = null, link_expires_at = null, address_sent = '6 chemin des Restanques Hautes, 06140 Vence'
+  pg_temp.attempt($q$update public.project_academia_dossiers set academia_dossier_id = 'dos_neuf', state = 'en_cours', link_url = null, link_expires_at = null, property_address = '6 chemin des Restanques Hautes, 06140 Vence', address_sent = '6 chemin des Restanques Hautes, 06140 Vence'
     where project_id = '157aaaaa-1111-0000-0000-000000000000'$q$), '1');
 select pg_temp.expect('§2 … l''heure de la demande repart du jour',
   (select (requested_at = now())::text from public.project_academia_dossiers where project_id = '157aaaaa-1111-0000-0000-000000000000'), 'true');
