@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { kickerLabel, pageTitle } from '@/components/ui/styles';
 import { AcademiaCard } from '@/features/academia/components/academia-card';
+import { livingHereAgeLine } from '@/features/academia/services/living-here-age';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
@@ -102,6 +103,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         addressLink={academiaLinkView({ target: 'address', address, demo })}
         livingLink={academiaLinkView({ target: 'living', address, demo })}
         savedUrl={academiaLivingHereUrl(project.academia_living_here_url)}
+        savedLine={
+          academiaLivingHereUrl(project.academia_living_here_url)
+            ? livingHereAgeLine(project.academia_living_here_pasted_at ?? null, new Date())
+            : null
+        }
         signed={conclusion?.outcome === 'signed'}
       />
     </div>

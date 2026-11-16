@@ -50,6 +50,8 @@ import {
 } from '@/features/buyers/services/buyer-journey';
 import { NO_PROGRESS } from '@/features/buyers/services/buyer-progress';
 import { BUYER_STATUS_LABELS } from '@/features/buyers/types';
+import { selectionNeedsLivingHere } from '@/features/academia/queries/read-property-living-links';
+import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 import { IdealSelectionList } from '@/features/ideal-properties/components/ideal-selection-list';
 import { PropertySheetButton } from '@/features/property-sheet/components/property-sheet-button';
 import { getIdealSelection } from '@/features/ideal-properties/queries/get-ideal-selection';
@@ -181,7 +183,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     .filter((line) => line.visitedAt != null)
     .sort((a, b) => b.visitedAt!.localeCompare(a.visitedAt!));
   // Mission 137 — et le bon de visite signé de chaque visite, toutes visites de la fiche.
-  const [letters, vouchers, signedVouchers, signedOffers] = await Promise.all([
+  // Mission 156 — le lien discret « Ajouter « Vivre ici » » (l'interrupteur ouvert seulement).
+  const [letters, vouchers, signedVouchers, signedOffers, livingHereMissing] = await Promise.all([
     getVisitLetters([...visits, ...doneVisits]),
     getVisitVouchers(
       supabase,
@@ -189,6 +192,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     ),
     profile ? getBuyerVouchers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
     profile ? getBuyerOffers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
+    selection && profile && livingHereEverywhereOpen()
+      ? selectionNeedsLivingHere(supabase, profile.agency_id, selection.items, new Date())
+      : Promise.resolve(false),
   ]);
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
   const lastAnswer =
@@ -671,6 +677,17 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                   Dossier acquéreur et lien
                 </Link>
               </div>
+              {/* Mission 156 — un bien hors mandat sans lien « Vivre ici », ou un lien de 30 jours
+                  et plus : un lien discret vers le bloc du dossier acquéreur. */}
+              {livingHereMissing ? (
+                <Link
+                  href={`/acquereurs/${buyer.id}/dossier#vivre-ici`}
+                  className="self-start text-sm font-medium text-zinc-600 underline underline-offset-2 hover:text-zinc-900"
+                  data-testid="buyer-living-here-add"
+                >
+                  Ajouter « Vivre ici »
+                </Link>
+              ) : null}
             </section>
           ) : selection ? (
             <IdealSelectionList selection={selection} />

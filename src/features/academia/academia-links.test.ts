@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => undefined }) }));
 vi.mock('@/features/projects/actions/set-academia-link', () => ({
-  setAcademiaLivingHereLink: async () => ({ ok: true, url: null }),
+  setAcademiaLivingHereLink: async () => ({ ok: true, url: null, pastedAt: null }),
 }));
 
 const { AcademiaLinks, AcademiaSalesLink, copyAddress } =
@@ -125,7 +125,11 @@ describe('AcademiaSalesLink', () => {
 });
 
 describe('AcademiaCard', () => {
-  const card = (signed: boolean, savedUrl: string | null) =>
+  const card = (
+    signed: boolean,
+    savedUrl: string | null,
+    savedLine: { tone: 'hint' | 'warn'; text: string } | null = null,
+  ) =>
     plain(
       renderToStaticMarkup(
         createElement(AcademiaCard, {
@@ -133,6 +137,7 @@ describe('AcademiaCard', () => {
           addressLink: live,
           livingLink: live,
           savedUrl,
+          savedLine,
           signed,
         }),
       ),
@@ -152,5 +157,18 @@ describe('AcademiaCard', () => {
     expect(signed).toContain('Retirer');
     // Aucun bouton plein : le seul de l'écran reste « Enregistrer » (M146 A).
     expect(signed).not.toContain('btn-filled');
+  });
+
+  it('mission 156 — l’âge du lien du mandat, et l’avertissement orange, sans cacher le lien', () => {
+    const warn =
+      'Collé il y a 34 jours : un lien d’Academia vaut 30 jours, il ne s’ouvre peut-être plus. Collez un lien neuf.';
+    const old = card(true, 'https://app.myacademia.ai/l/abc', { tone: 'warn', text: warn });
+    expect(old).toContain(warn);
+    expect(old).toContain('value="https://app.myacademia.ai/l/abc"');
+    expect(old).toContain('data-tone="warn"');
+    // Un lien d'avant la mission, sans date : aucune ligne, rien n'est inventé.
+    expect(card(true, 'https://app.myacademia.ai/l/abc', null)).not.toContain('Collé');
+    // La carte n'a pas « Ouvrir ↗ » (la maquette ne le montre pas).
+    expect(old).not.toContain('Ouvrir ↗');
   });
 });

@@ -12,6 +12,8 @@ import {
   link as linkStyle,
   sectionTitle,
 } from '@/components/ui/styles';
+import { LivingHereInfo } from '@/features/academia/components/living-here-info-line';
+import { livingHereSharePrefix } from '@/features/academia/services/living-here-info';
 import { prepareProposalLink, recordProposal } from '@/features/buyers/actions/proposals';
 import { READY_LABEL } from '@/features/buyers/services/buyer-readiness';
 import {
@@ -37,7 +39,7 @@ export type ProposeCandidate = {
   language: TextLanguage;
 };
 
-type Prepared = { url: string; selectionItemId: string };
+type Prepared = { url: string; selectionItemId: string; livingHereLetters: string[] };
 
 const EMAIL_SUBJECT = 'Un bien pour vous';
 
@@ -225,7 +227,11 @@ export function ProposeSeries({
           setError(result.error);
           return;
         }
-        setPrepared({ url: result.url, selectionItemId: result.selectionItemId });
+        setPrepared({
+          url: result.url,
+          selectionItemId: result.selectionItemId,
+          livingHereLetters: result.livingHereLetters,
+        });
       })
       .catch(() => {
         setPending(false);
@@ -259,6 +265,9 @@ export function ProposeSeries({
       >
         {message}
       </p>
+      {prepared?.livingHereLetters.length ? (
+        <LivingHereInfo prefix={livingHereSharePrefix(prepared.livingHereLetters)} />
+      ) : null}
       {prepared ? (
         <div className="flex flex-wrap gap-2">
           <button

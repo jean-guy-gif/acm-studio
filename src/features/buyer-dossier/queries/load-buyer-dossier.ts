@@ -19,6 +19,8 @@ import { signPropertyPhotos } from '@/features/subject-property-photos/services/
 import type { Database } from '@/lib/supabase/database.types';
 import type { DossierAcademiaLink } from '@/features/buyer-dossier/types';
 import { readMandateAcademiaLinks } from '@/features/academia/queries/read-academia-links';
+import { readPropertyLivingLinks } from '@/features/academia/queries/read-property-living-links';
+import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 
 type Client = SupabaseClient<Database>;
 
@@ -195,21 +197,38 @@ export async function loadBuyerDossier(
   });
 }
 
+// Mission 156 — et, l'interrupteur ouvert (jamais en production avant le texte A3 de
+// `/confidentialite`), celui de chaque bien HORS MANDAT de sa sélection, collé sur le dossier
+// acquéreur : un lien par bien pour toute l'agence. Seuls l'id du bien et le lien relu en sortent,
+// jamais la clé du bien (qui peut contenir l'adresse d'une annonce). Une lecture en échec est au
+// journal ; la page de l'acquéreur s'ouvre quand même, sans le lien.
 async function dossierAcademiaLinks(
   supabase: Client,
   agencyId: string,
   items: { id: string; source: string; reference: string }[],
 ): Promise<DossierAcademiaLink[]> {
   const own = items.filter((item) => item.source === 'project');
-  const read = await readMandateAcademiaLinks(
-    supabase,
-    agencyId,
-    own.map((item) => item.reference),
-  );
-  // Une lecture en échec est au journal ; la page de l'acquéreur s'ouvre quand même, sans le lien.
-  if (!read.ok) return [];
-  return own.flatMap((item) => {
-    const url = read.links.get(item.reference);
-    return url ? [{ itemId: item.id, url }] : [];
-  });
+  const [read, outside] = await Promise.all([
+    readMandateAcademiaLinks(
+      supabase,
+      agencyId,
+      own.map((item) => item.reference),
+    ),
+    livingHereEverywhereOpen()
+      ? readPropertyLivingLinks(supabase, agencyId, items)
+      : Promise.resolve({ ok: true as const, links: new Map<string, { url: string }>() }),
+  ]);
+  const mandates = read.ok
+    ? own.flatMap((item) => {
+        const url = read.links.get(item.reference);
+        return url ? [{ itemId: item.id, url }] : [];
+      })
+    : [];
+  const others = outside.ok
+    ? items.flatMap((item) => {
+        const link = item.source === 'project' ? undefined : outside.links.get(item.id);
+        return link ? [{ itemId: item.id, url: link.url }] : [];
+      })
+    : [];
+  return [...mandates, ...others];
 }

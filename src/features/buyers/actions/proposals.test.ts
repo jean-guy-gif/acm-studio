@@ -35,6 +35,26 @@ vi.mock('@/features/buyer-dossier/actions/dossier-links', () => ({
   }),
 }));
 
+// Mission 156 — les liens « Vivre ici » des biens hors mandat, lus avant d'écrire la sélection.
+const living = vi.hoisted(() => ({ ok: true }));
+vi.mock('@/features/academia/queries/read-property-living-links', () => ({
+  readPropertyLivingLinks: async (
+    _client: unknown,
+    _agency: unknown,
+    items: { id: string; source: string }[],
+  ) =>
+    living.ok
+      ? {
+          ok: true,
+          links: new Map(
+            items
+              .filter((item) => item.source !== 'project')
+              .map((item) => [item.id, { url: 'https://app.myacademia.ai/l/x', pastedAt: null }]),
+          ),
+        }
+      : { ok: false },
+}));
+
 const { prepareProposalLink, recordProposal } = await import('@/features/buyers/actions/proposals');
 
 const BUYER = '22222222-2222-4222-8222-222222222222';
@@ -122,6 +142,7 @@ const answers: Record<string, unknown> = {};
 
 beforeEach(() => {
   profile.current = { id: 'u1', agency_id: 'agency-a', removed_at: null };
+  living.ok = true;
   for (const key of Object.keys(answers)) delete answers[key];
   fake = fakeSupabase((calls) => ({ data: answers[tableOf(calls)] ?? null }));
   service.client = fake.client;
@@ -171,7 +192,15 @@ describe('le lien de sa sélection, ce bien en tête', () => {
     answers.buyer_selections = { id: 's-new', buyer_words: null };
     answers.buyer_selection_items = [{ id: ITEM_ID, position: 1 }];
     const result = await prepareProposalLink(BUYER, KEY);
-    expect(result).toEqual({ ok: true, url: 'https://acm/dossier/t', selectionItemId: ITEM_ID });
+    // Mission 156 — les biens hors mandat de la nouvelle sélection (le concurrent en tête, puis le
+    // bien recopié de la sélection actuelle) ont leur lien « Vivre ici » : la ligne d'information
+    // des biens A et B, au partage.
+    expect(result).toEqual({
+      ok: true,
+      url: 'https://acm/dossier/t',
+      selectionItemId: ITEM_ID,
+      livingHereLetters: ['A', 'B'],
+    });
     expect(fake.writes()).toEqual(['insert buyer_selections', 'insert buyer_selection_items']);
     const rows = fake.calls.filter((call) => call.method === 'insert')[1]?.args[0] as Record<
       string,
@@ -183,6 +212,18 @@ describe('le lien de sa sélection, ce bien en tête', () => {
       reference: 'c1',
       listed_price: 779_000,
     });
+  });
+
+  // Mission 156 — une lecture en échec n'écrit rien : jamais un lien hors mandat parti sans la
+  // ligne d'information (Jean-Guy, 16/11).
+  it('les liens « Vivre ici » illisibles : ni sélection ni lien, le message le dit', async () => {
+    answers.buyers = { budget_max: 790_000 };
+    living.ok = false;
+    expect(await prepareProposalLink(BUYER, KEY)).toEqual({
+      ok: false,
+      error: 'Les liens « Vivre ici » des biens n’ont pas pu être lus. Réessayez dans un instant.',
+    });
+    expect(fake.writes()).toEqual([]);
   });
 
   // Mission 145 — un bien de l'agence de sa sélection actuelle qui ne se propose plus (vendeur à

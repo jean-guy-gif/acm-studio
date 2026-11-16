@@ -27,7 +27,7 @@ export function copyAddress(text: string, clipboard: Clipboard): Promise<'copied
   );
 }
 
-function useCopyOnOpen() {
+export function useCopyOnOpen() {
   const [state, setState] = useState<CopyState>('idle');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -48,7 +48,7 @@ function useCopyOnOpen() {
   return { state, copy };
 }
 
-function CopyMessage({ state, address }: { state: CopyState; address: string | null }) {
+export function CopyMessage({ state, address }: { state: CopyState; address: string | null }) {
   if (state === 'copied') {
     return (
       <p
