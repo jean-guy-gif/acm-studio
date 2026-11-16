@@ -1,0 +1,127 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>A3 · 3 — Le lien de l’acquéreur, sur son téléphone</title><style>
+@font-face{font-family:Inter;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/inter/inter-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Montserrat;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2') format('woff2');font-weight:600}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2') format('woff2');font-weight:700}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}.sheet-sub{font-size:13px;color:#3f3f46;max-width:1720px;line-height:1.5}
+.layout{display:flex;gap:26px;align-items:flex-start}.rows{display:flex;flex-direction:column;gap:26px}.row{display:flex;gap:22px;align-items:flex-start}
+.col{display:flex;flex-direction:column}
+.ftitle{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff;background:#12875a}.st.before{background:#71717a}
+.notes{width:400px;display:flex;flex-direction:column;gap:12px;position:sticky;top:0}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:#3d3200}.note b.t{color:#5b4a00}
+code{font-size:12px;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+.frame{background:#f7f8fb;border:1px solid #a1a1aa;overflow:hidden;position:relative;display:flex}
+.frame.desk{width:1280px;min-height:640px}.frame.tab{width:820px;min-height:900px}.frame.phone{width:390px;min-height:844px;flex-direction:column}
+.frame.print{background:#f4f4f5}
+.side{width:256px;flex:none;background:#fff;border-right:1px solid #e4e4e7;padding:22px 18px;display:flex;flex-direction:column;gap:26px}
+.tab .side{width:220px}
+.logo{display:flex;align-items:center;gap:6px;color:#00527a}.logo span{display:flex;flex-direction:column;line-height:1}
+.logo b{font-family:Montserrat;font-size:15px;font-weight:800;letter-spacing:.08em}.logo i{font-style:normal;font-family:Montserrat;font-size:7px;font-weight:600;letter-spacing:.2em;margin-top:2px}
+nav{display:flex;flex-direction:column;gap:4px;flex:1}.grp{display:flex;flex-direction:column;gap:2px}.grp.sep{border-top:1px solid #e4e4e7;margin-top:10px;padding-top:12px}
+.gt{font-family:Montserrat;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#00527a;padding:0 12px 4px}
+.it{display:flex;flex-direction:column;border-radius:12px;padding:7px 12px}.il{display:flex;justify-content:space-between;font-family:Rajdhani,Montserrat;font-size:16px;font-weight:600;color:#52525b}.ih{font-size:11.5px;color:#71717a}
+.it.on{background:#eaf5ff}.it.on .il{color:#00527a}
+.pb{border-radius:999px;background:#ea580c;color:#fff;font-family:Inter;font-size:11px;font-weight:700;padding:1px 7px;align-self:center}
+.acc{display:flex;gap:9px;align-items:center;border:1px solid #e4e4e7;border-radius:12px;padding:9px;font-size:11px;color:#71717a}.acc b{color:#18181b;font-size:12px}
+.av{width:30px;height:30px;border-radius:99px;background:#eaf5ff;color:#00527a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:none}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #e4e4e7;background:#fff}.topbar .logo{flex:1}
+.burger{width:38px;height:38px;border:1px solid #e4e4e7;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.main{flex:1;min-width:0;padding:30px 36px 40px;display:flex;flex-direction:column;gap:16px;container-type:inline-size;overflow:hidden}
+.print .main{align-items:center}.print .card{width:100%;max-width:794px}
+.tab .main{padding:24px 24px 40px}.phone .main{padding:16px 14px 40px;gap:12px}
+.a4{width:100%;max-width:794px;height:160px;border:1px dashed #a1a1aa;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;color:#71717a;padding:0 16px;text-align:center}
+.back{font-size:13px;color:#71717a}
+.h1{font-family:Rajdhani,Montserrat;font-weight:700;font-size:36px;line-height:1.05;color:#00527a}.phone .h1{font-size:28px}
+.h2{font-family:Rajdhani,Montserrat;font-weight:700;font-size:23px;color:#00527a}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:14px}.phone .card{padding:14px;border-radius:14px}
+.gh{display:flex;justify-content:space-between;align-items:center;gap:10px}.lnk{color:#00527a;font-weight:700;font-size:13px;text-decoration:underline}
+.lead{font-size:14px;color:#3f3f46;line-height:1.45;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hint{font-size:12.5px;color:#71717a;line-height:1.45}
+.fs{border:none;display:flex;flex-direction:column;gap:8px}.fs legend{font-size:14px;font-weight:700;color:#3f3f46;margin-bottom:6px}
+.fs.new{border:2px solid #00527a;border-radius:14px;padding:12px 14px;background:#fbfdff}
+.newtag{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:#12875a;color:#fff;border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.chk{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#3f3f46}.box{width:16px;height:16px;border:1.5px solid #71717a;border-radius:4px;flex:none}
+.lrs{list-style:none;display:flex;flex-direction:column;gap:10px}
+.lr{border:1px solid #e4e4e7;border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:8px;background:#fff}
+.lrh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.badge{font-size:12px;font-weight:600;border-radius:7px;padding:2px 8px;background:#eaf5ff;color:#00527a}.badge.agency{background:#ecfdf5;color:#047857}
+.okdot{width:9px;height:9px;border-radius:99px;background:#12875a;display:inline-block}
+.url{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px}.u{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#18181b;background:#f4f4f5;border-radius:8px;padding:6px 9px;word-break:break-all}
+.paste{display:flex;gap:8px;align-items:stretch}.paste .in{flex:1}.paste.col{flex-direction:column}
+.in{font-style:normal;font-weight:400;border:1px solid #e4e4e7;border-radius:10px;padding:9px 12px;color:#71717a;font-size:13.5px;background:#fff;display:block}.in.on{color:#18181b}
+.info{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:#3f3f46;background:#eaf5ff;border-radius:9px;padding:7px 10px;line-height:1.4}
+.ico{flex:none;width:17px;height:17px;border-radius:99px;background:#00527a;color:#fff;font-size:11px;font-weight:800;font-style:italic;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.warn{font-size:13px;font-weight:600;color:#b45309;background:#fff7e6;border-radius:9px;padding:7px 10px;line-height:1.4}
+.err{font-size:13px;font-weight:600;color:#b91c1c;background:#fef2f2;border-radius:9px;padding:7px 10px;line-height:1.4}
+.sel{list-style:none;display:flex;flex-direction:column;gap:8px}.sel li{display:flex;gap:10px;align-items:center;font-size:13.5px}.sel small{display:block;font-size:12px;color:#71717a}
+.sp{width:56px;height:42px;border-radius:8px;background:#e4e4e7 center/cover;flex:none}
+.discreet{font-size:13px}.lnk.soft{font-weight:600;color:#52525b}
+.share{border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.tl{font-size:13px;font-weight:800;color:#00527a}
+.msg{font-size:13.5px;line-height:1.55;color:#18181b;background:#f4f4f5;border-radius:10px;padding:10px 12px;word-break:break-word}
+.msg mark{background:#dff3e8;color:#18181b;padding:0 2px;border-radius:3px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font-family:inherit;font-size:14px;font-weight:700;border-radius:12px;padding:10px 16px;border:1.5px solid #00527a;background:#fff;color:#00527a;white-space:nowrap}
+.btn.sm{font-size:13px;padding:7px 12px;border-radius:10px}.btn.fill{background:#00527a;color:#fff;align-self:flex-start}
+.visits{list-style:none;display:flex;flex-direction:column;gap:12px}
+.visit{border:1px solid #e4e4e7;border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.vh{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.vt{font-family:Rajdhani,Montserrat;font-size:17px}.price{font-size:14px;color:#52525b}
+.track{list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.track li{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px;background:#f4f4f5;color:#71717a}
+.track li i{width:8px;height:8px;border-radius:99px;background:currentColor}.track li.now{background:#eaf5ff;color:#00527a}
+.form{display:flex;flex-direction:column;gap:10px;border-top:1px solid #e4e4e7;padding-top:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@container (max-width:520px){.g2{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:#52525b}
+.client{background:#fff}.ctop{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e4e4e7;font-size:12.5px}.cag{font-weight:800;color:#00527a}.cstep{color:#71717a}
+.client .main{padding:14px 16px 90px;gap:12px}
+.cphoto{height:220px;border-radius:14px;background:#e4e4e7 center/cover}
+.ct{font-family:Rajdhani,Montserrat;font-size:21px;color:#18181b}
+.cprice{font-family:Rajdhani,Montserrat;font-size:22px;font-weight:700;display:flex;flex-direction:column}.cprice span{font-family:Inter;font-size:12.5px;font-weight:600;color:#b45309}
+.crit{list-style:none;display:flex;flex-direction:column;gap:5px;font-size:14px}.crit .y{color:#12875a}.crit .q{color:#71717a}
+.living{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #eaf5ff;background:#f2f9ff;border-radius:16px;padding:13px 15px}
+.living span{display:flex;flex-direction:column;gap:2px}.living small{font-size:13px;color:#52525b}.living b{font-family:Rajdhani,Montserrat;font-size:17px;color:#00527a}.living i{font-style:normal;font-size:20px;color:#00527a}
+.answers{display:flex;flex-direction:column;gap:8px}.answers span{border:1.5px solid #00527a;border-radius:12px;padding:11px;text-align:center;font-weight:700;font-size:14.5px;color:#00527a}
+.cbar{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid #e4e4e7;background:#fff;font-size:14px;color:#52525b}.cbar b{color:#00527a}
+</style></head><body>
+<h1 class="sheet">A3 · 3 — Le lien de l’acquéreur, sur son téléphone</h1><p class="sheet-sub">L’écran du bien B sur le lien du dossier acquéreur (M122 B). Le bloc « Vivre ici » (M147 A), jusqu’ici réservé aux mandats signés, s’affiche sous tout bien de sa sélection qui a son lien. L’acquéreur ne voit pas la ligne d’information : elle est pour le conseiller, au moment de partager.</p>
+<div class="layout"><div class="rows"><div class="row"><div class="col"><div class="ftitle"><span class="st before">AVANT</span>Téléphone · 390 · bien hors mandat</div>
+  <div class="frame phone client">
+    <div class="ctop"><span class="cag">Agence Horizon Côte d’Azur</span><span class="cstep">Bien B · 2 / 3</span></div>
+    <div class="main">
+      <div class="cphoto" style="background-image:url('file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-03.jpg')"></div>
+      <b class="ct">Maison · 6 pièces · 220 m² · Mougins</b>
+      <p class="cprice">1 720 000 €<span>Prix affiché · 70 000 € au-dessus du budget, à négocier</span></p>
+      <ul class="crit"><li class="y">✓ 220 m², comme demandé</li><li class="y">✓ Un jardin</li><li class="q">? Piscine : à vérifier</li></ul>
+      
+      <div class="answers"><span>Je veux le visiter</span><span>Peut-être</span><span>Pas pour moi</span></div>
+    </div>
+    <div class="cbar"><span>← Précédent</span><b>Suivant →</b></div>
+  </div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390 · le lien collé</div>
+  <div class="frame phone client">
+    <div class="ctop"><span class="cag">Agence Horizon Côte d’Azur</span><span class="cstep">Bien B · 2 / 3</span></div>
+    <div class="main">
+      <div class="cphoto" style="background-image:url('file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-03.jpg')"></div>
+      <b class="ct">Maison · 6 pièces · 220 m² · Mougins</b>
+      <p class="cprice">1 720 000 €<span>Prix affiché · 70 000 € au-dessus du budget, à négocier</span></p>
+      <ul class="crit"><li class="y">✓ 220 m², comme demandé</li><li class="y">✓ Un jardin</li><li class="q">? Piscine : à vérifier</li></ul>
+      <a class="living"><span><small>B · Maison · 6 pièces · 220 m² · Mougins</small><b>Vivre ici</b><small>Le quartier, les écoles, les commerces</small></span><i>↗</i></a>
+      <div class="answers"><span>Je veux le visiter</span><span>Peut-être</span><span>Pas pour moi</span></div>
+    </div>
+    <div class="cbar"><span>← Précédent</span><b>Suivant →</b></div>
+  </div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390 · en anglais (les Wilson)</div>
+  <div class="frame phone client">
+    <div class="ctop"><span class="cag">Agence Horizon Côte d’Azur</span><span class="cstep">Property B · 2 / 3</span></div>
+    <div class="main">
+      <div class="cphoto" style="background-image:url('file:///Users/jean-guyourmieres/Documents/acm-studio/public/demo/photos/villa-03.jpg')"></div>
+      <b class="ct">House · 6 rooms · 220 m² · Mougins</b>
+      <p class="cprice">€1,720,000<span>Asking price · €70,000 above your budget, negotiable</span></p>
+      <ul class="crit"><li class="y">✓ 220 m², as requested</li><li class="y">✓ A garden</li><li class="q">? Pool: to be checked</li></ul>
+      <a class="living"><span><small>B · House · 6 rooms · 220 m² · Mougins</small><b>Living here</b><small>The neighbourhood, schools and shops</small></span><i>↗</i></a>
+      <div class="answers"><span>I want to visit it</span><span>Maybe</span><span>Not for me</span></div>
+    </div>
+    <div class="cbar"><span>← Previous</span><b>Next →</b></div>
+  </div></div></div></div>
+<div class="notes"><div class="note"><b class="t">Avant :</b> Sous un bien hors mandat, rien. Le bloc « Vivre ici » n’existe que pour un mandat signé qui a son lien collé.</div><div class="note"><b class="t">Après :</b> Le même bloc, mêmes mots (« Vivre ici — Le quartier, les écoles, les commerces ↗ », « Living here » en anglais, M140 B), sous l’écran du bien et après sa réponse, comme pour un mandat. Il ouvre Academia dans un nouvel onglet.</div><div class="note"><b class="t">25 et 30 jours :</b> Le bloc reste montré, même pour un lien collé depuis plus de 30 jours : ACM ne vérifie pas son expiration (Jean-Guy, 16/11). Le conseiller est prévenu de son côté.</div><div class="note"><b class="t">Ce qui ne change pas :</b> Ni la présentation plein cadre ni le PDF du dossier ne le montrent (M147 A). Le lien passe par la même liste d’autorisation : un lien d’Academia relu, jamais l’adresse, titre piège M107 prouvé.</div><div class="note"><b class="t">L’exception à M119 :</b> En ouvrant le lien, l’acquéreur lit chez Academia la rue du bien, sans numéro, et un repère à environ 100 m : c’est l’exception assumée de Jean-Guy (15/11), écrite dans DECISIONS.md avec son test avant le code. ACM, lui, ne montre toujours ni adresse ni rue.</div></div></div></body></html>
