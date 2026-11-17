@@ -21,6 +21,7 @@ import {
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatDay, formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
+import { NeighbourhoodLinkBlock } from '@/features/neighbourhood-link/components/neighbourhood-link-block';
 
 // Mission 131 — l'« Étude de marché », à la forme de la synthèse (M113) et du Point marché (M127,
 // M129) : couverture en pleine photo, une fiche par concurrent retenu qui ne se coupe jamais, puis
@@ -453,6 +454,10 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
       </section>
 
       <div className="flex flex-col gap-6 p-5 sm:p-8 print:px-[14mm] print:py-0">
+        {/* Mission 157 B — le lien « Vivre ici » du bien, sous sa photo, avant les concurrents. */}
+        {document.neighbourhood ? (
+          <NeighbourhoodLinkBlock link={document.neighbourhood} language={language} />
+        ) : null}
         {hasCompetitors ? (
           <section className="flex flex-col gap-3" data-testid="market-study-competitors">
             <SectionTitle

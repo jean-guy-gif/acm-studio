@@ -2,6 +2,7 @@ import type { TextLanguage } from '@/lib/client-texts';
 import type { DpeClass } from '@/features/dpe/services/dpe';
 import type { QrCode } from '@/features/contact-card/services/qr-code';
 import type { GuessGap } from '@/features/live-seller/services/guess-gap';
+import type { NeighbourhoodDocumentLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
 
 // Mission 110 — la synthèse laissée au vendeur après le Live. LISTE D'AUTORISATION : ce type ne
 // porte que ce que le vendeur peut lire. Jamais l'adresse, le titre, le lien d'une annonce, ni
@@ -127,4 +128,6 @@ export type SellerSynthesis = {
   };
   // Les couleurs et la police de l'agence (M55, M57), déjà filtrées : des déclarations CSS sûres.
   brandDeclarations: string;
+  // Mission 157 B — le lien « Vivre ici » du bien, relu à chaque ouverture ; null sans lien valable.
+  neighbourhood: NeighbourhoodDocumentLink | null;
 };

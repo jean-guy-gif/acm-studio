@@ -6,6 +6,8 @@ import { liveEntryGate } from '@/features/live-seller/services/live-launch';
 import { hasLiveStarted, initialLiveIndex } from '@/features/live-seller/services/live-resume';
 import { needsLiveShortlist } from '@/features/live-seller/services/live-shortlist';
 import { getProject } from '@/features/projects/queries/get-project';
+import { readNeighbourhoodLink } from '@/features/neighbourhood-link/queries/read-neighbourhood-link';
+import { createClient } from '@/lib/supabase/server';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { getAgency } from '@/lib/auth/get-agency';
@@ -122,7 +124,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
     getProfile(),
     getConclusion(projectId),
   ]);
-  const [agency, buyers, isDemo] = profile
+  const [agency, buyers, isDemo, neighbourhood] = profile
     ? await Promise.all([
         getAgency(profile.agency_id),
         // Mission 133 — les acquéreurs prêts de l'agence pour ce bien : sous 5, rien ne part vers
@@ -131,8 +133,10 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
         // Mission 152 — l'agence de démonstration : « Voir l'annonce » n'ouvre pas d'onglet, ses
         // annonces ne mènent à aucun portail réel (la donnée, elle, est décidée par l'action).
         isDemoAgency(profile.agency_id),
+        // Mission 157 B — le lien « Vivre ici » du bien, sur « Votre bien ».
+        readNeighbourhoodLink(await createClient(), profile.agency_id, projectId),
       ])
-    : [null, null, false];
+    : [null, null, false, null];
 
   return (
     <DemoModeProvider isDemo={isDemo}>
@@ -151,6 +155,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
         presentationMode={presentationMode}
         buyersReveal={liveBuyersReveal(buyers, new Date())}
         language={clientLanguage(project.language)}
+        neighbourhood={neighbourhood}
       />
     </DemoModeProvider>
   );

@@ -19,6 +19,7 @@ import {
 } from '@/features/live-seller/components/live-stage';
 import { PROPERTY_CONFIRMED_VALUES } from '@/features/live-seller/constants';
 import type { LiveSellerSummary } from '@/features/live-seller/types';
+import type { NeighbourhoodLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
 import {
   type Exposure,
   type GeneralCondition,
@@ -51,13 +52,17 @@ export function LivePageProperty({
   property,
   summary,
   asksSeller = true,
+  neighbourhood = null,
 }: {
   property: SellerPresentationProperty;
   summary: LiveSellerSummary | null;
   // Mission 131 — en présentation directe, le bien se montre sans rien demander au vendeur.
   asksSeller?: boolean;
+  // Mission 157 B — le lien « Vivre ici » du bien (planche M157B-1) ; null sans lien valable.
+  neighbourhood?: NeighbourhoodLink | null;
 }) {
   const { language, texts } = useLiveTexts();
+  const n = texts.neighbourhood;
   const t = texts.live.property;
   const currentAnswer = summary?.seller_property_confirmed ?? '';
   const currentComment = summary?.seller_property_comment ?? '';
@@ -189,6 +194,27 @@ export function LivePageProperty({
                 </div>
               ))}
             </dl>
+          ) : null}
+
+          {/* Mission 157 B — « Vivre ici » : la page du quartier s'ouvre dans un nouvel onglet,
+              dans le geste du conseiller ; le Live reste là, rien n'est écrit. En contour : le
+              seul plein reste « Valider et continuer » (M146). */}
+          {neighbourhood ? (
+            <a
+              href={neighbourhood.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex shrink-0 items-center justify-between gap-3 rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 stage:border-white/40 stage:bg-white/5 stage:text-white/90 stage:hover:bg-white/15"
+              data-testid="live-neighbourhood"
+            >
+              <span className="flex min-w-0 flex-col">
+                <span className="font-title text-base font-semibold">{n.title}</span>
+                <span className="text-xs opacity-80">{n.subtitle}</span>
+              </span>
+              <span aria-hidden className="text-lg">
+                ↗
+              </span>
+            </a>
           ) : null}
         </div>
       </div>

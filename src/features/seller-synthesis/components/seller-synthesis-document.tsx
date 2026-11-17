@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { RemoteImage } from '@/components/ui/remote-image';
 import { DpeLetter } from '@/features/dpe/components/dpe-letter';
+import { NeighbourhoodLinkBlock } from '@/features/neighbourhood-link/components/neighbourhood-link-block';
 import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
 import { layoutBand, type BandLayout } from '@/features/seller-synthesis/services/band-labels';
 import type { SellerSynthesis, SynthesisCompetitor } from '@/features/seller-synthesis/types';
@@ -743,6 +744,9 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                   {euro(synthesis.perceivedPrice)}
                 </div>
               </div>
+            ) : null}
+            {synthesis.neighbourhood ? (
+              <NeighbourhoodLinkBlock link={synthesis.neighbourhood} language={language} />
             ) : null}
           </section>
         ) : null}

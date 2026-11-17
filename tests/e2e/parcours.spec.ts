@@ -4,6 +4,7 @@ import {
   fillLiveComment,
   ageTestBuyer,
   expectNoHorizontalScroll,
+  expectNoVerticalScroll,
   goViaAccountMenu,
   login,
   mainText,
@@ -56,6 +57,8 @@ const COMMERCIALIZATION_PRICE = 315_000;
 const ADVISOR_ANALYSIS = 300_000;
 const PRICE_ALIGNMENT_LABEL = 'Proche du marché';
 const COMMENT = 'Réponse saisie par le test automatique';
+// Mission 157 B — un lien client « Vivre ici » de test, collé sur le bien vendeur.
+const NEIGHBOURHOOD_LINK = 'https://app.myacademia.ai/l/e2e-acm.0157';
 const FOLLOW_UP_NOTE = 'Message laissé, d’après le test automatique';
 const MISSING_FOR_TEN = 'Le délai, d’après le test automatique';
 // Mission 98 — une adresse confirmée regroupe les concurrents qui la partagent, d'un dossier à
@@ -181,6 +184,16 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
   // Mission 99 — les réglages de la recherche : affichés, enregistrés sur le dossier, remis par
   // défaut. « Chercher les concurrents » n'est JAMAIS cliqué ici : aucun appel payant.
+  // Mission 157 B — le lien « Vivre ici » du bien, collé à la main (l'agence de test n'a pas l'accès
+  // en un clic) : montré au vendeur au Live, dans la synthèse et sur son lien, sans date connue.
+  await test.step('Le lien « Vivre ici » collé sur le bien vendeur', async () => {
+    await page.goto(`/builder/${projectId}/property`);
+    const field = page.getByTestId('academia-living-link');
+    await field.getByTestId('academia-living-input').fill(NEIGHBOURHOOD_LINK);
+    await field.getByTestId('academia-living-save').click();
+    await expect(field.getByTestId('academia-living-saved')).toHaveText('✓ Lien enregistré');
+  });
+
   await test.step('Réglages de la recherche : défaut, « réglé par vous », remise par défaut', async () => {
     await page.goto(`/builder/${projectId}/comparables/find`);
     const block = page.locator('[data-search-settings]');
@@ -1605,6 +1618,14 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       );
     };
     await check(await synthesis.innerText(), 'La synthèse');
+    // Mission 157 B — « Vivre ici » à la fin de « Votre bien » ; un lien collé n'a pas de date.
+    const neighbourhoodBlock = synthesis.getByTestId('neighbourhood-link');
+    await expect(neighbourhoodBlock.getByRole('link')).toHaveAttribute('href', NEIGHBOURHOOD_LINK);
+    await expect(neighbourhoodBlock).toContainText('Ouvrir la page du quartier');
+    await expect(neighbourhoodBlock).not.toContainText(/valable/);
+    expect((await synthesis.innerText()).replaceAll('app.myacademia.ai', '')).not.toMatch(
+      /academia/i,
+    );
     // Mission 111 — les prix du Live, sous leurs noms du Live.
     // Mission 113 — le libellé figure sur la bande des prix (M104) et sur sa carte.
     await expect(
@@ -1638,6 +1659,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       expect(response?.headers()['x-robots-tag']).toContain('noindex');
       await expect(visitor.getByTestId('seller-synthesis')).toBeVisible();
       await check(await visitor.getByTestId('seller-synthesis').innerText(), 'Le lien public');
+      await expect(
+        visitor.getByTestId('neighbourhood-link').getByRole('link'),
+        'Le lien public : « Vivre ici »',
+      ).toHaveAttribute('href', NEIGHBOURHOOD_LINK);
       // « Retirer le lien » : il ne s'ouvre plus, tout de suite.
       await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
       await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
@@ -1755,6 +1780,26 @@ async function walkLive(
   // Votre bien
   await expect(page.getByRole('heading', { name: 'Votre bien', exact: true })).toBeVisible();
   await onScreen('Votre bien');
+  // Mission 157 B — « Vivre ici » en contour, qui ouvre un nouvel onglet, sans nommer le service.
+  const neighbourhood = page.getByTestId('live-neighbourhood');
+  await expect(neighbourhood).toHaveAttribute('href', NEIGHBOURHOOD_LINK);
+  await expect(neighbourhood).toHaveAttribute('target', '_blank');
+  await expect(neighbourhood).toContainText('Le quartier, les écoles, les commerces');
+  await expect(page.locator('main, [data-stage]').first()).not.toContainText(/Academia/);
+  // M148 B — avec le bouton, « Votre bien » ne défile toujours pas aux fenêtres de Safari sur iPad.
+  const desktop = page.viewportSize();
+  for (const size of [
+    { width: 1024, height: 700 },
+    { width: 1180, height: 750 },
+    { width: 820, height: 1110 },
+  ]) {
+    await page.setViewportSize(size);
+    await expectNoVerticalScroll(
+      page,
+      `Votre bien avec « Vivre ici », ${size.width} × ${size.height}`,
+    );
+  }
+  if (desktop) await page.setViewportSize(desktop);
   await choose('Oui, c’est bien mon bien');
   await fillLiveComment(page, 'seller_property_comment', COMMENT);
   await validate();
