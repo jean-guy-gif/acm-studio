@@ -593,6 +593,13 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 14/11 · M155 (photos) · Des images générées par IA se regardent en grand ET par zones agrandies : les défauts trouvés ne se voyaient pas en vignette (une prise australienne, des volets à l'intérieur des pièces, une terrasse quatre fois trop grande pour l'annonce, un faux texte sur les livres et les fours).
 - 14/11 · M155 (photos, second lot) · Des jeux de photos livrés en deux envois : sans garde, la démo branchait un dossier dès sa première photo. La règle « un jeu ne s'affiche que complet » (les vues de sa fiche) laisse ranger un envoi partiel sans rien montrer ; quatre noms envoyés différaient de la fiche (`05-salle-de-bains`, `04-suite-parentale`) : la fiche gagne, et un test refuse désormais tout fichier qui n'est pas une vue de sa fiche. Suite e2e complète : 28 sur 28 au premier passage, 37 min.
 
+- 17/11 · M157 · Le premier vrai appel à une API d'un partenaire : garder au journal, dès le
+  premier jour, ce qu'elle a rendu (statut HTTP, code et message d'erreur, noms des champs d'une
+  réponse inattendue, jamais une valeur ni la clé). Sans ce détail, « unavailable » ne disait rien ;
+  avec lui, trois appels ont suffi à trouver deux écarts au contrat (un champ refusé, `statut` au
+  lieu de `etat` et des noms en camelCase). L'appel se fait depuis le serveur de l'essai, par un
+  petit script Playwright avec le compte de démo e2e (la clé n'est que dans Vercel).
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -729,13 +736,6 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
 - 30/10 · M127 B · « Ça gêne » du parcoureur sur un détail de données de démo (photos mélangées,
   prix de vente estimé juste avant le prix du vendeur) : à noter, pas à corriger ; la règle de
   l'agence et l'ordre des phrases sont des décisions, pas des défauts.
-
-- 17/11 · M157 · Le premier vrai appel à une API d'un partenaire : garder au journal, dès le
-  premier jour, ce qu'elle a rendu (statut HTTP, code et message d'erreur, noms des champs d'une
-  réponse inattendue, jamais une valeur ni la clé). Sans ce détail, « unavailable » ne disait rien ;
-  avec lui, trois appels ont suffi à trouver deux écarts au contrat (un champ refusé, `statut` au
-  lieu de `etat` et des noms en camelCase). L'appel se fait depuis le serveur de l'essai, par un
-  petit script Playwright avec le compte de démo e2e (la clé n'est que dans Vercel).
 
 ## L'atelier et les hooks
 
