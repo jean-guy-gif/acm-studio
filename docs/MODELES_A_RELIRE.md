@@ -72,3 +72,13 @@ anglaise, à joindre « pour information — seule la version française fait fo
 locuteur natif avant de l'allumer. Le bon la recompose depuis ses champs figés ; l'offre ne garde pas
 tous ses champs à la signature (parcelles, honoraires, dates) : l'allumer pour l'offre demandera de
 garder sa traduction à la signature (une colonne, une migration).
+
+## Mission 159 — le quartier montré au vendeur
+
+Les écrans du quartier au Live, et ses pages dans la synthèse et l'Étude de marché, lisent leurs mots
+dans `src/lib/client-texts/fr.ts` et `en.ts`, section `quartier` : des phrases recomposées depuis les
+chiffres (jamais une phrase d'Academia), écrites par Claude Code. Le français est à relire par
+Jean-Guy, l'anglais **à faire relire par un locuteur natif**. Points à vérifier : les noms des
+catégories d'urbanisme (« site reserved for a road »…), les échelles officielles (« zone 4 of 5:
+“medium” », « category 1 of 3: “low” potential »), « Listed municipality » pour une commune classée
+en territoire à risque important d'inondation, « Actual sales » et « What your neighbours sold ».

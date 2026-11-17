@@ -79,6 +79,21 @@ describe('le lien « Vivre ici » montré au vendeur : une seule porte, le lien 
       'NeighbourhoodLinkBlock',
       'readNeighbourhoodLink',
       'readNeighbourhoodDocumentLink',
+      // Mission 159 — la porte s'ouvre aussi au quartier montré au vendeur : l'instantané des
+      // blocs cochés, relu dans notre table (jamais Academia elle-même), ses dessins et ses mots.
+      'NEIGHBOURHOOD_BLOCK_KEYS',
+      'NeighbourhoodBlockKey',
+      'NeighbourhoodBlocks',
+      'readNeighbourhoodSnapshot',
+      'neighbourhoodKeys',
+      'neighbourhoodView',
+      'NeighbourhoodDocumentBlocks',
+      'NeighbourhoodDocumentContent',
+      'BuiltPeriod',
+      'DistanceRings',
+      'Pictograms',
+      'SalesTimeline',
+      'SegmentGauge',
     ]);
     const imported: string[] = [];
     for (const path of seller()) {

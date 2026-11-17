@@ -3074,6 +3074,74 @@ export type Database = {
           },
         ];
       };
+      project_neighbourhood_snapshots: {
+        Row: {
+          agency_id: string;
+          blocks: NonNullable<Json>;
+          computed_on: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          project_id: string;
+          property_address: string;
+          property_rooms: number;
+          property_surface: number;
+          property_type: string;
+          taken_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agency_id: string;
+          blocks: NonNullable<Json>;
+          computed_on?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          project_id: string;
+          property_address: string;
+          property_rooms: number;
+          property_surface: number;
+          property_type: string;
+          taken_at?: string;
+        };
+        Update: {
+          agency_id?: string;
+          blocks?: NonNullable<Json>;
+          computed_on?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          project_id?: string;
+          property_address?: string;
+          property_rooms?: number;
+          property_surface?: number;
+          property_type?: string;
+          taken_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_neighbourhood_snapshots_agency_id_fkey';
+            columns: ['agency_id'];
+            isOneToOne: false;
+            referencedRelation: 'agencies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_neighbourhood_snapshots_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_neighbourhood_snapshots_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       project_price_positionings: {
         Row: {
           advisor_comparative_market_price: number | null;

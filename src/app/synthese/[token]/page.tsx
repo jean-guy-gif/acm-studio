@@ -54,14 +54,17 @@ export default async function PublicSynthesisPage({
   const admin = createServiceRoleClient();
   const { data: link } = await admin
     .from('seller_synthesis_links')
-    .select('project_id, agency_id, expires_at')
+    .select('project_id, agency_id, expires_at, created_at')
     .eq('token_hash', hashSynthesisToken(token))
     .gt('expires_at', new Date().toISOString())
     .maybeSingle();
   if (!link) {
     notFound();
   }
-  const synthesis = await loadSellerSynthesis(admin, link.project_id, link.agency_id);
+  // Mission 159 — le quartier tel qu'il était quand le lien a été créé.
+  const synthesis = await loadSellerSynthesis(admin, link.project_id, link.agency_id, {
+    quartierBefore: link.created_at,
+  });
   if (!synthesis) {
     notFound();
   }

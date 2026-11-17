@@ -2,6 +2,7 @@ import type { TextLanguage } from '@/lib/client-texts';
 import type { RankingTier } from '@/features/market-update/services/ranking-tiers';
 import type { SellerSynthesis, SynthesisFeature } from '@/features/seller-synthesis/types';
 import type { NeighbourhoodDocumentLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
+import type { NeighbourhoodDocumentContent } from '@/features/neighbourhood-link/components/neighbourhood-document';
 
 // Mission 131 — l'« Étude de marché », remise au vendeur qui ne veut pas jouer, ou sans Live : le
 // marché du jour, concurrent par concurrent, puis où en est son prix. LISTE D'AUTORISATION, comme
@@ -75,4 +76,6 @@ export type MarketStudyDocument = {
   brandDeclarations: string;
   // Mission 157 B — le lien « Vivre ici » du bien, relu à chaque ouverture ; null sans lien valable.
   neighbourhood: NeighbourhoodDocumentLink | null;
+  // Mission 159 — les blocs du quartier cochés par le conseiller.
+  quartier: NeighbourhoodDocumentContent | null;
 };

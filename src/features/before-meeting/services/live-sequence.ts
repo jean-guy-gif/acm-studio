@@ -6,6 +6,7 @@ import {
   type LivePageType,
   type LiveRhythm,
 } from '@/features/live-seller/services/build-live-pages';
+import type { NeighbourhoodBlockKey } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 
 // Mission 91 — « Ce que verra le vendeur » : le déroulé du Live de CE dossier, compté sur
 // le moteur du Live lui-même (`buildLivePages`) — jamais sur une liste recopiée, qui
@@ -74,6 +75,8 @@ const PARTS: { key: string; members: { type: LivePageType; label: string }[] }[]
       { type: 'dangerous_competitor', label: 'Le concurrent le plus dangereux' },
       { type: 'advisor_closest', label: 'Le concurrent le plus proche' },
       { type: 'seller_revised_price', label: 'Votre prix après le marché' },
+      // Mission 159 — les ventes réelles, juste avant « Analyse des prix ».
+      { type: 'neighbourhood_sales', label: 'Les ventes réelles' },
       { type: 'price_analysis', label: 'Analyse des prix' },
     ],
   },
@@ -102,6 +105,8 @@ export function buildLiveSequence(
   rhythm: LiveRhythm = 'complete',
   // Mission 131 — en présentation directe, le déroulé n'a aucun écran qui demande au vendeur.
   mode: LivePresentationMode = 'interactive',
+  // Mission 159 — les blocs du quartier cochés : leurs écrans comptent dans la durée.
+  neighbourhood: readonly NeighbourhoodBlockKey[] = [],
 ): LiveSequence {
   // Aucune réponse du vendeur : le parcours entier, dans le rythme choisi.
   const pages = buildLivePages(
@@ -112,6 +117,7 @@ export function buildLiveSequence(
         energyRating: competitor.energyRating,
         durationKnown: competitor.durationKnown,
       })),
+      neighbourhood,
     },
     hasSubjectProperty,
     rhythm,
@@ -128,6 +134,15 @@ export function buildLiveSequence(
         key: part.key,
         label: present.map((member) => member.label).join(' · '),
         screenCount: count(present.map((member) => member.type)),
+      });
+    }
+    // Mission 159 — le quartier, après la valeur perçue (ou « Votre bien » en directe).
+    if (part.key === 'perceived' && count(['neighbourhood_block']) > 0) {
+      const blocks = count(['neighbourhood_block']);
+      parts.push({
+        key: 'neighbourhood',
+        label: blocks === 1 ? 'Votre quartier, 1 écran' : `Votre quartier, ${blocks} écrans`,
+        screenCount: blocks,
       });
     }
     // Les concurrents viennent juste après la valeur perçue (M82).

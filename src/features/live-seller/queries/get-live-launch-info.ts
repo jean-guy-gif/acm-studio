@@ -11,6 +11,11 @@ import type { LivePresentationMode } from '@/features/live-seller/services/prese
 import { needsLiveShortlist } from '@/features/live-seller/services/live-shortlist';
 import { projectLiveForSeller } from '@/features/live-seller/services/project-live-for-seller';
 import { getProject } from '@/features/projects/queries/get-project';
+import {
+  neighbourhoodKeys,
+  readNeighbourhoodSnapshot,
+} from '@/features/neighbourhood-link/queries/read-neighbourhood-snapshot';
+import { createClient } from '@/lib/supabase/server';
 import { listingsCheckStale } from '@/features/competitor-refresh/services/since-preparation';
 
 // Mission 89 — ce que la liste du Live dit d'un dossier avant de le lancer : combien de
@@ -46,17 +51,21 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     return null;
   }
   const projected = presentation.live ? projectLiveForSeller(presentation.live) : null;
-  const pages = buildLivePages(
-    projected,
-    presentation.property != null,
-    presentation.project.liveRhythm,
-    presentation.project.presentationMode,
-  );
   const [project, comparables, pending] = await Promise.all([
     getProject(projectId),
     getComparables(projectId),
     getPendingImports(projectId),
   ]);
+  // Mission 159 — les écrans du quartier comptent dans la durée et dans « Reprendre ».
+  const quartier = project
+    ? await readNeighbourhoodSnapshot(await createClient(), project.agency_id, projectId)
+    : null;
+  const pages = buildLivePages(
+    projected && { ...projected, neighbourhood: quartier ? neighbourhoodKeys(quartier) : [] },
+    presentation.property != null,
+    presentation.project.liveRhythm,
+    presentation.project.presentationMode,
+  );
   const resume = liveResume(pages, projected);
   return {
     competitorCount: projected?.comparables.length ?? 0,

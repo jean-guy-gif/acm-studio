@@ -15,13 +15,15 @@ export async function findMarketStudyLink(
   admin: SupabaseClient<Database>,
   token: string,
   now: Date = new Date(),
-): Promise<{ projectId: string; agencyId: string } | null> {
+): Promise<{ projectId: string; agencyId: string; createdAt: string } | null> {
   if (!MARKET_STUDY_TOKEN_PATTERN.test(token)) return null;
   const { data } = await admin
     .from('market_study_links')
-    .select('project_id, agency_id')
+    .select('project_id, agency_id, created_at')
     .eq('token_hash', hashMarketStudyToken(token))
     .gt('expires_at', now.toISOString())
     .maybeSingle();
-  return data ? { projectId: data.project_id, agencyId: data.agency_id } : null;
+  return data
+    ? { projectId: data.project_id, agencyId: data.agency_id, createdAt: data.created_at }
+    : null;
 }

@@ -288,7 +288,12 @@ export async function createAcademiaClientLink(
 // Mission 158 — la vue « bien » du dossier d'Academia (le dossier d'adresse du conseiller), calculée
 // pour le type, les pièces et la surface du bien vendeur (l'API les exige : 400 sans eux). La réponse
 // est rendue telle quelle à `parsePropertyView`, qui la relit champ par champ.
-export async function readAcademiaPropertyView(
+// Mission 159 — la vue « bien-client », la seule qui peut aller au vendeur (sans valeur indicative ni
+// DPE), se lit de même ; c'est `parseNeighbourhoodBlocks` qui la relit.
+export type AcademiaViewName = 'bien' | 'bien-client';
+
+export async function readAcademiaView(
+  view: AcademiaViewName,
   key: string,
   id: string,
   bien: AcademiaPropertyFacts & { pieces: number; surface: number },
@@ -305,10 +310,20 @@ export async function readAcademiaPropertyView(
     fetchImpl,
     key,
     'GET',
-    `/dossiers/${id}/bien?${query}`,
+    `/dossiers/${id}/${view}?${query}`,
     undefined,
     timeoutMs,
   );
   if (raw?.status === 200) return { ok: true, json: raw.json };
   return failure(raw);
+}
+
+export function readAcademiaPropertyView(
+  key: string,
+  id: string,
+  bien: AcademiaPropertyFacts & { pieces: number; surface: number },
+  fetchImpl: AcademiaFetch = fetch,
+  timeoutMs: number = ACADEMIA_API_TIMEOUT_MS,
+) {
+  return readAcademiaView('bien', key, id, bien, fetchImpl, timeoutMs);
 }
