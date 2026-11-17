@@ -1,11 +1,13 @@
+import { propertyAddressLine } from '@/lib/academia';
 import { formatRelativeDay } from '@/lib/format';
 
 // Mission 156 — l'âge d'un lien « Vivre ici » collé. Un lien client d'Academia vaut 30 jours
 // (Laurent, 15/11), mais ACM ne connaît pas son expiration : il compte les jours de Paris depuis
-// le collage (l'heure de la base) et prévient le conseiller du 25e au 29e jour, puis à 30 jours et
-// au-delà. Le lien reste toujours montré ; aucune requête ne part vers Academia (décisions de
-// Jean-Guy, 15 et 16/11 ; la date d'expiration viendra de l'API). Un lien sans date (collé sur un
-// mandat avant la mission) n'a pas d'âge : rien n'est inventé (M56). Pur.
+// le collage (l'heure de la base) et prévient le conseiller du 25e au 29e jour (décisions de
+// Jean-Guy, 15 et 16/11). Mission 157 — un lien collé se comporte comme un lien créé en un clic
+// (Jean-Guy, 17/11) : à 30 jours et au-delà, ou quand l'adresse du bien a changé depuis le collage,
+// il n'est plus montré, ni au vendeur ni aux acquéreurs, et la carte du conseiller le dit. Un lien
+// sans date (collé avant la mission 156) n'a pas d'âge sûr : il n'est plus montré non plus. Pur.
 
 export const LIVING_HERE_SOON_DAYS = 25;
 export const LIVING_HERE_OLD_DAYS = 30;
@@ -31,9 +33,60 @@ export function livingHereAge(pastedAt: string | null, now: Date): LivingHereAge
   return { level, days };
 }
 
-export function livingHereAgeLine(pastedAt: string | null, now: Date): LivingHereAgeLine | null {
+export type PastedLinkStatus = 'shown' | 'old' | 'moved' | 'undated';
+
+// L'adresse du bien au collage, gardée par la base (`academia_living_here_property`) : composée
+// comme l'adresse du jour, pour les comparer. Illisible, aucune.
+export function pastedPropertyAddress(value: unknown): string | null {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const text = (field: unknown) => (typeof field === 'string' ? field : null);
+  return propertyAddressLine({
+    address: text(record.address),
+    postalCode: text(record.postal_code),
+    city: text(record.city),
+  });
+}
+
+export function pastedLinkStatus(input: {
+  pastedAt: string | null;
+  pastedProperty: unknown;
+  currentAddress: string | null;
+  now: Date;
+}): PastedLinkStatus {
+  const age = livingHereAge(input.pastedAt, input.now);
+  if (!age) return 'undated';
+  const valid =
+    input.pastedProperty == null ||
+    (typeof input.pastedProperty === 'object' && !Array.isArray(input.pastedProperty));
+  if (!valid || pastedPropertyAddress(input.pastedProperty) !== input.currentAddress) {
+    return 'moved';
+  }
+  return age.level === 'old' ? 'old' : 'shown';
+}
+
+const NOT_SHOWN = 'n’est plus montré, ni au vendeur ni aux acquéreurs';
+
+export function livingHereAgeLine(
+  pastedAt: string | null,
+  now: Date,
+  options: { moved?: boolean; canCreate?: boolean } = {},
+): LivingHereAgeLine | null {
+  const make = options.canCreate ? 'Créez' : 'Collez';
+  if (!pastedAt) {
+    return {
+      tone: 'warn',
+      text: `Collé sans date connue : ce lien ${NOT_SHOWN}. ${make} un lien neuf.`,
+    };
+  }
+  if (options.moved) {
+    return {
+      tone: 'warn',
+      text: `L’adresse du bien a changé depuis le collage : ce lien ${NOT_SHOWN}. ${make} celui de la nouvelle adresse.`,
+    };
+  }
   const age = livingHereAge(pastedAt, now);
-  if (!age || !pastedAt) return null;
+  if (!age) return null;
   if (age.level === 'fresh') {
     return { tone: 'hint', text: `Collé ${formatRelativeDay(pastedAt, now)}` };
   }
@@ -42,8 +95,8 @@ export function livingHereAgeLine(pastedAt: string | null, now: Date): LivingHer
     tone: 'warn',
     text:
       age.level === 'soon'
-        ? `${head}. Collez bientôt un lien neuf.`
-        : `${head}, il ne s’ouvre peut-être plus. Collez un lien neuf.`,
+        ? `${head}. ${make} bientôt un lien neuf.`
+        : `${head}. Il ${NOT_SHOWN}. ${make} un lien neuf.`,
   };
 }
 

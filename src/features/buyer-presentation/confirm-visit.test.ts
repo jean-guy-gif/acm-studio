@@ -103,7 +103,8 @@ beforeEach(() => {
   state.projectLink = null;
   state.signed = true;
   state.readFails = false;
-  state.pastedAt = null;
+  // Un lien collé il y a deux jours (Mission 157 : sans date, il ne part plus).
+  state.pastedAt = new Date(Date.now() - 2 * 86_400_000).toISOString();
 });
 
 describe('« Confirmer la visite »', () => {
@@ -236,22 +237,30 @@ describe('le jour de la visite', () => {
 });
 
 // Mission 156 — l'âge du lien « Vivre ici » du mandat collé à la main, sous le message : en orange du
-// 25e au 29e jour, puis à 30 jours et au-delà ; le lien reste dans le message.
+// 25e au 29e jour. Mission 157 — à 30 jours et au-delà, ou sans date, il ne part plus (Jean-Guy, 17/11).
 describe('« Confirmer la visite » : l’âge du lien du mandat', () => {
-  it('collé il y a 34 jours : dans le message, et l’âge en orange', async () => {
+  it('collé il y a 26 jours : dans le message, et l’âge en orange', async () => {
     const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
     state.projectLink = 'https://app.myacademia.ai/l/abc';
-    state.pastedAt = new Date(Date.now() - 34 * 86_400_000).toISOString();
+    state.pastedAt = new Date(Date.now() - 26 * 86_400_000).toISOString();
     const result = await confirmVisit(VISIT, tomorrow(), '10:30');
     expect(result.ok && result.message).toContain('https://app.myacademia.ai/l/abc');
     expect(result.ok && result.livingHereAge?.tone).toBe('warn');
   });
 
-  it('sans lien, ou un lien d’avant la mission sans date : aucune ligne', async () => {
+  it('collé il y a 34 jours, ou sans date : il ne part plus, et aucune ligne', async () => {
     const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
-    expect((await confirmVisit(VISIT, tomorrow(), '10:30')).ok && null).toBeNull();
     state.projectLink = 'https://app.myacademia.ai/l/abc';
-    state.pastedAt = null;
+    for (const pastedAt of [new Date(Date.now() - 34 * 86_400_000).toISOString(), null]) {
+      state.pastedAt = pastedAt;
+      const result = await confirmVisit(VISIT, tomorrow(), '10:30');
+      expect(result.ok && result.message).not.toContain('Vivre ici');
+      expect(result.ok && result.livingHereAge).toBeNull();
+    }
+  });
+
+  it('sans lien : aucune ligne', async () => {
+    const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
     const result = await confirmVisit(VISIT, tomorrow(), '10:30');
     expect(result.ok && result.livingHereAge).toBeNull();
   });

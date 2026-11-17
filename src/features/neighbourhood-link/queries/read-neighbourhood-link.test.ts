@@ -18,6 +18,7 @@ const { readNeighbourhoodLink } =
 const LINK = 'https://app.myacademia.ai/l/Vb4nT8wLp2';
 const ADDRESS = '4 chemin des Restanques Hautes, 06140 Vence';
 const NOW = new Date('2026-11-17T10:00:00Z');
+const PROPERTY = { address: '4 chemin des Restanques Hautes', postal_code: '06140', city: 'Vence' };
 
 const state = vi.hoisted(() => ({
   project: null as Record<string, unknown> | null,
@@ -52,7 +53,11 @@ const read = () =>
 beforeEach(() => {
   db.reset();
   reported.length = 0;
-  state.project = { academia_living_here_url: LINK };
+  state.project = {
+    academia_living_here_url: LINK,
+    academia_living_here_pasted_at: '2026-11-15T09:00:00Z',
+    academia_living_here_property: PROPERTY,
+  };
   state.request = {
     // Des pièges : rien de cela ne doit sortir.
     academia_id: 'dos_8f2c1a9e',
@@ -85,19 +90,43 @@ describe('readNeighbourhoodLink', () => {
     expect(await read()).toEqual({ url: LINK, validUntil: null });
   });
 
+  // Mission 157 — collé à la main, il se comporte comme un lien créé en un clic (Jean-Guy, 17/11).
+  it('collé depuis 30 jours ou plus : rien', async () => {
+    state.request = null;
+    state.project = { ...state.project, academia_living_here_pasted_at: '2026-10-18T09:00:00Z' };
+    expect(await read()).toBeNull();
+    state.project = { ...state.project, academia_living_here_pasted_at: '2026-10-19T09:00:00Z' };
+    expect(await read()).toEqual({ url: LINK, validUntil: null });
+  });
+
+  it('collé, puis l’adresse du bien a changé : rien', async () => {
+    state.request = null;
+    state.project = {
+      ...state.project,
+      academia_living_here_property: { ...PROPERTY, address: '12 rue Ancienne' },
+    };
+    expect(await read()).toBeNull();
+  });
+
+  it('collé sans date connue : rien', async () => {
+    state.request = null;
+    state.project = { ...state.project, academia_living_here_pasted_at: null };
+    expect(await read()).toBeNull();
+  });
+
   it('un lien qui n’est pas un lien client (un dossier d’Academia, un autre site) : rien', async () => {
     for (const url of [
       'https://app.myacademia.ai/dossiers/dos_8f2c1a9e',
       'https://exemple.fr/l/abc',
       'http://app.myacademia.ai/l/abc',
     ]) {
-      state.project = { academia_living_here_url: url };
+      state.project = { ...state.project, academia_living_here_url: url };
       expect(await read()).toBeNull();
     }
   });
 
   it('sans lien sur le bien : rien, et la demande n’est pas lue', async () => {
-    state.project = { academia_living_here_url: null };
+    state.project = { ...state.project, academia_living_here_url: null };
     expect(await read()).toBeNull();
     expect(db.calls.some((call) => call.args[0] === 'project_academia_requests')).toBe(false);
   });
