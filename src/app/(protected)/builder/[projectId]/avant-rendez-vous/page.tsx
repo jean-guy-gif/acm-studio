@@ -5,6 +5,7 @@ import {
   priceOrSurfaceToVerifyLabel,
 } from '@/features/imported-fields/services/fields-to-verify';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { notFound } from 'next/navigation';
 
@@ -100,10 +101,11 @@ import { getSubjectProperty } from '@/features/subject-property/queries/get-subj
 import { formatRelativeMoment } from '@/lib/format';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { academiaLinkView, propertyAddressLine } from '@/lib/academia';
-import { AddressViewPanel } from '@/features/academia/components/address-view-panel';
-import { readAddressView } from '@/features/academia/queries/read-address-view';
+import {
+  AddressViewLoading,
+  AddressViewSection,
+} from '@/features/academia/components/address-view-section';
 import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
-import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 type BeforeMeetingPageProps = {
   params: Promise<{ projectId: string }>;
@@ -177,22 +179,10 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
     city: property?.city,
   });
   const salesLink = academiaLinkView({ target: 'sales', address: propertyAddress, demo });
-  // Mission 158 — le dossier d'adresse d'Academia, pour le conseiller seul, lu à chaque ouverture.
-  const addressView =
-    profile && property
-      ? await readAddressView({
-          admin: createServiceRoleClient(),
-          agencyId: profile.agency_id,
-          projectId,
-          property: {
-            address: propertyAddress,
-            propertyType: property.property_type,
-            rooms: property.rooms_count,
-            surface: property.surface_area != null ? Number(property.surface_area) : null,
-          },
-          access: academiaApiAccess(demo),
-        })
-      : null;
+  // Mission 158 — le dossier d'adresse d'Academia, pour le conseiller seul : décidé ici sans rien
+  // attendre (l'accès est lu au serveur), lu ensuite dans sa propre limite (`Suspense`) ; la page ne
+  // l'attend jamais. Sans accès (une vraie agence, interrupteur éteint) : rien.
+  const addressAccess = academiaApiAccess(demo);
 
   const generatedAt = new Date().toISOString();
   const presentation = buildSellerPresentation({
@@ -419,16 +409,25 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
       {/* Mission 152 — ce qui a bougé chez les concurrents depuis la préparation, avant le Live. */}
       {sinceShown ? <SincePreparationBlock projectId={projectId} since={since} /> : null}
 
-      {addressView && property ? (
-        <AddressViewPanel
-          projectId={projectId}
-          state={addressView}
-          savedRange={{
-            min: property.advisor_price_min != null ? Number(property.advisor_price_min) : null,
-            max: property.advisor_price_max != null ? Number(property.advisor_price_max) : null,
-          }}
-          demo={demo}
-        />
+      {addressAccess && profile && property ? (
+        <Suspense fallback={<AddressViewLoading />}>
+          <AddressViewSection
+            agencyId={profile.agency_id}
+            projectId={projectId}
+            access={addressAccess}
+            property={{
+              address: propertyAddress,
+              propertyType: property.property_type,
+              rooms: property.rooms_count,
+              surface: property.surface_area != null ? Number(property.surface_area) : null,
+            }}
+            savedRange={{
+              min: property.advisor_price_min != null ? Number(property.advisor_price_min) : null,
+              max: property.advisor_price_max != null ? Number(property.advisor_price_max) : null,
+            }}
+            demo={demo}
+          />
+        </Suspense>
       ) : null}
 
       <MarketAndDecision
