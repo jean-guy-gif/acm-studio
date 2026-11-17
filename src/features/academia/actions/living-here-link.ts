@@ -1,7 +1,5 @@
 'use server';
 
-import { createHash } from 'node:crypto';
-
 import { revalidatePath } from 'next/cache';
 
 import {
@@ -188,9 +186,6 @@ async function follow(
   return linkFor(admin, agencyId, projectId, key, row, currentUrl);
 }
 
-const idempotence = (projectId: string, address: string) =>
-  `acm-${projectId}-${createHash('sha256').update(address).digest('hex').slice(0, 16)}`;
-
 async function run(
   projectId: unknown,
   create: boolean,
@@ -262,7 +257,6 @@ async function run(
     key: access.key,
     adresse: sent,
     bien,
-    idempotence: idempotence(project.id, sent),
   });
   if (!request.ok && request.reason === 'ambiguous') {
     // Une adresse choisie n'est envoyée que si Academia vient de la proposer pour celle du bien :
@@ -274,7 +268,6 @@ async function run(
         key: access.key,
         adresse: sent,
         bien,
-        idempotence: idempotence(project.id, sent),
       });
     }
     if (!request.ok && request.reason === 'ambiguous') {

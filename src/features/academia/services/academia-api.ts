@@ -7,11 +7,12 @@ import { academiaLivingHereUrl } from '@/lib/academia';
 
 // Mission 157 — le client de l'API de Mon secteur (Academia), d'après le contrat v1 de Laurent
 // (14/11) : de serveur à serveur seulement, la clé d'ACM dans l'en-tête, jamais vers le navigateur ni
-// au journal. Seul le bien vendeur part : son adresse, son type, ses pièces, sa surface et une clé
-// d'idempotence ; jamais un nom, un téléphone, un e-mail, le texte ou le lien d'une annonce
-// (règle 1 du contrat). Chaque réponse est relue par une liste d'autorisation : ce qui n'est pas du
-// contrat n'est jamais cru. Délai de 8 s, puis un seul nouvel essai sur un dépassement ou une 5xx,
-// jamais sur une 4xx (M104) ; `429` : `Retry-After`, sans nouvel essai.
+// au journal. Seul le bien vendeur part : son adresse, son type, ses pièces et sa surface ; l'API
+// d'essai refuse tout autre champ, la clé d'idempotence du contrat comprise (17/11). Jamais un nom,
+// un téléphone, un e-mail, le texte ou le lien d'une annonce (règle 1 du contrat). Chaque réponse est
+// relue par une liste d'autorisation : ce qui n'est pas du contrat n'est jamais cru. Délai de 8 s,
+// puis un seul nouvel essai sur un dépassement ou une 5xx, jamais sur une 4xx (M104) ; `429` :
+// `Retry-After`, sans nouvel essai.
 
 export const ACADEMIA_API_BASE = 'https://app.myacademia.ai/api/v1';
 export const ACADEMIA_API_TIMEOUT_MS = 8_000;
@@ -179,7 +180,6 @@ export async function createAcademiaRequest(
     key: string;
     adresse: string;
     bien: AcademiaPropertyFacts | null;
-    idempotence: string;
   },
   fetchImpl: AcademiaFetch = fetch,
   timeoutMs: number = ACADEMIA_API_TIMEOUT_MS,
@@ -191,7 +191,6 @@ export async function createAcademiaRequest(
   const body = {
     adresse: input.adresse,
     ...(input.bien ? { bien: input.bien } : {}),
-    idempotence: input.idempotence,
   };
   const raw = await send(fetchImpl, input.key, 'POST', '/dossiers', body, timeoutMs);
   if (raw && (raw.status === 200 || raw.status === 202)) {

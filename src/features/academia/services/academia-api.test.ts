@@ -17,11 +17,10 @@ const input = {
   key: KEY,
   adresse: '4 chemin des Restanques Hautes, 06140 Vence',
   bien: { type: 'maison' as const, pieces: 5, surface: 135 },
-  idempotence: 'acm-157-p1-abc',
 };
 
 describe('POST /dossiers', () => {
-  it('la clé dans l’en-tête, et seulement l’adresse, le bien et l’idempotence dans le corps', async () => {
+  it('la clé dans l’en-tête, et seulement l’adresse et le bien dans le corps (l’API refuse tout autre champ)', async () => {
     const server = fakeAcademia();
     expect(await createAcademiaRequest(input, server.fetch)).toEqual({
       ok: true,
@@ -37,7 +36,6 @@ describe('POST /dossiers', () => {
     expect(server.calls[0].body).toEqual({
       adresse: '4 chemin des Restanques Hautes, 06140 Vence',
       bien: { type: 'maison', pieces: 5, surface: 135 },
-      idempotence: 'acm-157-p1-abc',
     });
   });
 
@@ -46,7 +44,6 @@ describe('POST /dossiers', () => {
     await createAcademiaRequest({ ...input, bien: null }, server.fetch);
     expect(server.calls[0].body).toEqual({
       adresse: input.adresse,
-      idempotence: input.idempotence,
     });
   });
 

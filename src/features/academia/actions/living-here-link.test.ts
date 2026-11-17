@@ -126,7 +126,6 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect(body).toEqual({
       adresse: ADDRESS,
       bien: { type: 'maison', pieces: 5, surface: 135 },
-      idempotence: expect.stringMatching(/^acm-[0-9a-f-]{36}-[0-9a-f]{16}$/),
     });
     expect(JSON.stringify(server.calls)).not.toContain('Lopez');
     expect(server.calls[0].authorization).toBe('Bearer msk_essai');
@@ -354,7 +353,6 @@ describe('« Créer le lien « Vivre ici » »', () => {
     await createLivingHereLink(PROJECT);
     expect(server.calls[0].body).toEqual({
       adresse: '1 place de la Démonstration, 06000 Nice',
-      idempotence: expect.any(String),
     });
     // Ni l'adresse ni les caractéristiques du bien de la démo.
     expect(JSON.stringify(server.calls)).not.toContain('Restanques');
