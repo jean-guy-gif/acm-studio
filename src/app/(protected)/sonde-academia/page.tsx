@@ -11,14 +11,11 @@ import { getProfile } from '@/lib/auth/get-profile';
 export const dynamic = 'force-dynamic';
 
 const ID = '0de30000-0000-4000-8000-000000000001';
+const Q = 'type=maison&pieces=5&surface=135';
 const PATHS = [
-  `/dossiers/${ID}`,
-  `/dossiers/${ID}?vue=bien`,
-  `/dossiers/${ID}?vue=bien-client`,
-  `/dossiers/${ID}/bien`,
-  `/dossiers/${ID}/bien-client`,
-  `/dossiers/${ID}/vues/bien`,
-  `/dossiers/${ID}/vues/bien-client`,
+  `/dossiers/${ID}/bien?${Q}`,
+  `/dossiers/${ID}/bien-client?${Q}`,
+  `/dossiers/${ID}/bien?type=appartement&pieces=3&surface=68`,
 ];
 
 export default async function SondeAcademia() {
