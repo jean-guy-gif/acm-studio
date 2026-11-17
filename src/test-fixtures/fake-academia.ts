@@ -50,7 +50,23 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
     const body = typeof init.body === 'string' ? JSON.parse(init.body) : null;
     calls.push({ method, path: url.pathname, authorization: headers.get('authorization'), body });
     let reply: FakeAcademiaReply = { status: 404, body: { erreur: 'introuvable' } };
-    if (method === 'POST' && url.pathname === '/api/v1/dossiers')
+    const extra =
+      body && typeof body === 'object'
+        ? Object.keys(body).filter((key) => key !== 'adresse' && key !== 'bien')
+        : [];
+    if (method === 'POST' && url.pathname === '/api/v1/dossiers' && extra.length > 0) {
+      // Comme l'API d'essai (17/11) : seuls « adresse » et « bien » sont acceptés.
+      reply = {
+        status: 400,
+        body: {
+          erreur: {
+            code: 'demande',
+            message:
+              'Demande invalide : seuls « adresse » et « bien » (type, pieces, surface) sont acceptés.',
+          },
+        },
+      };
+    } else if (method === 'POST' && url.pathname === '/api/v1/dossiers')
       reply = next(queues.createRequest);
     else if (method === 'GET' && /^\/api\/v1\/dossiers\/[^/]+$/.test(url.pathname))
       reply = next(queues.readRequest);
