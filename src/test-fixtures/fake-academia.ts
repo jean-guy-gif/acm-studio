@@ -6,6 +6,7 @@
 export type FakeAcademiaCall = {
   method: string;
   path: string;
+  query: string;
   authorization: string | null;
   body: unknown;
 };
@@ -17,6 +18,8 @@ export type FakeAcademiaRoutes = {
   createRequest?: FakeAcademiaReply[];
   readRequest?: FakeAcademiaReply[];
   createLink?: FakeAcademiaReply[];
+  // Mission 158 — la vue « bien » d'un dossier.
+  readView?: FakeAcademiaReply[];
 };
 
 export const FAKE_ACADEMIA_ID = 'dos_8f2c1a9e';
@@ -33,6 +36,7 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
     readRequest: [
       ...(routes.readRequest ?? [{ status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'pret' } }]),
     ],
+    readView: [...(routes.readView ?? [{ status: 200, body: { blocs: {} } }])],
     createLink: [
       ...(routes.createLink ?? [
         { status: 201, body: { url: FAKE_LINK, expire_le: '2026-12-16T00:00:00Z' } },
@@ -48,7 +52,13 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
     const method = (init.method ?? 'GET').toUpperCase();
     const headers = new Headers(init.headers);
     const body = typeof init.body === 'string' ? JSON.parse(init.body) : null;
-    calls.push({ method, path: url.pathname, authorization: headers.get('authorization'), body });
+    calls.push({
+      method,
+      path: url.pathname,
+      query: url.search,
+      authorization: headers.get('authorization'),
+      body,
+    });
     let reply: FakeAcademiaReply = { status: 404, body: { erreur: 'introuvable' } };
     const extra =
       body && typeof body === 'object'
@@ -68,6 +78,8 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
       };
     } else if (method === 'POST' && url.pathname === '/api/v1/dossiers')
       reply = next(queues.createRequest);
+    else if (method === 'GET' && /^\/api\/v1\/dossiers\/[^/]+\/bien$/.test(url.pathname))
+      reply = next(queues.readView);
     else if (method === 'GET' && /^\/api\/v1\/dossiers\/[^/]+$/.test(url.pathname))
       reply = next(queues.readRequest);
     else if (method === 'POST' && /^\/api\/v1\/dossiers\/[^/]+\/liens-client$/.test(url.pathname))

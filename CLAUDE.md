@@ -4,7 +4,7 @@
 
 ACM Studio est un SaaS pour conseillers immobiliers : préparer puis conduire un rendez-vous vendeur
 interactif, pour que le vendeur comprenne son marché et signe un mandat exclusif. Ce n'est pas un
-outil d'estimation automatique : ne jamais construire de fonction qui estime le prix du bien vendeur.
+outil d'estimation automatique : ACM ne calcule jamais lui-même une valeur du bien vendeur.
 
 Le conseiller décide.
 Le logiciel prépare.
@@ -18,7 +18,12 @@ est le chantier en cours ; la lecture de notes manuscrites par IA (121) attend l
 ## Règles produit absolues
 
 - Ne jamais demander le prix du bien vendeur à la création du dossier.
-- Ne jamais produire d'estimation automatique.
+- ACM ne calcule jamais de valeur du bien vendeur. Une valeur venue d'un service extérieur, la
+  « Valeur indicative d'Academia », s'affiche au conseiller seul, comme une aide : sa fourchette, sa
+  fiabilité et sa mention, nommées par leur source. Elle ne s'enregistre jamais : seule s'enregistre
+  la fourchette du conseiller, qu'il peut faire partir de cette valeur puis modifier librement. Elle
+  n'atteint jamais le vendeur : ni le Live, ni la présentation, ni un document, ni un lien client, ni
+  la vue « bien-client » (Jean-Guy, 17/11).
 - Ne jamais montrer le prix d'un concurrent avant d'avoir demandé au vendeur de le deviner, sauf en
   présentation directe ou dans l'Étude de marché, choisies par le conseiller (Jean-Guy, 05/11, M131).
 - Ne jamais montrer plusieurs concurrents sur le même écran du Live.
