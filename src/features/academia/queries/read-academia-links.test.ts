@@ -42,9 +42,11 @@ beforeEach(() => {
   state.subjects = [
     {
       project_id: 'p1',
-      address: '4 chemin des Restanques Hautes',
-      postal_code: '06140',
-      city: 'Vence',
+      ...{ address: '4 chemin des Restanques Hautes', postal_code: '06140', city: 'Vence' },
+    },
+    {
+      project_id: 'p2',
+      ...{ address: '8 avenue des Lilas', postal_code: '06600', city: 'Antibes' },
     },
   ];
   state.projects = [
@@ -52,11 +54,21 @@ beforeEach(() => {
       id: 'p1',
       academia_living_here_url: API_LINK,
       academia_living_here_pasted_at: '2026-11-10T09:00:00Z',
+      academia_living_here_property: {
+        address: '4 chemin des Restanques Hautes',
+        postal_code: '06140',
+        city: 'Vence',
+      },
     },
     {
       id: 'p2',
       academia_living_here_url: PASTED,
-      academia_living_here_pasted_at: '2026-10-10T09:00:00Z',
+      academia_living_here_pasted_at: '2026-10-25T09:00:00Z',
+      academia_living_here_property: {
+        address: '8 avenue des Lilas',
+        postal_code: '06600',
+        city: 'Antibes',
+      },
     },
   ];
   state.requests = [
@@ -80,7 +92,7 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
       ]),
       dates: new Map([
         ['p1', null],
-        ['p2', '2026-10-10T09:00:00Z'],
+        ['p2', '2026-10-25T09:00:00Z'],
       ]),
     });
   });
@@ -104,6 +116,11 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
         id: 'p1',
         academia_living_here_url: PASTED,
         academia_living_here_pasted_at: '2026-11-14T09:00:00Z',
+        academia_living_here_property: {
+          address: '4 chemin des Restanques Hautes',
+          postal_code: '06140',
+          city: 'Vence',
+        },
       },
     ];
     state.requests = [
@@ -127,6 +144,10 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
         postal_code: '06140',
         city: 'Vence',
       },
+      {
+        project_id: 'p2',
+        ...{ address: '8 avenue des Lilas', postal_code: '06600', city: 'Antibes' },
+      },
     ];
     const read = await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1', 'p2'], NOW);
     expect(read.ok && [...read.links.keys()]).toEqual(['p2']);
@@ -137,5 +158,33 @@ describe('le lien « Vivre ici » d’un mandat vers l’acquéreur', () => {
     expect(await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1'], NOW)).toEqual({
       ok: false,
     });
+  });
+
+  // Mission 157 — un lien collé se comporte comme un lien créé en un clic (Jean-Guy, 17/11).
+  it('collé depuis 30 jours ou plus : il ne part plus', async () => {
+    state.projects[1].academia_living_here_pasted_at = '2026-10-17T09:00:00Z';
+    const read = await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1', 'p2'], NOW);
+    expect(read.ok && [...read.links.keys()]).toEqual(['p1']);
+    state.projects[1].academia_living_here_pasted_at = '2026-10-18T09:00:00Z';
+    const fresh = await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1', 'p2'], NOW);
+    expect(fresh.ok && [...fresh.links.keys()]).toEqual(['p1', 'p2']);
+  });
+
+  it('collé, puis l’adresse du bien a changé : il ne part plus', async () => {
+    state.subjects = [
+      {
+        project_id: 'p1',
+        ...{ address: '4 chemin des Restanques Hautes', postal_code: '06140', city: 'Vence' },
+      },
+      { project_id: 'p2', address: '10 avenue des Lilas', postal_code: '06600', city: 'Antibes' },
+    ];
+    const read = await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1', 'p2'], NOW);
+    expect(read.ok && [...read.links.keys()]).toEqual(['p1']);
+  });
+
+  it('collé sans date connue (avant la mission 156) : il ne part plus', async () => {
+    state.projects[1].academia_living_here_pasted_at = null;
+    const read = await readMandateAcademiaLinks(db.client as never, 'agency-a', ['p1', 'p2'], NOW);
+    expect(read.ok && [...read.links.keys()]).toEqual(['p1']);
   });
 });

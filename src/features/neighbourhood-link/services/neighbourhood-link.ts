@@ -1,4 +1,5 @@
 import type { QrCode } from '@/features/contact-card/services/qr-code';
+import { pastedLinkStatus } from '@/features/academia/services/living-here-age';
 import { academiaLivingHereUrl } from '@/lib/academia';
 
 // Mission 157 B — le lien « Vivre ici » du bien, montré au vendeur : au Live (« Votre bien »), dans
@@ -25,6 +26,9 @@ export function neighbourhoodLink(input: {
   url: unknown;
   request: NeighbourhoodRequest | null;
   propertyAddress: string | null;
+  // Un lien collé à la main : le jour du collage et l'adresse du bien à ce moment (la base).
+  pastedAt?: string | null;
+  pastedProperty?: unknown;
   now: Date;
 }): NeighbourhoodLink | null {
   const url = academiaLivingHereUrl(input.url);
@@ -36,7 +40,15 @@ export function neighbourhoodLink(input: {
     if (request.property_address !== input.propertyAddress) return null;
     return { url, validUntil: request.link_expires_at };
   }
-  return { url, validUntil: null };
+  // Collé à la main, il se comporte comme un lien créé en un clic (Jean-Guy, 17/11) : à 30 jours et
+  // au-delà, sans date, ou l'adresse du bien changée depuis le collage, il n'est plus montré.
+  const status = pastedLinkStatus({
+    pastedAt: input.pastedAt ?? null,
+    pastedProperty: input.pastedProperty ?? null,
+    currentAddress: input.propertyAddress,
+    now: input.now,
+  });
+  return status === 'shown' ? { url, validUntil: null } : null;
 }
 
 // L'adresse du lien à taper, sur un document imprimé : sans « https:// ».

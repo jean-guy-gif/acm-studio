@@ -37,7 +37,9 @@ async function read(
 ): Promise<NeighbourhoodLink | null> {
   const project = await client
     .from('projects')
-    .select('academia_living_here_url')
+    .select(
+      'academia_living_here_url, academia_living_here_pasted_at, academia_living_here_property',
+    )
     .eq('id', projectId)
     .eq('agency_id', agencyId)
     .maybeSingle();
@@ -67,6 +69,8 @@ async function read(
   }
   return neighbourhoodLink({
     url: project.data.academia_living_here_url,
+    pastedAt: project.data.academia_living_here_pasted_at ?? null,
+    pastedProperty: project.data.academia_living_here_property ?? null,
     request: request.data ?? null,
     propertyAddress: subject.data
       ? propertyAddressLine({

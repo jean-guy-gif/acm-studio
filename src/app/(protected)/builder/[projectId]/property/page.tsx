@@ -4,7 +4,7 @@ import { kickerLabel, pageTitle } from '@/components/ui/styles';
 import { AcademiaCard } from '@/features/academia/components/academia-card';
 import { livingHereApiInitial } from '@/features/academia/queries/living-here-api-view';
 import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
-import { livingHereAgeLine } from '@/features/academia/services/living-here-age';
+import { livingHereAgeLine, pastedLinkStatus } from '@/features/academia/services/living-here-age';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
@@ -76,6 +76,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // d'essai et l'adresse de son dossier fixe ; une vraie agence, l'interrupteur allumé). Fermée : la
   // carte d'aujourd'hui.
   const access = academiaApiAccess(demo);
+  const now = new Date();
   const apiInitial =
     access && profile
       ? await livingHereApiInitial(
@@ -123,7 +124,18 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         savedUrl={academiaLivingHereUrl(project.academia_living_here_url)}
         savedLine={
           academiaLivingHereUrl(project.academia_living_here_url)
-            ? livingHereAgeLine(project.academia_living_here_pasted_at ?? null, new Date())
+            ? livingHereAgeLine(project.academia_living_here_pasted_at ?? null, now, {
+                // Mission 157 — un lien collé dont l'adresse du bien a changé depuis n'est plus
+                // montré : la carte le dit, et propose de créer un lien neuf quand c'est possible.
+                moved:
+                  pastedLinkStatus({
+                    pastedAt: project.academia_living_here_pasted_at ?? null,
+                    pastedProperty: project.academia_living_here_property ?? null,
+                    currentAddress: address,
+                    now,
+                  }) === 'moved',
+                canCreate: access != null && address != null,
+              })
             : null
         }
         signed={conclusion?.outcome === 'signed'}

@@ -3160,6 +3160,7 @@ export type Database = {
       projects: {
         Row: {
           academia_living_here_pasted_at: string | null;
+          academia_living_here_property: Json | null;
           academia_living_here_url: string | null;
           advisor_id: string;
           agency_id: string;
@@ -3186,6 +3187,7 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           academia_living_here_pasted_at?: string | null;
+          academia_living_here_property?: Json | null;
           academia_living_here_url?: string | null;
           advisor_id: string;
           agency_id: string;
@@ -3211,6 +3213,7 @@ export type Database = {
         };
         Update: {
           academia_living_here_pasted_at?: string | null;
+          academia_living_here_property?: Json | null;
           academia_living_here_url?: string | null;
           advisor_id?: string;
           agency_id?: string;

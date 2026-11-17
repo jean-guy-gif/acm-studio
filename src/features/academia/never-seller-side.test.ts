@@ -122,7 +122,16 @@ describe('le lien « Vivre ici » montré au vendeur : une seule porte, le lien 
       'https://app.myacademia.ai/l/abc?adresse=4%20chemin',
       'https://exemple.fr/l/abc',
     ]) {
-      expect(neighbourhoodLink({ url, request: null, propertyAddress: null, now })).toBeNull();
+      expect(
+        neighbourhoodLink({
+          url,
+          request: null,
+          propertyAddress: null,
+          pastedAt: '2026-11-16T10:00:00Z',
+          pastedProperty: null,
+          now,
+        }),
+      ).toBeNull();
     }
   });
 

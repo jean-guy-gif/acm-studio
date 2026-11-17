@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { pastedLinkStatus } from '@/features/academia/services/living-here-age';
 import { academiaLivingHereUrl, propertyAddressLine } from '@/lib/academia';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import type { Database } from '@/lib/supabase/database.types';
@@ -11,8 +12,8 @@ import type { Database } from '@/lib/supabase/database.types';
 // l'agence, non archivé (seul un mandat se propose, M145 A ; l'écran du conseiller le dit), et
 // seulement un lien d'Academia, relu. Une lecture en échec n'est jamais « pas de lien » (M98) : elle
 // est dite (`ok: false`) et entre au journal (M100).
-// Mission 156 — et la date du collage de chaque lien (`dates`, nulle pour un lien d'avant), pour
-// l'avertissement aux 25e et 30e jours.
+// Mission 156 — et la date du collage de chaque lien (`dates`), pour l'avertissement du 25e au 29e
+// jour ; un lien collé depuis 30 jours ou plus ne part plus (M157).
 export type AcademiaLinksRead =
   { ok: true; links: Map<string, string>; dates: Map<string, string | null> } | { ok: false };
 
@@ -26,7 +27,9 @@ export async function readMandateAcademiaLinks(
   if (ids.length === 0) return { ok: true, links: new Map(), dates: new Map() };
   const projects = await client
     .from('projects')
-    .select('id, academia_living_here_url, academia_living_here_pasted_at')
+    .select(
+      'id, academia_living_here_url, academia_living_here_pasted_at, academia_living_here_property',
+    )
     .eq('agency_id', agencyId)
     .neq('status', 'archived')
     .in('id', ids);
@@ -92,6 +95,16 @@ export async function readMandateAcademiaLinks(
       links.set(row.id, url);
       dates.set(row.id, null);
     } else {
+      // Mission 157 — collé à la main, il se comporte comme un lien créé en un clic (Jean-Guy,
+      // 17/11) : à 30 jours et au-delà, sans date, ou l'adresse du bien changée depuis le collage,
+      // il ne part plus.
+      const status = pastedLinkStatus({
+        pastedAt: row.academia_living_here_pasted_at ?? null,
+        pastedProperty: row.academia_living_here_property ?? null,
+        currentAddress: addresses.get(row.id) ?? null,
+        now,
+      });
+      if (status !== 'shown') continue;
       links.set(row.id, url);
       dates.set(row.id, row.academia_living_here_pasted_at ?? null);
     }
