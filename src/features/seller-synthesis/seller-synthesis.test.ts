@@ -264,6 +264,27 @@ const load = async (language = 'fr') => {
   return { db, synthesis, html };
 };
 
+// Mission 158 — test 3 : la synthèse, chargée et rendue, n'appelle jamais Academia et ne montre
+// aucun montant de la valeur indicative (celle du dossier de démonstration : 955 000 à 1 060 000 €).
+describe('la synthèse ne reçoit jamais la valeur indicative d’Academia', () => {
+  it('aucun appel à Academia, aucun de ses montants dans le document', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const { html } = await load();
+    expect(fetchSpy.mock.calls.some(([url]) => String(url).includes('myacademia.ai'))).toBe(false);
+    for (const amount of [
+      '980\u00a0000',
+      '955\u00a0000',
+      '1\u00a0060\u00a0000',
+      '980 000',
+      '955 000',
+    ]) {
+      expect(html).not.toContain(amount);
+    }
+    expect(html).not.toMatch(/Valeur indicative|fiabilité/);
+    fetchSpy.mockRestore();
+  });
+});
+
 // Mission 140 — la synthèse d'un vendeur anglophone : tout en anglais, les montants à l'anglaise,
 // les mentions légales de l'agence en français (décision de Jean-Guy, 06/11).
 describe('la synthèse dans la langue du vendeur', () => {

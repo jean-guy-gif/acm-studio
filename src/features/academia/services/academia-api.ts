@@ -284,3 +284,31 @@ export async function createAcademiaClientLink(
   }
   return failure(raw);
 }
+
+// Mission 158 — la vue « bien » du dossier d'Academia (le dossier d'adresse du conseiller), calculée
+// pour le type, les pièces et la surface du bien vendeur (l'API les exige : 400 sans eux). La réponse
+// est rendue telle quelle à `parsePropertyView`, qui la relit champ par champ.
+export async function readAcademiaPropertyView(
+  key: string,
+  id: string,
+  bien: AcademiaPropertyFacts & { pieces: number; surface: number },
+  fetchImpl: AcademiaFetch = fetch,
+  timeoutMs: number = ACADEMIA_API_TIMEOUT_MS,
+): Promise<{ ok: true; json: unknown } | AcademiaFailure> {
+  if (!ACADEMIA_ID.test(id)) return { ok: false, reason: 'not_found' };
+  const query = new URLSearchParams({
+    type: bien.type,
+    pieces: String(bien.pieces),
+    surface: String(bien.surface),
+  });
+  const raw = await send(
+    fetchImpl,
+    key,
+    'GET',
+    `/dossiers/${id}/bien?${query}`,
+    undefined,
+    timeoutMs,
+  );
+  if (raw?.status === 200) return { ok: true, json: raw.json };
+  return failure(raw);
+}

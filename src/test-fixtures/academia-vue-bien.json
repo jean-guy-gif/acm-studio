@@ -1,0 +1,359 @@
+{
+  "dossier": {
+    "id": "0de30000-0000-4000-8000-000000000001"
+  },
+  "bien": {
+    "type": "maison",
+    "pieces": 5,
+    "surface": 135
+  },
+  "calculeLe": "2026-11-17",
+  "blocs": {
+    "ventes": {
+      "etat": "ok",
+      "source": "DVF (DGFiP), ventes de logements anciens",
+      "date": "2026-10-07",
+      "note": null,
+      "type": "maison",
+      "pieces": 5,
+      "depuis": 2021,
+      "anneau": 250,
+      "anneaux": [
+        {
+          "rayon": 50,
+          "ventes": 1
+        },
+        {
+          "rayon": 100,
+          "ventes": 1
+        },
+        {
+          "rayon": 250,
+          "ventes": 11
+        },
+        {
+          "rayon": 300,
+          "ventes": 14
+        },
+        {
+          "rayon": 500,
+          "ventes": 27
+        },
+        {
+          "rayon": 800,
+          "ventes": 77
+        }
+      ],
+      "venteALAdresse": {
+        "date": "2022-04-28",
+        "prix": 524950,
+        "surface": 65,
+        "pieces": 3,
+        "type": "maison",
+        "prixM2": 8076
+      },
+      "liste": [
+        {
+          "date": "2025-11-06",
+          "prix": 876800,
+          "surface": 118,
+          "pieces": 5,
+          "terrain": 628,
+          "prixM2": 7431,
+          "distance": 120,
+          "rue": "Boulevard Marechal Juin",
+          "aLAdresse": false
+        },
+        {
+          "date": "2024-04-13",
+          "prix": 945575,
+          "surface": 119,
+          "pieces": 5,
+          "terrain": 1266,
+          "prixM2": 7946,
+          "distance": 135,
+          "rue": "Chemin du Val Fleuri",
+          "aLAdresse": false
+        },
+        {
+          "date": "2023-07-07",
+          "prix": 783266,
+          "surface": 134,
+          "pieces": 5,
+          "terrain": 1079,
+          "prixM2": 5845,
+          "distance": 248,
+          "rue": "Boulevard Marechal Juin",
+          "aLAdresse": false
+        },
+        {
+          "date": "2023-03-10",
+          "prix": 615551,
+          "surface": 114,
+          "pieces": 5,
+          "terrain": 1065,
+          "prixM2": 5400,
+          "distance": 101,
+          "rue": "Boulevard Marechal Juin",
+          "aLAdresse": false
+        },
+        {
+          "date": "2023-03-02",
+          "prix": 663830,
+          "surface": 121,
+          "pieces": 5,
+          "terrain": 1520,
+          "prixM2": 5486,
+          "distance": 226,
+          "rue": "Avenue de Nice",
+          "aLAdresse": false
+        },
+        {
+          "date": "2022-10-24",
+          "prix": 847604,
+          "surface": 133,
+          "pieces": 5,
+          "terrain": 1063,
+          "prixM2": 6373,
+          "distance": 26,
+          "rue": "Rue des Oliviers",
+          "aLAdresse": false
+        },
+        {
+          "date": "2022-04-11",
+          "prix": 640615,
+          "surface": 125,
+          "pieces": 5,
+          "terrain": 1228,
+          "prixM2": 5125,
+          "distance": 102,
+          "rue": "Avenue de Nice",
+          "aLAdresse": false
+        },
+        {
+          "date": "2022-01-12",
+          "prix": 754667,
+          "surface": 132,
+          "pieces": 5,
+          "terrain": 1013,
+          "prixM2": 5717,
+          "distance": 164,
+          "rue": "Chemin des Collettes",
+          "aLAdresse": false
+        },
+        {
+          "date": "2021-12-12",
+          "prix": 879320,
+          "surface": 123,
+          "pieces": 5,
+          "terrain": 1501,
+          "prixM2": 7149,
+          "distance": 237,
+          "rue": "Rue des Oliviers",
+          "aLAdresse": false
+        },
+        {
+          "date": "2021-08-18",
+          "prix": 628193,
+          "surface": 136,
+          "pieces": 5,
+          "terrain": 787,
+          "prixM2": 4619,
+          "distance": 160,
+          "rue": "Chemin du Val Fleuri",
+          "aLAdresse": false
+        },
+        {
+          "date": "2021-02-04",
+          "prix": 669325,
+          "surface": 117,
+          "pieces": 5,
+          "terrain": 1430,
+          "prixM2": 5721,
+          "distance": 166,
+          "rue": "Boulevard Marechal Juin",
+          "aLAdresse": false
+        }
+      ]
+    },
+    "estimation": {
+      "source": "Calcul Mon secteur (estimateur v1) sur les ventes DVF",
+      "date": "2026-11-17",
+      "mention": "Valeur indicative : elle ne remplace pas un avis de valeur.",
+      "comparables": 11,
+      "rayon": 300,
+      "etat": "ok",
+      "note": null,
+      "prix": 980000,
+      "bas": 955000,
+      "haut": 1060000,
+      "prixM2": 7263,
+      "fiabilite": "moyenne",
+      "rayonNecessaire": null
+    },
+    "dpe": {
+      "etat": "ok",
+      "source": "ADEME, diagnostics de performance énergétique des logements",
+      "date": "2026-10-07",
+      "note": "Aucun DPE de l'adresse ne correspond au type et à la surface du bien (10 % près).",
+      "dernier": {
+        "date": "2021-12-07",
+        "etiquette": "E",
+        "etiquetteOrigine": "F",
+        "etiquette2027": "D",
+        "type": "maison",
+        "surface": 82.6,
+        "annee": 1960,
+        "etage": null,
+        "numero": "2600E0000001X",
+        "correspond": false,
+        "ecartSurfacePct": -38.8
+      },
+      "aLAdresse": [],
+      "correspondants": 0
+    },
+    "population": {
+      "etat": "ok",
+      "source": "Insee, revenus fiscaux localisés (Filosofi), carreaux de 200 m",
+      "date": "2026-10-07",
+      "note": "Valeurs arrondies (secret statistique).",
+      "rayon": 300,
+      "habitants": 1120,
+      "menages": 500,
+      "personnesParMenage": 2.2
+    },
+    "urbanisme": {
+      "etat": "ok",
+      "source": "Géoportail de l'urbanisme (IGN, Géoplateforme)",
+      "date": "2026-10-07",
+      "note": null,
+      "parcelle": "06027000BA0100",
+      "zonage": "plu",
+      "phrase": "Rien de relevé sur la parcelle ni à moins de 40 m. 3 emplacements réservés de voirie entre 40 et 300 m, le plus proche à 153 m.",
+      "niveaux": {
+        "parcelle": {
+          "voirie": 0,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        },
+        "a40m": {
+          "voirie": 0,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        },
+        "a300m": {
+          "voirie": 3,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        }
+      },
+      "elements": [
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "V37",
+          "distance": 153
+        },
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "V47",
+          "distance": 279
+        },
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "P27",
+          "distance": 296
+        }
+      ]
+    },
+    "permis": {
+      "etat": "ok",
+      "source": "Sitadel (SDES), permis de construire et de démolir",
+      "date": "2026-10-07",
+      "note": "Permis de démolir non vérifiés : actualisez le dossier.",
+      "rayon": 300,
+      "depuis": 2022,
+      "construire": [
+        {
+          "autorise": "2025-08-17",
+          "etat": "termine",
+          "type": "PC",
+          "logements": 2,
+          "surface": 124,
+          "distance": 234,
+          "adresse": "17 Chemin du Val Fleuri",
+          "demandeur": null
+        },
+        {
+          "autorise": "2024-03-12",
+          "etat": "autorise",
+          "type": "PC",
+          "logements": 1,
+          "surface": 62,
+          "distance": 128,
+          "adresse": "12 Rue des Oliviers",
+          "demandeur": null
+        }
+      ],
+      "demolirEtat": "non_verifie",
+      "demolir": []
+    },
+    "risques": {
+      "etat": "ok",
+      "source": "Géorisques (ministère de la Transition écologique)",
+      "date": "2026-10-07",
+      "note": null,
+      "argile": "Exposition moyenne",
+      "seisme": "4 - MOYENNE",
+      "radon": "1",
+      "tri": "TRI Nice Cannes Mandelieu",
+      "catastrophesNaturelles": {
+        "nombre": 2,
+        "derniere": "2023-03-31",
+        "types": {
+          "Inondations et/ou Coulées de Boue": 1,
+          "Mouvement de Terrain": 1
+        }
+      },
+      "zonagePlu": {
+        "zone": "UFb4",
+        "libelle": "Zone UF : zones pavillonnaires"
+      },
+      "nonLus": []
+    },
+    "copropriete": {
+      "etat": "ok",
+      "source": "Registre national des copropriétés (Anah)",
+      "date": "2026-10-07",
+      "note": null,
+      "rattachement": "adresse",
+      "distance": null,
+      "nom": "Résidence Le Clos de la Démonstration",
+      "immatriculation": "AC1",
+      "lotsHabitation": 6,
+      "periodeConstruction": "1975-1993",
+      "mandatEnCours": false,
+      "finMandat": "2026-01-17"
+    }
+  }
+}
