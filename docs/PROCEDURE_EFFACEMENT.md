@@ -68,6 +68,10 @@ select
   -- Mission 139 : ce bien écarté pour des acquéreurs (libellé neutre, clé « project: »), à supprimer
   -- avec le dossier : delete from buyer_dismissals where property_key = 'project::dossier';
   (select count(*) from buyer_dismissals where property_key = 'project:' || ':dossier') as biens_ecartes,
+  -- Mission 157 : le dossier Academia du bien et son lien « Vivre ici » ; ils partent avec le dossier
+  -- (cascade). Le dossier lui-même vit chez Mon secteur (Academia) : relever son identifiant
+  -- (`academia_id`) AVANT d'effacer, et demander à Laurent de l'effacer de son côté.
+  (select count(*) from project_academia_requests where project_id = ':dossier') as dossier_academia,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;

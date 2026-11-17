@@ -24,6 +24,7 @@ const FILES = [
   'src/features/market-update/components/market-update-document.tsx',
   'src/features/market-update/components/price-ranking.tsx',
   'src/features/market-study/components/market-study-document.tsx',
+  'src/features/neighbourhood-link/components/neighbourhood-link-block.tsx',
   'src/features/live-seller/services/price-position.ts',
   'src/features/live-seller/services/market-reading.ts',
   'src/features/live-seller/services/pending-before-analysis.ts',
@@ -68,7 +69,19 @@ const ADVISOR: Record<string, string[]> = {
   ],
 };
 
-const NOT_SHOWN = new Set(['className', 'd', 'href', 'viewBox', 'name', 'type', 'role', 'key']);
+// `rel` et `target` (un lien qui s'ouvre dans un nouvel onglet, M157 B) ne se lisent pas à l'écran.
+const NOT_SHOWN = new Set([
+  'className',
+  'd',
+  'href',
+  'viewBox',
+  'name',
+  'type',
+  'role',
+  'key',
+  'rel',
+  'target',
+]);
 const FRENCH = /[a-zà-ÿ’]{2,}[ \u00a0][a-zà-ÿ’]{2,}|[à-ÿ]/i;
 const isClassList = (text: string): boolean => {
   const tokens = text.trim().split(/\s+/);

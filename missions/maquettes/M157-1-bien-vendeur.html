@@ -1,0 +1,161 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M157 · 1 — Bien vendeur : le lien « Vivre ici » en un clic</title><style>
+@font-face{font-family:Inter;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/inter/inter-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Montserrat;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2') format('woff2');font-weight:600}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2') format('woff2');font-weight:700}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}.sheet-sub{font-size:13px;color:#3f3f46;max-width:1720px;line-height:1.5}
+.layout{display:flex;gap:26px;align-items:flex-start}.rows{display:flex;flex-direction:column;gap:26px}.row{display:flex;gap:22px;align-items:flex-start}
+.col{display:flex;flex-direction:column}
+.ftitle{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff;background:#12875a}.st.before{background:#71717a}
+.notes{width:400px;display:flex;flex-direction:column;gap:12px;position:sticky;top:0}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.5;color:#3d3200}.note b.t{color:#5b4a00}
+code{font-size:12px;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+.frame{background:#f7f8fb;border:1px solid #a1a1aa;overflow:hidden;position:relative;display:flex}
+.frame.desk{width:1280px;min-height:640px}.frame.tab{width:820px;min-height:900px}.frame.phone{width:390px;min-height:844px;flex-direction:column}
+.frame.print{background:#f4f4f5}
+.side{width:256px;flex:none;background:#fff;border-right:1px solid #e4e4e7;padding:22px 18px;display:flex;flex-direction:column;gap:26px}
+.tab .side{width:220px}
+.logo{display:flex;align-items:center;gap:6px;color:#00527a}.logo span{display:flex;flex-direction:column;line-height:1}
+.logo b{font-family:Montserrat;font-size:15px;font-weight:800;letter-spacing:.08em}.logo i{font-style:normal;font-family:Montserrat;font-size:7px;font-weight:600;letter-spacing:.2em;margin-top:2px}
+nav{display:flex;flex-direction:column;gap:4px;flex:1}.grp{display:flex;flex-direction:column;gap:2px}.grp.sep{border-top:1px solid #e4e4e7;margin-top:10px;padding-top:12px}
+.gt{font-family:Montserrat;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#00527a;padding:0 12px 4px}
+.it{display:flex;flex-direction:column;border-radius:12px;padding:7px 12px}.il{display:flex;justify-content:space-between;font-family:Rajdhani,Montserrat;font-size:16px;font-weight:600;color:#52525b}.ih{font-size:11.5px;color:#71717a}
+.it.on{background:#eaf5ff}.it.on .il{color:#00527a}
+.pb{border-radius:999px;background:#ea580c;color:#fff;font-family:Inter;font-size:11px;font-weight:700;padding:1px 7px;align-self:center}
+.acc{display:flex;gap:9px;align-items:center;border:1px solid #e4e4e7;border-radius:12px;padding:9px;font-size:11px;color:#71717a}.acc b{color:#18181b;font-size:12px}
+.av{width:30px;height:30px;border-radius:99px;background:#eaf5ff;color:#00527a;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:none}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #e4e4e7;background:#fff}.topbar .logo{flex:1}
+.burger{width:38px;height:38px;border:1px solid #e4e4e7;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.main{flex:1;min-width:0;padding:30px 36px 40px;display:flex;flex-direction:column;gap:16px;container-type:inline-size;overflow:hidden}
+.print .main{align-items:center}.print .card{width:100%;max-width:794px}
+.tab .main{padding:24px 24px 40px}.phone .main{padding:16px 14px 40px;gap:12px}
+.a4{width:100%;max-width:794px;height:160px;border:1px dashed #a1a1aa;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;color:#71717a;padding:0 16px;text-align:center}
+.back{font-size:13px;color:#71717a}
+.h1{font-family:Rajdhani,Montserrat;font-weight:700;font-size:36px;line-height:1.05;color:#00527a}.phone .h1{font-size:28px}
+.h2{font-family:Rajdhani,Montserrat;font-weight:700;font-size:23px;color:#00527a}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:14px}.phone .card{padding:14px;border-radius:14px}
+.gh{display:flex;justify-content:space-between;align-items:center;gap:10px}.lnk{color:#00527a;font-weight:700;font-size:13px;text-decoration:underline}
+.lead{font-size:14px;color:#3f3f46;line-height:1.45;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hint{font-size:12.5px;color:#71717a;line-height:1.45}
+.fs{border:none;display:flex;flex-direction:column;gap:8px}.fs legend{font-size:14px;font-weight:700;color:#3f3f46;margin-bottom:6px}
+.fs.new{border:2px solid #00527a;border-radius:14px;padding:12px 14px;background:#fbfdff}
+.newtag{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:#12875a;color:#fff;border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.chk{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#3f3f46}.box{width:16px;height:16px;border:1.5px solid #71717a;border-radius:4px;flex:none}
+.lrs{list-style:none;display:flex;flex-direction:column;gap:10px}
+.lr{border:1px solid #e4e4e7;border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:8px;background:#fff}
+.lrh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px}
+.badge{font-size:12px;font-weight:600;border-radius:7px;padding:2px 8px;background:#eaf5ff;color:#00527a}.badge.agency{background:#ecfdf5;color:#047857}
+.okdot{width:9px;height:9px;border-radius:99px;background:#12875a;display:inline-block}
+.url{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px}.u{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#18181b;background:#f4f4f5;border-radius:8px;padding:6px 9px;word-break:break-all}
+.paste{display:flex;gap:8px;align-items:stretch}.paste .in{flex:1}.paste.col{flex-direction:column}
+.in{font-style:normal;font-weight:400;border:1px solid #e4e4e7;border-radius:10px;padding:9px 12px;color:#71717a;font-size:13.5px;background:#fff;display:block}.in.on{color:#18181b}
+.info{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:#3f3f46;background:#eaf5ff;border-radius:9px;padding:7px 10px;line-height:1.4}
+.ico{flex:none;width:17px;height:17px;border-radius:99px;background:#00527a;color:#fff;font-size:11px;font-weight:800;font-style:italic;font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.warn{font-size:13px;font-weight:600;color:#b45309;background:#fff7e6;border-radius:9px;padding:7px 10px;line-height:1.4}
+.err{font-size:13px;font-weight:600;color:#b91c1c;background:#fef2f2;border-radius:9px;padding:7px 10px;line-height:1.4}
+.sel{list-style:none;display:flex;flex-direction:column;gap:8px}.sel li{display:flex;gap:10px;align-items:center;font-size:13.5px}.sel small{display:block;font-size:12px;color:#71717a}
+.sp{width:56px;height:42px;border-radius:8px;background:#e4e4e7 center/cover;flex:none}
+.discreet{font-size:13px}.lnk.soft{font-weight:600;color:#52525b}
+.share{border:1px solid #e4e4e7;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.tl{font-size:13px;font-weight:800;color:#00527a}
+.msg{font-size:13.5px;line-height:1.55;color:#18181b;background:#f4f4f5;border-radius:10px;padding:10px 12px;word-break:break-word}
+.msg mark{background:#dff3e8;color:#18181b;padding:0 2px;border-radius:3px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font-family:inherit;font-size:14px;font-weight:700;border-radius:12px;padding:10px 16px;border:1.5px solid #00527a;background:#fff;color:#00527a;white-space:nowrap}
+.btn.sm{font-size:13px;padding:7px 12px;border-radius:10px}.btn.fill{background:#00527a;color:#fff;align-self:flex-start}
+.visits{list-style:none;display:flex;flex-direction:column;gap:12px}
+.visit{border:1px solid #e4e4e7;border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.vh{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.vt{font-family:Rajdhani,Montserrat;font-size:17px}.price{font-size:14px;color:#52525b}
+.track{list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.track li{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border-radius:999px;padding:4px 10px;background:#f4f4f5;color:#71717a}
+.track li i{width:8px;height:8px;border-radius:99px;background:currentColor}.track li.now{background:#eaf5ff;color:#00527a}
+.form{display:flex;flex-direction:column;gap:10px;border-top:1px solid #e4e4e7;padding-top:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@container (max-width:520px){.g2{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:#52525b}
+.client{background:#fff}.ctop{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e4e4e7;font-size:12.5px}.cag{font-weight:800;color:#00527a}.cstep{color:#71717a}
+.client .main{padding:14px 16px 90px;gap:12px}
+.cphoto{height:220px;border-radius:14px;background:#e4e4e7 center/cover}
+.ct{font-family:Rajdhani,Montserrat;font-size:21px;color:#18181b}
+.cprice{font-family:Rajdhani,Montserrat;font-size:22px;font-weight:700;display:flex;flex-direction:column}.cprice span{font-family:Inter;font-size:12.5px;font-weight:600;color:#b45309}
+.crit{list-style:none;display:flex;flex-direction:column;gap:5px;font-size:14px}.crit .y{color:#12875a}.crit .q{color:#71717a}
+.living{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid #eaf5ff;background:#f2f9ff;border-radius:16px;padding:13px 15px}
+.living span{display:flex;flex-direction:column;gap:2px}.living small{font-size:13px;color:#52525b}.living b{font-family:Rajdhani,Montserrat;font-size:17px;color:#00527a}.living i{font-style:normal;font-size:20px;color:#00527a}
+.answers{display:flex;flex-direction:column;gap:8px}.answers span{border:1.5px solid #00527a;border-radius:12px;padding:11px;text-align:center;font-weight:700;font-size:14.5px;color:#00527a}
+.cbar{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid #e4e4e7;background:#fff;font-size:14px;color:#52525b}.cbar b{color:#00527a}
+
+.tabs{display:flex;gap:18px;font-size:13px;color:#71717a;border-bottom:1px solid #e4e4e7;padding-bottom:8px}.tabs b{color:#00527a}
+.sep{border-top:1px solid #f4f4f5;padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.f{font-size:13px;font-weight:600;color:#52525b}
+.wait{display:flex;gap:10px;align-items:center;font-size:13.5px;color:#3f3f46;background:#f4f4f5;border-radius:9px;padding:9px 12px}
+.spin{width:14px;height:14px;border:2px solid #e4e4e7;border-top-color:#00527a;border-radius:99px;display:inline-block;flex:none}
+.err{font-size:13px;font-weight:600;color:#b91c1c;background:#fef2f2;border-radius:9px;padding:7px 10px;line-height:1.4}
+.props{list-style:none;display:flex;flex-direction:column;gap:6px}.props li{border:1px solid #e4e4e7;border-radius:9px;padding:7px 10px;font-size:13.5px}.props li:first-child{border-color:#00527a;background:#eaf5ff}
+.fallback{font-size:13px;color:#52525b}.fallback summary{cursor:pointer;margin-bottom:6px}
+</style></head><body>
+<h1 class="sheet">M157 · 1 — Bien vendeur : le lien « Vivre ici » en un clic</h1><p class="sheet-sub">L’onglet Bien vendeur d’un mandat (M. et Mme Lopez, Vence, dans la démo). Le champ à coller (M147 A) laisse la place à un bouton : ACM demande le dossier de l’adresse à Academia, puis son lien client, et le range sur le mandat. Le conseiller n’ouvre jamais Mon secteur.</p>
+<div class="layout"><div class="rows"><div class="row"><div class="col"><div class="ftitle"><span class="st before">AVANT</span>Ordinateur · 1280 · aujourd’hui (M147 A)</div><div class="frame desk"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it on"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <h1 class="h1">M. et Mme Lopez</h1>
+  <div class="tabs"><span>Vue d’ensemble</span><b>Bien vendeur</b><span>Concurrents</span><span>Avant le rendez-vous</span><span>Live</span></div>
+  <section class="card">
+  <h2 class="h2">Le bien dans Academia</h2>
+  <p class="hint">Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre, copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.</p>
+  <div class="btns"><button class="btn sm">Dossier d’adresse ↗</button><button class="btn sm">Vivre ici ↗</button></div>
+  <div class="sep"><span class="f">Lien « Vivre ici » à montrer aux acquéreurs (facultatif)</span>
+  <i class="in">Collez le lien donné par Academia</i>
+  <p class="hint">Montré sur le lien de chaque acquéreur qui a ce bien dans sa sélection, et dans « Confirmer la visite ».</p>
+  <div class="btns"><button class="btn sm">Enregistrer le lien</button></div></div></section></div></div></div></div><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Ordinateur · 1280 · le bouton</div><div class="frame desk"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it on"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <h1 class="h1">M. et Mme Lopez</h1>
+  <div class="tabs"><span>Vue d’ensemble</span><b>Bien vendeur</b><span>Concurrents</span><span>Avant le rendez-vous</span><span>Live</span></div>
+  <section class="card">
+  <h2 class="h2">Le bien dans Academia</h2>
+  <p class="hint">Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre, copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.</p>
+  <div class="btns"><button class="btn sm">Dossier d’adresse ↗</button><button class="btn sm">Vivre ici ↗</button></div><div class="sep"><span class="f">Lien « Vivre ici » pour les acquéreurs</span><p class="hint">Academia prépare la page du quartier de <b>4 chemin des Restanques Hautes, 06140 Vence</b> : les écoles, les commerces, les transports. Montrée au vendeur et à chaque acquéreur à qui ce bien est proposé.</p>
+      <div class="btns"><button class="btn sm">Créer le lien « Vivre ici »</button></div></div></section></div></div></div></div><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Tablette · 820 · Academia prépare le dossier</div><div class="frame tab"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it on"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <h1 class="h1">M. et Mme Lopez</h1>
+  <div class="tabs"><span>Vue d’ensemble</span><b>Bien vendeur</b><span>Concurrents</span><span>Avant le rendez-vous</span><span>Live</span></div>
+  <section class="card">
+  <h2 class="h2">Le bien dans Academia</h2>
+  <p class="hint">Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre, copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.</p>
+  <div class="btns"><button class="btn sm">Dossier d’adresse ↗</button><button class="btn sm">Vivre ici ↗</button></div><div class="sep"><span class="f">Lien « Vivre ici » pour les acquéreurs</span><p class="wait"><span class="spin"></span>Academia prépare le dossier de l’adresse… jusqu’à 2 minutes. Vous pouvez quitter la page : le lien vous attendra.</p></div></section></div></div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390 · le lien créé</div><div class="frame phone"><div class="topbar"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><span class="pb">3</span><span class="burger">☰</span></div><div class="main">
+  <h1 class="h1">M. et Mme Lopez</h1>
+  
+  <section class="card">
+  <h2 class="h2">Le bien dans Academia</h2>
+  <p class="hint">Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre, copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.</p>
+  <div class="btns"><button class="btn sm">Dossier d’adresse ↗</button><button class="btn sm">Vivre ici ↗</button></div><div class="sep"><span class="f">Lien « Vivre ici » pour les acquéreurs</span><div class="url"><span class="u">https://app.myacademia.ai/l/Vb4nT8wLp2</span><a class="lnk">Ouvrir ↗</a><a class="lnk">Copier</a></div>
+      <p class="hint">Créé aujourd’hui · valable jusqu’au 16/12 · montré au vendeur et à chaque acquéreur à qui ce bien est proposé</p>
+      <div class="btns"><a class="lnk">Retirer</a></div></div></section></div></div></div></div><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Tablette · 820 · adresse ambiguë (422)</div><div class="frame tab"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it on"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <h1 class="h1">M. et Mme Lopez</h1>
+  <div class="tabs"><span>Vue d’ensemble</span><b>Bien vendeur</b><span>Concurrents</span><span>Avant le rendez-vous</span><span>Live</span></div>
+  <section class="card">
+  <h2 class="h2">Le bien dans Academia</h2>
+  <p class="hint">Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre, copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.</p>
+  <div class="btns"><button class="btn sm">Dossier d’adresse ↗</button><button class="btn sm">Vivre ici ↗</button></div><div class="sep"><span class="f">Lien « Vivre ici » pour les acquéreurs</span><p class="warn">Academia ne reconnaît pas l’adresse avec certitude. Laquelle est la bonne ?</p>
+      <ul class="props"><li>4 chemin des Restanques Hautes, 06140 Vence</li><li>4 chemin des Restanques, 06140 Vence</li></ul>
+      <div class="btns"><button class="btn sm">Créer le lien avec cette adresse</button><a class="lnk">Corriger l’adresse du bien</a></div></div></section></div></div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390 · Academia ne répond pas</div><div class="frame phone"><div class="topbar"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><span class="pb">3</span><span class="burger">☰</span></div><div class="main">
+  <h1 class="h1">M. et Mme Lopez</h1>
+  
+  <section class="card">
+  <h2 class="h2">Le bien dans Academia</h2>
+  <p class="hint">Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre, copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.</p>
+  <div class="btns"><button class="btn sm">Dossier d’adresse ↗</button><button class="btn sm">Vivre ici ↗</button></div><div class="sep"><span class="f">Lien « Vivre ici » pour les acquéreurs</span><p class="err">Academia ne répond pas pour l’instant. Réessayez dans un moment, ou collez le lien vous-même.</p>
+      <div class="btns"><button class="btn sm">Réessayer</button></div>
+      <details class="fallback"><summary>Coller le lien à la main</summary><i class="in">Collez le lien donné par Academia</i></details></div></section></div></div></div></div><div class="row"><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Tablette · 820 · le lien a expiré</div><div class="frame tab"><aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><nav><div class="grp"><a class="it"><span class="il">Aujourd’hui<span class="pb">3</span></span><span class="ih">Ce qu’il y a à faire</span></a></div><div class="grp sep"><span class="gt">Vendeurs</span><a class="it on"><span class="il">Préparation</span><span class="ih">Dossiers vendeurs</span></a><a class="it"><span class="il">Live</span><span class="ih">Rendez-vous vendeur</span></a><a class="it"><span class="il">Suivi</span><span class="ih">Après le rendez-vous</span></a></div><div class="grp sep"><span class="gt">Acquéreurs</span><a class="it"><span class="il">Acquéreurs</span><span class="ih">Ce que chacun cherche</span></a><a class="it"><span class="il">Visites</span><span class="ih">À planifier, faites, retours</span></a></div><div class="grp sep"><span class="gt">Les deux</span><a class="it"><span class="il">Prospection</span><span class="ih">Courriers et passages</span></a></div></nav><div class="acc"><span class="av">CM</span><span><b>Claire Martin</b><br>Agence Horizon Côte d’Azur</span></div></aside><div class="main">
+  <h1 class="h1">M. et Mme Lopez</h1>
+  <div class="tabs"><span>Vue d’ensemble</span><b>Bien vendeur</b><span>Concurrents</span><span>Avant le rendez-vous</span><span>Live</span></div>
+  <section class="card">
+  <h2 class="h2">Le bien dans Academia</h2>
+  <p class="hint">Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre, copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.</p>
+  <div class="btns"><button class="btn sm">Dossier d’adresse ↗</button><button class="btn sm">Vivre ici ↗</button></div><div class="sep"><span class="f">Lien « Vivre ici » pour les acquéreurs</span><p class="warn">Le lien a expiré le 14/11 : il n’est plus montré, ni au vendeur ni aux acquéreurs.</p>
+      <div class="btns"><button class="btn sm">Créer un lien neuf</button></div></div></section></div></div></div><div class="col"><div class="ftitle"><span class="st">APRÈS</span>Téléphone · 390 · bientôt expiré</div><div class="frame phone"><div class="topbar"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><span class="pb">3</span><span class="burger">☰</span></div><div class="main">
+  <h1 class="h1">M. et Mme Lopez</h1>
+  
+  <section class="card">
+  <h2 class="h2">Le bien dans Academia</h2>
+  <p class="hint">Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre, copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.</p>
+  <div class="btns"><button class="btn sm">Dossier d’adresse ↗</button><button class="btn sm">Vivre ici ↗</button></div><div class="sep"><span class="f">Lien « Vivre ici » pour les acquéreurs</span><div class="url"><span class="u">https://app.myacademia.ai/l/Vb4nT8wLp2</span><a class="lnk">Ouvrir ↗</a><a class="lnk">Copier</a></div>
+      <p class="warn">Valable jusqu’au 19/11, dans 3 jours. <a class="lnk">Créer un lien neuf</a></p></div></section></div></div></div></div></div>
+<div class="notes"><div class="note"><b class="t">Avant :</b> Le conseiller ouvre Mon secteur, crée le lien client, revient et le colle (M147 A, M156).</div><div class="note"><b class="t">Le bouton :</b> « Créer le lien « Vivre ici » », en contour (le seul plein de la page reste « Enregistrer » de la fiche, M146 A). Un geste, un bien : jamais pour plusieurs biens d’un coup (le plafond commun de 200 dossiers par jour).</div><div class="note"><b class="t">Ce qui part :</b> L’adresse enregistrée du bien, son type, ses pièces, sa surface et une référence sans signification (l’identifiant du bien vendeur) ; jamais un nom. Sans adresse : « Ajoutez l’adresse du bien », aucun appel.</div><div class="note"><b class="t">L’attente :</b> Academia répond tout de suite (dossier de moins de 30 jours) ou prépare le dossier (2 minutes au plus) : ACM le suit, et le lien attend le conseiller s’il quitte la page.</div><div class="note"><b class="t">Le lien créé :</b> Rangé sur le mandat, avec sa date d’expiration donnée par Academia (« valable jusqu’au 16/12 »). Il sert au vendeur (la présentation et le document final, décision du 14/11 ; leur place se décide à part) et à chaque acquéreur à qui ce bien est proposé, comme le lien d’un mandat aujourd’hui. Trois jours avant l’expiration, en orange ; expiré, il n’est plus montré et « Créer un lien neuf » le remplace.</div><div class="note"><b class="t">Seulement le bien vendeur :</b> Aucun « Vivre ici » pour un bien hors mandat : ni bouton, ni champ à coller, ni adresse envoyée à Academia (Jean-Guy, 16/11).</div><div class="note"><b class="t">Adresse ambiguë :</b> Academia propose des adresses : le conseiller choisit, ACM ne devine jamais et ne réécrit pas la fiche sans son geste (« Corriger l’adresse du bien »).</div><div class="note"><b class="t">Repli :</b> Sans clé, clé refusée, Academia en panne ou au plafond du jour : le message, « Réessayer », et le champ à coller d’aujourd’hui, replié ; un lien collé y garde ses avertissements aux 25e et 30e jours (M156). Sans clé du tout, la carte reste celle d’aujourd’hui. Jamais lu comme « pas de lien » (M98).</div><div class="note"><b class="t">Démo :</b> Le bouton passe par le dossier de démonstration fixe d’Academia (clé d’essai, A2), jamais une autre adresse. Tant que Laurent n’a pas donné la clé d’essai, la démo garde la carte d’aujourd’hui : aucun lien inventé.</div></div></div></body></html>

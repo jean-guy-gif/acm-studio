@@ -12,7 +12,10 @@ import { createClient } from '@/lib/supabase/server';
 // https://app.myacademia.ai/l/<jeton>, relu ici (la base garde la même règle) ; un lien vide le
 // retire (`null`, jamais une chaîne vide). Tout dossier de l'agence non archivé, conclu compris.
 // `updated_at` ne bouge pas : coller un lien n'est pas travailler le dossier (« ce qui dort », M59).
-export type SetAcademiaLinkResult = { ok: true; url: string | null } | { ok: false; error: string };
+// Mission 156 — la date du collage, posée par la base, revient avec le lien : l'écran dit son âge
+// (avertissements aux 25e et 30e jours).
+export type SetAcademiaLinkResult =
+  { ok: true; url: string | null; pastedAt: string | null } | { ok: false; error: string };
 
 export async function setAcademiaLivingHereLink(
   projectId: unknown,
@@ -41,11 +44,11 @@ export async function setAcademiaLivingHereLink(
     .update({ academia_living_here_url: url })
     .eq('id', projectId)
     .eq('agency_id', profile.agency_id)
-    .select('id');
+    .select('id, academia_living_here_pasted_at');
   if (error || !written || written.length !== 1) {
     if (error) await reportServerError('academia:set-link', error);
     return { ok: false, error: 'Le lien n’a pas pu être enregistré. Réessayez.' };
   }
   revalidatePath(`/builder/${projectId}/property`);
-  return { ok: true, url };
+  return { ok: true, url, pastedAt: written[0].academia_living_here_pasted_at ?? null };
 }

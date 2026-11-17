@@ -48,6 +48,21 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   fichier, puis lire ce fichier à la notification.
 - 14/11 · Correctif · Le parcours e2e rouge deux fois sur des coupures entre le poste et l'essai (`ERR_TIMED_OUT` sur `/synthese/…`, puis « L'inscription n'a pas été confirmée ») à des étapes que le correctif ne touchait pas, journal d'erreurs vide ; vert au troisième passage (3,3 min). Lire `app_errors` (colonnes `source`, `page`, pas `origin` ni `path`) avant de conclure à un défaut.
 
+- 17/11 · M157 · La suite e2e jouée depuis une copie figée du dépôt (`git worktree`, pour pouvoir
+  coder pendant qu'elle tourne) a besoin de `supabase/.temp` copié à côté de `.env.e2e.local` : sans
+  lui, `supabase db query --remote` échoue et les specs qui lisent la base (`demo`,
+  `depuis-mes-notes`) tombent, sans défaut du code. Une suite complète dure 36 à 38 min (28 specs).
+- 17/11 · M157 · Le Mac a perdu Internet pendant une suite : 26 specs sur 28 rouges, toutes sur
+  `ERR_INTERNET_DISCONNECTED` dès la page de connexion, et le nettoyage de l'agence de test laissé
+  à moitié (8 lignes, vidées par `npm run nettoyer:test -- --supprimer`). Compter
+  `ERR_INTERNET_DISCONNECTED` dans le journal avant de chercher un défaut.
+- 17/11 · M157 · Après un `git switch essai` dans une chaîne de commandes, vérifier la branche
+  courante avant le commit suivant : un commit est parti sur `essai` sans passer par la branche
+  (repris par un `cherry-pick`, trouvé parce que le nombre de tests avait baissé de trois).
+- 17/11 · M157 · Aléas du jour, verts au rejeu : `live-d-un-coup-d-oeil` (un enregistrement de fond
+  coupé par le réseau, la bannière « Réponse non enregistrée » masque « Réglages ») et le parcours
+  à la Prospection (geo.api.gouv.fr au-delà de son délai, deux fois au journal).
+
 ## La démo et les tests
 
 - 05/11 · M129 · Une recherche des nouveaux venus par point : des rendus faits À LA MAIN sur le
@@ -578,6 +593,13 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 14/11 · M155 (photos) · Des images générées par IA se regardent en grand ET par zones agrandies : les défauts trouvés ne se voyaient pas en vignette (une prise australienne, des volets à l'intérieur des pièces, une terrasse quatre fois trop grande pour l'annonce, un faux texte sur les livres et les fours).
 - 14/11 · M155 (photos, second lot) · Des jeux de photos livrés en deux envois : sans garde, la démo branchait un dossier dès sa première photo. La règle « un jeu ne s'affiche que complet » (les vues de sa fiche) laisse ranger un envoi partiel sans rien montrer ; quatre noms envoyés différaient de la fiche (`05-salle-de-bains`, `04-suite-parentale`) : la fiche gagne, et un test refuse désormais tout fichier qui n'est pas une vue de sa fiche. Suite e2e complète : 28 sur 28 au premier passage, 37 min.
 
+- 17/11 · M157 · Le premier vrai appel à une API d'un partenaire : garder au journal, dès le
+  premier jour, ce qu'elle a rendu (statut HTTP, code et message d'erreur, noms des champs d'une
+  réponse inattendue, jamais une valeur ni la clé). Sans ce détail, « unavailable » ne disait rien ;
+  avec lui, trois appels ont suffi à trouver deux écarts au contrat (un champ refusé, `statut` au
+  lieu de `etat` et des noms en camelCase). L'appel se fait depuis le serveur de l'essai, par un
+  petit script Playwright avec le compte de démo e2e (la clé n'est que dans Vercel).
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -671,6 +693,12 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   `md5(pg_get_functiondef(…))` (la définition entière) n'ont rien de commun ; la prédiction portait
   sur le corps, le premier relevé « après » sur la définition, d'où un faux écart, levé en mesurant
   les deux sur la base locale. Sauvegarde 1 min, vérification par restauration 2 min.
+
+- 17/11 · M157 · La CLI Supabase passe un fichier de migration en transaction IMPLICITE : un
+  `lock table` au premier niveau y est refusé (« can only be used in transaction blocks ») ; il se
+  pose dans un bloc `do $$ … $$`, où il tient jusqu'à la fin du fichier. Le verrou avant un
+  comptage-garde suivi d'un `drop` est nécessaire : un `count(*)` seul n'empêche pas une insertion
+  entre les deux (gardien-sql).
 
 ## Les rendus
 

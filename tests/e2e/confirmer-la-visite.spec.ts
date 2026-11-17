@@ -76,6 +76,12 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
   try {
     await test.step('Le lien « Vivre ici » collé sur le mandat de Mougins', async () => {
       await page.goto(`/builder/${mougins}/property`);
+      // Mission 157 — avec la clé d'essai, la démo crée le lien en un clic ; le champ à coller est
+      // le repli, replié sous « Coller le lien à la main ».
+      const fallback = page.getByTestId('living-here-fallback');
+      if ((await fallback.count()) > 0 && (await fallback.getAttribute('open')) == null) {
+        await fallback.locator('summary').click();
+      }
       const field = page.getByTestId('academia-living-link');
       await expect(field).toContainText('Montré sur le lien de chaque acquéreur');
       await field

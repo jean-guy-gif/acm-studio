@@ -135,6 +135,15 @@ export const FRENCH_TEXTS: ClientTexts = {
       rank: (rank, total) => `le ${rank === 1 ? '1er' : `${rank}e`} moins cher sur ${total}`,
     },
   },
+  neighbourhood: {
+    title: 'Vivre ici',
+    subtitle: 'Le quartier, les écoles, les commerces',
+    heading: 'Vivre ici — le quartier, les écoles, les commerces',
+    open: 'Ouvrir la page du quartier',
+    scan: (address) => `Scannez pour découvrir le quartier, ou tapez ${address}`,
+    scanOnly: 'Scannez pour découvrir le quartier.',
+    validUntil: (day) => `Lien valable jusqu’au ${day}.`,
+  },
   live: {
     perceived: {
       question: 'À quel prix positionneriez-vous aujourd’hui votre bien ?',

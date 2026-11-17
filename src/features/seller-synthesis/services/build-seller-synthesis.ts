@@ -26,6 +26,7 @@ import { isPropertyType } from '@/features/subject-property/services/property-ty
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatPercent, formatSquareMeters } from '@/lib/format';
+import type { NeighbourhoodDocumentLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
 
 // Mission 110, refondue par la mission 113 — la synthèse au vendeur, construite depuis des lignes
 // lues par listes de colonnes autorisées (queries/load-seller-synthesis.ts). Pure. Elle suit
@@ -125,6 +126,8 @@ export type SynthesisInput = {
   commercializationPrice: number | null;
   agency: Omit<SellerSynthesis['agency'], 'advisorQr'> & { advisorQr: QrCode | null };
   brandDeclarations: string;
+  // Mission 157 B — le lien « Vivre ici » du bien (absent : aucun).
+  neighbourhood?: NeighbourhoodDocumentLink | null;
 };
 
 const strings = (value: unknown): string[] =>
@@ -536,5 +539,6 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     positionSentence: agreed != null ? positionAmongSeen(agreed, market.prices, texts) : null,
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
+    neighbourhood: input.neighbourhood ?? null,
   };
 }

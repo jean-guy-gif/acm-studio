@@ -2757,6 +2757,77 @@ export type Database = {
           },
         ];
       };
+      project_academia_requests: {
+        Row: {
+          academia_id: string;
+          address_sent: string;
+          agency_id: string;
+          created_at: string;
+          id: string;
+          link_expires_at: string | null;
+          link_url: string | null;
+          project_id: string;
+          property_address: string;
+          requested_at: string;
+          requested_by: string | null;
+          state: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          academia_id: string;
+          address_sent: string;
+          agency_id: string;
+          created_at?: string;
+          id?: string;
+          link_expires_at?: string | null;
+          link_url?: string | null;
+          project_id: string;
+          property_address: string;
+          requested_at?: string;
+          requested_by?: string | null;
+          state: string;
+          updated_at?: string;
+        };
+        Update: {
+          academia_id?: string;
+          address_sent?: string;
+          agency_id?: string;
+          created_at?: string;
+          id?: string;
+          link_expires_at?: string | null;
+          link_url?: string | null;
+          project_id?: string;
+          property_address?: string;
+          requested_at?: string;
+          requested_by?: string | null;
+          state?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_academia_requests_agency_id_fkey';
+            columns: ['agency_id'];
+            isOneToOne: false;
+            referencedRelation: 'agencies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_academia_requests_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: true;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_academia_requests_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       project_market_update_links: {
         Row: {
           agency_id: string;
@@ -3088,6 +3159,8 @@ export type Database = {
       };
       projects: {
         Row: {
+          academia_living_here_pasted_at: string | null;
+          academia_living_here_property: Json | null;
           academia_living_here_url: string | null;
           advisor_id: string;
           agency_id: string;
@@ -3113,6 +3186,8 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          academia_living_here_pasted_at?: string | null;
+          academia_living_here_property?: Json | null;
           academia_living_here_url?: string | null;
           advisor_id: string;
           agency_id: string;
@@ -3137,6 +3212,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          academia_living_here_pasted_at?: string | null;
+          academia_living_here_property?: Json | null;
           academia_living_here_url?: string | null;
           advisor_id?: string;
           agency_id?: string;

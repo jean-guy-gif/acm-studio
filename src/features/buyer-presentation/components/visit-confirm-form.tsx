@@ -11,6 +11,8 @@ import {
   hintText,
   inputBase,
 } from '@/components/ui/styles';
+import { AGE_WARN_CLASS } from '@/features/academia/components/living-here-field';
+import type { LivingHereAgeLine } from '@/features/academia/services/living-here-age';
 import { confirmVisit } from '@/features/buyer-presentation/actions/confirm-visit';
 import {
   LIVING_HERE_RETRY,
@@ -35,6 +37,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
     phone: string | null;
     email: string | null;
     subject: string;
+    livingHereAge: LivingHereAgeLine | null;
   } | null>(null);
   const [note, setNote] = useState<string | null>(null);
   // Mission 147 (partie A) — le lien « Vivre ici » du mandat n'a pas pu être lu : le conseiller
@@ -105,6 +108,12 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
           >
             {prepared.message}
           </p>
+          {/* Mission 156 — le lien du mandat collé il y a 25 jours ou plus : l'âge, en orange. */}
+          {prepared.livingHereAge?.tone === 'warn' ? (
+            <p className={AGE_WARN_CLASS} data-testid="visit-confirm-living-age">
+              Lien « Vivre ici » {prepared.livingHereAge.text.replace(/^Collé/, 'collé')}
+            </p>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"

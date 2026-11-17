@@ -6,12 +6,18 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => undefined }) }));
 vi.mock('@/features/projects/actions/set-academia-link', () => ({
-  setAcademiaLivingHereLink: async () => ({ ok: true, url: null }),
+  setAcademiaLivingHereLink: async () => ({ ok: true, url: null, pastedAt: null }),
+}));
+vi.mock('@/features/academia/actions/living-here-link', () => ({
+  createLivingHereLink: async () => ({ state: 'idle' }),
+  refreshLivingHereLink: async () => ({ state: 'idle' }),
 }));
 
 const { AcademiaLinks, AcademiaSalesLink, copyAddress } =
   await import('@/features/academia/components/academia-links');
 const { AcademiaCard } = await import('@/features/academia/components/academia-card');
+type LivingHereApiInitial =
+  import('@/features/academia/queries/living-here-api-view').LivingHereApiInitial;
 
 const ADDRESS = '4 chemin des Restanques Hautes, 06140 Vence';
 const live = { href: 'https://app.myacademia.ai', copy: ADDRESS };
@@ -125,7 +131,11 @@ describe('AcademiaSalesLink', () => {
 });
 
 describe('AcademiaCard', () => {
-  const card = (signed: boolean, savedUrl: string | null) =>
+  const card = (
+    signed: boolean,
+    savedUrl: string | null,
+    savedLine: { tone: 'hint' | 'warn'; text: string } | null = null,
+  ) =>
     plain(
       renderToStaticMarkup(
         createElement(AcademiaCard, {
@@ -133,6 +143,7 @@ describe('AcademiaCard', () => {
           addressLink: live,
           livingLink: live,
           savedUrl,
+          savedLine,
           signed,
         }),
       ),
@@ -152,5 +163,192 @@ describe('AcademiaCard', () => {
     expect(signed).toContain('Retirer');
     // Aucun bouton plein : le seul de l'écran reste « Enregistrer » (M146 A).
     expect(signed).not.toContain('btn-filled');
+  });
+
+  it('mission 156 — l’âge du lien du mandat, et l’avertissement orange, sans cacher le lien', () => {
+    const warn =
+      'Collé il y a 34 jours : un lien d’Academia vaut 30 jours, il ne s’ouvre peut-être plus. Collez un lien neuf.';
+    const old = card(true, 'https://app.myacademia.ai/l/abc', { tone: 'warn', text: warn });
+    expect(old).toContain(warn);
+    expect(old).toContain('value="https://app.myacademia.ai/l/abc"');
+    expect(old).toContain('data-tone="warn"');
+    // Un lien d'avant la mission, sans date : aucune ligne, rien n'est inventé.
+    expect(card(true, 'https://app.myacademia.ai/l/abc', null)).not.toContain('Collé');
+    // La carte n'a pas « Ouvrir ↗ » (la maquette ne le montre pas).
+    expect(old).not.toContain('Ouvrir ↗');
+  });
+});
+
+// Mission 157 — « Vivre ici » en un clic (planche M157-1), l'API ouverte : le bouton, l'attente, le
+// lien et sa validité, bientôt expiré, expiré, sans adresse ; le champ à coller devient le repli.
+describe('AcademiaCard, l’API ouverte', () => {
+  const LINK = 'https://app.myacademia.ai/l/Vb4nT8wLp2';
+  const withApi = (
+    initial: LivingHereApiInitial,
+    address: string | null = ADDRESS,
+    savedUrl: string | null = null,
+    signed = true,
+  ) =>
+    plain(
+      renderToStaticMarkup(
+        createElement(AcademiaCard, {
+          projectId: 'p1',
+          addressLink: live,
+          livingLink: live,
+          savedUrl,
+          savedLine: null,
+          signed,
+          api: { address, initial },
+        }),
+      ),
+    );
+
+  it('rien encore : l’adresse enregistrée, le bouton en contour, le champ à coller replié', () => {
+    const html = withApi({ kind: 'idle', stale: false });
+    expect(html).toContain('Créer le lien « Vivre ici »');
+    expect(html).toContain(ADDRESS);
+    expect(html).toContain('Coller le lien à la main');
+    expect(html).not.toContain(
+      '<details class="text-sm text-zinc-600" data-testid="living-here-fallback" open',
+    );
+    expect(html).not.toContain('btn-filled');
+  });
+
+  it('dans la démo : l’adresse envoyée (« démonstration ») ne se montre pas (M114)', () => {
+    const html = plain(
+      renderToStaticMarkup(
+        createElement(AcademiaCard, {
+          projectId: 'p1',
+          addressLink: live,
+          livingLink: live,
+          savedUrl: null,
+          savedLine: null,
+          signed: true,
+          api: { address: ADDRESS, initial: { kind: 'idle', stale: false }, showAddress: false },
+        }),
+      ),
+    );
+    expect(html).toContain('Academia prépare la page du quartier du bien');
+    expect(html).toContain('Créer le lien « Vivre ici »');
+    // L'adresse du bien reste (la copie de M147 A) ; celle qui part vers Academia, jamais.
+    const intro = html.match(/data-testid="living-here-intro">([^<]*)</)?.[1] ?? '';
+    expect(intro).not.toContain(ADDRESS);
+    expect(html).not.toMatch(/démonstration/i);
+  });
+
+  it('dans la démo, le lien créé ne s’écrit pas : « Ouvrir » et « Copier » restent', () => {
+    const html = plain(
+      renderToStaticMarkup(
+        createElement(AcademiaCard, {
+          projectId: 'p1',
+          addressLink: live,
+          livingLink: live,
+          savedUrl: 'https://app.myacademia.ai/l/demonstration',
+          savedLine: null,
+          signed: true,
+          api: {
+            address: ADDRESS,
+            initial: {
+              kind: 'ready',
+              url: 'https://app.myacademia.ai/l/demonstration',
+              expiresAt: '2026-12-17T13:52:35Z',
+              expiry: { level: 'ok', days: 30 },
+            },
+            showAddress: false,
+          },
+        }),
+      ),
+    );
+    expect(html).toContain('Lien créé');
+    expect(html).toContain('href="https://app.myacademia.ai/l/demonstration"');
+    expect(html).toContain('Ouvrir ↗');
+    expect(html).toContain('Copier');
+    // Le lien n'est que dans l'adresse du bouton, jamais dans le texte lu.
+    const text = html.replace(/href="[^"]*"/g, '').replace(/<[^>]+>/g, ' ');
+    expect(text).not.toMatch(/demonstration|démonstration/i);
+  });
+
+  it('un lien collé à la main : le repli ouvert, pour le voir', () => {
+    expect(withApi({ kind: 'idle', stale: false }, ADDRESS, LINK)).toMatch(
+      /data-testid="living-here-fallback" open/,
+    );
+  });
+
+  it('le lien créé : sa validité, Ouvrir, Copier, Retirer', () => {
+    const html = withApi({
+      kind: 'ready',
+      url: LINK,
+      expiresAt: '2026-12-16T00:00:00Z',
+      expiry: { level: 'ok', days: 30 },
+    });
+    expect(html).toContain(LINK);
+    expect(html).toContain('Valable jusqu’au 16/12');
+    expect(html).toContain('Ouvrir ↗');
+    expect(html).toContain('Copier');
+    expect(html).toContain('Retirer');
+    expect(html).not.toContain('Créer le lien « Vivre ici »');
+  });
+
+  it('bientôt expiré : en orange, « Créer un lien neuf » ; expiré : plus montré', () => {
+    const soon = withApi({
+      kind: 'ready',
+      url: LINK,
+      expiresAt: '2026-11-19T12:00:00Z',
+      expiry: { level: 'soon', days: 3 },
+    });
+    expect(soon).toContain('Valable jusqu’au 19/11, dans 3 jours.');
+    expect(soon).toContain('Créer un lien neuf');
+    const expired = withApi({
+      kind: 'ready',
+      url: LINK,
+      expiresAt: '2026-11-14T00:00:00Z',
+      expiry: { level: 'expired', days: 0 },
+    });
+    expect(expired).toContain('Le lien a expiré le 14/11 : il n’est plus montré aux acquéreurs.');
+    expect(expired).not.toContain(LINK);
+    expect(expired).toContain('Créer un lien neuf');
+  });
+
+  it('sans adresse : « Ajoutez l’adresse du bien », aucun bouton', () => {
+    const html = withApi({ kind: 'idle', stale: false }, null);
+    expect(html).toContain('Il faut l’adresse du bien pour créer le lien.');
+    expect(html).not.toContain('Créer le lien « Vivre ici »');
+  });
+
+  it('l’adresse du bien a changé : le lien de l’ancienne adresse n’est plus montré, le dire', () => {
+    const html = withApi({ kind: 'idle', stale: true }, ADDRESS, LINK);
+    expect(html).toContain('L’adresse du bien a changé');
+    expect(html).toContain('Créer le lien « Vivre ici »');
+    expect(html).not.toMatch(/data-testid="living-here-fallback" open/);
+  });
+
+  it('la demande illisible : le dire, jamais « rien » ; le repli reste', () => {
+    const html = withApi({ kind: 'unread' });
+    expect(html).toContain('La demande à Academia n’a pas pu être lue : rechargez la page.');
+    expect(html).toContain('Coller le lien à la main');
+  });
+
+  it('un mandat pas encore signé : le lien n’est montré aux acquéreurs qu’une fois signé', () => {
+    const html = withApi(
+      {
+        kind: 'ready',
+        url: LINK,
+        expiresAt: '2026-12-16T00:00:00Z',
+        expiry: { level: 'ok', days: 30 },
+      },
+      ADDRESS,
+      LINK,
+      false,
+    );
+    expect(html).toContain('montré aux acquéreurs une fois le mandat signé');
+    expect(html).not.toContain('montré à chaque acquéreur');
+  });
+
+  it('sans adresse : le repli reste ouvert à la main', () => {
+    expect(withApi({ kind: 'idle', stale: false }, null)).toContain('Coller le lien à la main');
+  });
+
+  it('en préparation : l’attente, dite', () => {
+    expect(withApi({ kind: 'waiting' })).toContain('Academia prépare le dossier de l’adresse…');
   });
 });

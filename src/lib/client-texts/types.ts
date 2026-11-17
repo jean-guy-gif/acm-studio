@@ -112,6 +112,18 @@ export type ClientTexts = {
       rank: (rank: number, total: number) => string;
     };
   };
+  // Mission 157 B — le lien « Vivre ici » du bien, montré au vendeur (le Live, la synthèse, l'Étude
+  // de marché). Jamais le nom du service : seule l'adresse du lien se voit (Jean-Guy, 17/11).
+  neighbourhood: {
+    title: string;
+    subtitle: string;
+    heading: string;
+    open: string;
+    scan: (address: string) => string;
+    // Le QR code seul, sans l'adresse du lien à taper.
+    scanOnly: string;
+    validUntil: (day: string) => string;
+  };
   live: LiveTexts;
   documents: DocumentTexts;
   buyer: BuyerTexts;

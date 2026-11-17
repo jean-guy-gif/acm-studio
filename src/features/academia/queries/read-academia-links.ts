@@ -2,7 +2,8 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { academiaLivingHereUrl } from '@/lib/academia';
+import { pastedLinkStatus } from '@/features/academia/services/living-here-age';
+import { academiaLivingHereUrl, propertyAddressLine } from '@/lib/academia';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import type { Database } from '@/lib/supabase/database.types';
 
@@ -11,18 +12,24 @@ import type { Database } from '@/lib/supabase/database.types';
 // l'agence, non archivé (seul un mandat se propose, M145 A ; l'écran du conseiller le dit), et
 // seulement un lien d'Academia, relu. Une lecture en échec n'est jamais « pas de lien » (M98) : elle
 // est dite (`ok: false`) et entre au journal (M100).
-export type AcademiaLinksRead = { ok: true; links: Map<string, string> } | { ok: false };
+// Mission 156 — et la date du collage de chaque lien (`dates`), pour l'avertissement du 25e au 29e
+// jour ; un lien collé depuis 30 jours ou plus ne part plus (M157).
+export type AcademiaLinksRead =
+  { ok: true; links: Map<string, string>; dates: Map<string, string | null> } | { ok: false };
 
 export async function readMandateAcademiaLinks(
   client: SupabaseClient<Database>,
   agencyId: string,
   projectIds: string[],
+  now: Date = new Date(),
 ): Promise<AcademiaLinksRead> {
   const ids = [...new Set(projectIds)];
-  if (ids.length === 0) return { ok: true, links: new Map() };
+  if (ids.length === 0) return { ok: true, links: new Map(), dates: new Map() };
   const projects = await client
     .from('projects')
-    .select('id, academia_living_here_url')
+    .select(
+      'id, academia_living_here_url, academia_living_here_pasted_at, academia_living_here_property',
+    )
     .eq('agency_id', agencyId)
     .neq('status', 'archived')
     .in('id', ids);
@@ -32,7 +39,7 @@ export async function readMandateAcademiaLinks(
   }
   // Aucun lien collé : rien de plus à lire.
   if (!(projects.data ?? []).some((row) => row.academia_living_here_url)) {
-    return { ok: true, links: new Map() };
+    return { ok: true, links: new Map(), dates: new Map() };
   }
   const conclusions = await client
     .from('project_meeting_conclusions')
@@ -45,10 +52,62 @@ export async function readMandateAcademiaLinks(
     return { ok: false };
   }
   const signed = new Set((conclusions.data ?? []).map((row) => row.project_id));
+  // Mission 157 — un lien créé par l'API a son expiration, donnée par Academia : expiré, il ne part
+  // plus ; l'adresse du bien changée depuis la demande, il est oublié (contrat §3.3). Un lien collé à
+  // la main n'a ni l'une ni l'autre (ses avertissements aux 25e et 30e jours, M156).
+  const created = await client
+    .from('project_academia_requests')
+    .select('project_id, property_address, link_url, link_expires_at')
+    .eq('agency_id', agencyId)
+    .in('project_id', ids);
+  const subjects = created.error
+    ? { data: null, error: null }
+    : await client
+        .from('subject_properties')
+        .select('project_id, address, postal_code, city')
+        .eq('agency_id', agencyId)
+        .in('project_id', ids);
+  const readError = created.error ?? subjects.error;
+  if (readError) {
+    await reportServerError('academia:read-links', readError);
+    return { ok: false };
+  }
+  const addresses = new Map(
+    (subjects.data ?? []).map((row) => [
+      row.project_id,
+      propertyAddressLine({ address: row.address, postalCode: row.postal_code, city: row.city }),
+    ]),
+  );
+  const expiries = new Map(
+    (created.data ?? []).flatMap((row) =>
+      row.link_url && row.link_expires_at ? [[row.project_id, row]] : [],
+    ),
+  );
   const links = new Map<string, string>();
+  const dates = new Map<string, string | null>();
   for (const row of projects.data ?? []) {
     const url = academiaLivingHereUrl(row.academia_living_here_url);
-    if (url && signed.has(row.id)) links.set(row.id, url);
+    if (!url || !signed.has(row.id)) continue;
+    const api = expiries.get(row.id);
+    if (api && api.link_url === url) {
+      if (new Date(api.link_expires_at as string).getTime() <= now.getTime()) continue;
+      if (api.property_address !== addresses.get(row.id)) continue;
+      links.set(row.id, url);
+      dates.set(row.id, null);
+    } else {
+      // Mission 157 — collé à la main, il se comporte comme un lien créé en un clic (Jean-Guy,
+      // 17/11) : à 30 jours et au-delà, sans date, ou l'adresse du bien changée depuis le collage,
+      // il ne part plus.
+      const status = pastedLinkStatus({
+        pastedAt: row.academia_living_here_pasted_at ?? null,
+        pastedProperty: row.academia_living_here_property ?? null,
+        currentAddress: addresses.get(row.id) ?? null,
+        now,
+      });
+      if (status !== 'shown') continue;
+      links.set(row.id, url);
+      dates.set(row.id, row.academia_living_here_pasted_at ?? null);
+    }
   }
-  return { ok: true, links };
+  return { ok: true, links, dates };
 }

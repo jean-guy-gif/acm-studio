@@ -426,6 +426,25 @@ jobs:
           docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
             -v ON_ERROR_STOP=1 < supabase/tests/demo_date_ses_envois.sql
 
+      # Mission 156 — la date du lien « Vivre ici » d'un mandat, posée par la base (le lien d'un bien
+      # hors mandat est abandonné le 16/11 : sa table part avec la mission 157).
+      - name: La date du lien Vivre ici d'un mandat (mission 156)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/vivre_ici_tout_bien.sql
+
+      # Mission 157 — la demande à Academia du bien vendeur et son lien « Vivre ici » créé par l'API :
+      # une par dossier vendeur, écrite par le serveur seul, partie avec son dossier ; le hors mandat
+      # de la 156 retiré.
+      - name: Vivre ici en un clic (mission 157)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/vivre_ici_un_clic.sql
+      - name: L'adresse du bien au collage du lien « Vivre ici » (mission 157)
+        run: |
+          docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 < supabase/tests/vivre_ici_adresse_du_lien.sql
+
       # Mission 108 — les 14 tests SQL qui tournaient hors CI : leurs profils prennent les rôles
       # d'aujourd'hui (manager, conseiller), et deux suivent les décisions M90 et M92.
       - name: Tests SQL des missions précédentes

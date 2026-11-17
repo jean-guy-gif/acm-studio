@@ -178,6 +178,15 @@ export const ENGLISH_TEXTS: ClientTexts = {
     },
     questionMark: '?',
   },
+  neighbourhood: {
+    title: 'Living here',
+    subtitle: 'The neighbourhood, schools and shops',
+    heading: 'Living here — the neighbourhood, schools and shops',
+    open: 'Open the neighbourhood page',
+    scan: (address) => `Scan to discover the neighbourhood, or type ${address}`,
+    scanOnly: 'Scan to discover the neighbourhood.',
+    validUntil: (day) => `Link valid until ${day}.`,
+  },
   live: {
     perceived: {
       question: 'At what price would you position your property today?',

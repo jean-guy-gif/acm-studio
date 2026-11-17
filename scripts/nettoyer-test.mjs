@@ -49,6 +49,8 @@ const CLEANED = [
   'competitor_decisions',
   // Mission 152 — la copie de l'annonce de chaque concurrent part avec lui.
   'competitor_listing_copies',
+  // Mission 157 — le dossier Academia du bien vendeur (part avec son dossier).
+  'project_academia_requests',
   'competitor_prospecting_files',
   'follow_up_contacts',
   'listing_observations',
@@ -238,6 +240,8 @@ begin
   delete from public.stream_estate_results where agency_id = v_agency;
   -- Mission 152 — la copie de l'annonce part avec son concurrent (cascade), supprimée ici aussi.
   delete from public.competitor_listing_copies where agency_id = v_agency;
+  -- Mission 157 — le dossier Academia du bien vendeur (il part aussi avec son dossier).
+  delete from public.project_academia_requests where agency_id = v_agency;
   delete from public.comparables where agency_id = v_agency;
   delete from public.subject_properties where agency_id = v_agency;
   delete from public.projects where agency_id = v_agency;

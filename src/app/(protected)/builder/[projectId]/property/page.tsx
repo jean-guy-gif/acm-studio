@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 
 import { kickerLabel, pageTitle } from '@/components/ui/styles';
 import { AcademiaCard } from '@/features/academia/components/academia-card';
+import { livingHereApiInitial } from '@/features/academia/queries/living-here-api-view';
+import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
+import { livingHereAgeLine, pastedLinkStatus } from '@/features/academia/services/living-here-age';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
 import { getSubjectPropertyCondominium } from '@/features/subject-property-condominium/services/get-subject-property-condominium';
@@ -27,6 +30,7 @@ import {
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { academiaLinkView, academiaLivingHereUrl, propertyAddressLine } from '@/lib/academia';
 import { getProfile } from '@/lib/auth/get-profile';
+import { createClient } from '@/lib/supabase/server';
 
 type PropertyPageProps = {
   params: Promise<{ projectId: string }>;
@@ -50,7 +54,8 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // Mission 114 — l'agence de démonstration : « Importer une annonce » lit le jeu de données (même
   // signature, action liée par la page), les annonces des scénarios sont proposées d'avance, et la
   // fiche PDF de démonstration est à un clic. Décidé sur le repère de l'agence, lu en base.
-  const demo = await isDemoAgency((await getProfile())?.agency_id);
+  const profile = await getProfile();
+  const demo = await isDemoAgency(profile?.agency_id);
   const save = saveSubjectPropertySheet.bind(null, projectId);
   const uploadPhotos = uploadPropertyPhotos.bind(null, projectId);
   const updatePhotos = updatePropertyPhotos.bind(null, projectId);
@@ -67,6 +72,21 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     postalCode: property?.postal_code,
     city: property?.city,
   });
+  // Mission 157 — « Vivre ici » en un clic, l'API ouverte (décidé au serveur : la démo par sa clé
+  // d'essai et l'adresse de son dossier fixe ; une vraie agence, l'interrupteur allumé). Fermée : la
+  // carte d'aujourd'hui.
+  const access = academiaApiAccess(demo);
+  const now = new Date();
+  const apiInitial =
+    access && profile
+      ? await livingHereApiInitial(
+          await createClient(),
+          profile.agency_id,
+          projectId,
+          project.academia_living_here_url,
+          address,
+        )
+      : null;
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
@@ -102,7 +122,30 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         addressLink={academiaLinkView({ target: 'address', address, demo })}
         livingLink={academiaLinkView({ target: 'living', address, demo })}
         savedUrl={academiaLivingHereUrl(project.academia_living_here_url)}
+        savedLine={
+          academiaLivingHereUrl(project.academia_living_here_url)
+            ? livingHereAgeLine(project.academia_living_here_pasted_at ?? null, now, {
+                // Mission 157 — un lien collé dont l'adresse du bien a changé depuis n'est plus
+                // montré : la carte le dit, et propose de créer un lien neuf quand c'est possible.
+                moved:
+                  pastedLinkStatus({
+                    pastedAt: project.academia_living_here_pasted_at ?? null,
+                    pastedProperty: project.academia_living_here_property ?? null,
+                    currentAddress: address,
+                    now,
+                  }) === 'moved',
+                canCreate: access != null && address != null,
+              })
+            : null
+        }
         signed={conclusion?.outcome === 'signed'}
+        api={
+          access && apiInitial
+            ? // L'adresse dite à l'écran est celle qui part ; dans la démo, celle de son dossier fixe
+              // dit « démonstration » : la carte ne la montre pas (M114 ; Jean-Guy, 17/11).
+              { address, initial: apiInitial, showAddress: access.demoAddress == null }
+            : null
+        }
       />
     </div>
   );

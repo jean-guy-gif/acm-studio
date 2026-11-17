@@ -79,6 +79,7 @@ import type {
 } from '@/features/live-seller/services/project-live-for-seller';
 import type { LiveComparableResponse, LiveSellerSummary } from '@/features/live-seller/types';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
+import type { NeighbourhoodLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
 import { signalClientError } from '@/lib/app-errors/signal-client-error';
 
 export type LiveStageTheme = 'dark' | 'light';
@@ -106,6 +107,7 @@ export function LiveComparativeShell({
   presentationMode = 'interactive',
   buyersReveal = null,
   language: initialLanguage = 'fr',
+  neighbourhood = null,
 }: {
   projectId: string;
   // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
@@ -136,6 +138,8 @@ export function LiveComparativeShell({
   presentationMode?: 'interactive' | 'direct';
   // Mission 133 — les acquéreurs prêts de l'agence, anonymes ; null sous 5 (rien ne part alors).
   buyersReveal?: LiveBuyersReveal | null;
+  // Mission 157 B — le lien « Vivre ici » du bien, montré sur « Votre bien » ; null sans lien.
+  neighbourhood?: NeighbourhoodLink | null;
   // Mission 140 — la langue du dossier : celle de tout ce que voit le vendeur ; le conseiller la
   // change en direct dans « Réglages » (ce qui a été répondu est gardé).
   language?: ClientLanguage;
@@ -1391,6 +1395,7 @@ export function LiveComparativeShell({
               property={property}
               summary={summary}
               asksSeller={mode !== 'direct'}
+              neighbourhood={neighbourhood}
             />
           ) : page.type === 'comparable_competition' && entry ? (
             <LivePageCompetition entry={entry} />

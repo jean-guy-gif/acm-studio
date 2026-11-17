@@ -4,6 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { readMandateAcademiaLinks } from '@/features/academia/queries/read-academia-links';
+import {
+  livingHereAgeLine,
+  type LivingHereAgeLine,
+} from '@/features/academia/services/living-here-age';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { presentedItems } from '@/features/buyer-presentation/queries/load-presentation';
 import { LIVING_HERE_UNREAD } from '@/features/buyer-presentation/services/confirm-visit-texts';
@@ -40,8 +44,17 @@ async function liveVisit(visitId: unknown) {
   return { profile, visit: data, buyer };
 }
 
+// Mission 156 — l'âge du lien « Vivre ici » du mandat collé à la main (orange du 25e au 29e jour,
+// puis à 30 jours et au-delà), dit sous le message ; un lien créé par Academia n'en a pas (M157).
 export type ConfirmVisitResult =
-  | { ok: true; message: string; phone: string | null; email: string | null; subject: string }
+  | {
+      ok: true;
+      message: string;
+      phone: string | null;
+      email: string | null;
+      subject: string;
+      livingHereAge: LivingHereAgeLine | null;
+    }
   // `livingHereUnread` : le lien « Vivre ici » du mandat n'a pas pu être lu ; rien n'est écrit, le
   // conseiller choisit « Réessayer » ou « Préparer le message sans le lien ».
   | { ok: false; error: string; livingHereUnread?: true };
@@ -76,12 +89,14 @@ export async function confirmVisit(
   const presented =
     (await presentedItems(admin, [toSelectionItem(item)], context.profile.agency_id))[0] ?? null;
   let livingHereUrl: string | null = null;
+  let livingHerePastedAt: string | null = null;
   if (item.source === 'project' && withoutLivingHere !== true) {
     const read = await readMandateAcademiaLinks(admin, context.profile.agency_id, [item.reference]);
     // Jamais un message sans le lien EN SILENCE parce qu'il n'a pas pu être lu (M98) : l'échec est
     // au journal, le conseiller le lit et choisit ; la visite n'est pas bloquée (Jean-Guy, 09/11).
     if (!read.ok) return { ok: false, error: LIVING_HERE_UNREAD, livingHereUnread: true };
     livingHereUrl = read.links.get(item.reference) ?? null;
+    livingHerePastedAt = read.dates.get(item.reference) ?? null;
   }
   // Un lien vers la sélection de CE bien (relecture du 07/11), créé avant d'écrire le jour : un
   // lien en échec ne laisse rien d'écrit.
@@ -117,5 +132,6 @@ export async function confirmVisit(
     phone: context.buyer.phone,
     email: context.buyer.email,
     subject: t.visitConfirm.subject,
+    livingHereAge: livingHereUrl ? livingHereAgeLine(livingHerePastedAt, new Date()) : null,
   };
 }

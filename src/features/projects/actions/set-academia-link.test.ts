@@ -9,11 +9,14 @@ import { fakeSupabase, type FakeResponse } from '@/test-fixtures/fake-supabase';
 const state = vi.hoisted(() => ({
   profile: null as Record<string, unknown> | null,
   project: null as Record<string, unknown> | null,
+  pastedAt: null as string | null,
 }));
 
 const db = fakeSupabase((calls): FakeResponse => {
   const wrote = calls.some((call) => call.method === 'update');
-  return wrote ? { data: [{ id: 'p1' }] } : { data: state.project };
+  return wrote
+    ? { data: [{ id: 'p1', academia_living_here_pasted_at: state.pastedAt }] }
+    : { data: state.project };
 });
 
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
@@ -72,7 +75,14 @@ describe('setAcademiaLivingHereLink', () => {
   it('un lien d’Academia, dossier conclu compris : écrit tel quel, dans l’agence', async () => {
     const { setAcademiaLivingHereLink } =
       await import('@/features/projects/actions/set-academia-link');
-    expect(await setAcademiaLivingHereLink('p1', `  ${LINK}  `)).toEqual({ ok: true, url: LINK });
+    // Mission 156 — la date du collage, posée par la base, revient avec le lien.
+    state.pastedAt = '2026-11-16T09:00:00Z';
+    expect(await setAcademiaLivingHereLink('p1', `  ${LINK}  `)).toEqual({
+      ok: true,
+      url: LINK,
+      pastedAt: '2026-11-16T09:00:00Z',
+    });
+    state.pastedAt = null;
     expect(updates()).toEqual([{ academia_living_here_url: LINK }]);
     expect(db.calls).toContainEqual({ method: 'eq', args: ['agency_id', AGENCY] });
   });
@@ -80,8 +90,16 @@ describe('setAcademiaLivingHereLink', () => {
   it('« Retirer » écrit null, jamais une chaîne vide', async () => {
     const { setAcademiaLivingHereLink } =
       await import('@/features/projects/actions/set-academia-link');
-    expect(await setAcademiaLivingHereLink('p1', null)).toEqual({ ok: true, url: null });
-    expect(await setAcademiaLivingHereLink('p1', '   ')).toEqual({ ok: true, url: null });
+    expect(await setAcademiaLivingHereLink('p1', null)).toEqual({
+      ok: true,
+      url: null,
+      pastedAt: null,
+    });
+    expect(await setAcademiaLivingHereLink('p1', '   ')).toEqual({
+      ok: true,
+      url: null,
+      pastedAt: null,
+    });
     expect(updates()).toEqual([
       { academia_living_here_url: null },
       { academia_living_here_url: null },
