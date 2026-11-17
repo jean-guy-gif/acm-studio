@@ -202,6 +202,53 @@ describe('ce qu’Academia a rendu, dit au journal (pour Laurent)', () => {
   });
 });
 
+describe('la forme réelle de l’API d’essai (17/11)', () => {
+  it('« statut » et les noms en camelCase sont lus ; « adresse », « creeLe »… ne sont pas gardés', async () => {
+    const server = fakeAcademia({
+      createRequest: [
+        {
+          status: 200,
+          body: {
+            id: FAKE_ACADEMIA_ID,
+            statut: 'pret',
+            adresse: '12 Avenue de la Démonstration, 06800 Cagnes-sur-Mer',
+            creeLe: '2026-11-17T13:49:35Z',
+            actualiseLe: '2026-11-17T13:49:35Z',
+            effaceLe: '2027-11-17T13:49:35Z',
+            reutilise: true,
+          },
+        },
+      ],
+    });
+    expect(await createAcademiaRequest(input, server.fetch)).toEqual({
+      ok: true,
+      id: FAKE_ACADEMIA_ID,
+      etat: 'pret',
+    });
+  });
+
+  it('un statut inconnu : dit au journal, jamais deviné', async () => {
+    const server = fakeAcademia({
+      createRequest: [{ status: 200, body: { id: FAKE_ACADEMIA_ID, statut: 'archive' } }],
+    });
+    expect(await createAcademiaRequest(input, server.fetch)).toMatchObject({
+      reason: 'unavailable',
+      detail: 'HTTP 200 · réponse hors contrat · champs : id, statut · statut inconnu : archive',
+    });
+  });
+
+  it('le lien client : « expireLe » comme « expire_le »', async () => {
+    const server = fakeAcademia({
+      createLink: [{ status: 201, body: { url: FAKE_LINK, expireLe: '2026-12-17T13:49:35Z' } }],
+    });
+    expect(await createAcademiaClientLink(KEY, FAKE_ACADEMIA_ID, server.fetch)).toEqual({
+      ok: true,
+      url: FAKE_LINK,
+      expiresAt: '2026-12-17T13:49:35.000Z',
+    });
+  });
+});
+
 describe('GET /dossiers/{id}', () => {
   it('l’état de la préparation, par l’identifiant du dossier', async () => {
     const server = fakeAcademia({
