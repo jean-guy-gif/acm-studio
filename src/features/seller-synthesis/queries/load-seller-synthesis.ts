@@ -5,6 +5,7 @@ import { textLanguage } from '@/lib/client-texts';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { readNeighbourhoodDocumentLink } from '@/features/neighbourhood-link/queries/read-neighbourhood-document-link';
 import { buildSellerSynthesis } from '@/features/seller-synthesis/services/build-seller-synthesis';
 import {
   DOCUMENT_PHOTO_URL_TTL_SECONDS,
@@ -47,7 +48,7 @@ export async function loadSellerSynthesis(
   if (!project) {
     return null;
   }
-  const [property, competitors, responses, summary, decision, conclusion, document] =
+  const [property, competitors, responses, summary, decision, conclusion, document, neighbourhood] =
     await Promise.all([
       supabase
         .from('subject_properties')
@@ -97,6 +98,8 @@ export async function loadSellerSynthesis(
         .eq('agency_id', agencyId)
         .maybeSingle(),
       loadDocumentAgency(supabase, agencyId, project.advisor_id),
+      // Mission 157 B — le lien « Vivre ici » du bien, relu à chaque ouverture.
+      readNeighbourhoodDocumentLink(supabase, agencyId, projectId),
     ]);
   // Sans réponse du vendeur, il n'y a pas eu de Live : pas de synthèse.
   if (summary.data == null && (responses.data ?? []).length === 0) {
@@ -138,6 +141,7 @@ export async function loadSellerSynthesis(
       : null,
     commercializationPrice: conclusion.data?.commercialization_price ?? null,
     agency: document.agency,
+    neighbourhood,
     brandDeclarations: document.brandDeclarations,
   });
 }

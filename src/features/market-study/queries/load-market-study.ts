@@ -5,6 +5,7 @@ import { textLanguage } from '@/lib/client-texts';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { readNeighbourhoodDocumentLink } from '@/features/neighbourhood-link/queries/read-neighbourhood-document-link';
 import { buildMarketStudy } from '@/features/market-study/services/build-market-study';
 import type { MarketStudyDocument } from '@/features/market-study/types';
 import {
@@ -41,7 +42,7 @@ export async function loadMarketStudy(
     .neq('status', 'archived')
     .maybeSingle();
   if (!project) return null;
-  const [property, competitors, decision, conclusion, document] = await Promise.all([
+  const [property, competitors, decision, conclusion, document, neighbourhood] = await Promise.all([
     supabase
       .from('subject_properties')
       .select(
@@ -71,6 +72,8 @@ export async function loadMarketStudy(
       .eq('agency_id', agencyId)
       .maybeSingle(),
     loadDocumentAgency(supabase, agencyId, project.advisor_id),
+    // Mission 157 B — le lien « Vivre ici » du bien, relu à chaque ouverture.
+    readNeighbourhoodDocumentLink(supabase, agencyId, projectId, now),
   ]);
   // La couverture : la première photo du bien vendeur, un chemin du stockage privé de CE dossier,
   // signé ici (M37).
@@ -89,6 +92,7 @@ export async function loadMarketStudy(
     commercializationPrice: conclusion.data?.commercialization_price ?? null,
     advisorAnalysis: decision.data?.advisor_comparative_market_price ?? null,
     agency: document.agency,
+    neighbourhood,
     brandDeclarations: document.brandDeclarations,
   });
 }
