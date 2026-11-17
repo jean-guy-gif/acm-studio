@@ -12,7 +12,6 @@ begin;
 insert into auth.users (id, email) values
   ('15a11111-0000-0000-0000-0000000000a1', 'ca@a15a.test'),
   ('15a11111-0000-0000-0000-0000000000a2', 'ra@a15a.test'),
-  ('15a11111-0000-0000-0000-0000000000a3', 'aa@a15a.test'),
   ('15a11111-0000-0000-0000-0000000000b1', 'cb@b15a.test');
 insert into public.agencies (id, name) values
   ('15aaaaaa-0000-0000-0000-000000000000', 'Agence A 157 adr'),
@@ -20,15 +19,10 @@ insert into public.agencies (id, name) values
 insert into public.profiles (id, agency_id, first_name, last_name, email, role, removed_at) values
   ('15a11111-0000-0000-0000-0000000000a1', '15aaaaaa-0000-0000-0000-000000000000', 'Carl', 'Conseiller', 'ca@a15a.test', 'advisor', null),
   ('15a11111-0000-0000-0000-0000000000a2', '15aaaaaa-0000-0000-0000-000000000000', 'Rémi', 'Retiré', 'ra@a15a.test', 'advisor', now()),
-  ('15a11111-0000-0000-0000-0000000000a3', '15aaaaaa-0000-0000-0000-000000000000', 'Annie', 'Auteure', 'aa@a15a.test', 'advisor', null),
   ('15a11111-0000-0000-0000-0000000000b1', '15abbbbb-0000-0000-0000-000000000000', 'Boris', 'Conseiller', 'cb@b15a.test', 'advisor', null);
 insert into public.projects (id, agency_id, advisor_id, seller_name, status) values
   ('15aaaaaa-1111-0000-0000-000000000000', '15aaaaaa-0000-0000-0000-000000000000', '15a11111-0000-0000-0000-0000000000a1', 'Vendeur A', 'draft'),
   ('15abbbbb-1111-0000-0000-000000000000', '15abbbbb-0000-0000-0000-000000000000', '15a11111-0000-0000-0000-0000000000b1', 'Vendeur B', 'draft');
-insert into public.comparables (id, agency_id, project_id, title, price, surface_area, is_selected, display_order) values
-  ('15aaaaaa-2222-0000-0000-000000000001', '15aaaaaa-0000-0000-0000-000000000000', '15aaaaaa-1111-0000-0000-000000000000', 'Maison 1', 700000, 140, true, 1),
-  ('15aaaaaa-2222-0000-0000-000000000002', '15aaaaaa-0000-0000-0000-000000000000', '15aaaaaa-1111-0000-0000-000000000000', 'Maison 2', 720000, 150, true, 2),
-  ('15abbbbb-2222-0000-0000-000000000001', '15abbbbb-0000-0000-0000-000000000000', '15abbbbb-1111-0000-0000-000000000000', 'Maison B', 650000, 130, true, 1);
 
 create function pg_temp.act_as(p_uid uuid) returns void language plpgsql as $$
 begin
@@ -37,11 +31,6 @@ begin
   perform set_config('role', 'authenticated', true);
 end $$;
 grant execute on function pg_temp.act_as(uuid) to authenticated;
-create function pg_temp.act_as_anon() returns void language plpgsql as $$
-begin
-  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
-  perform set_config('role', 'anon', true);
-end $$;
 create function pg_temp.act_as_service() returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
@@ -72,13 +61,17 @@ grant execute on function pg_temp.expect(text, text, text) to authenticated, ano
 
 
 insert into public.subject_properties (agency_id, project_id, address, postal_code, city) values
-  ('15aaaaaa-0000-0000-0000-000000000000', '15aaaaaa-1111-0000-0000-000000000000', '4 chemin des Restanques Hautes', '06140', 'Vence');
+  ('15aaaaaa-0000-0000-0000-000000000000', '15aaaaaa-1111-0000-0000-000000000000', '4 chemin des Restanques Hautes', '06140', 'Vence'),
+  ('15abbbbb-0000-0000-0000-000000000000', '15abbbbb-1111-0000-0000-000000000000', '8 avenue des Lilas', '06600', 'Antibes');
+update public.projects set updated_at = now() - interval '9 days' where id = '15aaaaaa-1111-0000-0000-000000000000';
 
 -- §1 — l'adresse du bien au collage, posée par la base.
 select pg_temp.act_as('15a11111-0000-0000-0000-0000000000a1');
 select pg_temp.expect('§1 le conseiller colle le lien',
   pg_temp.attempt($q$update public.projects set academia_living_here_url = 'https://app.myacademia.ai/l/a1'
     where id = '15aaaaaa-1111-0000-0000-000000000000'$q$), '1');
+select pg_temp.expect('§1 … sans toucher à updated_at',
+  (select (updated_at = now() - interval '9 days')::text from public.projects where id = '15aaaaaa-1111-0000-0000-000000000000'), 'true');
 select pg_temp.expect('§1 … la base garde l''adresse du bien',
   (select academia_living_here_property::text from public.projects where id = '15aaaaaa-1111-0000-0000-000000000000'),
   '{"city": "Vence", "address": "4 chemin des Restanques Hautes", "postal_code": "06140"}');
@@ -88,10 +81,26 @@ select pg_temp.expect('§1 le navigateur ne la choisit pas',
 select pg_temp.expect('§1 … elle reste celle du collage',
   (select academia_living_here_property->>'address' from public.projects where id = '15aaaaaa-1111-0000-0000-000000000000'),
   '4 chemin des Restanques Hautes');
+select pg_temp.act_as('15a11111-0000-0000-0000-0000000000a2');
+select pg_temp.expect('§1 un membre retiré ne change pas le lien',
+  pg_temp.attempt($q$update public.projects set academia_living_here_url = 'https://app.myacademia.ai/l/r1'
+    where id = '15aaaaaa-1111-0000-0000-000000000000'$q$), '0');
+select pg_temp.expect('§1 … ni l''adresse du collage',
+  pg_temp.attempt($q$update public.projects set academia_living_here_property = null where id = '15aaaaaa-1111-0000-0000-000000000000'$q$), '0');
 reset role;
 update public.projects set academia_living_here_property = null where id = '15aaaaaa-1111-0000-0000-000000000000';
 select pg_temp.expect('§1 ni à la main, hors du navigateur',
   (select academia_living_here_property->>'city' from public.projects where id = '15aaaaaa-1111-0000-0000-000000000000'), 'Vence');
+
+-- La clé de service (le lien créé en un clic) : l'adresse relue sans la règle du navigateur, sur le
+-- bien du dossier lui-même.
+select pg_temp.act_as_service();
+select pg_temp.expect('§1 la clé de service pose le lien d''un dossier de l''agence B',
+  pg_temp.attempt($q$update public.projects set academia_living_here_url = 'https://app.myacademia.ai/l/b1'
+    where id = '15abbbbb-1111-0000-0000-000000000000'$q$), '1');
+select pg_temp.expect('§1 … avec l''adresse de son bien, pas celle d''une autre agence',
+  (select academia_living_here_property->>'city' from public.projects where id = '15abbbbb-1111-0000-0000-000000000000'), 'Antibes');
+reset role;
 
 -- §2 — l'adresse du bien change ensuite : la colonne garde celle du collage.
 update public.subject_properties set address = '12 rue Neuve' where project_id = '15aaaaaa-1111-0000-0000-000000000000';
@@ -122,6 +131,10 @@ select pg_temp.expect('§3 un dossier créé avec son lien, sans bien vendeur',
 select pg_temp.expect('§3 … daté, sans adresse',
   (select (academia_living_here_pasted_at = now())::text || ' ' || coalesce(academia_living_here_property::text, 'nulle')
      from public.projects where id = '15aaaaaa-1111-0000-0000-000000000002'), 'true nulle');
+insert into public.subject_properties (agency_id, project_id, address, postal_code, city) values
+  ('15aaaaaa-0000-0000-0000-000000000000', '15aaaaaa-1111-0000-0000-000000000002', '2 place du Marché', '06140', 'Vence');
+select pg_temp.expect('§3 … le bien saisi ensuite ne la remplit pas : l''adresse a changé depuis le lien',
+  (select coalesce(academia_living_here_property::text, 'nulle') from public.projects where id = '15aaaaaa-1111-0000-0000-000000000002'), 'nulle');
 select pg_temp.act_as('15a11111-0000-0000-0000-0000000000b1');
 select pg_temp.expect('§3 une autre agence ne lit pas l''adresse du collage',
   (select count(*)::text from public.projects where id = '15aaaaaa-1111-0000-0000-000000000002'), '0');
