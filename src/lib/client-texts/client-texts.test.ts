@@ -14,8 +14,13 @@ type Tree = Record<string, unknown>;
 
 // Les phrases dont une langue n'a pas besoin de tous les arguments : écrites ici, une par une.
 //   • la relance : l'anglais ne fait pas l'accord « la / le visiter » (le genre du bien) ;
-//   • le lien expiré : l'anglais ne fait pas l'accord « retiré / retirée ».
-const ARITY_EXCEPTIONS = new Set(['buyer.messages.relaunch.fits', 'common.linkGone.body']);
+//   • le lien expiré : l'anglais ne fait pas l'accord « retiré / retirée » ;
+//   • « permis » ne prend pas de « s » en français, « permit / permits » en anglais (M159).
+const ARITY_EXCEPTIONS = new Set([
+  'buyer.messages.relaunch.fits',
+  'common.linkGone.body',
+  'quartier.permits.count',
+]);
 
 function shape(tree: Tree, path = ''): string[] {
   return Object.entries(tree).flatMap(([key, value]) => {

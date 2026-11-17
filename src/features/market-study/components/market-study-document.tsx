@@ -22,6 +22,7 @@ import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatDay, formatEuro, formatEuroPerSquareMeter, formatPercent } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 import { NeighbourhoodLinkBlock } from '@/features/neighbourhood-link/components/neighbourhood-link-block';
+import { NeighbourhoodDocumentBlocks } from '@/features/neighbourhood-link/components/neighbourhood-document';
 
 // Mission 131 — l'« Étude de marché », à la forme de la synthèse (M113) et du Point marché (M127,
 // M129) : couverture en pleine photo, une fiche par concurrent retenu qui ne se coupe jamais, puis
@@ -362,9 +363,17 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
   const footer = [c.confidential, document.commune, day].filter(Boolean).join(' · ');
   const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   const hasCompetitors = document.competitors.length > 0;
-  const sections = [hasCompetitors ? 'competitors' : null, 'ranking'].filter(
-    (key): key is string => key != null,
-  );
+  // Mission 159 — les blocs du quartier cochés : le quartier avant les concurrents, les ventes
+  // réelles avant « Où en est votre prix ».
+  const QUARTIER_BLOCKS = ['urbanisme', 'risques', 'population', 'copropriete', 'permis'] as const;
+  const quartierBlocks = QUARTIER_BLOCKS.filter((key) => document.quartier?.keys.includes(key));
+  const quartierSales = document.quartier?.keys.includes('ventes') ?? false;
+  const sections = [
+    quartierBlocks.length > 0 ? 'quartier' : null,
+    hasCompetitors ? 'competitors' : null,
+    quartierSales ? 'sales' : null,
+    'ranking',
+  ].filter((key): key is string => key != null);
   const sectionNumber = (key: string) => sections.indexOf(key) + 1;
 
   return (
@@ -458,6 +467,16 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
         {document.neighbourhood ? (
           <NeighbourhoodLinkBlock link={document.neighbourhood} language={language} />
         ) : null}
+        {document.quartier && quartierBlocks.length > 0 ? (
+          <section className="flex flex-col gap-3">
+            <SectionTitle number={sectionNumber('quartier')} title={texts.quartier.kicker} />
+            <NeighbourhoodDocumentBlocks
+              content={document.quartier}
+              only={quartierBlocks}
+              language={language}
+            />
+          </section>
+        ) : null}
         {hasCompetitors ? (
           <section className="flex flex-col gap-3" data-testid="market-study-competitors">
             <SectionTitle
@@ -471,6 +490,16 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
           </section>
         ) : null}
 
+        {document.quartier && quartierSales ? (
+          <section className="flex flex-col gap-3">
+            <SectionTitle number={sectionNumber('sales')} title={texts.quartier.sales.title} />
+            <NeighbourhoodDocumentBlocks
+              content={document.quartier}
+              only={['ventes']}
+              language={language}
+            />
+          </section>
+        ) : null}
         {/* Le classement commence une page neuve à l'impression, pour ne jamais se couper (M129). */}
         <section
           className={`flex flex-col gap-3 ${hasCompetitors ? 'print:break-before-page' : ''}`}

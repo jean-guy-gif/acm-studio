@@ -32,7 +32,7 @@ export type AddressViewState =
       kind: 'ready';
       view: AcademiaPropertyView;
       // Ce pour quoi la vue a été calculée : « une maison de 5 pièces et 135 m² ».
-      facts: { type: 'appartement' | 'maison'; rooms: number; surface: number };
+      facts: AcademiaFacts;
     };
 
 export type AddressViewProperty = {
@@ -42,15 +42,21 @@ export type AddressViewProperty = {
   surface: number | null;
 };
 
-export async function readAddressView(input: {
-  // La clé de service : l'identifiant chez Academia n'est pas lisible par le navigateur (M157).
+// Les conditions communes aux deux vues (M158, M159) : l'accès, la demande du dossier prête et
+// faite pour l'adresse du jour, le type, les pièces et la surface du bien.
+export type AcademiaFacts = { type: 'appartement' | 'maison'; rooms: number; surface: number };
+export type AcademiaDossierState =
+  | Exclude<AddressViewState, { kind: 'ready' }>
+  | { kind: 'ok'; key: string; academiaId: string; facts: AcademiaFacts };
+
+export async function resolveAcademiaDossier(input: {
   admin: SupabaseClient<Database>;
   agencyId: string;
   projectId: string;
   property: AddressViewProperty | null;
   access: AcademiaAccess | null;
-  fetchImpl?: AcademiaFetch;
-}): Promise<AddressViewState> {
+  label: string;
+}): Promise<AcademiaDossierState> {
   if (!input.access) return { kind: 'closed' };
   const { data: request, error } = await input.admin
     .from('project_academia_requests')
@@ -59,7 +65,7 @@ export async function readAddressView(input: {
     .eq('agency_id', input.agencyId)
     .maybeSingle();
   if (error) {
-    await reportServerError('academia:read-address-view', error);
+    await reportServerError(input.label, error);
     return { kind: 'failed' };
   }
   if (!request || !input.property?.address || request.property_address !== input.property.address) {
@@ -83,9 +89,29 @@ export async function readAddressView(input: {
       ],
     };
   }
+  return {
+    kind: 'ok',
+    key: input.access.key,
+    academiaId: request.academia_id,
+    facts: { type, rooms, surface },
+  };
+}
+
+export async function readAddressView(input: {
+  // La clé de service : l'identifiant chez Academia n'est pas lisible par le navigateur (M157).
+  admin: SupabaseClient<Database>;
+  agencyId: string;
+  projectId: string;
+  property: AddressViewProperty | null;
+  access: AcademiaAccess | null;
+  fetchImpl?: AcademiaFetch;
+}): Promise<AddressViewState> {
+  const dossier = await resolveAcademiaDossier({ ...input, label: 'academia:read-address-view' });
+  if (dossier.kind !== 'ok') return dossier;
+  const { type, rooms, surface } = dossier.facts;
   const reply = await readAcademiaPropertyView(
-    input.access.key,
-    request.academia_id,
+    dossier.key,
+    dossier.academiaId,
     { type, pieces: rooms, surface },
     input.fetchImpl,
   );
@@ -104,5 +130,5 @@ export async function readAddressView(input: {
     );
     return { kind: 'failed' };
   }
-  return { kind: 'ready', view, facts: { type, rooms, surface } };
+  return { kind: 'ready', view, facts: dossier.facts };
 }

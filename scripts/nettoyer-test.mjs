@@ -51,6 +51,8 @@ const CLEANED = [
   'competitor_listing_copies',
   // Mission 157 — le dossier Academia du bien vendeur (part avec son dossier).
   'project_academia_requests',
+  // Mission 159 — les blocs du quartier figés pour le vendeur (partent avec leur dossier).
+  'project_neighbourhood_snapshots',
   'competitor_prospecting_files',
   'follow_up_contacts',
   'listing_observations',
@@ -242,6 +244,8 @@ begin
   delete from public.competitor_listing_copies where agency_id = v_agency;
   -- Mission 157 — le dossier Academia du bien vendeur (il part aussi avec son dossier).
   delete from public.project_academia_requests where agency_id = v_agency;
+  -- Mission 159 — l'instantané du quartier (il part aussi avec son dossier).
+  delete from public.project_neighbourhood_snapshots where agency_id = v_agency;
   delete from public.comparables where agency_id = v_agency;
   delete from public.subject_properties where agency_id = v_agency;
   delete from public.projects where agency_id = v_agency;

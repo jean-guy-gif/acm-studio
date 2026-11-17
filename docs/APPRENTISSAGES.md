@@ -600,6 +600,20 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   lieu de `etat` et des noms en camelCase). L'appel se fait depuis le serveur de l'essai, par un
   petit script Playwright avec le compte de démo e2e (la clé n'est que dans Vercel).
 
+- 17/11 · M158 · Une API d'un partenaire dont la réponse n'est pas documentée se lit d'abord par
+  une sonde temporaire, sur l'essai seulement et réservée à l'agence de démonstration (la clé n'est
+  que dans Vercel) : trois passages ont suffi pour trouver les vraies routes
+  (`/dossiers/{id}/bien?type&pieces&surface`, `?vue=` ignoré) ; la sonde a été retirée de l'essai
+  aussitôt, jamais dans `main`. La vraie réponse, fictive, sert ensuite de jeu d'essai des tests.
+- 17/11 · M158 · Un appel lent à un service extérieur ne se fait jamais dans le corps d'une page :
+  « Avant le rendez-vous » attendait Academia (jusqu'à 2 × 8 s) avant de s'afficher, ce qu'aucun
+  test ne voyait ; le bloc se lit dans sa propre limite (`Suspense`), prouvé par un rendu en flux
+  (`react-dom/server.edge`) avec un service qui ne répond jamais.
+- 17/11 · M158 · Un remplacement de texte par script échoue sans rien écrire quand Prettier a déjà
+  reformaté le passage (une signature passée sur plusieurs lignes) : relire le fichier avant.
+- 17/11 · M158 · Durées : suite e2e complète 39 min (28 sur 28), les sept specs qui passent par
+  « Avant le rendez-vous » 24 min ; relecteur une passe, 3 min.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

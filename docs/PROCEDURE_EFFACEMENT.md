@@ -72,6 +72,8 @@ select
   -- (cascade). Le dossier lui-même vit chez Mon secteur (Academia) : relever son identifiant
   -- (`academia_id`) AVANT d'effacer, et demander à Laurent de l'effacer de son côté.
   (select count(*) from project_academia_requests where project_id = ':dossier') as dossier_academia,
+  -- Mission 159 : les blocs du quartier figés pour le vendeur ; ils partent avec le dossier (cascade).
+  (select count(*) from project_neighbourhood_snapshots where project_id = ':dossier') as quartier_vendeur,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;

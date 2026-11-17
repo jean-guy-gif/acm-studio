@@ -6,6 +6,7 @@ import { textLanguage } from '@/lib/client-texts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { readNeighbourhoodDocumentLink } from '@/features/neighbourhood-link/queries/read-neighbourhood-document-link';
+import { readNeighbourhoodSnapshot } from '@/features/neighbourhood-link/queries/read-neighbourhood-snapshot';
 import { buildSellerSynthesis } from '@/features/seller-synthesis/services/build-seller-synthesis';
 import {
   DOCUMENT_PHOTO_URL_TTL_SECONDS,
@@ -38,6 +39,8 @@ export async function loadSellerSynthesis(
   supabase: Client,
   projectId: string,
   agencyId: string,
+  // Mission 159 — un lien déjà envoyé garde le quartier d'avant sa création.
+  options: { quartierBefore?: string | null } = {},
 ): Promise<SellerSynthesis | null> {
   const { data: project } = await supabase
     .from('projects')
@@ -49,59 +52,72 @@ export async function loadSellerSynthesis(
   if (!project) {
     return null;
   }
-  const [property, competitors, responses, summary, decision, conclusion, document, neighbourhood] =
-    await Promise.all([
-      supabase
-        .from('subject_properties')
-        .select(
-          'property_type, city, district, surface_area, land_area, rooms_count, bedrooms_count, floor, building_floors, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, strengths, photo_urls',
-        )
-        .eq('project_id', projectId)
-        .eq('agency_id', agencyId)
-        .maybeSingle(),
-      supabase
-        .from('comparables')
-        .select(
-          'id, price, property_type, rooms_count, bedrooms_count, surface_area, city, district, is_selected, excluded_from_live, display_order, created_at, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, photo_urls, price_drop_amount, price_drop_percentage, days_on_market, listing_published_at, synthesis_hide_photo',
-        )
-        .eq('project_id', projectId)
-        .eq('agency_id', agencyId)
-        .eq('is_selected', true),
-      supabase
-        .from('live_seller_responses')
-        .select(
-          'comparable_id, seller_estimated_listing_price, seller_serious_competitor, revealed_listing_price, seller_estimated_days_on_market, shown_directly_at',
-        )
-        .eq('project_id', projectId)
-        .eq('agency_id', agencyId),
-      supabase
-        .from('live_seller_summary')
-        .select(
-          'seller_perceived_property_price, seller_revised_property_price, seller_most_dangerous_comparable_id, seller_most_dangerous_reason, advisor_closest_comparable_id',
-        )
-        .eq('project_id', projectId)
-        .eq('agency_id', agencyId)
-        .maybeSingle(),
-      supabase
-        .from('project_price_positionings')
-        .select(
-          'advisor_price, advisor_comparative_market_price, justification, range_central, calculation_snapshot',
-        )
-        .eq('project_id', projectId)
-        .eq('agency_id', agencyId)
-        .maybeSingle(),
-      supabase
-        .from('project_meeting_conclusions')
-        .select(
-          'commercialization_price, concluded_at, outcome, frozen_advisor_price, frozen_advisor_analysis, frozen_market_computed',
-        )
-        .eq('project_id', projectId)
-        .eq('agency_id', agencyId)
-        .maybeSingle(),
-      loadDocumentAgency(supabase, agencyId, project.advisor_id),
-      // Mission 157 B — le lien « Vivre ici » du bien, relu à chaque ouverture.
-      readNeighbourhoodDocumentLink(supabase, agencyId, projectId),
-    ]);
+  const [
+    property,
+    competitors,
+    responses,
+    summary,
+    decision,
+    conclusion,
+    document,
+    neighbourhood,
+    quartier,
+  ] = await Promise.all([
+    supabase
+      .from('subject_properties')
+      .select(
+        'property_type, city, district, surface_area, land_area, rooms_count, bedrooms_count, floor, building_floors, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, strengths, photo_urls',
+      )
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId)
+      .maybeSingle(),
+    supabase
+      .from('comparables')
+      .select(
+        'id, price, property_type, rooms_count, bedrooms_count, surface_area, city, district, is_selected, excluded_from_live, display_order, created_at, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, photo_urls, price_drop_amount, price_drop_percentage, days_on_market, listing_published_at, synthesis_hide_photo',
+      )
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId)
+      .eq('is_selected', true),
+    supabase
+      .from('live_seller_responses')
+      .select(
+        'comparable_id, seller_estimated_listing_price, seller_serious_competitor, revealed_listing_price, seller_estimated_days_on_market, shown_directly_at',
+      )
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId),
+    supabase
+      .from('live_seller_summary')
+      .select(
+        'seller_perceived_property_price, seller_revised_property_price, seller_most_dangerous_comparable_id, seller_most_dangerous_reason, advisor_closest_comparable_id',
+      )
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId)
+      .maybeSingle(),
+    supabase
+      .from('project_price_positionings')
+      .select(
+        'advisor_price, advisor_comparative_market_price, justification, range_central, calculation_snapshot',
+      )
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId)
+      .maybeSingle(),
+    supabase
+      .from('project_meeting_conclusions')
+      .select(
+        'commercialization_price, concluded_at, outcome, frozen_advisor_price, frozen_advisor_analysis, frozen_market_computed',
+      )
+      .eq('project_id', projectId)
+      .eq('agency_id', agencyId)
+      .maybeSingle(),
+    loadDocumentAgency(supabase, agencyId, project.advisor_id),
+    // Mission 157 B — le lien « Vivre ici » du bien, relu à chaque ouverture.
+    readNeighbourhoodDocumentLink(supabase, agencyId, projectId),
+    // Mission 159 — les blocs du quartier vus au Live.
+    readNeighbourhoodSnapshot(supabase, agencyId, projectId, {
+      before: options.quartierBefore ?? null,
+    }),
+  ]);
   // Sans réponse du vendeur, il n'y a pas eu de Live : pas de synthèse.
   if (summary.data == null && (responses.data ?? []).length === 0) {
     return null;
@@ -143,6 +159,7 @@ export async function loadSellerSynthesis(
     commercializationPrice: conclusion.data?.commercialization_price ?? null,
     agency: document.agency,
     neighbourhood,
+    quartier: quartier.snapshot,
     brandDeclarations: document.brandDeclarations,
   });
 }

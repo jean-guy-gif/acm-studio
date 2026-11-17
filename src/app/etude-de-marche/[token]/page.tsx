@@ -42,7 +42,10 @@ export default async function PublicMarketStudyPage({
   const admin = createServiceRoleClient();
   const link = await findMarketStudyLink(admin, token);
   if (!link) notFound();
-  const document = await loadMarketStudy(admin, link.projectId, link.agencyId);
+  // Mission 159 — le quartier tel qu'il était quand le lien a été créé.
+  const document = await loadMarketStudy(admin, link.projectId, link.agencyId, new Date(), {
+    quartierBefore: link.createdAt,
+  });
   if (!document) notFound();
   return (
     <main className="min-h-screen bg-zinc-100 p-4 pb-20 print:bg-white print:p-0">

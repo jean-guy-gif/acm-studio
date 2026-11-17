@@ -2,6 +2,7 @@
 import { RemoteImage } from '@/components/ui/remote-image';
 import { DpeLetter } from '@/features/dpe/components/dpe-letter';
 import { NeighbourhoodLinkBlock } from '@/features/neighbourhood-link/components/neighbourhood-link-block';
+import { NeighbourhoodDocumentBlocks } from '@/features/neighbourhood-link/components/neighbourhood-document';
 import { priceAlignment } from '@/features/price-positioning/services/price-alignment';
 import { layoutBand, type BandLayout } from '@/features/seller-synthesis/services/band-labels';
 import type { SellerSynthesis, SynthesisCompetitor } from '@/features/seller-synthesis/types';
@@ -508,12 +509,19 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
   const dangerous = synthesis.dangerous
     ? (synthesis.competitors.find((item) => item.id === synthesis.dangerous!.competitorId) ?? null)
     : null;
+  const QUARTIER_BLOCKS = ['urbanisme', 'risques', 'population', 'copropriete', 'permis'] as const;
+  const quartierBlocks = QUARTIER_BLOCKS.filter((key) => synthesis.quartier?.keys.includes(key));
+  const quartierSales = synthesis.quartier?.keys.includes('ventes') ?? false;
   // Les sections présentes, dans l'ordre du Live : leur numéro (« 01 », « 02 »…) en découle.
   const sections = [
     property || synthesis.perceivedPrice != null ? 'property' : null,
+    // Mission 159 — le quartier vu au Live, après « Votre bien » ; les ventes réelles avant
+    // « L'analyse des prix », comme au Live.
+    quartierBlocks.length > 0 ? 'quartier' : null,
     synthesis.competitors.length > 0 ? 'competitors' : null,
     synthesis.dpe ? 'dpe' : null,
     dangerous ? 'dangerous' : null,
+    quartierSales ? 'sales' : null,
     analysis || decision ? 'analysis' : null,
     'path',
   ].filter((key): key is string => key != null);
@@ -751,6 +759,17 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
           </section>
         ) : null}
 
+        {synthesis.quartier && quartierBlocks.length > 0 ? (
+          <section className="flex flex-col gap-3">
+            <SectionTitle number={sectionNumber('quartier')} title={texts.quartier.kicker} />
+            <NeighbourhoodDocumentBlocks
+              content={synthesis.quartier}
+              only={quartierBlocks}
+              language={language}
+            />
+          </section>
+        ) : null}
+
         {/* 02 · Les biens regardés ensemble — une fiche par concurrent montré, dans l'ordre du Live. */}
         {synthesis.competitors.length > 0 ? (
           <section className="flex flex-col gap-3">
@@ -816,6 +835,17 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             <CompetitorCard
               competitor={dangerous}
               dangerousReason={synthesis.dangerous?.reason ?? null}
+              language={language}
+            />
+          </section>
+        ) : null}
+
+        {synthesis.quartier && quartierSales ? (
+          <section className="flex flex-col gap-3">
+            <SectionTitle number={sectionNumber('sales')} title={texts.quartier.sales.title} />
+            <NeighbourhoodDocumentBlocks
+              content={synthesis.quartier}
+              only={['ventes']}
               language={language}
             />
           </section>

@@ -16,6 +16,7 @@ import { isPropertyType } from '@/features/subject-property/services/property-ty
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatSquareMeters } from '@/lib/format';
 import type { NeighbourhoodDocumentLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
+import type { NeighbourhoodDocumentContent } from '@/features/neighbourhood-link/components/neighbourhood-document';
 
 // Mission 131 — le constructeur de l'Étude de marché. Pur. Son entrée est une LISTE
 // D'AUTORISATION : chaque champ de la sortie est recopié un par un, jamais par décomposition d'une
@@ -79,6 +80,7 @@ export type MarketStudyInput = {
   brandDeclarations: string;
   // Mission 157 B — le lien « Vivre ici » du bien (absent : aucun).
   neighbourhood?: NeighbourhoodDocumentLink | null;
+  quartier?: NeighbourhoodDocumentContent | null;
 };
 
 // Trois photos au plus : une fiche tient toujours sur une page A4 (comme le Point marché).
@@ -333,5 +335,6 @@ export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
     neighbourhood: input.neighbourhood ?? null,
+    quartier: input.quartier ?? null,
   };
 }
