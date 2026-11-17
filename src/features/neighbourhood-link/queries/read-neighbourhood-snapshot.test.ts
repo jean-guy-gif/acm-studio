@@ -68,7 +68,7 @@ beforeEach(() => {
   reads = [];
   rows = {
     projects: { data: { status: 'ready_for_meeting', live_started_at: null } },
-    live_seller_responses: { count: 0 },
+    live_seller_responses: { data: [] },
     subject_properties: { data: PROPERTY },
     project_neighbourhood_snapshots: { data: SNAPSHOT },
   };
@@ -104,26 +104,43 @@ describe('readNeighbourhoodSnapshot', () => {
     }
   });
 
-  it('le Live commencé : on garde ce qui a été montré, et l’adresse n’est plus lue', async () => {
-    rows.subject_properties = { data: { ...PROPERTY, address: '6 autre rue' } };
+  it('le Live commencé : un bien changé APRÈS le début garde ce qui a été montré', async () => {
+    const changed = { ...PROPERTY, address: '6 autre rue', updated_at: '2026-11-18T11:00:00Z' };
     for (const started of [
       {
         projects: {
           data: { status: 'ready_for_meeting', live_started_at: '2026-11-18T10:00:00Z' },
         },
       },
-      { live_seller_responses: { count: 2 } },
-      { projects: { data: { status: 'meeting_completed', live_started_at: null } } },
+      { live_seller_responses: { data: [{ created_at: '2026-11-18T10:00:00Z' }] } },
     ]) {
-      reads = [];
+      rows.subject_properties = { data: changed };
       Object.assign(rows, started);
       const state = await readNeighbourhoodSnapshot(client(), 'a1', 'p1');
       expect(state.locked).toBe(true);
       expect(neighbourhoodKeys(state)).toEqual(['risques', 'ventes']);
-      expect(reads.some((read) => read.table === 'subject_properties')).toBe(false);
+      // L'adresse n'est lue que pour comparer : elle ne sort jamais.
+      expect(JSON.stringify(state)).not.toMatch(/autre rue|Restanques/);
       rows.projects = { data: { status: 'ready_for_meeting', live_started_at: null } };
-      rows.live_seller_responses = { count: 0 };
+      rows.live_seller_responses = { data: [] };
     }
+  });
+
+  it('un instantané déjà écarté au début du Live ne revient jamais (bien changé AVANT)', async () => {
+    rows.subject_properties = {
+      data: { ...PROPERTY, address: '6 autre rue', updated_at: '2026-11-18T09:00:00Z' },
+    };
+    rows.projects = {
+      data: { status: 'ready_for_meeting', live_started_at: '2026-11-18T10:00:00Z' },
+    };
+    expect(await readNeighbourhoodSnapshot(client(), 'a1', 'p1')).toEqual({
+      snapshot: null,
+      stale: true,
+      locked: true,
+    });
+    // Conclu sans Live (« Document seul ») : le bien d'aujourd'hui décide.
+    rows.projects = { data: { status: 'meeting_completed', live_started_at: null } };
+    expect((await readNeighbourhoodSnapshot(client(), 'a1', 'p1')).stale).toBe(true);
   });
 
   it('sans instantané, ou une lecture en échec : aucun écran, jamais une erreur', async () => {

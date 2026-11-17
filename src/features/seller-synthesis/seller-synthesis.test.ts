@@ -645,6 +645,69 @@ describe('les prix de la synthèse (mission 111)', () => {
     });
   });
 
+  // Mission 159 — les blocs du quartier vus au Live : rien sans Live ; les ventes réelles, juste
+  // avant « Analyse des prix », seulement si chaque concurrent montré a été passé.
+  it('le quartier : les blocs vus au Live, jamais ceux d’un Live qui n’a pas eu lieu', () => {
+    const quartier = {
+      blocks: {
+        urbanisme: null,
+        risques: {
+          date: '2026-10-07',
+          clay: 2,
+          earthquake: 4,
+          radon: 1,
+          floodArea: null,
+          disasters: null,
+        },
+        population: null,
+        copropriete: null,
+        permis: null,
+        ventes: {
+          date: '2026-10-07',
+          type: null,
+          rooms: null,
+          since: null,
+          listRadius: 250,
+          list: [],
+        },
+      },
+      keys: ['risques', 'ventes'] as ('risques' | 'ventes')[],
+      takenAt: '2026-11-17T18:00:00Z',
+    };
+    expect(buildSellerSynthesis({ ...base, quartier }).quartier).toBeNull();
+    const started = { ...base, quartier, liveStartedAt: '2026-11-18T10:00:00Z' };
+    const shown = [
+      competitor('c1', 0, 300_000),
+      competitor('c2', 1, 310_000),
+    ] as unknown as SynthesisInput['competitors'];
+    const answer = (id: string, over: Record<string, unknown> = {}) => ({
+      comparable_id: id,
+      seller_estimated_listing_price: null,
+      seller_serious_competitor: null,
+      revealed_listing_price: null,
+      seller_estimated_days_on_market: null,
+      ...over,
+    });
+    // Un concurrent pas encore passé : le Live s'est arrêté avant les ventes réelles.
+    expect(
+      buildSellerSynthesis({
+        ...started,
+        competitors: shown,
+        responses: [answer('c1', { seller_estimated_listing_price: 300_000 })],
+      }).quartier?.keys,
+    ).toEqual(['risques']);
+    expect(
+      buildSellerSynthesis({
+        ...started,
+        competitors: shown,
+        responses: [
+          answer('c1', { seller_estimated_listing_price: 300_000 }),
+          answer('c2', { seller_serious_competitor: 'no' }),
+        ],
+      }).quartier?.keys,
+    ).toEqual(['risques', 'ventes']);
+  });
+
   it('sans décision ni conclusion : aucun prix final', () => {
     const synthesis = buildSellerSynthesis(base);
     expect(synthesis.decision).toBeNull();

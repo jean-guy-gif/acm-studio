@@ -1,4 +1,7 @@
-import type { PlanningCategory } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
+import type {
+  NeighbourhoodBlockKey,
+  PlanningCategory,
+} from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatNumber } from '@/lib/format';
 
@@ -193,7 +196,15 @@ export const ENGLISH_TEXTS: ClientTexts = {
     salesKicker: 'What your neighbours sold',
     home: 'Your property',
     source: (name, day) => `Source: ${name}${day ? `, data as of ${day}` : ''}`,
-    frozen: (day) => `Public information as of ${day}, the day this document was prepared.`,
+    frozen: (day) => `Public information as of ${day}.`,
+    sources: {
+      urbanisme: 'Géoportail de l’urbanisme (IGN, French planning portal)',
+      risques: 'Géorisques (French Ministry for the Ecological Transition)',
+      population: 'Insee (French statistics office), local tax income data, 200 m grid squares',
+      copropriete: 'National register of co-ownerships (Anah)',
+      permis: 'Sitadel (SDES), building permits',
+      ventes: 'DVF (DGFiP), sales of existing homes',
+    } satisfies Record<NeighbourhoodBlockKey, string>,
     within: (meters) => `Around the property, within ${meters}`,
     range: (from, to) => `${from} to ${to}`,
     nothing: 'nothing recorded',
@@ -235,6 +246,8 @@ export const ENGLISH_TEXTS: ClientTexts = {
           : `No building permit recorded within ${meters}${since ? ` since ${since}` : ''}.`,
       count: (count) => (count > 1 ? 'permits' : 'permit'),
       none: 'none',
+      more: (count, meters) =>
+        `and ${count} other ${count > 1 ? 'permits' : 'permit'} within ${meters}`,
       at: (meters) =>
         `at ${meters.length > 1 ? `${meters.slice(0, -1).join(', ')} and ${meters[meters.length - 1]}` : meters[0]}`,
       line: ({ dwellings, surface, state, month, distance }) => {
@@ -314,6 +327,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
                 : ''
         }.`,
       atAddress: 'At the property’s address',
+      near: (meters) => `About ${meters} from the property`,
       built: 'built',
       today: 'today',
       lots: 'residential units',

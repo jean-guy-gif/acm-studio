@@ -118,8 +118,8 @@ export async function saveNeighbourhoodChoice(
     property_type: current.facts.type,
     property_rooms: current.facts.rooms,
     property_surface: current.facts.surface,
-    // Le jour des données de la source, celui du premier bloc gardé qui le dit.
-    computed_on: Object.values(blocks).find((block) => block?.date)?.date ?? null,
+    // Le jour où la source a calculé la vue (« calculeLe »).
+    computed_on: current.computedOn,
     created_by: profile.id,
   });
   if (error) {

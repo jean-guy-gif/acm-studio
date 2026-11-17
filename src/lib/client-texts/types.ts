@@ -1,4 +1,7 @@
-import type { PlanningCategory } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
+import type {
+  NeighbourhoodBlockKey,
+  PlanningCategory,
+} from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { LivePageType } from '@/features/live-seller/services/build-live-pages';
 import type {
   ComparisonCriterion,
@@ -134,6 +137,8 @@ export type ClientTexts = {
     salesKicker: string;
     home: string;
     source: (name: string, day: string | null) => string;
+    // Le nom de la source publique de chaque bloc, écrit par ACM (jamais par le service).
+    sources: Record<NeighbourhoodBlockKey, string>;
     frozen: (day: string) => string;
     within: (meters: string) => string;
     range: (from: string, to: string) => string;
@@ -154,6 +159,8 @@ export type ClientTexts = {
       count: (count: number) => string;
       none: string;
       at: (meters: string[]) => string;
+      // « et 3 autres permis » sous la liste, quand elle est coupée pour tenir sur l'écran.
+      more: (count: number, meters: string) => string;
       line: (input: {
         dwellings: number | null;
         surface: string | null;
@@ -192,6 +199,7 @@ export type ClientTexts = {
       title: string;
       headline: (lots: number | null, from: number | null, to: number | null) => string;
       atAddress: string;
+      near: (meters: string) => string;
       built: string;
       today: string;
       lots: string;

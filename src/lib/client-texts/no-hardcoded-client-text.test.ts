@@ -25,6 +25,10 @@ const FILES = [
   'src/features/market-update/components/price-ranking.tsx',
   'src/features/market-study/components/market-study-document.tsx',
   'src/features/neighbourhood-link/components/neighbourhood-link-block.tsx',
+  // Mission 159 — le quartier montré au vendeur : les dessins, leurs mots et le bloc imprimé.
+  'src/features/neighbourhood-link/components/neighbourhood-drawings.tsx',
+  'src/features/neighbourhood-link/components/neighbourhood-document.tsx',
+  'src/features/neighbourhood-link/services/neighbourhood-view.ts',
   'src/features/live-seller/services/price-position.ts',
   'src/features/live-seller/services/market-reading.ts',
   'src/features/live-seller/services/pending-before-analysis.ts',

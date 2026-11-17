@@ -15,14 +15,14 @@ import advisorView from '@/test-fixtures/academia-vue-bien.json';
 // parcelle, ni le prix au m², ni le numéro d'un permis, ni le terrain, ni la vente à l'adresse.
 
 const FORBIDDEN =
-  /estimation|980000|955000|1060000|7263|dpe|etiquette|2600E0000001X|06027000BA0100|"parcelle"|prixM2|pricePerSquareMeter|terrain|"land"|venteALAdresse|atAddress|17 Chemin du Val Fleuri|12 Rue des Oliviers|immatriculation|AC1|Démonstration|fiabilite|anneaux|Rien de relevé|Voirie|V37|UFb4|pavillonnaire|Exposition|MOYENNE|TRI |Inondations|Permis de démolir|secret statistique|PC"/;
+  /DVF|Géorisques|Insee|Anah|Sitadel|Géoportail|estimation|980000|955000|1060000|7263|dpe|etiquette|2600E0000001X|06027000BA0100|"parcelle"|prixM2|pricePerSquareMeter|terrain|"land"|venteALAdresse|atAddress|17 Chemin du Val Fleuri|12 Rue des Oliviers|immatriculation|AC1|Démonstration|fiabilite|anneaux|Rien de relevé|Voirie|V37|UFb4|pavillonnaire|Exposition|MOYENNE|TRI |Inondations|Permis de démolir|secret statistique|PC"/;
 
 describe('parseNeighbourhoodBlocks (la vue « bien-client »)', () => {
   const blocks = parseNeighbourhoodBlocks(clientView);
 
   it('lit les ventes : le mois, le type, les pièces, la surface, le prix, la distance, la rue', () => {
+    // Le jour des données seulement : le nom de la source est écrit par ACM, jamais repris.
     expect(blocks?.ventes).toMatchObject({
-      source: 'DVF (DGFiP), ventes de logements anciens',
       date: '2026-10-07',
       type: 'maison',
       rooms: 5,
@@ -94,6 +94,7 @@ describe('parseNeighbourhoodBlocks (la vue « bien-client »)', () => {
       peoplePerHousehold: 2.2,
     });
     expect(blocks?.copropriete).toMatchObject({
+      linkedToAddress: true,
       dwellingLots: 6,
       builtFrom: 1975,
       builtTo: 1993,

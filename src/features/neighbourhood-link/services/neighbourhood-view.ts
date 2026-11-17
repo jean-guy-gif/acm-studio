@@ -4,7 +4,10 @@ import type {
   NeighbourhoodBlocks,
   PlanningLevel,
 } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
-import { PLANNING_CATEGORIES } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
+import {
+  isShowableBlock,
+  PLANNING_CATEGORIES,
+} from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { ClientLanguage } from '@/lib/client-language';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import {
@@ -24,6 +27,8 @@ import {
 // Les distances de la planche : la parcelle, à moins de 40 m, de 40 à 300 m.
 const NEAR = 40;
 const AROUND = 300;
+// Les permis listés à l'écran, les plus proches d'abord.
+const PERMITS_SHOWN = 4;
 
 export type Gauge = {
   title: string;
@@ -102,10 +107,12 @@ export function neighbourhoodView(
   language: ClientLanguage,
 ): NeighbourhoodView | null {
   const t = texts.quartier;
+  // Un bloc qui ne dirait rien n'a pas d'écran (jamais un écran vide).
+  if (!isShowableBlock(blocks, key)) return null;
   const meters = (value: number) => formatMeters(value, { language });
   const day = (value: string | null) => (value ? formatDay(value, language) : null);
-  const source = (block: { source: string | null; date: string | null }) =>
-    block.source ? t.source(block.source, day(block.date)) : null;
+  // La source publique, nommée par ACM dans la langue du vendeur ; le jour vient de la vue.
+  const source = (block: { date: string | null }) => t.source(t.sources[key], day(block.date));
   const number = (value: number) => formatNumber(value, { language, maxDecimals: 1 });
 
   if (key === 'urbanisme') {
@@ -190,22 +197,38 @@ export function neighbourhoodView(
             range: t.range(String(NEAR), meters(radius)),
             count: String(around.length),
             label: t.permits.count(around.length),
-            sub: at.length ? t.permits.at(at) : undefined,
+            sub: at.length > 0 && at.length <= 3 ? t.permits.at(at) : undefined,
             hit: true,
           }
         : { range: t.range(String(NEAR), meters(radius)), count: t.permits.none, hit: false },
-      legend: block.build.map((permit) => ({
-        title: permit.street ?? '',
-        text: t.permits.line({
-          dwellings: permit.dwellings,
-          surface: permit.surface != null ? formatSquareMeters(permit.surface, { language }) : null,
-          state: permit.state,
-          month: permit.authorizedOn
-            ? formatMonth(permit.authorizedOn.slice(0, 7), language)
-            : null,
-          distance: permit.distance != null ? meters(permit.distance) : null,
-        }),
-      })),
+      // Les quatre plus proches seulement, pour que l'écran tienne sans défiler (M148 B) ; les
+      // autres sont comptés dessous.
+      legend: [
+        ...[...block.build]
+          .sort((x, y) => (x.distance ?? Infinity) - (y.distance ?? Infinity))
+          .slice(0, PERMITS_SHOWN)
+          .map((permit) => ({
+            title: permit.street ?? '',
+            text: t.permits.line({
+              dwellings: permit.dwellings,
+              surface:
+                permit.surface != null ? formatSquareMeters(permit.surface, { language }) : null,
+              state: permit.state,
+              month: permit.authorizedOn
+                ? formatMonth(permit.authorizedOn.slice(0, 7), language)
+                : null,
+              distance: permit.distance != null ? meters(permit.distance) : null,
+            }),
+          })),
+        ...(block.build.length > PERMITS_SHOWN
+          ? [
+              {
+                title: '',
+                text: t.permits.more(block.build.length - PERMITS_SHOWN, meters(radius)),
+              },
+            ]
+          : []),
+      ],
       diagram: t.diagram,
       source: source(block),
     };
@@ -312,7 +335,7 @@ export function neighbourhoodView(
       kind: 'condominium',
       title: c.title,
       headline: c.headline(block.dwellingLots, block.builtFrom, block.builtTo),
-      scale: c.atAddress,
+      scale: block.linkedToAddress ? c.atAddress : c.near(meters(block.distance ?? 0)),
       lots: Math.min(block.dwellingLots ?? 0, 12),
       period: { from: block.builtFrom, to: block.builtTo },
       built: c.built,
