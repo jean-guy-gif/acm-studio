@@ -40,11 +40,44 @@ export type AcademiaPropertyFacts = {
 export type AcademiaRequestState = 'en_cours' | 'pret' | 'erreur';
 
 const ACADEMIA_ID = /^[A-Za-z0-9_-]{1,100}$/;
-const requestReply = z.object({
-  id: z.string().regex(ACADEMIA_ID),
-  etat: z.enum(['en_cours', 'pret', 'erreur']),
-});
-const linkReply = z.object({ url: z.string(), expire_le: z.string() });
+// L'API d'essai (17/11) répond `statut` et des noms en camelCase (`creeLe`, `effaceLe`) ; le contrat
+// du 14/11 disait `etat` et `expire_le` : les deux formes sont lues, rien d'autre n'est cru.
+const STATES: Record<string, AcademiaRequestState> = {
+  pret: 'pret',
+  prêt: 'pret',
+  ready: 'pret',
+  en_cours: 'en_cours',
+  'en-cours': 'en_cours',
+  pending: 'en_cours',
+  erreur: 'erreur',
+  error: 'erreur',
+};
+const requestReply = z
+  .object({
+    id: z.string().regex(ACADEMIA_ID),
+    statut: z.string().optional(),
+    etat: z.string().optional(),
+  })
+  .transform((reply, ctx) => {
+    const raw = (reply.statut ?? reply.etat ?? '').trim().toLowerCase();
+    const etat = STATES[raw];
+    if (!etat) {
+      ctx.addIssue({ code: 'custom', message: `statut inconnu : ${raw.slice(0, 40) || 'absent'}` });
+      return z.NEVER;
+    }
+    return { id: reply.id, etat };
+  });
+const linkReply = z
+  .object({
+    url: z.string().optional(),
+    lien: z.string().optional(),
+    expire_le: z.string().optional(),
+    expireLe: z.string().optional(),
+  })
+  .transform((reply) => ({
+    url: reply.url ?? reply.lien ?? '',
+    expire_le: reply.expire_le ?? reply.expireLe ?? '',
+  }));
 
 // Le type du bien dans le vocabulaire du contrat ; un autre type ne part pas (le bien sans type).
 export function academiaPropertyType(value: string | null): AcademiaPropertyType | null {
@@ -120,7 +153,12 @@ export function academiaDetail(raw: Raw): string {
 }
 
 // Une réponse qui n'a pas la forme du contrat : les noms de ses champs, jamais leurs valeurs.
-function offContract(raw: NonNullable<Raw>): AcademiaFailure {
+// Le seul message gardé d'une relecture refusée : un statut inconnu (sa valeur est un mot de l'API).
+function statusIssue(error: z.ZodError): string | undefined {
+  return error.issues.find((issue) => issue.message.startsWith('statut inconnu'))?.message;
+}
+
+function offContract(raw: NonNullable<Raw>, issue?: string): AcademiaFailure {
   const json = raw.json;
   const fields =
     json && typeof json === 'object' && !Array.isArray(json)
@@ -131,7 +169,7 @@ function offContract(raw: NonNullable<Raw>): AcademiaFailure {
   return {
     ok: false,
     reason: 'unavailable',
-    detail: `HTTP ${raw.status} · réponse hors contrat · champs : ${fields || 'aucun'}`,
+    detail: `HTTP ${raw.status} · réponse hors contrat · champs : ${fields || 'aucun'}${issue ? ` · ${issue}` : ''}`,
   };
 }
 
@@ -197,7 +235,7 @@ export async function createAcademiaRequest(
     const parsed = requestReply.safeParse(raw.json);
     return parsed.success
       ? { ok: true, id: parsed.data.id, etat: parsed.data.etat }
-      : offContract(raw);
+      : offContract(raw, statusIssue(parsed.error));
   }
   if (raw?.status === 422) {
     return { ok: false, reason: 'ambiguous', propositions: propositions(raw.json) };
@@ -215,7 +253,9 @@ export async function readAcademiaRequest(
   const raw = await send(fetchImpl, key, 'GET', `/dossiers/${id}`, undefined, timeoutMs);
   if (raw?.status === 200) {
     const parsed = requestReply.safeParse(raw.json);
-    return parsed.success ? { ok: true, etat: parsed.data.etat } : offContract(raw);
+    return parsed.success
+      ? { ok: true, etat: parsed.data.etat }
+      : offContract(raw, statusIssue(parsed.error));
   }
   return failure(raw);
 }
