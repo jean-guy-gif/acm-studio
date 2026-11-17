@@ -542,6 +542,28 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
     neighbourhood: input.neighbourhood ?? null,
-    quartier: input.quartier ?? null,
+    // Mission 159 — les blocs vus au Live : rien sans Live ; le quartier suit « Votre valeur
+    // perçue », il a été vu dès le Live commencé ; les ventes réelles précèdent « Analyse des
+    // prix » : vues seulement si chaque concurrent montré a été passé (deviné, écarté ou montré en
+    // directe), la condition même de l'analyse (M82).
+    quartier:
+      input.quartier && input.liveStartedAt
+        ? {
+            ...input.quartier,
+            keys: input.quartier.keys.filter(
+              (key) =>
+                key !== 'ventes' ||
+                shown.every((row) => {
+                  const answer = responseById.get(row.id);
+                  return (
+                    answer != null &&
+                    (answer.seller_serious_competitor === 'no' ||
+                      answer.seller_estimated_listing_price != null ||
+                      answer.shown_directly_at != null)
+                  );
+                }),
+            ),
+          }
+        : null,
   };
 }

@@ -25,7 +25,9 @@ export type NeighbourhoodBlockKey = (typeof NEIGHBOURHOOD_BLOCK_KEYS)[number];
 export const isNeighbourhoodBlockKey = (value: unknown): value is NeighbourhoodBlockKey =>
   typeof value === 'string' && (NEIGHBOURHOOD_BLOCK_KEYS as readonly string[]).includes(value);
 
-export type BlockSource = { source: string | null; date: string | null };
+// La source publique de chaque bloc est nommée par ACM, dans la langue du vendeur
+// (`client-texts`, `quartier.sources`) : seul le jour de ses données vient de la vue.
+export type BlockSource = { date: string | null };
 
 export type NeighbourhoodSale = {
   month: string;
@@ -93,6 +95,9 @@ export type NeighbourhoodPopulation = BlockSource & {
   peoplePerHousehold: number | null;
 };
 export type NeighbourhoodCondominium = BlockSource & {
+  // L'échelle du fait : la copropriété à l'adresse du bien, ou à N mètres (rattachée par proximité).
+  linkedToAddress: boolean;
+  distance: number | null;
   dwellingLots: number | null;
   builtFrom: number | null;
   builtTo: number | null;
@@ -152,10 +157,7 @@ const street = (value: unknown): string | null => {
   const found = text(value, 120);
   return found && !/^\d/.test(found) ? found : null;
 };
-const source = (block: Json): BlockSource => ({
-  source: text(block.source),
-  date: day(block.date),
-});
+const source = (block: Json): BlockSource => ({ date: day(block.date) });
 
 // ─── La forme d'ACM, relue champ par champ (réponse de la source ou instantané en base) ──────────
 
@@ -250,6 +252,8 @@ function population(block: Json): NeighbourhoodPopulation {
 function condominium(block: Json): NeighbourhoodCondominium {
   return {
     ...source(block),
+    linkedToAddress: block.linkedToAddress === true,
+    distance: int(block.distance, 100_000),
     dwellingLots: int(block.dwellingLots, 100_000),
     builtFrom: year(block.builtFrom),
     builtTo: year(block.builtTo),
@@ -283,6 +287,40 @@ function readAll(blocks: Json): NeighbourhoodBlocks {
   };
 }
 
+// Un bloc qui dirait quelque chose au vendeur : jamais un écran vide ; une copropriété sans échelle
+// (ni à l'adresse, ni à une distance connue) n'est pas montrée.
+export function isShowableBlock(blocks: NeighbourhoodBlocks, key: NeighbourhoodBlockKey): boolean {
+  switch (key) {
+    case 'risques': {
+      const r = blocks.risques;
+      return (
+        r != null &&
+        (r.clay != null ||
+          r.earthquake != null ||
+          r.radon != null ||
+          r.floodArea != null ||
+          r.disasters != null)
+      );
+    }
+    case 'population':
+      return blocks.population?.inhabitants != null;
+    case 'copropriete': {
+      const c = blocks.copropriete;
+      return (
+        c != null &&
+        (c.linkedToAddress || c.distance != null) &&
+        (c.dwellingLots != null ||
+          c.builtFrom != null ||
+          c.builtTo != null ||
+          c.syndicMandateEnded != null ||
+          c.syndicMandateActive != null)
+      );
+    }
+    default:
+      return blocks[key] != null;
+  }
+}
+
 // L'instantané relu en base : seuls les blocs qu'il porte, relus de nouveau.
 export function readStoredNeighbourhood(json: unknown): NeighbourhoodBlocks {
   return readAll(obj(json) ?? {});
@@ -294,9 +332,9 @@ export function pickNeighbourhoodBlocks(
   keys: readonly NeighbourhoodBlockKey[],
 ): Partial<NeighbourhoodBlocks> {
   return Object.fromEntries(
-    NEIGHBOURHOOD_BLOCK_KEYS.filter((key) => keys.includes(key) && blocks[key] != null).map(
-      (key) => [key, blocks[key]],
-    ),
+    NEIGHBOURHOOD_BLOCK_KEYS.filter(
+      (key) => keys.includes(key) && isShowableBlock(blocks, key),
+    ).map((key) => [key, blocks[key]]),
   );
 }
 
@@ -314,7 +352,6 @@ function sourcePlanning(block: Json): Json {
   const levels = obj(block.niveaux);
   const elements = list(block.elements, 60);
   return {
-    source: block.source,
     date: block.date,
     ...Object.fromEntries(
       (Object.keys(LEVELS) as (keyof typeof LEVELS)[]).map((name) => {
@@ -352,7 +389,6 @@ const floodName = (value: unknown): string | null =>
 function sourceRisks(block: Json): Json {
   const disasters = obj(block.catastrophesNaturelles);
   return {
-    source: block.source,
     date: block.date,
     clay: clayLevel(block.argile),
     earthquake: leadingDigit(block.seisme),
@@ -373,6 +409,12 @@ function builtPeriod(value: unknown): { builtFrom: number | null; builtTo: numbe
   return { builtFrom: null, builtTo: null };
 }
 
+// Le jour où la source a calculé la vue (« calculeLe »).
+export function neighbourhoodComputedOn(json: unknown): string | null {
+  const root = obj(json);
+  return root ? day(root.calculeLe) : null;
+}
+
 export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | null {
   const root = obj(json);
   const blocks = root ? obj(root.blocs) : null;
@@ -386,7 +428,6 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
 
   return readAll({
     ventes: ventes && {
-      source: ventes.source,
       date: ventes.date,
       type: ventes.type,
       rooms: ventes.pieces,
@@ -404,7 +445,6 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
     },
     urbanisme: urbanisme && sourcePlanning(urbanisme),
     permis: permis && {
-      source: permis.source,
       date: permis.date,
       radius: permis.rayon,
       since: permis.depuis,
@@ -421,7 +461,6 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
     },
     risques: risques && sourceRisks(risques),
     population: populationBlock && {
-      source: populationBlock.source,
       date: populationBlock.date,
       radius: populationBlock.rayon,
       inhabitants: populationBlock.habitants,
@@ -429,8 +468,9 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
       peoplePerHousehold: populationBlock.personnesParMenage,
     },
     copropriete: copropriete && {
-      source: copropriete.source,
       date: copropriete.date,
+      linkedToAddress: copropriete.rattachement === 'adresse',
+      distance: copropriete.distance,
       dwellingLots: copropriete.lotsHabitation,
       ...builtPeriod(copropriete.periodeConstruction),
       syndicMandateEnded: copropriete.finMandat,

@@ -3,6 +3,7 @@
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import {
   panel,
+  panelTight,
   question,
   questionHint,
   screen,
@@ -89,9 +90,9 @@ export function LivePageNeighbourhood({
     return (
       <div className={screen} data-testid={`live-neighbourhood-${block}`}>
         {head(null)}
-        <div className="grid grid-cols-1 gap-3 md:min-h-0 md:flex-1 md:grid-cols-2 md:content-start">
+        <div className="grid grid-cols-1 gap-3 md:min-h-0 md:flex-1 md:grid-cols-2 md:content-start md:landscape:grid-cols-3">
           {view.gauges.map((gauge) => (
-            <div key={gauge.title} className={`${panel} flex flex-col gap-1`}>
+            <div key={gauge.title} className={`${panelTight} flex flex-col gap-1`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-title text-xl font-bold">{gauge.title}</span>
                 <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs whitespace-nowrap">
@@ -101,25 +102,25 @@ export function LivePageNeighbourhood({
               <SegmentGauge
                 value={gauge.value}
                 labels={gauge.labels}
-                className="h-auto w-full max-w-md text-brand-deep stage:text-white"
+                className="h-auto w-full max-w-sm text-brand-deep stage:text-white"
               />
               <p className="text-sm sm:text-base">{gauge.caption}</p>
             </div>
           ))}
           {view.disasters ? (
-            <div className={`${panel} flex flex-col gap-1`}>
+            <div className={`${panelTight} flex flex-col gap-1`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-title text-xl font-bold">{view.disasters.title}</span>
                 <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs whitespace-nowrap">
                   {view.disasters.scale}
                 </span>
               </div>
-              <p className="font-title text-5xl leading-none font-bold">{view.disasters.count}</p>
+              <p className="font-title text-4xl leading-none font-bold">{view.disasters.count}</p>
               <p className="text-sm sm:text-base">{view.disasters.caption}</p>
             </div>
           ) : null}
           {view.flood ? (
-            <div className={`${panel} flex flex-col gap-1 md:col-span-2`}>
+            <div className={`${panelTight} flex flex-col gap-1 md:col-span-2`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-title text-xl font-bold">{view.flood.title}</span>
                 <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs whitespace-nowrap">
@@ -206,13 +207,13 @@ export function LivePageNeighbourhood({
       <div className="flex flex-col gap-3 md:min-h-0 md:flex-1">
         <SalesTimeline
           sales={view.timeline}
-          className="mx-auto h-auto max-h-56 w-full text-brand-deep stage:text-white"
+          className="mx-auto h-auto max-h-48 w-full text-brand-deep stage:text-white [@media(max-height:760px)]:max-h-36"
         />
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {view.cards.slice(0, 6).map((card, i) => (
             <div
               key={i}
-              className={`${panel} flex flex-col gap-0.5 !py-2 text-sm ${i >= 3 ? 'max-sm:hidden' : ''}`}
+              className={`${panelTight} flex flex-col gap-0.5 text-sm ${i >= 3 ? 'max-sm:hidden [@media(max-height:760px)]:hidden' : ''}`}
             >
               <span className="font-title text-2xl leading-none font-bold">{card.price}</span>
               <span className="text-xs font-bold tracking-wide text-brand-deep uppercase stage:text-brand">

@@ -15,6 +15,7 @@ import {
   type NeighbourhoodSnapshotState,
 } from '@/features/neighbourhood-link/queries/read-neighbourhood-snapshot';
 import {
+  neighbourhoodComputedOn,
   parseNeighbourhoodBlocks,
   type NeighbourhoodBlocks,
 } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
@@ -43,7 +44,7 @@ export async function readClientBlocks(input: {
   fetchImpl?: AcademiaFetch;
 }): Promise<
   | Exclude<AddressViewState, { kind: 'ready' }>
-  | { kind: 'ok'; blocks: NeighbourhoodBlocks; facts: AcademiaFacts }
+  | { kind: 'ok'; blocks: NeighbourhoodBlocks; facts: AcademiaFacts; computedOn: string | null }
 > {
   const label = 'academia:read-neighbourhood';
   const dossier = await resolveAcademiaDossier({ ...input, label });
@@ -68,7 +69,12 @@ export async function readClientBlocks(input: {
     await reportServerError(label, new Error('Academia : vue « bien-client » hors contrat'));
     return { kind: 'failed' };
   }
-  return { kind: 'ok', blocks, facts: dossier.facts };
+  return {
+    kind: 'ok',
+    blocks,
+    facts: dossier.facts,
+    computedOn: neighbourhoodComputedOn(reply.json),
+  };
 }
 
 export async function readNeighbourhoodChoice(input: {

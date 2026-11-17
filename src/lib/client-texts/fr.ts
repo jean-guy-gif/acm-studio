@@ -37,7 +37,10 @@ import { BUYER_CRITERION_LABELS } from '@/features/buyers/types';
 import { PRICE_ALIGNMENT_LABELS } from '@/features/price-positioning/services/price-alignment';
 import { CONNECTION_LOST_MESSAGE } from '@/features/live-seller/services/guarded-save';
 import { budgetStepLabel } from '@/features/buyers/services/budget-steps';
-import type { PlanningCategory } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
+import type {
+  NeighbourhoodBlockKey,
+  PlanningCategory,
+} from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatNumber } from '@/lib/format';
 
@@ -150,8 +153,15 @@ export const FRENCH_TEXTS: ClientTexts = {
     salesKicker: 'Vos voisins ont vendu',
     home: 'Votre bien',
     source: (name, day) => `Source : ${name}${day ? `, données du ${day}` : ''}`,
-    frozen: (day) =>
-      `Informations publiques telles qu’au ${day}, jour où ce document a été préparé.`,
+    frozen: (day) => `Informations publiques telles qu’au ${day}.`,
+    sources: {
+      urbanisme: 'Géoportail de l’urbanisme (IGN)',
+      risques: 'Géorisques (ministère de la Transition écologique)',
+      population: 'Insee, revenus fiscaux localisés (Filosofi), carreaux de 200 m',
+      copropriete: 'Registre national des copropriétés (Anah)',
+      permis: 'Sitadel (SDES), permis de construire',
+      ventes: 'DVF (DGFiP), ventes de logements anciens',
+    } satisfies Record<NeighbourhoodBlockKey, string>,
     within: (meters) => `Autour du bien, à moins de ${meters}`,
     range: (from, to) => `${from} à ${to}`,
     nothing: 'rien de relevé',
@@ -199,6 +209,8 @@ export const FRENCH_TEXTS: ClientTexts = {
           : `Aucun permis de construire relevé à moins de ${meters}${since ? ` depuis ${since}` : ''}.`,
       count: () => 'permis',
       none: 'aucun',
+      more: (count, meters) =>
+        `et ${count} ${count > 1 ? 'autres permis' : 'autre permis'} à moins de ${meters}`,
       at: (meters) =>
         `à ${meters.length > 1 ? `${meters.slice(0, -1).join(', à ')} et à ${meters[meters.length - 1]}` : meters[0]}`,
       line: ({ dwellings, surface, state, month, distance }) => {
@@ -279,6 +291,7 @@ export const FRENCH_TEXTS: ClientTexts = {
                 : ''
         }.`,
       atAddress: 'À l’adresse du bien',
+      near: (meters) => `À environ ${meters} du bien`,
       built: 'construite',
       today: 'aujourd’hui',
       lots: 'lots d’habitation',

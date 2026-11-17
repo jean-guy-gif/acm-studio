@@ -139,7 +139,6 @@ export function formatDay(
   }).format(date);
 }
 
-// Une date et son heure (« 06/10/2026 21:14:03 »), pour « Validé le … ».
 // Mission 159 — un mois pour le client : « novembre 2025 » / « November 2025 » (« 2025-11 »).
 export function formatMonth(value: string, language: ClientLanguage = 'fr'): string {
   const found = /^(\d{4})-(\d{2})$/.exec(value);
@@ -156,6 +155,7 @@ export function formatMeters(value: number, options: FormatNumberOptions = {}): 
   return withUnit(value, 'm', { maxDecimals: 0, ...options });
 }
 
+// Une date et son heure (« 06/10/2026 21:14:03 »), pour « Validé le … ».
 export function formatDateTime(value: string | number | Date): string {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? MISSING : date.toLocaleString(LOCALE);

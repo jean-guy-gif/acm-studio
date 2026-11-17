@@ -67,7 +67,10 @@ export function NeighbourhoodChoicePanel({
         setMessage(result.error);
         return;
       }
-      setSaved(checked);
+      // Ce que le serveur a gardé : un bloc qu'il a écarté ne reste pas coché.
+      const kept = checked.filter((key) => result.keys.includes(key));
+      setChecked(kept);
+      setSaved(kept);
       setMessage('Choix enregistré : le Live et les documents montreront ces blocs.');
       router.refresh();
     });
@@ -133,6 +136,11 @@ export function NeighbourhoodChoicePanel({
         {checked.length === 0
           ? 'Aucun écran ajouté au Live'
           : `${checked.length} ${checked.length > 1 ? 'écrans ajoutés' : 'écran ajouté'} au Live · environ ${minutes} ${minutes > 1 ? 'minutes' : 'minute'} de plus`}
+      </p>
+      <p className={hintText}>
+        Ordre au Live : Introduction → Votre bien → Votre valeur perçue →{' '}
+        <b>les blocs du quartier cochés</b> → les concurrents → … → <b>Ventes réelles</b> → Analyse
+        des prix → Conclusion.
       </p>
       {!locked ? (
         <div className="flex flex-wrap items-center gap-3">

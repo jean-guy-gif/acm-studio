@@ -127,6 +127,10 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
       await page.getByTestId('launch-for-real').click();
       const start = page.locator('main button.btn-filled').first();
       await expect(start).toBeVisible({ timeout: 90_000 });
+      // « Démarrer » attend la fin du préchargement des photos (M144), comme au rendez-vous.
+      await expect(page.locator('[data-photos-preloaded="true"]')).toHaveCount(1, {
+        timeout: 120_000,
+      });
       await start.click();
       const main = page.locator('main');
       await expect(main).not.toHaveAttribute('data-live-page', 'intro', { timeout: 30_000 });
@@ -206,7 +210,9 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
       await expect(panel.getByRole('button', { name: 'Enregistrer le choix' })).toHaveCount(0);
     });
   } finally {
+    // La remise à zéro part d'une page qui a le menu, jamais de la scène du Live.
     await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/builder');
     await resetDemoByScreen(page);
   }
 });
