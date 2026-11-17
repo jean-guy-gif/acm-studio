@@ -114,6 +114,9 @@ export async function saveSubjectPropertySheet(
         ),
         project_id: projectId,
         agency_id: profile.agency_id,
+        // Mission 159 — la date de la dernière modification de la fiche : elle dit si le bien a
+        // changé avant ou après le début du Live (le quartier montré au vendeur).
+        updated_at: new Date().toISOString(),
       },
       { onConflict: 'project_id' },
     )

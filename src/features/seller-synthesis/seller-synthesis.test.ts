@@ -705,6 +705,18 @@ describe('les prix de la synthèse (mission 111)', () => {
           answer('c2', { seller_serious_competitor: 'no' }),
         ],
       }).quartier?.keys,
+    ).toEqual(['risques']);
+    // Tous passés et le prix reformulé : le vendeur est allé jusqu'aux ventes réelles.
+    expect(
+      buildSellerSynthesis({
+        ...started,
+        competitors: shown,
+        summary: { ...base.summary!, seller_revised_property_price: 340_000 },
+        responses: [
+          answer('c1', { seller_estimated_listing_price: 300_000 }),
+          answer('c2', { seller_serious_competitor: 'no' }),
+        ],
+      }).quartier?.keys,
     ).toEqual(['risques', 'ventes']);
   });
 
