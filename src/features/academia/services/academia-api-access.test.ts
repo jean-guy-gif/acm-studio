@@ -13,11 +13,16 @@ const env = { ACADEMIA_API_KEY: 'msk_vraie', ACADEMIA_API_KEY_DEMO: 'msk_demo' }
 const DEMO_ADDRESS = '1 place de la Démonstration, 06000 Nice';
 
 describe('academiaApiAccess', () => {
-  it('éteint pour les vraies agences, et sans adresse de démonstration tant que Laurent ne l’a pas donnée', () => {
+  it('éteint pour les vraies agences ; l’adresse du dossier de démonstration donnée par Laurent (17/11)', () => {
     expect(ACADEMIA_API_OUVERT_AGENCES).toBe(false);
-    expect(ACADEMIA_DEMO_ADDRESS).toBeNull();
+    expect(ACADEMIA_DEMO_ADDRESS).toBe('12 Avenue de la Démonstration, 06800 Cagnes-sur-Mer');
     expect(academiaApiAccess(false, env)).toBeNull();
-    expect(academiaApiAccess(true, env)).toBeNull();
+    expect(academiaApiAccess(true, env)).toEqual({
+      key: 'msk_demo',
+      demoAddress: '12 Avenue de la Démonstration, 06800 Cagnes-sur-Mer',
+    });
+    // Sans la clé d'essai, la démo garde la carte d'aujourd'hui.
+    expect(academiaApiAccess(true, { ACADEMIA_API_KEY: 'msk_vraie' })).toBeNull();
   });
 
   it('la démo : la clé d’essai et l’adresse fictive de son dossier, jamais la vraie clé', () => {

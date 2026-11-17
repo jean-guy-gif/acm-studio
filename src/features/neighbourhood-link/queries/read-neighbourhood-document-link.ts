@@ -16,5 +16,10 @@ export async function readNeighbourhoodDocumentLink(
   now: Date = new Date(),
 ): Promise<NeighbourhoodDocumentLink | null> {
   const link = await readNeighbourhoodLink(client, agencyId, projectId, now);
-  return link ? { ...link, qr: buildQrCode(link.url) } : null;
+  if (!link) return null;
+  // L'agence de démonstration se reconnaît au serveur (M114), lue avec le client du document ; une
+  // lecture en échec n'imprime pas l'adresse du lien (le QR code suffit).
+  const agency = await client.from('agencies').select('is_demo').eq('id', agencyId).maybeSingle();
+  const printAddress = !agency.error && agency.data?.is_demo === false;
+  return { ...link, qr: buildQrCode(link.url), printAddress };
 }

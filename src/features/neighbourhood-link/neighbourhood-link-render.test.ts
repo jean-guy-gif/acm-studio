@@ -87,10 +87,10 @@ describe('« Vivre ici » au Live, sur « Votre bien »', () => {
 });
 
 describe('« Vivre ici » dans la synthèse et l’Étude de marché', () => {
-  const block = (validUntil: string | null, language: 'fr' | 'en' = 'fr') =>
+  const block = (validUntil: string | null, language: 'fr' | 'en' = 'fr', printAddress = true) =>
     renderToStaticMarkup(
       createElement(NeighbourhoodLinkBlock, {
-        link: { url: LINK, validUntil, qr: buildQrCode(LINK) },
+        link: { url: LINK, validUntil, qr: buildQrCode(LINK), printAddress },
         language,
       }),
     );
@@ -107,6 +107,25 @@ describe('« Vivre ici » dans la synthèse et l’Étude de marché', () => {
     expect(html).toContain('Lien valable jusqu’au 16 décembre 2026.');
     // Le nom du service ne se dit pas : seule l'adresse du lien se voit.
     expect(html.replaceAll('app.myacademia.ai', '')).not.toMatch(/academia/i);
+  });
+
+  it('dans l’agence de démonstration : le QR code seul, sans l’adresse du lien (M114)', () => {
+    const html = renderToStaticMarkup(
+      createElement(NeighbourhoodLinkBlock, {
+        link: {
+          url: 'https://app.myacademia.ai/l/demonstration',
+          validUntil: null,
+          qr: buildQrCode('https://app.myacademia.ai/l/demonstration'),
+          printAddress: false,
+        },
+        language: 'fr',
+      }),
+    );
+    expect(html).toContain('Scannez pour découvrir le quartier.');
+    expect(html).toContain('<svg');
+    // Le mot n'est qu'à l'intérieur du lien (son adresse), jamais dans le texte lu ou imprimé.
+    const text = html.replace(/href="[^"]*"/g, '').replace(/<[^>]+>/g, ' ');
+    expect(text).not.toMatch(/démonstration|demonstration/i);
   });
 
   it('un lien collé à la main : sans date de validité', () => {
