@@ -1,5 +1,9 @@
 # « Vivre ici » sur tout bien d'une sélection acquéreur (A3) — périmètre
 
+> **Abandonné le 16/11/2026 (décision de Jean-Guy)** : « Vivre ici » ne vaut plus que pour le bien
+> vendeur ; aucun bien hors mandat ne part vers Academia. Cette fiche et ses maquettes `A3-*` restent
+> comme archive. Le plan qui la remplace : `PLAN_ACADEMIA_EN_UN_CLIC.md`.
+
 Préparé le 15/11/2026, à la demande de Jean-Guy. Périmètre et maquettes validés par lui le 16/11,
 avec ses décisions du 15 et du 16/11, reportées ici. Numéro de mission à donner par Jean-Guy. Le code se fait
 sur une branche dès que le dépôt est privé ; d'ici là, aucun commit. Rien sur `main` ni en

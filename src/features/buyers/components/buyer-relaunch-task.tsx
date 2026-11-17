@@ -4,8 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { btnPrimary, btnSecondary, hintText } from '@/components/ui/styles';
-import { LivingHereInfo } from '@/features/academia/components/living-here-info-line';
-import { livingHereSharePrefix } from '@/features/academia/services/living-here-info';
 import { prepareRelaunch, recordBuyerRelaunch } from '@/features/buyers/actions/relaunch';
 import { followUpShareHrefs } from '@/features/meeting-conclusion/services/follow-up-share';
 
@@ -36,7 +34,6 @@ export function BuyerRelaunchTask({
     phone: string | null;
     email: string | null;
     subject?: string;
-    livingHereLetters?: string[];
   } | null>(null);
   const [done, setDone] = useState(false);
 
@@ -86,9 +83,6 @@ export function BuyerRelaunchTask({
           >
             {prepared.message}
           </p>
-          {prepared.livingHereLetters?.length ? (
-            <LivingHereInfo prefix={livingHereSharePrefix(prepared.livingHereLetters)} />
-          ) : null}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"

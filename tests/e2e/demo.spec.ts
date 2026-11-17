@@ -74,8 +74,9 @@ async function expectUnspoken(page: Page, screen: string): Promise<void> {
   );
 }
 
-// Budget de la démo : 8 minutes (décision de Jean-Guy, 25/10 ; 40 minutes depuis la M114 B).
-test.setTimeout(8 * 60_000);
+// Budget de la démo : 10 minutes, comme le reste de la suite (décision de Jean-Guy, 16/11 ; 8 minutes
+// depuis le 25/10, dépassées deux fois sur l'essai le 16/11 avec les douze dossiers de la M155).
+test.setTimeout(10 * 60_000);
 
 async function blockOutsideHosts(context: BrowserContext, blocked: Map<string, number>) {
   const own = new URL(process.env.E2E_BASE_URL ?? 'http://localhost').hostname;

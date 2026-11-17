@@ -3,12 +3,6 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import { readPropertyLivingLinks } from '@/features/academia/queries/read-property-living-links';
-import {
-  deckLetter,
-  LIVING_HERE_UNREAD_SHARE,
-} from '@/features/academia/services/living-here-info';
-import { livingHereEverywhereOpen } from '@/features/academia/services/living-here-switch';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { loadAgencyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { loadLoopCatalog } from '@/features/buyers/queries/get-loop-properties';
@@ -26,11 +20,8 @@ import { getProfile } from '@/lib/auth/get-profile';
 import type { Json } from '@/lib/supabase/database.types';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
-// Mission 156 — `livingHereLetters` : les biens hors mandat de la sélection dont le lien « Vivre
-// ici » part avec ce lien ; l'écran dit la ligne d'information au moment du partage.
 export type PrepareProposalResult =
-  | { ok: true; url: string; selectionItemId: string; livingHereLetters: string[] }
-  | { ok: false; error: string };
+  { ok: true; url: string; selectionItemId: string } | { ok: false; error: string };
 export type RecordProposalResult = { ok: true; sentAt: string } | { ok: false; error: string };
 
 const KEY = z.string().min(3).max(2100);
@@ -127,25 +118,6 @@ export async function prepareProposalLink(
     .filter((row) => row.source !== 'project' || proposableKeys.has(`project:${row.reference}`))
     .slice(0, MAX_IDEAL_SELECTION - 1);
 
-  // Mission 156 — les biens hors mandat de la nouvelle sélection dont le lien « Vivre ici » part
-  // avec ce lien (la page de l'acquéreur les relit à son ouverture) : lus AVANT d'écrire. Une
-  // lecture en échec n'écrit rien et le dit : jamais un lien hors mandat parti sans la ligne
-  // d'information (Jean-Guy, 16/11).
-  const refs = [item, ...kept].map((row, index) => ({
-    id: `bien-${index}`,
-    source: row.source,
-    reference: row.reference,
-  }));
-  const living = livingHereEverywhereOpen()
-    ? await readPropertyLivingLinks(client, agencyId, refs)
-    : null;
-  if (living && !living.ok) return { ok: false, error: LIVING_HERE_UNREAD_SHARE };
-  const livingHereLetters = living?.ok
-    ? refs.flatMap((ref, index) =>
-        ref.source !== 'project' && living.links.has(ref.id) ? [deckLetter(index)] : [],
-      )
-    : [];
-
   const { data: selection, error } = await client
     .from('buyer_selections')
     .insert({
@@ -213,7 +185,7 @@ export async function prepareProposalLink(
     return { ok: false, error: link.error };
   }
   revalidatePath(`/acquereurs/${buyerIdOk}`);
-  return { ok: true, url: link.url, selectionItemId: headId, livingHereLetters };
+  return { ok: true, url: link.url, selectionItemId: headId };
 }
 
 // Mission 134 (§ 6, 7) — « Envoyé, suivant » : le bien est noté proposé à cet acquéreur, une fois,

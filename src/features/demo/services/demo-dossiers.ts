@@ -166,14 +166,6 @@ export async function deleteDemoBuyers(supabase: Client, closer: Closer): Promis
   if (!(await deleteDemoVouchers(supabase, closer, buyerIds))) return false;
   const { error } = await supabase.from('buyers').delete().eq('agency_id', closer.agencyId);
   if (error) return false;
-  // Mission 156 — les liens « Vivre ici » collés sur les biens hors mandat de l'agence de
-  // démonstration (par un closer ou l'e2e), derrière le même second verrou (décision de Jean-Guy,
-  // 16/11) : rien n'en est semé.
-  const { error: livingError } = await supabase
-    .from('property_living_here_links')
-    .delete()
-    .eq('agency_id', closer.agencyId);
-  if (livingError) return false;
   await removeBuyerLetterPhotos(supabase.storage, closer.agencyId, letterOrigins);
   return deleteOrphanDemoProspects(supabase, closer);
 }

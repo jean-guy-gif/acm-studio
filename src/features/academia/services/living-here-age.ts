@@ -12,7 +12,6 @@ export const LIVING_HERE_OLD_DAYS = 30;
 
 export type LivingHereAge = { level: 'fresh' | 'soon' | 'old'; days: number };
 export type LivingHereAgeLine = { tone: 'hint' | 'warn'; text: string };
-export type PastedLivingHereLink = { url: string; pastedAt: string | null };
 
 const PARIS_DAY = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Europe/Paris',
@@ -48,9 +47,16 @@ export function livingHereAgeLine(pastedAt: string | null, now: Date): LivingHer
   };
 }
 
-// Le lien discret de la fiche se montre pour un bien sans lien, ou dont le lien a 30 jours et plus
-// (décision de Jean-Guy, 16/11).
-export function livingHereNeedsLink(link: PastedLivingHereLink | null, now: Date): boolean {
-  if (!link) return true;
-  return livingHereAge(link.pastedAt, now)?.level === 'old';
+// Mission 157 — un lien créé par l'API a son expiration, donnée par Academia : « valable jusqu'au
+// 16/12 » ; trois jours avant, en orange ; expiré, il n'est plus montré (ni au vendeur ni aux
+// acquéreurs) et « Créer un lien neuf » le remplace. Les jours se comptent à Paris.
+export const LIVING_HERE_EXPIRY_SOON_DAYS = 3;
+export type LivingHereExpiry = { level: 'ok' | 'soon' | 'expired'; days: number };
+
+export function livingHereExpiry(expiresAt: string, now: Date): LivingHereExpiry | null {
+  const date = new Date(expiresAt);
+  if (Number.isNaN(date.getTime())) return null;
+  if (date.getTime() <= now.getTime()) return { level: 'expired', days: 0 };
+  const days = Math.max(0, Math.round((parisMidnight(date) - parisMidnight(now)) / 86_400_000));
+  return { level: days <= LIVING_HERE_EXPIRY_SOON_DAYS ? 'soon' : 'ok', days };
 }

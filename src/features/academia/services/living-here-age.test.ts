@@ -5,7 +5,7 @@ import {
   LIVING_HERE_SOON_DAYS,
   livingHereAge,
   livingHereAgeLine,
-  livingHereNeedsLink,
+  livingHereExpiry,
 } from '@/features/academia/services/living-here-age';
 
 // Mission 156 — un lien client d'Academia vaut 30 jours (Laurent, 15/11). ACM compte les jours de
@@ -75,20 +75,12 @@ describe('livingHereAgeLine', () => {
   });
 });
 
-describe('livingHereNeedsLink — le lien discret « Ajouter « Vivre ici » » de la fiche', () => {
-  it('sans lien, ou un lien de 30 jours et au-delà ; jamais avant', () => {
-    expect(livingHereNeedsLink(null, NOW)).toBe(true);
-    expect(
-      livingHereNeedsLink({ url: 'https://app.myacademia.ai/l/a', pastedAt: daysAgo(29) }, NOW),
-    ).toBe(false);
-    expect(
-      livingHereNeedsLink({ url: 'https://app.myacademia.ai/l/a', pastedAt: daysAgo(30) }, NOW),
-    ).toBe(true);
-  });
-
-  it('un lien sans date n’appelle pas le lien discret (son âge est inconnu)', () => {
-    expect(livingHereNeedsLink({ url: 'https://app.myacademia.ai/l/a', pastedAt: null }, NOW)).toBe(
-      false,
-    );
+describe('livingHereExpiry — un lien créé par l’API, avec son expiration', () => {
+  it('valable, bientôt (trois jours au plus), expiré', () => {
+    expect(livingHereExpiry('2026-12-16T00:00:00Z', NOW)).toEqual({ level: 'ok', days: 30 });
+    expect(livingHereExpiry('2026-11-19T12:00:00Z', NOW)).toEqual({ level: 'soon', days: 3 });
+    expect(livingHereExpiry('2026-11-16T10:00:00Z', NOW)).toEqual({ level: 'expired', days: 0 });
+    expect(livingHereExpiry('2026-11-14T00:00:00Z', NOW)).toEqual({ level: 'expired', days: 0 });
+    expect(livingHereExpiry('jamais', NOW)).toBeNull();
   });
 });
