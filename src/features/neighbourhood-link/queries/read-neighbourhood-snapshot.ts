@@ -134,7 +134,9 @@ async function read(
     current.rooms_count === row.property_rooms &&
     surface === row.property_surface;
   const changedAfterLive =
-    liveStart != null && current?.updated_at != null && current.updated_at > liveStart;
+    liveStart != null &&
+    current?.updated_at != null &&
+    Date.parse(current.updated_at) > Date.parse(liveStart);
   if (!same && !changedAfterLive) return { snapshot: null, stale: true, locked };
 
   const blocks = readStoredNeighbourhood(row.blocks);

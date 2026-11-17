@@ -476,6 +476,17 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       : null;
   const commune = input.property?.city?.trim() || null;
 
+  const salesSeen =
+    shown.every((row) => {
+      const answer = responseById.get(row.id);
+      return (
+        answer != null &&
+        (answer.seller_serious_competitor === 'no' ||
+          answer.seller_estimated_listing_price != null ||
+          answer.shown_directly_at != null)
+      );
+    }) &&
+    (input.summary?.seller_revised_property_price != null || input.commercializationPrice != null);
   return {
     language,
     sellerName: input.sellerName,
@@ -543,26 +554,15 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     brandDeclarations: input.brandDeclarations,
     neighbourhood: input.neighbourhood ?? null,
     // Mission 159 — les blocs vus au Live : rien sans Live ; le quartier suit « Votre valeur
-    // perçue », il a été vu dès le Live commencé ; les ventes réelles précèdent « Analyse des
-    // prix » : vues seulement si chaque concurrent montré a été passé (deviné, écarté ou montré en
-    // directe), la condition même de l'analyse (M82).
+    // perçue », il a été vu dès le Live commencé ; les ventes réelles suivent « Votre prix après le
+    // marché » et précèdent la conclusion : vues seulement si chaque concurrent montré a été passé
+    // ET que le vendeur a reformulé son prix ou qu'un prix de commercialisation a été convenu (le
+    // Live est allé au-delà). Prudent : une vente vue sans aucune de ces deux traces n'est pas dite.
     quartier:
       input.quartier && input.liveStartedAt
         ? {
             ...input.quartier,
-            keys: input.quartier.keys.filter(
-              (key) =>
-                key !== 'ventes' ||
-                shown.every((row) => {
-                  const answer = responseById.get(row.id);
-                  return (
-                    answer != null &&
-                    (answer.seller_serious_competitor === 'no' ||
-                      answer.seller_estimated_listing_price != null ||
-                      answer.shown_directly_at != null)
-                  );
-                }),
-            ),
+            keys: input.quartier.keys.filter((key) => key !== 'ventes' || salesSeen),
           }
         : null,
   };
