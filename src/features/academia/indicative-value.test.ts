@@ -46,6 +46,15 @@ const SELLER_SIDE = [
   ['app', 'point-marche'],
   ['app', 'etude-de-marche'],
   ['app', 'dossier'],
+  // Les documents et liens remis à l'acquéreur, au propriétaire, au confrère, au notaire.
+  ['features', 'buyer-dossier'],
+  ['features', 'buyer-presentation'],
+  ['features', 'buyer-messages'],
+  ['features', 'prospecting-file'],
+  ['features', 'visit-voucher'],
+  ['features', 'purchase-offer'],
+  ['app', 'offre'],
+  ['app', 'bon-de-visite'],
 ];
 
 describe('la valeur indicative d’Academia ne peut pas atteindre le vendeur', () => {
@@ -103,7 +112,7 @@ describe('la valeur indicative d’Academia ne peut pas atteindre le vendeur', (
       renderToStaticMarkup(
         createElement(AddressViewPanel, {
           projectId: 'p1',
-          state: { kind: 'ready', view },
+          state: { kind: 'ready', view, facts: { type: 'maison', rooms: 5, surface: 135 } },
           savedRange: { min, max },
           demo: false,
         }),
@@ -129,12 +138,47 @@ describe('la valeur indicative d’Academia ne peut pas atteindre le vendeur', (
     const html = renderToStaticMarkup(
       createElement(AddressViewPanel, {
         projectId: 'p1',
-        state: { kind: 'ready', view },
+        state: { kind: 'ready', view, facts: { type: 'maison', rooms: 5, surface: 135 } },
         savedRange: { min: null, max: null },
         demo: true,
       }),
     );
     expect(html).not.toMatch(/Démonstration/);
     expect(html).toContain('6 lots d’habitation');
+  });
+});
+
+describe('le bloc quand la vue n’est pas là (maquette M158-1, « Quand il n’y est pas »)', () => {
+  const render = (state: Parameters<typeof AddressViewPanel>[0]['state']) =>
+    renderToStaticMarkup(
+      createElement(AddressViewPanel, {
+        projectId: 'p1',
+        state,
+        savedRange: { min: 900000, max: 990000 },
+        demo: false,
+      }),
+    );
+
+  it('sans accès (une vraie agence) : rien ; sinon une ligne, jamais un bloc vide ni la fourchette', () => {
+    expect(render({ kind: 'closed' })).toBe('');
+    expect(render({ kind: 'none' })).toContain('Créez le dossier d’adresse depuis Bien vendeur');
+    expect(render({ kind: 'waiting' })).toContain('Academia prépare le dossier d’adresse');
+    expect(render({ kind: 'request_failed' })).toContain('Recréez le lien « Vivre ici »');
+    expect(render({ kind: 'failed' })).toContain('n’a pas pu être lu');
+    expect(render({ kind: 'missing_facts', missing: ['type', 'rooms', 'surface'] })).toContain(
+      'le type (maison ou appartement), le nombre de pièces et la surface',
+    );
+    for (const kind of ['none', 'waiting', 'request_failed', 'failed'] as const) {
+      expect(render({ kind })).not.toContain('your-range');
+    }
+  });
+
+  it('la vue lue : la phrase de tête dit pour quel bien elle est calculée', () => {
+    const view = parsePropertyView(realView)!;
+    const html = render({ kind: 'ready', view, facts: { type: 'maison', rooms: 5, surface: 135 } });
+    expect(html.replace(/<!-- -->/g, '')).toMatch(/calculé pour une maison de 5 pièces et 135/);
+    // La note d'Academia sur les permis de démolir n'est pas dite deux fois.
+    expect(html.match(/Permis de démolir non vérifiés/g)).toHaveLength(1);
+    expect(html).toContain('zone 4, moyenne');
   });
 });

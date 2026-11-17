@@ -20,6 +20,13 @@ vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => db.client }));
 vi.mock('@/lib/app-errors/report-server-error', () => ({ reportServerError: async () => {} }));
+const promoted = vi.hoisted(() => [] as string[]);
+vi.mock('@/features/projects/services/project-readiness', () => ({
+  maybePromoteToReady: async (_client: unknown, projectId: string) => {
+    promoted.push(projectId);
+    return false;
+  },
+}));
 const { saveAdvisorRange } = await import('@/features/subject-property/actions/save-advisor-range');
 
 const updates = () => db.calls.filter((call) => call.method === 'update').map((c) => c.args[0]);
@@ -32,6 +39,15 @@ beforeEach(() => {
 });
 
 describe('saveAdvisorRange', () => {
+  it('la bascule en « Prêt » reste automatique (M52) : vérifiée après l’enregistrement', async () => {
+    promoted.length = 0;
+    await saveAdvisorRange('p1', 900000, 955000);
+    expect(promoted).toEqual(['p1']);
+    promoted.length = 0;
+    await saveAdvisorRange('p1', 955000, '');
+    expect(promoted).toEqual([]);
+  });
+
   it('n’écrit que les deux bornes du conseiller, sur le bien de son agence', async () => {
     expect(await saveAdvisorRange('p1', '955 000', 1060000)).toEqual({
       ok: true,

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { maybePromoteToReady } from '@/features/projects/services/project-readiness';
 import { LONE_BOUND_ERROR } from '@/features/subject-property/services/advisor-range';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -61,7 +62,13 @@ export async function saveAdvisorRange(
     if (error) await reportServerError('subject-property:save-advisor-range', error);
     return { ok: false, error: 'La fourchette n’a pas pu être enregistrée. Réessayez.' };
   }
+  // La fourchette est une des conditions de « Prêt » (M52) : la bascule reste automatique, d'où
+  // qu'elle soit saisie, comme sur Bien vendeur.
+  await maybePromoteToReady(supabase, projectId, profile.agency_id);
+  revalidatePath(`/builder/${projectId}`);
   revalidatePath(`/builder/${projectId}/avant-rendez-vous`);
   revalidatePath(`/builder/${projectId}/property`);
+  revalidatePath('/builder');
+  revalidatePath('/live');
   return { ok: true, min, max };
 }

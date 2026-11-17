@@ -131,6 +131,12 @@ const num = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 const text = (value: unknown, max = 300): string | null =>
   typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
+// Une phrase d'Academia montrée telle quelle (mention, note) : jamais le mot « estimation » à
+// l'écran (M105) ; une phrase qui le dirait n'est pas montrée.
+const phrase = (value: unknown, max = 300): string | null => {
+  const found = text(value, max);
+  return found && !/estimat/i.test(found) ? found : null;
+};
 const bool = (value: unknown): boolean | null => (typeof value === 'boolean' ? value : null);
 const list = (value: unknown, max = 50): Json[] =>
   Array.isArray(value)
@@ -145,7 +151,7 @@ function sourceOf(block: Json): SourceInfo {
     ok: block.etat === 'ok',
     source: text(block.source, 200),
     date: text(block.date, 30),
-    note: text(block.note, 300),
+    note: phrase(block.note, 300),
   };
 }
 
@@ -221,7 +227,7 @@ function planning(block: Json | null): ViewPlanning | null {
   return {
     ...sourceOf(block),
     parcel: text(block.parcelle, 40),
-    sentence: text(block.phrase, 400),
+    sentence: phrase(block.phrase, 400),
     zone: zone ? text(zone.libelle, 120) : null,
     elements: list(block.elements, 30).flatMap((element) => {
       const level = text(element.niveau, 20);
@@ -300,7 +306,7 @@ function indicative(block: Json | null): IndicativeValue | null {
     middle: num(block.prix),
     pricePerSquareMeter: num(block.prixM2),
     reliability: text(block.fiabilite, 30),
-    mention: text(block.mention, 200),
+    mention: phrase(block.mention, 200),
     date: text(block.date, 30),
   };
 }

@@ -36,7 +36,18 @@ import {
 // chacun avec sa source et sa date.
 
 const NB = ' ';
-const day = (value: string | null) => (value ? formatDay(value, 'fr', 'numeric') : null);
+const day = (value: string | null) =>
+  value && !Number.isNaN(Date.parse(value)) ? formatDay(value, 'fr', 'numeric') : null;
+const andList = (items: string[]) =>
+  items.length > 1
+    ? `${items.slice(0, -1).join(', ')} et ${items[items.length - 1]}`
+    : (items[0] ?? '');
+const plural = (count: number, one: string, many: string) => (count > 1 ? many : one);
+// « 4 - MOYENNE » : « zone 4, moyenne ».
+const earthquakeLabel = (value: string) => {
+  const match = /^(\d)\s*-\s*(.+)$/.exec(value.trim());
+  return match ? `zone ${match[1]}, ${match[2].toLowerCase()}` : value.toLowerCase();
+};
 const meters = (value: number) => `${formatNumber(value)}${NB}m`;
 
 function Source({ info }: { info: SourceInfo }) {
@@ -53,10 +64,13 @@ function Block({
   title,
   info,
   children,
+  hideNote = false,
 }: {
   title: string;
   info: SourceInfo;
   children: React.ReactNode;
+  // La note d'Academia déjà dite autrement dans le bloc (les permis de démolir).
+  hideNote?: boolean;
 }) {
   return (
     <section
@@ -69,7 +83,7 @@ function Block({
       ) : (
         <p className="text-sm text-amber-700">La source n’a pas pu être lue pour cette adresse.</p>
       )}
-      {info.ok && info.note ? (
+      {info.ok && info.note && !hideNote ? (
         <p className="text-sm font-medium text-amber-700">{info.note}</p>
       ) : null}
       <Source info={info} />
@@ -235,7 +249,9 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
               ]
                 .filter(Boolean)
                 .join(', ')}
-              , vendue {formatEuro(sales.atAddress.price)} le {day(sales.atAddress.date)}
+              , {sales.atAddress.type === 'maison' ? 'vendue' : 'vendu'}{' '}
+              {formatEuro(sales.atAddress.price)}
+              {day(sales.atAddress.date) ? ` le ${day(sales.atAddress.date)}` : ''}
               {sales.atAddress.pricePerSquareMeter != null
                 ? ` (${formatEuroPerSquareMeter(sales.atAddress.pricePerSquareMeter)})`
                 : ''}
@@ -364,7 +380,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
         </Block>
       ) : null}
       {permits ? (
-        <Block title="Permis autour" info={permits}>
+        <Block title="Permis autour" info={permits} hideNote={permits.demolitionUnchecked}>
           <p className="text-sm text-zinc-800">
             {permits.build.length === 0
               ? `Aucun permis de construire relevé${permits.radius ? ` à moins de ${meters(permits.radius)}` : ''}.`
@@ -393,7 +409,9 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
           <p className="text-sm text-zinc-800">
             {[
               risks.clay ? `Argiles (à l’adresse du bien) : ${risks.clay.toLowerCase()}` : null,
-              risks.earthquake ? `Séisme (la commune) : ${risks.earthquake.toLowerCase()}` : null,
+              risks.earthquake
+                ? `Séisme (la commune) : ${earthquakeLabel(risks.earthquake)}`
+                : null,
               risks.radon ? `Radon (la commune) : catégorie ${risks.radon}` : null,
               risks.floodArea ? `Inondation : commune classée, ${risks.floodArea}` : null,
               risks.disasters
@@ -434,7 +452,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
               // Le nom de la copropriété fictive de la démo n'est pas écrit (M114).
               !demo && condominium.name ? condominium.name : null,
               condominium.dwellingLots != null
-                ? `${condominium.dwellingLots} lots d’habitation`
+                ? `${condominium.dwellingLots} ${plural(condominium.dwellingLots, 'lot', 'lots')} d’habitation`
                 : null,
               condominium.builtPeriod
                 ? `construite entre ${condominium.builtPeriod.replace('-', ' et ')}`
@@ -463,17 +481,10 @@ export function AddressViewPanel({
   savedRange: { min: number | null; max: number | null };
   demo: boolean;
 }) {
+  // Sans accès à Academia (une vraie agence, tant que l'interrupteur est éteint) : rien, comme sur
+  // la maquette (« jamais un bloc vide »).
+  if (state.kind === 'closed') return null;
   const view = state.kind === 'ready' ? state.view : null;
-  // Sans accès à Academia (une vraie agence, tant que l'interrupteur est éteint) : la seule
-  // fourchette, modifiable ici comme sur Bien vendeur.
-  if (state.kind === 'closed') {
-    return (
-      <section className={`${card} flex flex-col gap-2 p-4 sm:p-5`} data-testid="address-view">
-        <h2 className={sectionTitle}>Votre fourchette</h2>
-        <YourRange projectId={projectId} saved={savedRange} indicative={null} />
-      </section>
-    );
-  }
   return (
     <section className="@container flex flex-col gap-3" data-testid="address-view">
       <div className="flex flex-wrap items-center gap-2">
@@ -482,7 +493,10 @@ export function AddressViewPanel({
       </div>
       {state.kind === 'ready' ? (
         <p className={hintText}>
-          Ce qu’Academia sait de l’adresse du bien. Rien de ce bloc ne part vers le vendeur.
+          Ce qu’Academia sait de l’adresse du bien, calculé pour{' '}
+          {state.facts.type === 'maison' ? 'une maison' : 'un appartement'} de {state.facts.rooms}{' '}
+          {plural(state.facts.rooms, 'pièce', 'pièces')} et{' '}
+          {formatSquareMeters(state.facts.surface)}. Rien de ce bloc ne part vers le vendeur.
         </p>
       ) : null}
       {state.kind === 'none' ? (
@@ -493,21 +507,35 @@ export function AddressViewPanel({
           </Link>
         </p>
       ) : null}
+      {state.kind === 'waiting' ? (
+        <p className={hintText} data-testid="address-view-waiting">
+          Academia prépare le dossier d’adresse : il apparaîtra ici à la prochaine ouverture de la
+          page.
+        </p>
+      ) : null}
+      {state.kind === 'request_failed' ? (
+        <p className={hintText} data-testid="address-view-request-failed">
+          Academia n’a pas pu préparer le dossier d’adresse.{' '}
+          <Link href={`/builder/${projectId}/property`} className={link}>
+            Recréez le lien « Vivre ici » depuis Bien vendeur
+          </Link>
+        </p>
+      ) : null}
       {state.kind === 'missing_facts' ? (
         <p className={hintText} data-testid="address-view-missing">
           Pour lire le dossier d’adresse, indiquez sur{' '}
           <Link href={`/builder/${projectId}/property`} className={link}>
             Bien vendeur
           </Link>{' '}
-          {state.missing
-            .map((missing) =>
+          {andList(
+            state.missing.map((missing) =>
               missing === 'type'
                 ? 'le type (maison ou appartement)'
                 : missing === 'rooms'
                   ? 'le nombre de pièces'
                   : 'la surface',
-            )
-            .join(', ')}
+            ),
+          )}
           .
         </p>
       ) : null}
@@ -516,23 +544,21 @@ export function AddressViewPanel({
           Le dossier d’adresse d’Academia n’a pas pu être lu : rechargez la page dans un moment.
         </p>
       ) : null}
-      <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,26rem)_1fr]">
-        <section className={`${card} flex flex-col gap-3 p-4 sm:p-5`}>
-          {view?.indicative ? <Indicative value={view.indicative} /> : null}
-          <YourRange
-            projectId={projectId}
-            saved={savedRange}
-            indicative={view?.indicative ?? null}
-          />
-          {view?.indicative ? (
-            <p className="text-xs text-zinc-500">
-              Academia · calcul sur les ventes DVF
-              {day(view.indicative.date) ? ` · ${day(view.indicative.date)}` : ''}
-            </p>
-          ) : null}
-        </section>
-        {view ? <OtherBlocks view={view} demo={demo} /> : null}
-      </div>
+      {view ? (
+        <div className="grid grid-cols-1 gap-3 @4xl:grid-cols-[minmax(0,26rem)_1fr]">
+          <section className={`${card} flex flex-col gap-3 p-4 sm:p-5`}>
+            {view.indicative ? <Indicative value={view.indicative} /> : null}
+            <YourRange projectId={projectId} saved={savedRange} indicative={view.indicative} />
+            {view.indicative ? (
+              <p className="text-xs text-zinc-500">
+                Academia · calcul sur les ventes DVF
+                {day(view.indicative.date) ? ` · ${day(view.indicative.date)}` : ''}
+              </p>
+            ) : null}
+          </section>
+          <OtherBlocks view={view} demo={demo} />
+        </div>
+      ) : null}
       {view?.sales ? <Sales sales={view.sales} /> : null}
     </section>
   );

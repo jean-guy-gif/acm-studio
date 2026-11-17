@@ -86,6 +86,15 @@ describe('parsePropertyView', () => {
     expect(parsed?.indicative).toBeNull();
   });
 
+  it('une phrase d’Academia qui dirait « estimation » n’est pas montrée (M105)', () => {
+    const trap = structuredClone(realView) as { blocs: Record<string, Record<string, unknown>> };
+    trap.blocs.estimation.mention = 'Estimation automatique du bien';
+    trap.blocs.dpe.note = 'Une estimation du DPE';
+    const parsed = parsePropertyView(trap);
+    expect(parsed?.indicative?.mention).toBeNull();
+    expect(parsed?.dpe?.note).toBeNull();
+  });
+
   it('une réponse sans blocs n’est pas une vue', () => {
     expect(parsePropertyView(null)).toBeNull();
     expect(parsePropertyView({ dossier: { id: 'x' } })).toBeNull();

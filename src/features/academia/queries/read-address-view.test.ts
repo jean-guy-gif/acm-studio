@@ -53,6 +53,11 @@ describe('readAddressView', () => {
     const result = await read({}, server);
     expect(result.kind).toBe('ready');
     expect(result.kind === 'ready' && result.view.indicative?.low).toBe(955000);
+    expect(result.kind === 'ready' && result.facts).toEqual({
+      type: 'maison',
+      rooms: 5,
+      surface: 135,
+    });
     expect(server.calls[0]).toMatchObject({
       path: `/api/v1/dossiers/${FAKE_ACADEMIA_ID}/bien`,
       query: '?type=maison&pieces=5&surface=135',
@@ -65,7 +70,9 @@ describe('readAddressView', () => {
     state.request = null;
     expect(await read({}, server)).toEqual({ kind: 'none' });
     state.request = { academia_id: FAKE_ACADEMIA_ID, state: 'en_cours', property_address: ADDRESS };
-    expect(await read({}, server)).toEqual({ kind: 'none' });
+    expect(await read({}, server)).toEqual({ kind: 'waiting' });
+    state.request = { academia_id: FAKE_ACADEMIA_ID, state: 'erreur', property_address: ADDRESS };
+    expect(await read({}, server)).toEqual({ kind: 'request_failed' });
     state.request = {
       academia_id: FAKE_ACADEMIA_ID,
       state: 'pret',

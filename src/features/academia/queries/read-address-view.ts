@@ -23,9 +23,17 @@ import type { Database } from '@/lib/supabase/database.types';
 export type AddressViewState =
   | { kind: 'closed' }
   | { kind: 'none' }
+  // La demande existe mais Academia prépare encore le dossier, ou n'a pas pu le préparer.
+  | { kind: 'waiting' }
+  | { kind: 'request_failed' }
   | { kind: 'missing_facts'; missing: ('type' | 'rooms' | 'surface')[] }
   | { kind: 'failed' }
-  | { kind: 'ready'; view: AcademiaPropertyView };
+  | {
+      kind: 'ready';
+      view: AcademiaPropertyView;
+      // Ce pour quoi la vue a été calculée : « une maison de 5 pièces et 135 m² ».
+      facts: { type: 'appartement' | 'maison'; rooms: number; surface: number };
+    };
 
 export type AddressViewProperty = {
   address: string | null;
@@ -54,14 +62,11 @@ export async function readAddressView(input: {
     await reportServerError('academia:read-address-view', error);
     return { kind: 'failed' };
   }
-  if (
-    !request ||
-    request.state !== 'pret' ||
-    !input.property?.address ||
-    request.property_address !== input.property.address
-  ) {
+  if (!request || !input.property?.address || request.property_address !== input.property.address) {
     return { kind: 'none' };
   }
+  if (request.state === 'en_cours') return { kind: 'waiting' };
+  if (request.state !== 'pret') return { kind: 'request_failed' };
   const type = academiaPropertyType(input.property.propertyType);
   const rooms = input.property.rooms && input.property.rooms > 0 ? input.property.rooms : null;
   const surface =
@@ -99,5 +104,5 @@ export async function readAddressView(input: {
     );
     return { kind: 'failed' };
   }
-  return { kind: 'ready', view };
+  return { kind: 'ready', view, facts: { type, rooms, surface } };
 }
