@@ -236,6 +236,38 @@ describe('AcademiaCard, l’API ouverte', () => {
     expect(html).not.toMatch(/démonstration/i);
   });
 
+  it('dans la démo, le lien créé ne s’écrit pas : « Ouvrir » et « Copier » restent', () => {
+    const html = plain(
+      renderToStaticMarkup(
+        createElement(AcademiaCard, {
+          projectId: 'p1',
+          addressLink: live,
+          livingLink: live,
+          savedUrl: 'https://app.myacademia.ai/l/demonstration',
+          savedLine: null,
+          signed: true,
+          api: {
+            address: ADDRESS,
+            initial: {
+              kind: 'ready',
+              url: 'https://app.myacademia.ai/l/demonstration',
+              expiresAt: '2026-12-17T13:52:35Z',
+              expiry: { level: 'ok', days: 30 },
+            },
+            showAddress: false,
+          },
+        }),
+      ),
+    );
+    expect(html).toContain('Lien créé');
+    expect(html).toContain('href="https://app.myacademia.ai/l/demonstration"');
+    expect(html).toContain('Ouvrir ↗');
+    expect(html).toContain('Copier');
+    // Le lien n'est que dans l'adresse du bouton, jamais dans le texte lu.
+    const text = html.replace(/href="[^"]*"/g, '').replace(/<[^>]+>/g, ' ');
+    expect(text).not.toMatch(/demonstration|démonstration/i);
+  });
+
   it('un lien collé à la main : le repli ouvert, pour le voir', () => {
     expect(withApi({ kind: 'idle', stale: false }, ADDRESS, LINK)).toMatch(
       /data-testid="living-here-fallback" open/,
