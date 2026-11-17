@@ -75,7 +75,7 @@ describe('POST /dossiers', () => {
         },
       ],
     });
-    expect(await createAcademiaRequest(input, server.fetch)).toEqual({
+    expect(await createAcademiaRequest(input, server.fetch)).toMatchObject({
       ok: false,
       reason: 'ambiguous',
       propositions: [
@@ -94,7 +94,10 @@ describe('POST /dossiers', () => {
     ];
     for (const [status, reason] of cases) {
       const server = fakeAcademia({ createRequest: [{ status, body: { erreur: 'x' } }] });
-      expect(await createAcademiaRequest(input, server.fetch)).toEqual({ ok: false, reason });
+      expect(await createAcademiaRequest(input, server.fetch)).toMatchObject({
+        ok: false,
+        reason,
+      });
       expect(server.calls).toHaveLength(1);
     }
     const limited = fakeAcademia({
@@ -102,7 +105,7 @@ describe('POST /dossiers', () => {
         { status: 429, body: { code: 'plafond_jour' }, headers: { 'retry-after': '3600' } },
       ],
     });
-    expect(await createAcademiaRequest(input, limited.fetch)).toEqual({
+    expect(await createAcademiaRequest(input, limited.fetch)).toMatchObject({
       ok: false,
       reason: 'quota',
       retryAfter: 3600,
@@ -121,7 +124,7 @@ describe('POST /dossiers', () => {
     expect((await createAcademiaRequest(input, once.fetch)).ok).toBe(true);
     expect(once.calls).toHaveLength(2);
     const twice = fakeAcademia({ createRequest: [{ status: 500 }, { status: 502 }] });
-    expect(await createAcademiaRequest(input, twice.fetch)).toEqual({
+    expect(await createAcademiaRequest(input, twice.fetch)).toMatchObject({
       ok: false,
       reason: 'unavailable',
     });
@@ -130,7 +133,7 @@ describe('POST /dossiers', () => {
 
   it('pas de réponse en 8 s : un seul nouvel essai, puis indisponible', async () => {
     const server = fakeAcademia({ createRequest: ['timeout'] });
-    expect(await createAcademiaRequest(input, server.fetch, 20)).toEqual({
+    expect(await createAcademiaRequest(input, server.fetch, 20)).toMatchObject({
       ok: false,
       reason: 'unavailable',
     });
@@ -145,11 +148,60 @@ describe('POST /dossiers', () => {
       null,
     ]) {
       const server = fakeAcademia({ createRequest: [{ status: 200, body }] });
-      expect(await createAcademiaRequest(input, server.fetch)).toEqual({
+      expect(await createAcademiaRequest(input, server.fetch)).toMatchObject({
         ok: false,
         reason: 'unavailable',
       });
     }
+  });
+});
+
+describe('ce qu’Academia a rendu, dit au journal (pour Laurent)', () => {
+  it('le statut, le code et le message de son erreur ; jamais la clé', async () => {
+    const server = fakeAcademia({
+      createRequest: [
+        { status: 404, body: { erreur: { code: 'route_inconnue', message: 'Route inconnue' } } },
+      ],
+    });
+    const result = await createAcademiaRequest(input, server.fetch);
+    expect(result).toEqual({
+      ok: false,
+      reason: 'not_found',
+      detail: 'HTTP 404 · route_inconnue · Route inconnue',
+    });
+    expect(JSON.stringify(result)).not.toContain(KEY);
+    const flat = fakeAcademia({
+      createRequest: [
+        { status: 400, body: { code: 'adresse_absente', message: 'Adresse requise' } },
+      ],
+    });
+    expect(await createAcademiaRequest(input, flat.fetch)).toMatchObject({
+      reason: 'unavailable',
+      detail: 'HTTP 400 · adresse_absente · Adresse requise',
+    });
+  });
+
+  it('deux 5xx : le dernier statut ; aucune réponse : le délai', async () => {
+    const twice = fakeAcademia({ createRequest: [{ status: 500 }, { status: 502 }] });
+    expect(await createAcademiaRequest(input, twice.fetch)).toMatchObject({ detail: 'HTTP 502' });
+    const silent = fakeAcademia({ createRequest: ['timeout'] });
+    expect(await createAcademiaRequest(input, silent.fetch, 20)).toMatchObject({
+      detail: 'aucune réponse en 0 s',
+    });
+  });
+
+  it('une réponse hors contrat : les noms de ses champs, jamais leurs valeurs', async () => {
+    const server = fakeAcademia({
+      createRequest: [
+        { status: 200, body: { dossier: { id: 'dos_secret' }, statut: 'pret', lien: 'x' } },
+      ],
+    });
+    const result = await createAcademiaRequest(input, server.fetch);
+    expect(result).toMatchObject({
+      reason: 'unavailable',
+      detail: 'HTTP 200 · réponse hors contrat · champs : dossier, statut, lien',
+    });
+    expect(JSON.stringify(result)).not.toContain('dos_secret');
   });
 });
 
@@ -171,7 +223,7 @@ describe('GET /dossiers/{id}', () => {
 
   it('un identifiant de forme inconnue ne part pas', async () => {
     const server = fakeAcademia();
-    expect(await readAcademiaRequest(KEY, '../moi', server.fetch)).toEqual({
+    expect(await readAcademiaRequest(KEY, '../moi', server.fetch)).toMatchObject({
       ok: false,
       reason: 'not_found',
     });
@@ -202,7 +254,7 @@ describe('POST /dossiers/{id}/liens-client', () => {
       { url: FAKE_LINK },
     ]) {
       const server = fakeAcademia({ createLink: [{ status: 201, body }] });
-      expect(await createAcademiaClientLink(KEY, FAKE_ACADEMIA_ID, server.fetch)).toEqual({
+      expect(await createAcademiaClientLink(KEY, FAKE_ACADEMIA_ID, server.fetch)).toMatchObject({
         ok: false,
         reason: 'unavailable',
       });
@@ -211,7 +263,7 @@ describe('POST /dossiers/{id}/liens-client', () => {
 
   it('sans le droit au lien client (403) : refusé, dit tel quel', async () => {
     const server = fakeAcademia({ createLink: [{ status: 403, body: { erreur: 'offre' } }] });
-    expect(await createAcademiaClientLink(KEY, FAKE_ACADEMIA_ID, server.fetch)).toEqual({
+    expect(await createAcademiaClientLink(KEY, FAKE_ACADEMIA_ID, server.fetch)).toMatchObject({
       ok: false,
       reason: 'forbidden',
     });

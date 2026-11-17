@@ -18,9 +18,16 @@ export const ACADEMIA_API_TIMEOUT_MS = 8_000;
 
 export type AcademiaFetch = (input: string, init: RequestInit) => Promise<Response>;
 
+// `detail` : ce qu'Academia a rendu (le statut HTTP, son code et son message d'erreur, ou les noms des
+// champs d'une réponse hors contrat), pour le journal et pour Laurent ; jamais la clé ni une valeur
+// de la réponse.
 export type AcademiaFailure =
-  | { ok: false; reason: 'unauthorized' | 'readonly' | 'forbidden' | 'not_found' | 'unavailable' }
-  | { ok: false; reason: 'quota'; retryAfter?: number };
+  | {
+      ok: false;
+      reason: 'unauthorized' | 'readonly' | 'forbidden' | 'not_found' | 'unavailable';
+      detail?: string;
+    }
+  | { ok: false; reason: 'quota'; retryAfter?: number; detail?: string };
 
 export type AcademiaPropertyType = 'appartement' | 'maison';
 export type AcademiaPropertyFacts = {
@@ -44,7 +51,8 @@ export function academiaPropertyType(value: string | null): AcademiaPropertyType
   return type === 'apartment' ? 'appartement' : type === 'house' ? 'maison' : null;
 }
 
-type Raw = { status: number; json: unknown; headers: Headers } | null;
+// `status` 0 : aucune réponse (réseau, délai), `note` dit pourquoi.
+type Raw = { status: number; json: unknown; headers: Headers; note?: string } | null;
 
 async function send(
   fetchImpl: AcademiaFetch,
@@ -54,6 +62,7 @@ async function send(
   body: unknown,
   timeoutMs: number,
 ): Promise<Raw> {
+  let last: Raw = null;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -69,37 +78,82 @@ async function send(
         signal: controller.signal,
         cache: 'no-store',
       });
-      if (response.status >= 500) continue;
       const json = await response.json().catch(() => null);
-      return { status: response.status, json, headers: response.headers };
-    } catch {
+      last = { status: response.status, json, headers: response.headers };
+      if (response.status >= 500) continue;
+      return last;
+    } catch (error) {
       // Dépassement du délai ou réseau : un seul nouvel essai.
+      const cause = (error as { cause?: { code?: unknown } })?.cause?.code;
+      last = {
+        status: 0,
+        json: null,
+        headers: new Headers(),
+        note: controller.signal.aborted
+          ? `aucune réponse en ${Math.round(timeoutMs / 1000)} s`
+          : `réseau : ${error instanceof Error ? error.message : 'échec'}${typeof cause === 'string' ? ` (${cause})` : ''}`,
+      };
     } finally {
       clearTimeout(timer);
     }
   }
-  return null;
+  return last;
+}
+
+const text = (value: unknown): string | null =>
+  typeof value === 'string' && value.trim() ? value.trim().slice(0, 160) : null;
+
+// Ce qu'Academia a rendu, dit en une ligne : « HTTP 404 · route_inconnue · Route inconnue ».
+export function academiaDetail(raw: Raw): string {
+  if (!raw) return 'aucune réponse';
+  if (raw.status === 0) return raw.note ?? 'aucune réponse';
+  const body = (raw.json ?? {}) as Record<string, unknown>;
+  const nested = (body.erreur ?? body.error) as unknown;
+  const source = nested && typeof nested === 'object' ? (nested as Record<string, unknown>) : body;
+  const parts = [
+    `HTTP ${raw.status}`,
+    text(source.code),
+    text(source.message) ?? (typeof nested === 'string' ? text(nested) : null),
+  ].filter((part): part is string => part != null);
+  return parts.join(' · ');
+}
+
+// Une réponse qui n'a pas la forme du contrat : les noms de ses champs, jamais leurs valeurs.
+function offContract(raw: NonNullable<Raw>): AcademiaFailure {
+  const json = raw.json;
+  const fields =
+    json && typeof json === 'object' && !Array.isArray(json)
+      ? Object.keys(json).slice(0, 12).join(', ')
+      : json === null
+        ? 'pas de JSON'
+        : typeof json;
+  return {
+    ok: false,
+    reason: 'unavailable',
+    detail: `HTTP ${raw.status} · réponse hors contrat · champs : ${fields || 'aucun'}`,
+  };
 }
 
 function failure(raw: Raw): AcademiaFailure {
-  if (!raw) return { ok: false, reason: 'unavailable' };
+  const detail = academiaDetail(raw);
+  if (!raw) return { ok: false, reason: 'unavailable', detail };
   switch (raw.status) {
     case 401:
-      return { ok: false, reason: 'unauthorized' };
+      return { ok: false, reason: 'unauthorized', detail };
     case 402:
-      return { ok: false, reason: 'readonly' };
+      return { ok: false, reason: 'readonly', detail };
     case 403:
-      return { ok: false, reason: 'forbidden' };
+      return { ok: false, reason: 'forbidden', detail };
     case 404:
-      return { ok: false, reason: 'not_found' };
+      return { ok: false, reason: 'not_found', detail };
     case 429: {
       const seconds = Number(raw.headers.get('retry-after'));
       return Number.isFinite(seconds) && seconds > 0
-        ? { ok: false, reason: 'quota', retryAfter: seconds }
-        : { ok: false, reason: 'quota' };
+        ? { ok: false, reason: 'quota', retryAfter: seconds, detail }
+        : { ok: false, reason: 'quota', detail };
     }
     default:
-      return { ok: false, reason: 'unavailable' };
+      return { ok: false, reason: 'unavailable', detail };
   }
 }
 
@@ -144,7 +198,7 @@ export async function createAcademiaRequest(
     const parsed = requestReply.safeParse(raw.json);
     return parsed.success
       ? { ok: true, id: parsed.data.id, etat: parsed.data.etat }
-      : { ok: false, reason: 'unavailable' };
+      : offContract(raw);
   }
   if (raw?.status === 422) {
     return { ok: false, reason: 'ambiguous', propositions: propositions(raw.json) };
@@ -162,9 +216,7 @@ export async function readAcademiaRequest(
   const raw = await send(fetchImpl, key, 'GET', `/dossiers/${id}`, undefined, timeoutMs);
   if (raw?.status === 200) {
     const parsed = requestReply.safeParse(raw.json);
-    return parsed.success
-      ? { ok: true, etat: parsed.data.etat }
-      : { ok: false, reason: 'unavailable' };
+    return parsed.success ? { ok: true, etat: parsed.data.etat } : offContract(raw);
   }
   return failure(raw);
 }
@@ -188,9 +240,7 @@ export async function createAcademiaClientLink(
     const parsed = linkReply.safeParse(raw.json);
     const url = parsed.success ? academiaLivingHereUrl(parsed.data.url) : null;
     const expires = parsed.success ? new Date(parsed.data.expire_le) : null;
-    if (!url || !expires || Number.isNaN(expires.getTime())) {
-      return { ok: false, reason: 'unavailable' };
-    }
+    if (!url || !expires || Number.isNaN(expires.getTime())) return offContract(raw);
     return { ok: true, url, expiresAt: expires.toISOString() };
   }
   return failure(raw);

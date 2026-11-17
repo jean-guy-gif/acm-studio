@@ -77,7 +77,10 @@ const fail = (message: string, retry = true): LivingHereLinkState => ({
 
 // Chaque échec d'Academia part au journal, la clé jamais (M100).
 async function failed(reason: AcademiaFailure, where: string): Promise<LivingHereLinkState> {
-  await reportServerError(`academia:${where}`, new Error(`Academia : ${reason.reason}`));
+  await reportServerError(
+    `academia:${where}`,
+    new Error(`Academia : ${reason.reason}${reason.detail ? ` — ${reason.detail}` : ''}`),
+  );
   if (reason.reason === 'quota') return fail(ACADEMIA_QUOTA, false);
   if (reason.reason === 'unavailable') return fail(ACADEMIA_DOWN);
   return fail(ACADEMIA_REFUSED);
