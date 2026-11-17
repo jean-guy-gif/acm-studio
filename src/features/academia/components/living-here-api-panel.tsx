@@ -100,8 +100,9 @@ export function LivingHereApiPanel({
   pasted?: boolean;
   // Le lien ne part vers les acquéreurs que pour un mandat signé (M147 A).
   signed: boolean;
-  // Dans l'agence de démonstration, l'adresse envoyée (celle du dossier fixe d'Academia) dit
-  // « démonstration » : elle ne se montre pas (M114 ; Jean-Guy, 17/11).
+  // Dans l'agence de démonstration, l'adresse envoyée (celle du dossier fixe d'Academia) et le lien
+  // rendu disent « démonstration » : ni l'une ni l'autre ne s'écrit sur la carte, « Ouvrir » et
+  // « Copier » restent (M114 ; Jean-Guy, 17/11).
   showAddress?: boolean;
 }) {
   const router = useRouter();
@@ -243,12 +244,18 @@ export function LivingHereApiPanel({
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span
-                className="rounded-lg bg-zinc-100 px-2.5 py-1.5 font-mono text-xs break-all text-zinc-900"
-                data-testid="living-here-url"
-              >
-                {view.url}
-              </span>
+              {showAddress ? (
+                <span
+                  className="rounded-lg bg-zinc-100 px-2.5 py-1.5 font-mono text-xs break-all text-zinc-900"
+                  data-testid="living-here-url"
+                >
+                  {view.url}
+                </span>
+              ) : (
+                <span className="text-sm text-zinc-700" data-testid="living-here-url">
+                  Lien créé
+                </span>
+              )}
               <a
                 href={view.url}
                 target="_blank"
