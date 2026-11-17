@@ -120,6 +120,8 @@ export type ClientTexts = {
     heading: string;
     open: string;
     scan: (address: string) => string;
+    // Le QR code seul, sans l'adresse du lien à taper.
+    scanOnly: string;
     validUntil: (day: string) => string;
   };
   live: LiveTexts;

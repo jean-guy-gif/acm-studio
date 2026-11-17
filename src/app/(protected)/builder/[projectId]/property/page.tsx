@@ -141,8 +141,9 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         signed={conclusion?.outcome === 'signed'}
         api={
           access && apiInitial
-            ? // L'adresse dite à l'écran est celle qui part : dans la démo, celle de son dossier fixe.
-              { address: address ? (access.demoAddress ?? address) : null, initial: apiInitial }
+            ? // L'adresse dite à l'écran est celle qui part ; dans la démo, celle de son dossier fixe
+              // dit « démonstration » : la carte ne la montre pas (M114 ; Jean-Guy, 17/11).
+              { address, initial: apiInitial, showAddress: access.demoAddress == null }
             : null
         }
       />

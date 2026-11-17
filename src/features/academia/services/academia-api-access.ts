@@ -15,8 +15,11 @@ import 'server-only';
 
 export const ACADEMIA_API_OUVERT_AGENCES = false;
 
-// L'adresse fictive du dossier de démonstration fixe d'Academia, à recevoir de Laurent (A2).
-export const ACADEMIA_DEMO_ADDRESS: string | null = null;
+// L'adresse fictive du dossier de démonstration fixe d'Academia, donnée par Laurent avec la clé
+// d'essai (17/11). Elle dit « démonstration » : elle ne se montre jamais, ni sur la carte du
+// conseiller ni dans un document du vendeur (M114 ; décision de Jean-Guy, 17/11).
+export const ACADEMIA_DEMO_ADDRESS: string | null =
+  '12 Avenue de la Démonstration, 06800 Cagnes-sur-Mer';
 
 export type AcademiaAccess = { key: string; demoAddress: string | null };
 

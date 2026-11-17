@@ -214,6 +214,28 @@ describe('AcademiaCard, l’API ouverte', () => {
     expect(html).not.toContain('btn-filled');
   });
 
+  it('dans la démo : l’adresse envoyée (« démonstration ») ne se montre pas (M114)', () => {
+    const html = plain(
+      renderToStaticMarkup(
+        createElement(AcademiaCard, {
+          projectId: 'p1',
+          addressLink: live,
+          livingLink: live,
+          savedUrl: null,
+          savedLine: null,
+          signed: true,
+          api: { address: ADDRESS, initial: { kind: 'idle', stale: false }, showAddress: false },
+        }),
+      ),
+    );
+    expect(html).toContain('Academia prépare la page du quartier du bien');
+    expect(html).toContain('Créer le lien « Vivre ici »');
+    // L'adresse du bien reste (la copie de M147 A) ; celle qui part vers Academia, jamais.
+    const intro = html.match(/data-testid="living-here-intro">([^<]*)</)?.[1] ?? '';
+    expect(intro).not.toContain(ADDRESS);
+    expect(html).not.toMatch(/démonstration/i);
+  });
+
   it('un lien collé à la main : le repli ouvert, pour le voir', () => {
     expect(withApi({ kind: 'idle', stale: false }, ADDRESS, LINK)).toMatch(
       /data-testid="living-here-fallback" open/,

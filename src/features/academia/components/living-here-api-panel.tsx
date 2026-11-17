@@ -90,6 +90,7 @@ export function LivingHereApiPanel({
   fallback,
   pasted = false,
   signed,
+  showAddress = true,
 }: {
   projectId: string;
   address: string | null;
@@ -99,6 +100,9 @@ export function LivingHereApiPanel({
   pasted?: boolean;
   // Le lien ne part vers les acquéreurs que pour un mandat signé (M147 A).
   signed: boolean;
+  // Dans l'agence de démonstration, l'adresse envoyée (celle du dossier fixe d'Academia) dit
+  // « démonstration » : elle ne se montre pas (M114 ; Jean-Guy, 17/11).
+  showAddress?: boolean;
 }) {
   const router = useRouter();
   const [view, setView] = useState<View>(() => initialView(address, initial));
@@ -201,10 +205,17 @@ export function LivingHereApiPanel({
               celui de la nouvelle adresse.
             </p>
           ) : null}
-          <p className={hintText}>
-            Academia prépare la page du quartier de{' '}
-            <b className="font-semibold text-zinc-800">{address}</b> : les écoles, les commerces,
-            les transports. Le lien est {shownTo}, et dans « Confirmer la visite ».
+          <p className={hintText} data-testid="living-here-intro">
+            {showAddress ? (
+              <>
+                Academia prépare la page du quartier de{' '}
+                <b className="font-semibold text-zinc-800">{address}</b>
+              </>
+            ) : (
+              'Academia prépare la page du quartier du bien'
+            )}{' '}
+            : les écoles, les commerces, les transports. Le lien est {shownTo}, et dans « Confirmer
+            la visite ».
           </p>
           {button('Créer le lien « Vivre ici »')}
         </>

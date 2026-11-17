@@ -43,7 +43,7 @@ export function NeighbourhoodLinkBlock({
           {texts.open} ↗
         </a>
         <span className="hidden break-all text-zinc-700 print:inline">
-          {texts.scan(shortLinkAddress(link.url))}
+          {link.printAddress ? texts.scan(shortLinkAddress(link.url)) : texts.scanOnly}
         </span>
         {day ? <span className="text-xs text-zinc-500">{texts.validUntil(day)}</span> : null}
       </div>

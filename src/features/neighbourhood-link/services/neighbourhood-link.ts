@@ -58,4 +58,6 @@ export function shortLinkAddress(url: string): string {
 
 // Sur un document imprimé, le lien vient avec son QR code (tracé sans image ni service extérieur,
 // comme celui du conseiller, M84) : construit au serveur, avec le document.
-export type NeighbourhoodDocumentLink = NeighbourhoodLink & { qr: QrCode };
+// `printAddress` : l'adresse du lien s'imprime à côté du QR code, sauf dans l'agence de
+// démonstration, dont le lien dit « démonstration » (M114 ; Jean-Guy, 17/11).
+export type NeighbourhoodDocumentLink = NeighbourhoodLink & { qr: QrCode; printAddress: boolean };

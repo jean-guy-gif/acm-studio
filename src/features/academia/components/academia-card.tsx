@@ -31,7 +31,7 @@ export function AcademiaCard({
   savedUrl: string | null;
   savedLine: LivingHereAgeLine | null;
   signed: boolean;
-  api?: { address: string | null; initial: LivingHereApiInitial } | null;
+  api?: { address: string | null; initial: LivingHereApiInitial; showAddress?: boolean } | null;
 }) {
   const field = (
     <LivingHereField
@@ -71,6 +71,7 @@ export function AcademiaCard({
             fallback={field}
             pasted={api.initial.kind === 'idle' && !api.initial.stale && savedUrl !== null}
             signed={signed}
+            showAddress={api.showAddress ?? true}
           />
         ) : (
           field

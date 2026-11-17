@@ -141,6 +141,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     heading: 'Vivre ici — le quartier, les écoles, les commerces',
     open: 'Ouvrir la page du quartier',
     scan: (address) => `Scannez pour découvrir le quartier, ou tapez ${address}`,
+    scanOnly: 'Scannez pour découvrir le quartier.',
     validUntil: (day) => `Lien valable jusqu’au ${day}.`,
   },
   live: {
