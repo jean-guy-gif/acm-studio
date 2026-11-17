@@ -737,9 +737,6 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                 </ul>
               </div>
             ) : null}
-            {synthesis.neighbourhood ? (
-              <NeighbourhoodLinkBlock link={synthesis.neighbourhood} language={language} />
-            ) : null}
             {synthesis.perceivedPrice != null ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border border-l-4 border-zinc-200 border-l-brand bg-white px-5 py-4">
                 <div className={kicker}>{t.perceivedAtStart}</div>
@@ -747,6 +744,9 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                   {euro(synthesis.perceivedPrice)}
                 </div>
               </div>
+            ) : null}
+            {synthesis.neighbourhood ? (
+              <NeighbourhoodLinkBlock link={synthesis.neighbourhood} language={language} />
             ) : null}
           </section>
         ) : null}

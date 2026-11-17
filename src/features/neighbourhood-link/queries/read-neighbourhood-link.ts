@@ -20,6 +20,21 @@ export async function readNeighbourhoodLink(
   projectId: string,
   now: Date = new Date(),
 ): Promise<NeighbourhoodLink | null> {
+  try {
+    return await read(client, agencyId, projectId, now);
+  } catch (error) {
+    // Une exception (le réseau) ne fait jamais tomber le Live ni un document du vendeur.
+    await reportServerError('neighbourhood-link:read', error);
+    return null;
+  }
+}
+
+async function read(
+  client: SupabaseClient<Database>,
+  agencyId: string,
+  projectId: string,
+  now: Date,
+): Promise<NeighbourhoodLink | null> {
   const project = await client
     .from('projects')
     .select('academia_living_here_url')

@@ -30,7 +30,8 @@ const strings = (value: unknown): string[] =>
 // Mission 110 — les lignes de la synthèse au vendeur, lues par LISTES DE COLONNES AUTORISÉES,
 // cadrées sur le dossier ET son agence. Ni `title`, ni `listing_url`, ni adresse, ni « Vendu
 // par », ni la fourchette ou les points de vigilance du conseiller ne sont lus : ils ne peuvent
-// pas en sortir. Sert à l'écran du conseiller (son client, RLS) et à la page publique du lien
+// pas en sortir (M157 B : l'adresse du bien n'est lue, par la porte du lien « Vivre ici », que pour
+// savoir si ce lien vaut encore ; elle n'entre pas dans le document). Sert à l'écran du conseiller (son client, RLS) et à la page publique du lien
 // (clé de service, après vérification du jeton). null : dossier introuvable, archivé, ou Live
 // jamais mené.
 export async function loadSellerSynthesis(

@@ -113,6 +113,16 @@ describe('readNeighbourhoodLink', () => {
     expect(reported).toEqual(['neighbourhood-link:read']);
   });
 
+  it('une exception (le réseau) ne montre rien et entre au journal', async () => {
+    const throwing = {
+      from: () => {
+        throw new Error('fetch failed');
+      },
+    };
+    expect(await readNeighbourhoodLink(throwing as never, 'agence-1', 'p1', NOW)).toBeNull();
+    expect(reported).toEqual(['neighbourhood-link:read']);
+  });
+
   it('ne lit que les colonnes utiles, cadrées sur l’agence et le dossier', async () => {
     await read();
     const selects = db.calls.filter((call) => call.method === 'select').map((c) => c.args[0]);

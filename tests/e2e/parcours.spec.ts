@@ -4,6 +4,7 @@ import {
   fillLiveComment,
   ageTestBuyer,
   expectNoHorizontalScroll,
+  expectNoVerticalScroll,
   goViaAccountMenu,
   login,
   mainText,
@@ -1785,6 +1786,20 @@ async function walkLive(
   await expect(neighbourhood).toHaveAttribute('target', '_blank');
   await expect(neighbourhood).toContainText('Le quartier, les écoles, les commerces');
   await expect(page.locator('main, [data-stage]').first()).not.toContainText(/Academia/);
+  // M148 B — avec le bouton, « Votre bien » ne défile toujours pas aux fenêtres de Safari sur iPad.
+  const desktop = page.viewportSize();
+  for (const size of [
+    { width: 1024, height: 700 },
+    { width: 1180, height: 750 },
+    { width: 820, height: 1110 },
+  ]) {
+    await page.setViewportSize(size);
+    await expectNoVerticalScroll(
+      page,
+      `Votre bien avec « Vivre ici », ${size.width} × ${size.height}`,
+    );
+  }
+  if (desktop) await page.setViewportSize(desktop);
   await choose('Oui, c’est bien mon bien');
   await fillLiveComment(page, 'seller_property_comment', COMMENT);
   await validate();

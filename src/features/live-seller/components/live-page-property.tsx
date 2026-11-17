@@ -8,7 +8,6 @@ import {
   answerColumn,
   choiceCompact,
   fieldLabel,
-  navBtn,
   panelTight,
   photoColumn,
   question,
@@ -205,7 +204,7 @@ export function LivePageProperty({
               href={neighbourhood.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${navBtn} shrink-0 justify-between px-3.5 py-2 text-left`}
+              className="flex shrink-0 items-center justify-between gap-3 rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 stage:border-white/40 stage:bg-white/5 stage:text-white/90 stage:hover:bg-white/15"
               data-testid="live-neighbourhood"
             >
               <span className="flex min-w-0 flex-col">
