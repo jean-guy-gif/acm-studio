@@ -1,0 +1,266 @@
+{
+  "dossier": {
+    "id": "0de30000-0000-4000-8000-000000000001"
+  },
+  "bien": {
+    "type": "maison",
+    "pieces": 5,
+    "surface": 135
+  },
+  "calculeLe": "2026-11-17",
+  "vue": "client",
+  "blocs": {
+    "ventes": {
+      "etat": "ok",
+      "source": "DVF (DGFiP), ventes de logements anciens",
+      "date": "2026-10-07",
+      "note": null,
+      "type": "maison",
+      "pieces": 5,
+      "anneau": 250,
+      "liste": [
+        {
+          "mois": "2025-11",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 118,
+          "prix": 876800,
+          "distance": 100,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2024-04",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 119,
+          "prix": 945575,
+          "distance": 150,
+          "rue": "Chemin du Val Fleuri"
+        },
+        {
+          "mois": "2023-07",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 134,
+          "prix": 783266,
+          "distance": 250,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2023-03",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 114,
+          "prix": 615551,
+          "distance": 100,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2023-03",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 121,
+          "prix": 663830,
+          "distance": 250,
+          "rue": "Avenue de Nice"
+        },
+        {
+          "mois": "2022-10",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 133,
+          "prix": 847604,
+          "distance": 50,
+          "rue": "Rue des Oliviers"
+        },
+        {
+          "mois": "2022-04",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 125,
+          "prix": 640615,
+          "distance": 100,
+          "rue": "Avenue de Nice"
+        },
+        {
+          "mois": "2022-01",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 132,
+          "prix": 754667,
+          "distance": 150,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2021-12",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 123,
+          "prix": 879320,
+          "distance": 250,
+          "rue": "Rue des Oliviers"
+        },
+        {
+          "mois": "2021-08",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 136,
+          "prix": 628193,
+          "distance": 150,
+          "rue": "Chemin du Val Fleuri"
+        },
+        {
+          "mois": "2021-02",
+          "type": "maison",
+          "pieces": 5,
+          "surface": 117,
+          "prix": 669325,
+          "distance": 150,
+          "rue": "Boulevard Marechal Juin"
+        }
+      ]
+    },
+    "urbanisme": {
+      "etat": "ok",
+      "source": "Géoportail de l'urbanisme (IGN, Géoplateforme)",
+      "date": "2026-10-07",
+      "note": null,
+      "zonage": "plu",
+      "phrase": "Rien de relevé sur la parcelle ni à moins de 40 m. 3 emplacements réservés de voirie entre 40 et 300 m, le plus proche à 153 m.",
+      "niveaux": {
+        "parcelle": {
+          "voirie": 0,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        },
+        "a40m": {
+          "voirie": 0,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        },
+        "a300m": {
+          "voirie": 3,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        }
+      },
+      "elements": [
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "V37",
+          "distance": 153
+        },
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "V47",
+          "distance": 279
+        },
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "P27",
+          "distance": 296
+        }
+      ]
+    },
+    "permis": {
+      "etat": "ok",
+      "source": "Sitadel (SDES), permis de construire et de démolir",
+      "date": "2026-10-07",
+      "note": "Permis de démolir non vérifiés : actualisez le dossier.",
+      "rayon": 300,
+      "depuis": 2022,
+      "construire": [
+        {
+          "autorise": "2025-08-17",
+          "etat": "termine",
+          "type": "PC",
+          "logements": 2,
+          "surface": 124,
+          "distance": 234,
+          "demandeur": null,
+          "rue": "Chemin du Val Fleuri"
+        },
+        {
+          "autorise": "2024-03-12",
+          "etat": "autorise",
+          "type": "PC",
+          "logements": 1,
+          "surface": 62,
+          "distance": 128,
+          "demandeur": null,
+          "rue": "Rue des Oliviers"
+        }
+      ],
+      "demolirEtat": "non_verifie",
+      "demolir": []
+    },
+    "risques": {
+      "etat": "ok",
+      "source": "Géorisques (ministère de la Transition écologique)",
+      "date": "2026-10-07",
+      "note": null,
+      "argile": "Exposition moyenne",
+      "seisme": "4 - MOYENNE",
+      "radon": "1",
+      "tri": "TRI Nice Cannes Mandelieu",
+      "catastrophesNaturelles": {
+        "nombre": 2,
+        "derniere": "2023-03-31",
+        "types": {
+          "Inondations et/ou Coulées de Boue": 1,
+          "Mouvement de Terrain": 1
+        }
+      },
+      "zonagePlu": {
+        "zone": "UFb4",
+        "libelle": "Zone UF : zones pavillonnaires"
+      },
+      "nonLus": []
+    },
+    "population": {
+      "etat": "ok",
+      "source": "Insee, revenus fiscaux localisés (Filosofi), carreaux de 200 m",
+      "date": "2026-10-07",
+      "note": "Valeurs arrondies (secret statistique).",
+      "rayon": 300,
+      "habitants": 1120,
+      "menages": 500,
+      "personnesParMenage": 2.2
+    },
+    "copropriete": {
+      "etat": "ok",
+      "source": "Registre national des copropriétés (Anah)",
+      "date": "2026-10-07",
+      "note": null,
+      "rattachement": "adresse",
+      "distance": null,
+      "nom": "Résidence Le Clos de la Démonstration",
+      "immatriculation": "AC1",
+      "lotsHabitation": 6,
+      "periodeConstruction": "1975-1993",
+      "mandatEnCours": false,
+      "finMandat": "2026-01-17"
+    }
+  }
+}

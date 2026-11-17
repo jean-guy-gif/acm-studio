@@ -327,3 +327,52 @@ describe('le type du bien', () => {
     expect(ACADEMIA_API_BASE).toBe('https://app.myacademia.ai/api/v1');
   });
 });
+
+describe('GET /dossiers/{id}/bien (mission 158)', () => {
+  it('la clé dans l’en-tête, le type, les pièces et la surface en paramètres, la réponse rendue', async () => {
+    const { readAcademiaPropertyView } = await import('@/features/academia/services/academia-api');
+    const server = fakeAcademia({ readView: [{ status: 200, body: { blocs: { ventes: {} } } }] });
+    const result = await readAcademiaPropertyView(
+      KEY,
+      FAKE_ACADEMIA_ID,
+      { type: 'maison', pieces: 5, surface: 135 },
+      server.fetch,
+    );
+    expect(result).toEqual({ ok: true, json: { blocs: { ventes: {} } } });
+    expect(server.calls[0]).toMatchObject({
+      method: 'GET',
+      path: `/api/v1/dossiers/${FAKE_ACADEMIA_ID}/bien`,
+      query: '?type=maison&pieces=5&surface=135',
+      authorization: `Bearer ${KEY}`,
+    });
+  });
+
+  it('une erreur d’Academia est dite avec son détail ; un identifiant douteux ne part pas', async () => {
+    const { readAcademiaPropertyView } = await import('@/features/academia/services/academia-api');
+    const server = fakeAcademia({
+      readView: [{ status: 400, body: { erreur: 'Demande invalide', code: 'demande' } }],
+    });
+    expect(
+      await readAcademiaPropertyView(
+        KEY,
+        FAKE_ACADEMIA_ID,
+        { type: 'maison', pieces: 5, surface: 135 },
+        server.fetch,
+      ),
+    ).toMatchObject({
+      ok: false,
+      reason: 'unavailable',
+      detail: 'HTTP 400 · demande · Demande invalide',
+    });
+    const none = fakeAcademia();
+    expect(
+      await readAcademiaPropertyView(
+        KEY,
+        '../x',
+        { type: 'maison', pieces: 5, surface: 135 },
+        none.fetch,
+      ),
+    ).toEqual({ ok: false, reason: 'not_found' });
+    expect(none.calls).toHaveLength(0);
+  });
+});
