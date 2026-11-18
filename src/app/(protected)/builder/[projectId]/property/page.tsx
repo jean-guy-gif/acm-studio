@@ -75,7 +75,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // Mission 157 — « Vivre ici » en un clic, l'API ouverte (décidé au serveur : la démo par sa clé
   // d'essai et l'adresse de son dossier fixe ; une vraie agence, l'interrupteur allumé). Fermée : la
   // carte d'aujourd'hui.
-  const access = academiaApiAccess(demo);
+  const access = academiaApiAccess({ demo, agencyId: profile?.agency_id });
   const now = new Date();
   const apiInitial =
     access && profile

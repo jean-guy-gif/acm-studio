@@ -7,6 +7,11 @@
 export type SourceInfo = {
   // `etat` d'Academia : « ok », sinon la source n'a pas pu être lue (dit, jamais « rien », M98).
   ok: boolean;
+  // Mission 161 — l'API réelle (Laurent, 18/11) : « aucun », la source a été lue et n'a rien
+  // trouvé (dit comme tel, jamais comme un échec) ; « non_verifie », la source n'a pas été
+  // vérifiée pour cette adresse (dit au conseiller, jamais montré au vendeur).
+  empty: boolean;
+  unchecked: boolean;
   source: string | null;
   date: string | null;
   note: string | null;
@@ -149,6 +154,8 @@ const list = (value: unknown, max = 50): Json[] =>
 function sourceOf(block: Json): SourceInfo {
   return {
     ok: block.etat === 'ok',
+    empty: block.etat === 'aucun',
+    unchecked: block.etat === 'non_verifie' || block.etat === 'non vérifié',
     source: text(block.source, 200),
     date: text(block.date, 30),
     note: phrase(block.note, 300),

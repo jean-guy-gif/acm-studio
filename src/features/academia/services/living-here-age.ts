@@ -113,3 +113,16 @@ export function livingHereExpiry(expiresAt: string, now: Date): LivingHereExpiry
   const days = Math.max(0, Math.round((parisMidnight(date) - parisMidnight(now)) / 86_400_000));
   return { level: days <= LIVING_HERE_EXPIRY_SOON_DAYS ? 'soon' : 'ok', days };
 }
+
+// Mission 161 — un seul lien « Vivre ici » par bien, réutilisé partout tant qu'il a moins de 7 jours
+// (décision de Jean-Guy, 18/11) ; au-delà, un écran du conseiller en crée un neuf. Un lien d'Academia
+// vaut 30 jours : son âge se lit dans son expiration. Sans expiration lisible, il est à refaire.
+export const LINK_LIFETIME_DAYS = 30;
+export const LINK_RENEW_AFTER_DAYS = 7;
+
+export function linkNeedsRenewal(expiresAt: string | null, now: Date): boolean {
+  const at = expiresAt ? new Date(expiresAt).getTime() : Number.NaN;
+  if (Number.isNaN(at)) return true;
+  const ageDays = LINK_LIFETIME_DAYS - (at - now.getTime()) / 86_400_000;
+  return ageDays >= LINK_RENEW_AFTER_DAYS;
+}

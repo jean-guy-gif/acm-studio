@@ -9,6 +9,7 @@ import {
   NEIGHBOURHOOD_BLOCK_KEYS,
   type NeighbourhoodBlockKey,
   type NeighbourhoodBlocks,
+  type NeighbourhoodBlockStatus,
 } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import { neighbourhoodView } from '@/features/neighbourhood-link/services/neighbourhood-view';
 import { btnSecondary, card, hintText, sectionTitle } from '@/components/ui/styles';
@@ -31,12 +32,15 @@ const NAMES: Record<NeighbourhoodBlockKey, string> = {
 export function NeighbourhoodChoicePanel({
   projectId,
   blocks,
+  statuses,
   savedKeys,
   stale,
   locked,
 }: {
   projectId: string;
   blocks: NeighbourhoodBlocks;
+  // Mission 161 — ce que la source a dit de chaque bloc : un bloc qui ne se propose pas dit pourquoi.
+  statuses?: Record<NeighbourhoodBlockKey, NeighbourhoodBlockStatus>;
   savedKeys: NeighbourhoodBlockKey[];
   stale: boolean;
   locked: boolean;
@@ -45,6 +49,7 @@ export function NeighbourhoodChoicePanel({
   const available = NEIGHBOURHOOD_BLOCK_KEYS.filter(
     (key) => neighbourhoodView(blocks, key, CLIENT_TEXTS.fr, 'fr') != null,
   );
+  const unavailable = NEIGHBOURHOOD_BLOCK_KEYS.filter((key) => !available.includes(key));
   const [checked, setChecked] = useState<NeighbourhoodBlockKey[]>(
     savedKeys.filter((key) => available.includes(key)),
   );
@@ -137,6 +142,29 @@ export function NeighbourhoodChoicePanel({
           ? 'Aucun écran ajouté au Live'
           : `${checked.length} ${checked.length > 1 ? 'écrans ajoutés' : 'écran ajouté'} au Live · environ ${minutes} ${minutes > 1 ? 'minutes' : 'minute'} de plus`}
       </p>
+      {unavailable.length > 0 ? (
+        <ul className="flex flex-col gap-1" data-testid="neighbourhood-choice-unavailable">
+          {unavailable.map((key) => (
+            <li
+              key={key}
+              className="flex items-start gap-3 px-4 text-sm text-zinc-500 stage:text-white/50"
+            >
+              <span
+                className="mt-0.5 inline-block h-4 w-4 shrink-0 rounded border border-zinc-300"
+                aria-hidden
+              />
+              <span>
+                <span className="font-semibold">{NAMES[key]}</span> —{' '}
+                {statuses?.[key] === 'unchecked'
+                  ? 'non vérifié par la source : jamais proposé au vendeur'
+                  : statuses?.[key] === 'unread'
+                    ? 'la source n’a pas pu être lue pour cette adresse'
+                    : 'rien à montrer pour cette adresse'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <p className={hintText}>
         Ordre au Live : Introduction → Votre bien → Votre valeur perçue →{' '}
         <b>les blocs du quartier cochés</b> → les concurrents → … → <b>Ventes réelles</b> → Analyse

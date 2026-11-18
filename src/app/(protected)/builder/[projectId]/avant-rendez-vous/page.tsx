@@ -188,7 +188,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   // Mission 158 — le dossier d'adresse d'Academia, pour le conseiller seul : décidé ici sans rien
   // attendre (l'accès est lu au serveur), lu ensuite dans sa propre limite (`Suspense`) ; la page ne
   // l'attend jamais. Sans accès (une vraie agence, interrupteur éteint) : rien.
-  const addressAccess = academiaApiAccess(demo);
+  const addressAccess = academiaApiAccess({ demo, agencyId: profile?.agency_id });
 
   const generatedAt = new Date().toISOString();
   const presentation = buildSellerPresentation({

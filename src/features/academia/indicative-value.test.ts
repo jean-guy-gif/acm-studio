@@ -11,6 +11,7 @@ import realView from '@/test-fixtures/academia-vue-bien.json';
 vi.mock('@/features/subject-property/actions/save-advisor-range', () => ({
   saveAdvisorRange: async () => ({ ok: true, min: null, max: null }),
 }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => undefined }) }));
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: unknown }) =>
     createElement('a', { href }, children as never),
@@ -171,7 +172,10 @@ describe('le bloc quand la vue n’est pas là (maquette M158-1, « Quand il n�
   it('sans accès (une vraie agence) : rien ; sinon une ligne, jamais un bloc vide ni la fourchette', () => {
     expect(render({ kind: 'closed' })).toBe('');
     expect(render({ kind: 'none' })).toContain('Créez le dossier d’adresse depuis Bien vendeur');
-    expect(render({ kind: 'waiting' })).toContain('Academia prépare le dossier d’adresse');
+    // Mission 161 — l'attente se dit, et la page se relit toute seule (5 s, deux minutes au plus).
+    expect(render({ kind: 'waiting' })).toContain(
+      'Academia prépare le dossier d’adresse : 20 à 60 secondes.',
+    );
     expect(render({ kind: 'request_failed' })).toContain('Recréez le lien « Vivre ici »');
     expect(render({ kind: 'failed' })).toContain('n’a pas pu être lu');
     expect(render({ kind: 'missing_facts', missing: ['type', 'rooms', 'surface'] })).toContain(

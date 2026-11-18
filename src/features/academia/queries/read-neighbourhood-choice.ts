@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   resolveAcademiaDossier,
+  viewFailure,
   type AcademiaFacts,
   type AddressViewProperty,
   type AddressViewState,
@@ -15,8 +16,11 @@ import {
   type NeighbourhoodSnapshotState,
 } from '@/features/neighbourhood-link/queries/read-neighbourhood-snapshot';
 import {
+  neighbourhoodBlockStatuses,
   neighbourhoodComputedOn,
   parseNeighbourhoodBlocks,
+  type NeighbourhoodBlockKey,
+  type NeighbourhoodBlockStatus,
   type NeighbourhoodBlocks,
 } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
@@ -30,6 +34,7 @@ export type NeighbourhoodChoiceState =
   | {
       kind: 'ready';
       blocks: NeighbourhoodBlocks;
+      statuses: Record<NeighbourhoodBlockKey, NeighbourhoodBlockStatus>;
       facts: AcademiaFacts;
       saved: NeighbourhoodSnapshotState;
     };
@@ -44,7 +49,13 @@ export async function readClientBlocks(input: {
   fetchImpl?: AcademiaFetch;
 }): Promise<
   | Exclude<AddressViewState, { kind: 'ready' }>
-  | { kind: 'ok'; blocks: NeighbourhoodBlocks; facts: AcademiaFacts; computedOn: string | null }
+  | {
+      kind: 'ok';
+      blocks: NeighbourhoodBlocks;
+      statuses: Record<NeighbourhoodBlockKey, NeighbourhoodBlockStatus>;
+      facts: AcademiaFacts;
+      computedOn: string | null;
+    }
 > {
   const label = 'academia:read-neighbourhood';
   const dossier = await resolveAcademiaDossier({ ...input, label });
@@ -57,13 +68,7 @@ export async function readClientBlocks(input: {
     { type, pieces: rooms, surface },
     input.fetchImpl,
   );
-  if (!reply.ok) {
-    await reportServerError(
-      label,
-      new Error(`Academia : ${reply.reason}${reply.detail ? ` — ${reply.detail}` : ''}`),
-    );
-    return { kind: 'failed' };
-  }
+  if (!reply.ok) return { kind: await viewFailure({ ...input, label }, reply) };
   const blocks = parseNeighbourhoodBlocks(reply.json);
   if (!blocks) {
     await reportServerError(label, new Error('Academia : vue « bien-client » hors contrat'));
@@ -72,6 +77,7 @@ export async function readClientBlocks(input: {
   return {
     kind: 'ok',
     blocks,
+    statuses: neighbourhoodBlockStatuses(reply.json),
     facts: dossier.facts,
     computedOn: neighbourhoodComputedOn(reply.json),
   };
@@ -92,5 +98,11 @@ export async function readNeighbourhoodChoice(input: {
     readNeighbourhoodSnapshot(input.client, input.agencyId, input.projectId),
   ]);
   if (current.kind !== 'ok') return current;
-  return { kind: 'ready', blocks: current.blocks, facts: current.facts, saved };
+  return {
+    kind: 'ready',
+    blocks: current.blocks,
+    statuses: current.statuses,
+    facts: current.facts,
+    saved,
+  };
 }

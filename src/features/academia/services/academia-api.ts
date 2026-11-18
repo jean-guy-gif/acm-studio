@@ -25,7 +25,8 @@ export type AcademiaFetch = (input: string, init: RequestInit) => Promise<Respon
 export type AcademiaFailure =
   | {
       ok: false;
-      reason: 'unauthorized' | 'readonly' | 'forbidden' | 'not_found' | 'unavailable';
+      // Mission 161 — `not_ready` : 409 « pas_pret », le dossier est encore en préparation.
+      reason: 'unauthorized' | 'readonly' | 'forbidden' | 'not_found' | 'unavailable' | 'not_ready';
       detail?: string;
     }
   | { ok: false; reason: 'quota'; retryAfter?: number; detail?: string };
@@ -51,6 +52,9 @@ const STATES: Record<string, AcademiaRequestState> = {
   pending: 'en_cours',
   erreur: 'erreur',
   error: 'erreur',
+  // Mission 161 — l'API réelle dit « echec » : la préparation a échoué, à redemander plus tard.
+  echec: 'erreur',
+  échec: 'erreur',
 };
 const requestReply = z
   .object({
@@ -185,15 +189,31 @@ function failure(raw: Raw): AcademiaFailure {
       return { ok: false, reason: 'forbidden', detail };
     case 404:
       return { ok: false, reason: 'not_found', detail };
+    case 409:
+      return { ok: false, reason: 'not_ready', detail };
     case 429: {
-      const seconds = Number(raw.headers.get('retry-after'));
-      return Number.isFinite(seconds) && seconds > 0
+      const seconds = retryAfterSeconds(raw.headers.get('retry-after'));
+      return seconds != null
         ? { ok: false, reason: 'quota', retryAfter: seconds, detail }
         : { ok: false, reason: 'quota', detail };
     }
     default:
       return { ok: false, reason: 'unavailable', detail };
   }
+}
+
+// `Retry-After` : des secondes, ou une date HTTP (RFC 9110) ; rien d'autre n'est cru.
+export function retryAfterSeconds(value: string | null, now: number = Date.now()): number | null {
+  const raw = value?.trim();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) {
+    const seconds = Number(raw);
+    return seconds > 0 ? seconds : null;
+  }
+  const at = Date.parse(raw);
+  if (Number.isNaN(at)) return null;
+  const seconds = Math.ceil((at - now) / 1000);
+  return seconds > 0 ? seconds : null;
 }
 
 // Les adresses proposées par Academia (une chaîne, ou `{ adresse }`), jamais devinées par ACM.
@@ -224,6 +244,8 @@ export async function createAcademiaRequest(
 ): Promise<
   | { ok: true; id: string; etat: AcademiaRequestState }
   | { ok: false; reason: 'ambiguous'; propositions: string[] }
+  // Mission 161 — 422 sans proposition : Academia ne trouve pas l'adresse.
+  | { ok: false; reason: 'address_not_found'; detail?: string }
   | AcademiaFailure
 > {
   const body = {
@@ -238,7 +260,10 @@ export async function createAcademiaRequest(
       : offContract(raw, statusIssue(parsed.error));
   }
   if (raw?.status === 422) {
-    return { ok: false, reason: 'ambiguous', propositions: propositions(raw.json) };
+    const found = propositions(raw.json);
+    return found.length > 0
+      ? { ok: false, reason: 'ambiguous', propositions: found }
+      : { ok: false, reason: 'address_not_found', detail: academiaDetail(raw) };
   }
   return failure(raw);
 }
@@ -326,4 +351,21 @@ export function readAcademiaPropertyView(
   timeoutMs: number = ACADEMIA_API_TIMEOUT_MS,
 ) {
   return readAcademiaView('bien', key, id, bien, fetchImpl, timeoutMs);
+}
+
+// Mission 161 — `GET /etat` : la clé posée est-elle la vraie (« ok », sans « essai »), celle
+// d'essai, refusée, ou Academia muette ? Pour les opérateurs (`/erreurs`), jamais la clé elle-même.
+export type AcademiaKeyCheck = 'real' | 'trial' | 'refused' | 'unavailable';
+
+export async function checkAcademiaKey(
+  key: string,
+  fetchImpl: AcademiaFetch = fetch,
+  timeoutMs: number = ACADEMIA_API_TIMEOUT_MS,
+): Promise<AcademiaKeyCheck> {
+  const raw = await send(fetchImpl, key, 'GET', '/etat', undefined, timeoutMs);
+  if (!raw || raw.status === 0 || raw.status >= 500) return 'unavailable';
+  if (raw.status !== 200) return 'refused';
+  const body = (raw.json ?? {}) as Record<string, unknown>;
+  if (body.ok !== true) return 'refused';
+  return body.essai === true ? 'trial' : 'real';
 }
