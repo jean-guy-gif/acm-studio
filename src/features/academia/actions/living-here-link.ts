@@ -11,6 +11,7 @@ import {
 } from '@/features/academia/services/academia-api';
 import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
 import { academiaQuotaMessage } from '@/features/academia/services/academia-messages';
+import { linkNeedsRenewal } from '@/features/academia/services/living-here-age';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { propertyAddressLine } from '@/lib/academia';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
@@ -125,15 +126,27 @@ async function linkFor(
   row: { academia_id: string; link_url: string | null; link_expires_at: string | null },
   currentUrl: string | null,
 ): Promise<LivingHereLinkState | 'gone'> {
-  if (
+  // Mission 161 — un seul lien par bien, réutilisé tant qu'il a moins de 7 jours (Jean-Guy, 18/11).
+  const current =
     row.link_url &&
     row.link_expires_at &&
     row.link_url === currentUrl &&
     new Date(row.link_expires_at).getTime() > Date.now()
-  ) {
-    return { state: 'ready', url: row.link_url, expiresAt: row.link_expires_at };
+      ? { url: row.link_url, expiresAt: row.link_expires_at }
+      : null;
+  if (current && !linkNeedsRenewal(current.expiresAt, new Date())) {
+    return { state: 'ready', ...current };
   }
   const link = await createAcademiaClientLink(key, row.academia_id);
+  // Le lien neuf n'a pas pu être créé : le lien encore valable est gardé, rien n'est bloqué, c'est
+  // noté au journal (un dossier effacé, lui, est redemandé dans le même geste).
+  if (!link.ok && current && link.reason !== 'not_found') {
+    await reportServerError(
+      'academia:client-link',
+      new Error(`Academia : ${link.reason}${link.detail ? ` — ${link.detail}` : ''} (lien gardé)`),
+    );
+    return { state: 'ready', ...current };
+  }
   if (!link.ok) {
     // Mission 161 — un dossier qu'Academia a effacé (90 jours, `effaceLe`) : il est redemandé, avec
     // un nouveau lien, dans le même geste.

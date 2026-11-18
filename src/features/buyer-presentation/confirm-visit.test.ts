@@ -50,6 +50,15 @@ const service = fakeSupabase((calls): FakeResponse => {
 
 vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
+// Mission 161 — le lien de 7 jours ou plus est renouvelé avant le message (simulé ici).
+const renewals = vi.hoisted(() => [] as string[]);
+vi.mock('@/features/academia/services/living-here-renewal', () => ({
+  renewLivingHereLinkIfOld: async (input: { projectId: string }) => {
+    renewals.push(input.projectId);
+    return 'fresh';
+  },
+}));
+vi.mock('@/features/demo/services/is-demo-agency', () => ({ isDemoAgency: async () => false }));
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
 vi.mock('@/lib/app-errors/report-server-error', () => ({
@@ -139,6 +148,8 @@ describe('« Confirmer la visite »', () => {
     const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
     const result = await confirmVisit(VISIT, tomorrow(), '10:30');
     expect(result.ok).toBe(true);
+    // Mission 161 — la préparation du message renouvelle d'abord le lien du mandat, s'il est vieux.
+    expect(renewals.length).toBeGreaterThan(0);
     if (!result.ok) return;
     expect(result.message).toContain('Votre sélection : https://x.test/dossier/abc');
     expect(result.message).not.toContain('Vivre ici');

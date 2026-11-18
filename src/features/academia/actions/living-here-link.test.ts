@@ -161,17 +161,39 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect(server.calls).toEqual([]);
   });
 
-  it('un lien valable déjà rangé : rendu tel quel, sans appel', async () => {
+  it('un lien de moins de 7 jours déjà rangé : rendu tel quel, sans appel (M161)', async () => {
     state.project = { ...state.project, academia_living_here_url: FAKE_LINK };
     state.request = {
       academia_id: FAKE_ACADEMIA_ID,
       state: 'pret',
       property_address: ADDRESS,
       link_url: FAKE_LINK,
-      link_expires_at: new Date(Date.now() + 10 * 86_400_000).toISOString(),
+      link_expires_at: new Date(Date.now() + 28 * 86_400_000).toISOString(),
     };
     expect((await createLivingHereLink(PROJECT)).state).toBe('ready');
     expect(server.calls).toEqual([]);
+  });
+
+  it('161 · un lien de 7 jours ou plus : un neuf ; la création en échec garde le lien valable, au journal', async () => {
+    const old = 'https://app.myacademia.ai/l/ancien0123';
+    const oldRequest = {
+      academia_id: FAKE_ACADEMIA_ID,
+      state: 'pret',
+      property_address: ADDRESS,
+      link_url: old,
+      link_expires_at: new Date(Date.now() + 20 * 86_400_000).toISOString(),
+    };
+    state.project = { ...state.project, academia_living_here_url: old };
+    state.request = oldRequest;
+    expect(await refreshLivingHereLink(PROJECT)).toMatchObject({ state: 'ready', url: FAKE_LINK });
+    db.reset();
+    const { reportServerError } = await import('@/lib/app-errors/report-server-error');
+    vi.mocked(reportServerError).mockClear();
+    server = fakeAcademia({ createLink: [{ status: 503 }, { status: 503 }] });
+    vi.stubGlobal('fetch', server.fetch);
+    expect(await refreshLivingHereLink(PROJECT)).toMatchObject({ state: 'ready', url: old });
+    expect(written('projects', 'update')).toBeNull();
+    expect(reportServerError).toHaveBeenCalled();
   });
 
   it('un lien expiré : un lien neuf sur le même dossier, sans nouveau dossier (il ne compte pas)', async () => {

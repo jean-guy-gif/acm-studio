@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { readMandateAcademiaLinks } from '@/features/academia/queries/read-academia-links';
+import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
+import { renewLivingHereLinkIfOld } from '@/features/academia/services/living-here-renewal';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import {
   livingHereAgeLine,
   type LivingHereAgeLine,
@@ -91,6 +94,17 @@ export async function confirmVisit(
   let livingHereUrl: string | null = null;
   let livingHerePastedAt: string | null = null;
   if (item.source === 'project' && withoutLivingHere !== true) {
+    // Mission 161 — la préparation d'un message à un acquéreur : le lien « Vivre ici » de 7 jours ou
+    // plus est renouvelé d'abord ; en échec, le lien encore valable part, rien n'est bloqué.
+    await renewLivingHereLinkIfOld({
+      admin,
+      agencyId: context.profile.agency_id,
+      projectId: item.reference,
+      access: academiaApiAccess({
+        demo: await isDemoAgency(context.profile.agency_id),
+        agencyId: context.profile.agency_id,
+      }),
+    });
     const read = await readMandateAcademiaLinks(admin, context.profile.agency_id, [item.reference]);
     // Jamais un message sans le lien EN SILENCE parce qu'il n'a pas pu être lu (M98) : l'échec est
     // au journal, le conseiller le lit et choisit ; la visite n'est pas bloquée (Jean-Guy, 09/11).

@@ -18,6 +18,7 @@ import {
 import { AGE_WARN_CLASS } from '@/features/academia/components/living-here-field';
 import type { LivingHereApiInitial } from '@/features/academia/queries/living-here-api-view';
 import {
+  linkNeedsRenewal,
   livingHereExpiry,
   type LivingHereExpiry,
 } from '@/features/academia/services/living-here-age';
@@ -147,7 +148,23 @@ export function LivingHereApiPanel({
       }
     });
 
-  // La préparation chez Academia : relancée toutes les 10 s, une demande à la fois, 2 minutes au plus.
+  // Mission 161 — un lien de 7 jours ou plus : la carte en demande un neuf, une fois, à l'ouverture
+  // (un écran du conseiller) ; en échec, le lien encore valable reste (décision de Jean-Guy, 18/11).
+  const renewed = useRef(false);
+  useEffect(() => {
+    if (renewed.current || view.kind !== 'ready') return;
+    if (!linkNeedsRenewal(view.expiresAt, new Date())) return;
+    renewed.current = true;
+    void refreshLivingHereLink(projectId)
+      .then((result) => {
+        if (result.state === 'ready' && result.url !== view.url) {
+          setView((previous) => fromState(result, previous));
+          router.refresh();
+        }
+      })
+      .catch(() => undefined);
+  }, [view, projectId, router]);
+  // La préparation chez Academia : relancée toutes les 5 s, une demande à la fois, 2 minutes au plus.
   const waiting = view.kind === 'waiting' && !view.gaveUp;
   useEffect(() => {
     if (!waiting) return;

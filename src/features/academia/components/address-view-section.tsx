@@ -7,6 +7,7 @@ import {
 } from '@/features/academia/queries/read-address-view';
 import type { AcademiaAccess } from '@/features/academia/services/academia-api-access';
 import { hintText, sectionTitle } from '@/components/ui/styles';
+import { renewLivingHereLinkIfOld } from '@/features/academia/services/living-here-renewal';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 // Mission 158 — le dossier d'adresse se lit à part du reste de la page (Jean-Guy, 17/11) : « Avant
@@ -28,13 +29,13 @@ export async function AddressViewSection({
   savedRange: { min: number | null; max: number | null };
   demo: boolean;
 }) {
-  const state = await readAddressView({
-    admin: createServiceRoleClient(),
-    agencyId,
-    projectId,
-    property,
-    access,
-  });
+  const admin = createServiceRoleClient();
+  // Mission 161 — un écran du conseiller : le lien « Vivre ici » de 7 jours ou plus est renouvelé en
+  // même temps, sans rien retenir (jamais une exception).
+  const [state] = await Promise.all([
+    readAddressView({ admin, agencyId, projectId, property, access }),
+    renewLivingHereLinkIfOld({ admin, agencyId, projectId, access }),
+  ]);
   return (
     <AddressViewPanel projectId={projectId} state={state} savedRange={savedRange} demo={demo} />
   );
