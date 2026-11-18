@@ -631,6 +631,13 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 18/11 · M159 · Durées : suite e2e complète 48 min (26 sur 29, trois aléas verts au rejeu en
   9,9 min) ; la spec du quartier 1,7 min ; relecteur 5 min puis 1,3 min sur le delta ; gardien-sql
   2 min puis 0,5 min.
+- 18/11 · M160 · Un lien posé sur un texte déjà cherché par les specs change ce qu'elles trouvent :
+  `getByRole('link', { name: 'Ouvrir le dossier' })` attrapait aussi le nom du vendeur, dont le
+  libellé accessible commence pareil (« Ouvrir le dossier de … ») ; viser un repère (`data-testid`)
+  plutôt qu'un nom qui peut se répéter. Un rendu statique (`renderToStaticMarkup`) ne garde pas
+  l'ordre des attributs qu'on croit : chercher l'attribut dans la balise (`[^>]*`), pas à une place.
+- 18/11 · M160 · Durées : suite e2e complète 46 min (28 sur 29, un aléa vert au rejeu en 1,4 min) ;
+  relecteur une passe, 1,6 min.
 
 ## La base
 
