@@ -7,6 +7,7 @@ import type {
 import {
   isShowableBlock,
   PLANNING_CATEGORIES,
+  SALES_COUNTED_SINCE,
 } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { ClientLanguage } from '@/lib/client-language';
 import type { ClientTexts } from '@/lib/client-texts/types';
@@ -352,7 +353,7 @@ export function neighbourhoodView(
     kind: 'sales',
     title: s.title,
     headline: block.list.length
-      ? s.headline(block.list.length, block.type, block.rooms, block.since)
+      ? s.headline(block.list.length, block.type, block.rooms, block.since ?? SALES_COUNTED_SINCE)
       : s.none,
     scale: block.listRadius != null ? s.within(meters(block.listRadius)) : null,
     timeline: block.list.map((sale) => ({

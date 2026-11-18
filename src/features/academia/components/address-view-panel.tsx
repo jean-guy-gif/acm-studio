@@ -20,6 +20,7 @@ import type {
   IndicativeValue,
   SourceInfo,
 } from '@/features/academia/services/property-view';
+import { GroupedDigitsInput, priceDigits } from '@/features/live-seller/components/price-input';
 import { saveAdvisorRange } from '@/features/subject-property/actions/save-advisor-range';
 import {
   formatDay,
@@ -125,6 +126,17 @@ function Indicative({ value }: { value: IndicativeValue }) {
   );
 }
 
+// L'état d'un permis, tel que la source le code (« termine »), écrit en français.
+const PERMIT_STATES: Record<string, string> = {
+  autorise: 'autorisé',
+  commence: 'travaux commencés',
+  termine: 'terminé',
+};
+function permitStateLabel(state: string | null): string | null {
+  if (!state) return null;
+  return PERMIT_STATES[state] ?? null;
+}
+
 // « Votre fourchette » : vide tant que le conseiller ne l'a pas saisie ou reprise lui-même.
 function YourRange({
   projectId,
@@ -135,8 +147,12 @@ function YourRange({
   saved: { min: number | null; max: number | null };
   indicative: IndicativeValue | null;
 }) {
-  const [min, setMin] = useState(saved.min != null ? String(saved.min) : '');
-  const [max, setMax] = useState(saved.max != null ? String(saved.max) : '');
+  const [min, setMin] = useState(
+    saved.min != null ? priceDigits(String(Math.round(saved.min))) : '',
+  );
+  const [max, setMax] = useState(
+    saved.max != null ? priceDigits(String(Math.round(saved.max))) : '',
+  );
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const save = () =>
@@ -155,8 +171,8 @@ function YourRange({
           type="button"
           className={`${btnSecondary} self-start text-sm`}
           onClick={() => {
-            setMin(String(indicative.low));
-            setMax(String(indicative.high));
+            setMin(priceDigits(String(Math.round(indicative.low))));
+            setMax(priceDigits(String(Math.round(indicative.high))));
             setMessage(null);
           }}
           data-testid="take-indicative"
@@ -164,41 +180,43 @@ function YourRange({
           Reprendre comme point de départ de votre fourchette
         </button>
       ) : null}
-      <div className="flex flex-wrap items-center gap-2">
-        <label htmlFor="your-range-min" className={fieldLabel}>
-          Votre fourchette
-        </label>
-        <input
+      {/* Les deux montants toujours sur la même ligne, écrits avec l'espace des milliers
+          (« 690 000 »), comme partout ailleurs ; la valeur envoyée reste le nombre seul. */}
+      <label htmlFor="your-range-min" className={fieldLabel}>
+        Votre fourchette
+      </label>
+      <div className="flex flex-nowrap items-center gap-2">
+        <GroupedDigitsInput
           id="your-range-min"
-          inputMode="numeric"
-          className={`${inputBase} w-36`}
-          value={min}
+          language="fr"
+          className={`${inputBase} w-32 min-w-0 text-right tabular-nums`}
+          digits={min}
+          onDigits={setMin}
           placeholder="—"
           aria-label="Bas de votre fourchette"
-          onChange={(event) => setMin(event.target.value)}
           data-testid="your-range-min"
         />
         <span className="text-sm text-zinc-600">à</span>
-        <input
-          inputMode="numeric"
-          className={`${inputBase} w-36`}
-          value={max}
+        <GroupedDigitsInput
+          language="fr"
+          className={`${inputBase} w-32 min-w-0 text-right tabular-nums`}
+          digits={max}
+          onDigits={setMax}
           placeholder="—"
           aria-label="Haut de votre fourchette"
-          onChange={(event) => setMax(event.target.value)}
           data-testid="your-range-max"
         />
         <span className="text-sm text-zinc-600">€</span>
-        <button
-          type="button"
-          className={`${btnSecondary} text-sm`}
-          disabled={pending}
-          onClick={save}
-          data-testid="your-range-save"
-        >
-          {pending ? 'Enregistrement…' : 'Enregistrer la fourchette'}
-        </button>
       </div>
+      <button
+        type="button"
+        className={`${btnSecondary} self-start text-sm`}
+        disabled={pending}
+        onClick={save}
+        data-testid="your-range-save"
+      >
+        {pending ? 'Enregistrement…' : 'Enregistrer la fourchette'}
+      </button>
       <p className={hintText}>Modifiable, c’est la seule enregistrée.</p>
       {message ? (
         <p
@@ -391,7 +409,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
                         ? `${permit.dwellings} logement${permit.dwellings > 1 ? 's' : ''}`
                         : null,
                       permit.address,
-                      permit.state,
+                      permitStateLabel(permit.state),
                       permit.distance != null ? `à ${meters(permit.distance)}` : null,
                     ]
                       .filter(Boolean)

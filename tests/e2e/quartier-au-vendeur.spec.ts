@@ -38,6 +38,41 @@ async function garciaId(page: Page): Promise<string> {
   return id!;
 }
 
+// Academia ne répond pas (panne, délai) : la spec s'arrête proprement, notée « skipped » avec ce
+// message, sans faire échouer le reste de la suite (Jean-Guy, 18/11). Un écran qui manquerait alors
+// qu'Academia a répondu reste, lui, un échec.
+const ACADEMIA_DOWN = 'Academia ne répond pas';
+async function waitForAcademia(
+  page: Page,
+  answered: () => Promise<boolean>,
+  failedTestId: string,
+  timeout: number,
+): Promise<void> {
+  let outcome = 'waiting' as 'answered' | 'failed' | 'waiting';
+  try {
+    await expect
+      .poll(
+        async () => {
+          if (await answered()) outcome = 'answered';
+          else if ((await page.getByTestId(failedTestId).count()) > 0) outcome = 'failed';
+          else outcome = 'waiting';
+          return outcome;
+        },
+        { timeout, intervals: [1_000, 2_000, 5_000] },
+      )
+      .not.toBe('waiting');
+  } catch {
+    // Le délai est dépassé : Academia n'a pas répondu.
+  }
+  if (outcome !== 'answered') {
+    const detail =
+      outcome === 'failed'
+        ? ((await page.getByTestId(failedTestId).first().textContent()) ?? '').trim()
+        : `aucune réponse en ${Math.round(timeout / 1000)} s`;
+    test.skip(true, `${ACADEMIA_DOWN} (${detail})`);
+  }
+}
+
 async function switchLanguage(page: Page): Promise<void> {
   await page.getByTestId('live-options').click();
   await page.getByTestId('live-language').click();
@@ -70,12 +105,31 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
     await test.step('Bien vendeur : le dossier d’adresse de démonstration', async () => {
       await page.goto(`/builder/${garcia}/property`);
       await page.getByTestId('living-here-create').click();
-      await expect(page.getByTestId('living-here-create')).toHaveCount(0, { timeout: 150_000 });
+      await waitForAcademia(
+        page,
+        async () => (await page.getByTestId('living-here-create').count()) === 0,
+        'living-here-failed',
+        150_000,
+      );
     });
 
     await test.step('Avant le rendez-vous : coché bloc par bloc, enregistré, relu', async () => {
       await page.goto(`/builder/${garcia}/avant-rendez-vous`);
       const panel = page.getByTestId('neighbourhood-choice');
+      // Le dossier d'adresse lu (« Votre fourchette » s'affiche dès qu'il l'est), puis le quartier
+      // (la vue « bien-client », un second appel) : Academia a répondu aux deux.
+      await waitForAcademia(
+        page,
+        async () => (await page.getByTestId('your-range').count()) > 0,
+        'address-view-failed',
+        60_000,
+      );
+      await waitForAcademia(
+        page,
+        async () => (await panel.count()) > 0,
+        'neighbourhood-choice-failed',
+        60_000,
+      );
       await expect(panel).toBeVisible({ timeout: 60_000 });
       await expect(panel).toContainText('Ce que verra le vendeur : le quartier');
       await expect(page.getByTestId('neighbourhood-choice-count')).toHaveText(

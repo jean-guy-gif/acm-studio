@@ -732,7 +732,7 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   comptage-garde suivi d'un `drop` est nécessaire : un `count(*)` seul n'empêche pas une insertion
   entre les deux (gardien-sql).
 - 18/11 · M159 · Une table figée (« jamais modifiée ») qui porte une clé étrangère `on delete set
-  null` doit laisser passer la seule mise à nul de cette clé, sinon la suppression d'un compte casse
+null` doit laisser passer la seule mise à nul de cette clé, sinon la suppression d'un compte casse
   (gardien-sql, le défaut de la M135 refait) ; et le refus de clés interdites dans un `jsonb` se fait
   à tous les niveaux (`jsonb_path_exists(blocks, '$.**.cle', '{}', true)`, silencieux), pas
   seulement au premier.

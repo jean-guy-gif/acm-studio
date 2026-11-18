@@ -4,6 +4,7 @@ import { NeighbourhoodChoicePanel } from '@/features/academia/components/neighbo
 import type { AddressViewProperty } from '@/features/academia/queries/read-address-view';
 import { readNeighbourhoodChoice } from '@/features/academia/queries/read-neighbourhood-choice';
 import type { AcademiaAccess } from '@/features/academia/services/academia-api-access';
+import { errorText } from '@/components/ui/styles';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
@@ -29,6 +30,15 @@ export async function NeighbourhoodChoiceSection({
     property,
     access,
   });
+  // Une lecture en échec le dit, jamais « rien » (M98) ; les autres cas, le dossier d'adresse les
+  // dit déjà au-dessus.
+  if (state.kind === 'failed') {
+    return (
+      <p className={errorText} role="alert" data-testid="neighbourhood-choice-failed">
+        Le quartier à montrer au vendeur n’a pas pu être lu : rechargez la page.
+      </p>
+    );
+  }
   if (state.kind !== 'ready') return null;
   return (
     <NeighbourhoodChoicePanel
