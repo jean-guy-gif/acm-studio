@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type Ref } from 'react';
+import { useRef, useState, type InputHTMLAttributes, type Ref } from 'react';
 
 import type { TextLanguage } from '@/lib/client-texts';
 
@@ -89,5 +89,50 @@ export function PriceInput({
       />
       <input ref={inputRef} type="hidden" name={name} value={digits} />
     </>
+  );
+}
+
+// Correctifs 159 — la même saisie, tenue par son parent (« Votre fourchette » sur « Avant le
+// rendez-vous ») : les chiffres groupés pendant la frappe, le curseur gardé après le même nombre de
+// chiffres qu'avant le regroupement, comme `PriceInput`.
+export function GroupedDigitsInput({
+  digits,
+  onDigits,
+  language,
+  ...rest
+}: {
+  digits: string;
+  onDigits: (digits: string) => void;
+  language: TextLanguage;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'inputMode'>) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <input
+      {...rest}
+      ref={ref}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      value={groupDigits(digits, language)}
+      onChange={(event) => {
+        const element = event.currentTarget;
+        const caret = element.selectionStart ?? element.value.length;
+        const digitsBefore = priceDigits(element.value.slice(0, caret)).length;
+        const next = priceDigits(element.value);
+        onDigits(next);
+        requestAnimationFrame(() => {
+          const input = ref.current;
+          if (!input) return;
+          const shown = groupDigits(next, language);
+          let position = 0;
+          let seen = 0;
+          while (position < shown.length && seen < digitsBefore) {
+            if (/\d/.test(shown[position]!)) seen += 1;
+            position += 1;
+          }
+          input.setSelectionRange(position, position);
+        });
+      }}
+    />
   );
 }
