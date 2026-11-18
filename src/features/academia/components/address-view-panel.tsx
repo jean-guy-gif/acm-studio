@@ -20,7 +20,7 @@ import type {
   IndicativeValue,
   SourceInfo,
 } from '@/features/academia/services/property-view';
-import { groupDigits, priceDigits } from '@/features/live-seller/components/price-input';
+import { GroupedDigitsInput, priceDigits } from '@/features/live-seller/components/price-input';
 import { saveAdvisorRange } from '@/features/subject-property/actions/save-advisor-range';
 import {
   formatDay,
@@ -147,8 +147,12 @@ function YourRange({
   saved: { min: number | null; max: number | null };
   indicative: IndicativeValue | null;
 }) {
-  const [min, setMin] = useState(saved.min != null ? String(saved.min) : '');
-  const [max, setMax] = useState(saved.max != null ? String(saved.max) : '');
+  const [min, setMin] = useState(
+    saved.min != null ? priceDigits(String(Math.round(saved.min))) : '',
+  );
+  const [max, setMax] = useState(
+    saved.max != null ? priceDigits(String(Math.round(saved.max))) : '',
+  );
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const save = () =>
@@ -167,8 +171,8 @@ function YourRange({
           type="button"
           className={`${btnSecondary} self-start text-sm`}
           onClick={() => {
-            setMin(String(indicative.low));
-            setMax(String(indicative.high));
+            setMin(priceDigits(String(Math.round(indicative.low))));
+            setMax(priceDigits(String(Math.round(indicative.high))));
             setMessage(null);
           }}
           data-testid="take-indicative"
@@ -182,26 +186,24 @@ function YourRange({
         Votre fourchette
       </label>
       <div className="flex flex-nowrap items-center gap-2">
-        <input
+        <GroupedDigitsInput
           id="your-range-min"
-          inputMode="numeric"
-          autoComplete="off"
+          language="fr"
           className={`${inputBase} w-32 min-w-0 text-right tabular-nums`}
-          value={groupDigits(min, 'fr')}
+          digits={min}
+          onDigits={setMin}
           placeholder="—"
           aria-label="Bas de votre fourchette"
-          onChange={(event) => setMin(priceDigits(event.target.value))}
           data-testid="your-range-min"
         />
         <span className="text-sm text-zinc-600">à</span>
-        <input
-          inputMode="numeric"
-          autoComplete="off"
+        <GroupedDigitsInput
+          language="fr"
           className={`${inputBase} w-32 min-w-0 text-right tabular-nums`}
-          value={groupDigits(max, 'fr')}
+          digits={max}
+          onDigits={setMax}
           placeholder="—"
           aria-label="Haut de votre fourchette"
-          onChange={(event) => setMax(priceDigits(event.target.value))}
           data-testid="your-range-max"
         />
         <span className="text-sm text-zinc-600">€</span>

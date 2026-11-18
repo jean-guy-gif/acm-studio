@@ -116,11 +116,18 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
     await test.step('Avant le rendez-vous : coché bloc par bloc, enregistré, relu', async () => {
       await page.goto(`/builder/${garcia}/avant-rendez-vous`);
       const panel = page.getByTestId('neighbourhood-choice');
-      // Le dossier d'adresse lu (sa valeur indicative, pour le conseiller seul) : Academia a répondu.
+      // Le dossier d'adresse lu (« Votre fourchette » s'affiche dès qu'il l'est), puis le quartier
+      // (la vue « bien-client », un second appel) : Academia a répondu aux deux.
       await waitForAcademia(
         page,
-        async () => (await page.getByTestId('indicative-value').count()) > 0,
+        async () => (await page.getByTestId('your-range').count()) > 0,
         'address-view-failed',
+        60_000,
+      );
+      await waitForAcademia(
+        page,
+        async () => (await panel.count()) > 0,
+        'neighbourhood-choice-failed',
         60_000,
       );
       await expect(panel).toBeVisible({ timeout: 60_000 });
