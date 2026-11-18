@@ -613,6 +613,24 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   reformaté le passage (une signature passée sur plusieurs lignes) : relire le fichier avant.
 - 17/11 · M158 · Durées : suite e2e complète 39 min (28 sur 28), les sept specs qui passent par
   « Avant le rendez-vous » 24 min ; relecteur une passe, 3 min.
+- 18/11 · M159 · Le faux client Supabase (`fake-supabase`) répond selon la DERNIÈRE table de la
+  chaîne : trois lectures lancées ensemble (`Promise.all`) reçoivent toutes la réponse de la dernière
+  et un garde passe par accident ; dans une action testée ainsi, les lectures gardées se font l'une
+  après l'autre (ou le test prend un faux client qui répond par table).
+- 18/11 · M159 · Une colonne `updated_at` n'est pas forcément tenue : celle de `subject_properties`
+  n'avait ni déclencheur ni écriture par le code (seules les tables des diagnostics et de la
+  copropriété la posaient) ; le relecteur l'a vu en lisant l'upsert. Avant de bâtir une règle sur
+  une date, vérifier QUI l'écrit (déclencheur dans la base, ou le code).
+- 18/11 · M159 · Une spec e2e qui lance le Live attend la fin du préchargement des photos
+  (`[data-photos-preloaded="true"]`) avant « Démarrer la présentation », sinon le clic ne fait rien ;
+  et une remise à zéro dans un `finally` part d'une page qui a le menu (`/builder`), jamais de la
+  scène du Live, sinon son échec masque l'erreur d'origine.
+- 18/11 · M159 · Une capture de l'écran fautif, prise dans la copie figée de la spec juste avant
+  la mesure (`page.screenshot`), a montré en une passe le débordement (la cinquième case des risques
+  sous la barre à 1024 × 700) que la capture d'échec, prise après la remise à zéro, ne montrait pas.
+- 18/11 · M159 · Durées : suite e2e complète 48 min (26 sur 29, trois aléas verts au rejeu en
+  9,9 min) ; la spec du quartier 1,7 min ; relecteur 5 min puis 1,3 min sur le delta ; gardien-sql
+  2 min puis 0,5 min.
 
 ## La base
 
@@ -713,6 +731,11 @@ supabase` sans version) : `db push` refusait `[inbucket]` (devenu `[local_smtp]`
   pose dans un bloc `do $$ … $$`, où il tient jusqu'à la fin du fichier. Le verrou avant un
   comptage-garde suivi d'un `drop` est nécessaire : un `count(*)` seul n'empêche pas une insertion
   entre les deux (gardien-sql).
+- 18/11 · M159 · Une table figée (« jamais modifiée ») qui porte une clé étrangère `on delete set
+  null` doit laisser passer la seule mise à nul de cette clé, sinon la suppression d'un compte casse
+  (gardien-sql, le défaut de la M135 refait) ; et le refus de clés interdites dans un `jsonb` se fait
+  à tous les niveaux (`jsonb_path_exists(blocks, '$.**.cle', '{}', true)`, silencieux), pas
+  seulement au premier.
 
 ## Les rendus
 
