@@ -1,3 +1,7 @@
+import type {
+  NeighbourhoodBlockKey,
+  PlanningCategory,
+} from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatNumber } from '@/lib/format';
 
@@ -187,6 +191,176 @@ export const ENGLISH_TEXTS: ClientTexts = {
     scanOnly: 'Scan to discover the neighbourhood.',
     validUntil: (day) => `Link valid until ${day}.`,
   },
+  quartier: {
+    kicker: 'Your neighbourhood',
+    salesKicker: 'What your neighbours sold',
+    home: 'Your property',
+    source: (name, day) => `Source: ${name}${day ? `, data as of ${day}` : ''}`,
+    frozen: (day) => `Public information as of ${day}.`,
+    sources: {
+      urbanisme: 'Géoportail de l’urbanisme (IGN, French planning portal)',
+      risques: 'Géorisques (French Ministry for the Ecological Transition)',
+      population: 'Insee (French statistics office), local tax income data, 200 m grid squares',
+      copropriete: 'National register of co-ownerships (Anah)',
+      permis: 'Sitadel (SDES), building permits',
+      ventes: 'DVF (DGFiP), sales of existing homes',
+    } satisfies Record<NeighbourhoodBlockKey, string>,
+    within: (meters) => `Around the property, within ${meters}`,
+    range: (from, to) => `${from} to ${to}`,
+    nothing: 'nothing recorded',
+    diagram: 'A diagram of distances, not a map: directions are not known.',
+    scale: { commune: 'the municipality', address: 'the property’s address' },
+    planning: {
+      title: 'Planning',
+      parcel: 'Your plot',
+      headline: (parcel, within40, meters40) =>
+        parcel > 0
+          ? `${parcel} planning ${parcel > 1 ? 'items' : 'item'} recorded on your plot.`
+          : within40 > 0
+            ? `Nothing recorded on your plot; ${within40} ${within40 > 1 ? 'items' : 'item'} within ${meters40}.`
+            : `Nothing recorded on your plot, nor within ${meters40}.`,
+      item: (category, count) => {
+        const many = count > 1;
+        const words: Record<PlanningCategory, [string, string]> = {
+          voirie: ['site reserved for a road', 'sites reserved for a road'],
+          alignement: ['road alignment line', 'road alignment lines'],
+          equipement: [
+            'site reserved for a public facility',
+            'sites reserved for public facilities',
+          ],
+          logements: ['site reserved for housing', 'sites reserved for housing'],
+          attente: ['area awaiting a project', 'areas awaiting a project'],
+          oap: ['development guideline', 'development guidelines'],
+          perimetre: ['special local planning area', 'special local planning areas'],
+        };
+        return `${count} ${words[category][many ? 1 : 0]}`;
+      },
+      count: (count) => (count > 1 ? 'items recorded' : 'item recorded'),
+      nearest: (meters) => `the nearest at ${meters}`,
+    },
+    permits: {
+      title: 'Building permits',
+      headline: (count, meters, since) =>
+        count > 0
+          ? `${count} building ${count > 1 ? 'permits' : 'permit'} within ${meters}${since ? `, since ${since}` : ''}.`
+          : `No building permit recorded within ${meters}${since ? ` since ${since}` : ''}.`,
+      count: (count) => (count > 1 ? 'permits' : 'permit'),
+      none: 'none',
+      more: (count, meters) =>
+        `and ${count} other ${count > 1 ? 'permits' : 'permit'} within ${meters}`,
+      at: (meters) =>
+        `at ${meters.length > 1 ? `${meters.slice(0, -1).join(', ')} and ${meters[meters.length - 1]}` : meters[0]}`,
+      line: ({ dwellings, surface, state, month, distance }) => {
+        const parts = [
+          dwellings != null ? `${dwellings} ${dwellings > 1 ? 'homes' : 'home'}` : null,
+          surface,
+          state === 'autorise'
+            ? month
+              ? `approved in ${month}`
+              : 'approved'
+            : state === 'commence'
+              ? 'works started'
+              : state === 'termine'
+                ? 'completed'
+                : null,
+        ].filter(Boolean);
+        return `${parts.join(', ')}${distance ? `${parts.length ? ' · ' : ''}at ${distance}` : ''}`;
+      },
+    },
+    risks: {
+      title: 'Risks',
+      headline: (earthquake, clay) => {
+        const same =
+          (earthquake === 2 && clay === 1) ||
+          (earthquake === 4 && clay === 2) ||
+          (earthquake === 5 && clay === 3);
+        if (same && clay != null)
+          return `Earthquake and clay: a ${['low', 'medium', 'high'][clay - 1]} level.`;
+        const parts = [
+          earthquake != null
+            ? `Earthquake: zone ${earthquake} of 5, “${['very low', 'low', 'moderate', 'medium', 'high'][earthquake - 1]}”`
+            : null,
+          clay != null ? `clay: ${['low', 'medium', 'high'][clay - 1]} exposure` : null,
+        ].filter(Boolean);
+        return parts.length
+          ? `${parts.join('; ')}.`
+          : 'The risks of the municipality and of your address.';
+      },
+      earthquake: 'Earthquake',
+      clay: 'Clay',
+      radon: 'Radon',
+      earthquakeLevels: ['very low', 'low', 'moderate', 'medium', 'high'],
+      clayLevels: ['low', 'medium', 'high'],
+      radonLevels: ['low', 'low, easier transfer', 'significant'],
+      earthquakeCaption: (level) =>
+        `zone ${level} of 5: “${['very low', 'low', 'moderate', 'medium', 'high'][level - 1]}”`,
+      clayCaption: (level) => `${['low', 'medium', 'high'][level - 1]} exposure, on 3 levels`,
+      radonCaption: (level) =>
+        `category ${level} of 3: “${['low', 'low, easier transfer', 'significant'][level - 1]}” potential`,
+      disasters: 'Natural disasters',
+      disastersCaption: (count, latest) =>
+        count === 0
+          ? 'none recognised'
+          : `recognised${latest ? `, ${count > 1 ? 'the latest ' : ''}on ${latest}` : ''}`,
+      flood: 'Listed municipality',
+      floodCaption: (name) => `area at significant flood risk: ${name}`,
+    },
+    population: {
+      title: 'Population',
+      headline: (inhabitants) => `${inhabitants} residents around your property.`,
+      within: (meters) => `Within ${meters}, rounded figures`,
+      inhabitants: 'residents',
+      households: 'households',
+      perHousehold: 'people per household',
+      pictogram: (count, what) => `(one pictogram: ${count} ${what})`,
+    },
+    condominium: {
+      title: 'The co-ownership',
+      headline: (lots, from, to) =>
+        `A co-ownership${lots != null ? ` of ${lots} residential ${lots > 1 ? 'units' : 'unit'}` : ''}${
+          from != null && to != null
+            ? `, built between ${from} and ${to}`
+            : to != null
+              ? `, built before ${to}`
+              : from != null
+                ? `, built after ${from}`
+                : ''
+        }.`,
+      atAddress: 'At the property’s address',
+      near: (meters) => `About ${meters} from the property`,
+      built: 'built',
+      today: 'today',
+      lots: 'residential units',
+      syndic: 'Managing agent’s mandate',
+      syndicEnded: (day) => `ended on ${day}`,
+      syndicActive: 'ongoing',
+    },
+    sales: {
+      title: 'Actual sales',
+      headline: (count, type, rooms, since) => {
+        const many = count > 1;
+        const noun =
+          type === 'maison'
+            ? many
+              ? 'houses'
+              : 'house'
+            : type === 'appartement'
+              ? many
+                ? 'flats'
+                : 'flat'
+              : many
+                ? 'homes'
+                : 'home';
+        const size = rooms != null ? ` with ${rooms} ${rooms > 1 ? 'rooms' : 'room'}` : '';
+        return `${count} ${noun}${size} sold around you${since ? ` since ${since}` : ''}`;
+      },
+      within: (meters) => `Within ${meters} of your property`,
+      about: (meters) => `about ${meters} away`,
+      legend: 'Each dot: a sale, at its date, higher when the price is higher. Actual sale prices.',
+      none: 'No sale recorded around you.',
+      shortPrice: (thousands) => `€${thousands}k`,
+    },
+  },
   live: {
     perceived: {
       question: 'At what price would you position your property today?',
@@ -276,6 +450,8 @@ export const ENGLISH_TEXTS: ClientTexts = {
       price_analysis: 'Price analysis',
       conclusion: 'Conclusion',
       closing_question: 'Ready to launch?',
+      neighbourhood_block: 'Your neighbourhood',
+      neighbourhood_sales: 'What your neighbours sold',
     },
     shell: {
       kicker: 'Your property meeting',

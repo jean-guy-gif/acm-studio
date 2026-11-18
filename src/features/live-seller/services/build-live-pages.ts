@@ -1,5 +1,6 @@
 import { dpeMedian } from '@/features/dpe/services/dpe';
 import type { LivePresentationMode } from '@/features/live-seller/services/presentation-mode';
+import type { NeighbourhoodBlockKey } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { LiveComparableResponse, LiveSellerSummary } from '@/features/live-seller/types';
 
 // MISSION 51 — la navigation ne lit d'un concurrent que son id et sa réponse persistée.
@@ -31,6 +32,28 @@ export type LiveNavSummary = Partial<
 export type LiveNavData = {
   comparables: LiveNavComparable[];
   sellerSummary?: LiveNavSummary | null;
+  // Mission 159 — les blocs du quartier cochés par le conseiller (le dernier instantané valable) :
+  // leurs seuls noms, jamais leur contenu.
+  neighbourhood?: readonly NeighbourhoodBlockKey[];
+};
+
+// Mission 159 — l'ordre décidé par Jean-Guy (17/11, planche M159-2) : les blocs du quartier après
+// « Votre valeur perçue », les ventes réelles juste avant « Analyse des prix ».
+const NEIGHBOURHOOD_ORDER: readonly Exclude<NeighbourhoodBlockKey, 'ventes'>[] = [
+  'urbanisme',
+  'risques',
+  'population',
+  'copropriete',
+  'permis',
+];
+// Le titre de l'écran dans l'aperçu du conseiller (« Ce que verra le vendeur »).
+const NEIGHBOURHOOD_TITLES: Record<NeighbourhoodBlockKey, string> = {
+  urbanisme: 'Votre quartier — l’urbanisme',
+  risques: 'Votre quartier — les risques',
+  population: 'Votre quartier — la population',
+  copropriete: 'Votre quartier — la copropriété',
+  permis: 'Votre quartier — les permis de construire',
+  ventes: 'Les ventes réelles autour du bien',
 };
 
 // The ordered page model that drives the Live comparative UI. Pure/deterministic:
@@ -59,7 +82,10 @@ export type LivePageType =
   | 'seller_revised_price'
   | 'price_analysis'
   | 'conclusion'
-  | 'closing_question';
+  | 'closing_question'
+  // Mission 159 — le quartier montré au vendeur : un écran par bloc coché, sans question.
+  | 'neighbourhood_block'
+  | 'neighbourhood_sales';
 
 export type LivePage = {
   key: string;
@@ -69,6 +95,8 @@ export type LivePage = {
   comparableId: string | null;
   comparableIndex: number | null; // 1-based position among retained
   step: 1 | 2 | 3 | 4 | null; // step within the 4-step loop
+  // Mission 159 — le bloc du quartier de l'écran (`neighbourhood_block`, `neighbourhood_sales`).
+  block?: NeighbourhoodBlockKey;
 };
 
 // MISSION 95 — le rythme du Live, choisi par le conseiller sur « Avant le rendez-vous ».
@@ -154,6 +182,21 @@ export function buildLivePages(
       comparableId: null,
       comparableIndex: null,
       step: null,
+    });
+  }
+
+  // Mission 159 — les mêmes écrans dans les trois façons de présenter, sans plafond.
+  const neighbourhood = live?.neighbourhood ?? [];
+  for (const block of NEIGHBOURHOOD_ORDER) {
+    if (!neighbourhood.includes(block)) continue;
+    pages.push({
+      key: `neighbourhood:${block}`,
+      type: 'neighbourhood_block',
+      title: NEIGHBOURHOOD_TITLES[block],
+      comparableId: null,
+      comparableIndex: null,
+      step: null,
+      block,
     });
   }
 
@@ -262,6 +305,18 @@ export function buildLivePages(
         step: null,
       });
     }
+  }
+
+  if (neighbourhood.includes('ventes')) {
+    pages.push({
+      key: 'neighbourhood:ventes',
+      type: 'neighbourhood_sales',
+      title: NEIGHBOURHOOD_TITLES.ventes,
+      comparableId: null,
+      comparableIndex: null,
+      step: null,
+      block: 'ventes',
+    });
   }
 
   pages.push(

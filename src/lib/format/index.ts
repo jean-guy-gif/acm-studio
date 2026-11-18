@@ -139,6 +139,22 @@ export function formatDay(
   }).format(date);
 }
 
+// Mission 159 — un mois pour le client : « novembre 2025 » / « November 2025 » (« 2025-11 »).
+export function formatMonth(value: string, language: ClientLanguage = 'fr'): string {
+  const found = /^(\d{4})-(\d{2})$/.exec(value);
+  if (!found) return MISSING;
+  return new Intl.DateTimeFormat(LOCALES[language], {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(Date.UTC(Number(found[1]), Number(found[2]) - 1, 15));
+}
+
+// Une distance pour le client : « 153 m », l'espace insécable (« 40 m » ne se coupe jamais).
+export function formatMeters(value: number, options: FormatNumberOptions = {}): string {
+  return withUnit(value, 'm', { maxDecimals: 0, ...options });
+}
+
 // Une date et son heure (« 06/10/2026 21:14:03 »), pour « Validé le … ».
 export function formatDateTime(value: string | number | Date): string {
   const date = value instanceof Date ? value : new Date(value);

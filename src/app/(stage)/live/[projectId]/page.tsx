@@ -7,6 +7,10 @@ import { hasLiveStarted, initialLiveIndex } from '@/features/live-seller/service
 import { needsLiveShortlist } from '@/features/live-seller/services/live-shortlist';
 import { getProject } from '@/features/projects/queries/get-project';
 import { readNeighbourhoodLink } from '@/features/neighbourhood-link/queries/read-neighbourhood-link';
+import {
+  neighbourhoodKeys,
+  readNeighbourhoodSnapshot,
+} from '@/features/neighbourhood-link/queries/read-neighbourhood-snapshot';
 import { createClient } from '@/lib/supabase/server';
 
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
@@ -104,9 +108,16 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
   // avant, elle n'entre donc pas dans la charge tant que le vendeur ne s'est pas prononcé.
   const advisorRange = presentation.live ? authorizeAdvisorRange(presentation.live) : null;
 
+  // Mission 159 — le quartier coché par le conseiller : le dernier instantané valable. Sans lui,
+  // aucun écran du quartier (Jean-Guy, 17/11).
+  const quartier = await readNeighbourhoodSnapshot(
+    await createClient(),
+    project.agency_id,
+    projectId,
+  );
   const rhythm = presentation.project.liveRhythm;
   const pages = buildLivePages(
-    projectedLive,
+    projectedLive && { ...projectedLive, neighbourhood: neighbourhoodKeys(quartier) },
     presentation.property != null,
     rhythm,
     presentationMode,
@@ -156,6 +167,7 @@ export default async function LiveProjectPage({ params, searchParams }: LivePage
         buyersReveal={liveBuyersReveal(buyers, new Date())}
         language={clientLanguage(project.language)}
         neighbourhood={neighbourhood}
+        quartier={quartier.snapshot?.blocks ?? null}
       />
     </DemoModeProvider>
   );

@@ -115,6 +115,10 @@ create function pg_temp.fixture(p_table text, p_column text) returns text langua
     when 'project_academia_requests.state' then $v$'en_cours'$v$
     when 'project_academia_requests.property_address' then $v$'1 rue de l''Essai, 06000 Nice'$v$
     when 'project_academia_requests.address_sent' then $v$'1 rue de l''Essai, 06000 Nice'$v$
+    -- Mission 159 : l'instantané du quartier.
+    when 'project_neighbourhood_snapshots.property_address' then $v$'1 rue de l''Essai, 06000 Nice'$v$
+    when 'project_neighbourhood_snapshots.property_type' then $v$'maison'$v$
+    when 'project_neighbourhood_snapshots.blocks' then $v$'{}'::jsonb$v$
     else null
   end
 $$;

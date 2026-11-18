@@ -1,3 +1,7 @@
+import type {
+  NeighbourhoodBlockKey,
+  PlanningCategory,
+} from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { LivePageType } from '@/features/live-seller/services/build-live-pages';
 import type {
   ComparisonCriterion,
@@ -123,6 +127,101 @@ export type ClientTexts = {
     // Le QR code seul, sans l'adresse du lien à taper.
     scanOnly: string;
     validUntil: (day: string) => string;
+  };
+  // Mission 159 — le quartier montré au vendeur (vue « bien-client » du dossier d'adresse) : des
+  // phrases recomposées depuis des chiffres, jamais le texte de la source (Jean-Guy, 17/11).
+  // « Rien de relevé », jamais « rien de prévu » ; chaque fait dit son échelle. Les distances et les
+  // dates arrivent déjà écrites (« 40 m », « 7 octobre 2026 »).
+  quartier: {
+    kicker: string;
+    salesKicker: string;
+    home: string;
+    source: (name: string, day: string | null) => string;
+    // Le nom de la source publique de chaque bloc, écrit par ACM (jamais par le service).
+    sources: Record<NeighbourhoodBlockKey, string>;
+    frozen: (day: string) => string;
+    within: (meters: string) => string;
+    range: (from: string, to: string) => string;
+    nothing: string;
+    diagram: string;
+    scale: { commune: string; address: string };
+    planning: {
+      title: string;
+      parcel: string;
+      headline: (parcel: number, within40: number, meters40: string) => string;
+      item: (category: PlanningCategory, count: number) => string;
+      count: (count: number) => string;
+      nearest: (meters: string) => string;
+    };
+    permits: {
+      title: string;
+      headline: (count: number, meters: string, since: number | null) => string;
+      count: (count: number) => string;
+      none: string;
+      at: (meters: string[]) => string;
+      // « et 3 autres permis » sous la liste, quand elle est coupée pour tenir sur l'écran.
+      more: (count: number, meters: string) => string;
+      line: (input: {
+        dwellings: number | null;
+        surface: string | null;
+        state: 'autorise' | 'commence' | 'termine' | null;
+        month: string | null;
+        distance: string | null;
+      }) => string;
+    };
+    risks: {
+      title: string;
+      headline: (earthquake: number | null, clay: number | null) => string;
+      earthquake: string;
+      clay: string;
+      radon: string;
+      earthquakeLevels: [string, string, string, string, string];
+      clayLevels: [string, string, string];
+      radonLevels: [string, string, string];
+      earthquakeCaption: (level: number) => string;
+      clayCaption: (level: number) => string;
+      radonCaption: (level: number) => string;
+      disasters: string;
+      disastersCaption: (count: number, latest: string | null) => string;
+      flood: string;
+      floodCaption: (name: string) => string;
+    };
+    population: {
+      title: string;
+      headline: (inhabitants: string) => string;
+      within: (meters: string) => string;
+      inhabitants: string;
+      households: string;
+      perHousehold: string;
+      pictogram: (count: string, what: string) => string;
+    };
+    condominium: {
+      title: string;
+      headline: (lots: number | null, from: number | null, to: number | null) => string;
+      atAddress: string;
+      near: (meters: string) => string;
+      built: string;
+      today: string;
+      lots: string;
+      syndic: string;
+      syndicEnded: (day: string) => string;
+      syndicActive: string;
+    };
+    sales: {
+      title: string;
+      headline: (
+        count: number,
+        type: 'maison' | 'appartement' | null,
+        rooms: number | null,
+        since: number | null,
+      ) => string;
+      within: (meters: string) => string;
+      about: (meters: string) => string;
+      legend: string;
+      none: string;
+      // « 877 k€ », écrit à côté de chaque point de la frise.
+      shortPrice: (thousands: string) => string;
+    };
   };
   live: LiveTexts;
   documents: DocumentTexts;

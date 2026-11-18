@@ -37,6 +37,10 @@ import { BUYER_CRITERION_LABELS } from '@/features/buyers/types';
 import { PRICE_ALIGNMENT_LABELS } from '@/features/price-positioning/services/price-alignment';
 import { CONNECTION_LOST_MESSAGE } from '@/features/live-seller/services/guarded-save';
 import { budgetStepLabel } from '@/features/buyers/services/budget-steps';
+import type {
+  NeighbourhoodBlockKey,
+  PlanningCategory,
+} from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatNumber } from '@/lib/format';
 
@@ -144,6 +148,185 @@ export const FRENCH_TEXTS: ClientTexts = {
     scanOnly: 'Scannez pour découvrir le quartier.',
     validUntil: (day) => `Lien valable jusqu’au ${day}.`,
   },
+  quartier: {
+    kicker: 'Votre quartier',
+    salesKicker: 'Vos voisins ont vendu',
+    home: 'Votre bien',
+    source: (name, day) => `Source : ${name}${day ? `, données du ${day}` : ''}`,
+    frozen: (day) => `Informations publiques telles qu’au ${day}.`,
+    sources: {
+      urbanisme: 'Géoportail de l’urbanisme (IGN)',
+      risques: 'Géorisques (ministère de la Transition écologique)',
+      population: 'Insee, revenus fiscaux localisés (Filosofi), carreaux de 200 m',
+      copropriete: 'Registre national des copropriétés (Anah)',
+      permis: 'Sitadel (SDES), permis de construire',
+      ventes: 'DVF (DGFiP), ventes de logements anciens',
+    } satisfies Record<NeighbourhoodBlockKey, string>,
+    within: (meters) => `Autour du bien, à moins de ${meters}`,
+    range: (from, to) => `${from} à ${to}`,
+    nothing: 'rien de relevé',
+    diagram: 'Schéma des distances, pas une carte : les directions ne sont pas connues.',
+    scale: { commune: 'la commune', address: 'l’adresse du bien' },
+    planning: {
+      title: 'L’urbanisme',
+      parcel: 'Votre parcelle',
+      headline: (parcel, within40, meters40) =>
+        parcel > 0
+          ? `${parcel} ${parcel > 1 ? 'éléments d’urbanisme relevés' : 'élément d’urbanisme relevé'} sur votre parcelle.`
+          : within40 > 0
+            ? `Rien de relevé sur votre parcelle ; ${within40} ${within40 > 1 ? 'éléments' : 'élément'} à moins de ${meters40}.`
+            : `Rien de relevé sur votre parcelle, ni à moins de ${meters40}.`,
+      item: (category, count) => {
+        const many = count > 1;
+        const words: Record<PlanningCategory, [string, string]> = {
+          voirie: ['emplacement réservé pour une voie', 'emplacements réservés pour une voie'],
+          alignement: ['alignement de voie', 'alignements de voie'],
+          equipement: [
+            'emplacement réservé pour un équipement public',
+            'emplacements réservés pour des équipements publics',
+          ],
+          logements: [
+            'emplacement réservé pour des logements',
+            'emplacements réservés pour des logements',
+          ],
+          attente: ['périmètre d’attente de projet', 'périmètres d’attente de projet'],
+          oap: ['orientation d’aménagement', 'orientations d’aménagement'],
+          perimetre: [
+            'périmètre particulier du plan local d’urbanisme',
+            'périmètres particuliers du plan local d’urbanisme',
+          ],
+        };
+        return `${count} ${words[category][many ? 1 : 0]}`;
+      },
+      count: (count) => (count > 1 ? 'éléments relevés' : 'élément relevé'),
+      nearest: (meters) => `le plus proche à ${meters}`,
+    },
+    permits: {
+      title: 'Les permis de construire',
+      headline: (count, meters, since) =>
+        count > 0
+          ? `${count} permis de construire à moins de ${meters}${since ? `, depuis ${since}` : ''}.`
+          : `Aucun permis de construire relevé à moins de ${meters}${since ? ` depuis ${since}` : ''}.`,
+      count: () => 'permis',
+      none: 'aucun',
+      more: (count, meters) =>
+        `et ${count} ${count > 1 ? 'autres permis' : 'autre permis'} à moins de ${meters}`,
+      at: (meters) =>
+        `à ${meters.length > 1 ? `${meters.slice(0, -1).join(', à ')} et à ${meters[meters.length - 1]}` : meters[0]}`,
+      line: ({ dwellings, surface, state, month, distance }) => {
+        const parts = [
+          dwellings != null ? `${dwellings} ${dwellings > 1 ? 'logements' : 'logement'}` : null,
+          surface,
+          state === 'autorise'
+            ? month
+              ? `autorisé en ${month}`
+              : 'autorisé'
+            : state === 'commence'
+              ? 'travaux commencés'
+              : state === 'termine'
+                ? 'terminé'
+                : null,
+        ].filter(Boolean);
+        return `${parts.join(', ')}${distance ? `${parts.length ? ' · ' : ''}à ${distance}` : ''}`;
+      },
+    },
+    risks: {
+      title: 'Les risques',
+      headline: (earthquake, clay) => {
+        const same =
+          (earthquake === 2 && clay === 1) ||
+          (earthquake === 4 && clay === 2) ||
+          (earthquake === 5 && clay === 3);
+        if (same && clay != null)
+          return `Séisme et argiles : un niveau ${['faible', 'moyen', 'fort'][clay - 1]}.`;
+        const parts = [
+          earthquake != null
+            ? `Séisme : zone ${earthquake} sur 5, « ${['très faible', 'faible', 'modérée', 'moyenne', 'forte'][earthquake - 1]} »`
+            : null,
+          clay != null ? `argiles : exposition ${['faible', 'moyenne', 'forte'][clay - 1]}` : null,
+        ].filter(Boolean);
+        return parts.length
+          ? `${parts.join(' ; ')}.`
+          : 'Les risques de la commune et de votre adresse.';
+      },
+      earthquake: 'Séisme',
+      clay: 'Argiles',
+      radon: 'Radon',
+      earthquakeLevels: ['très faible', 'faible', 'modérée', 'moyenne', 'forte'],
+      clayLevels: ['faible', 'moyen', 'fort'],
+      radonLevels: ['faible', 'faible, transfert facilité', 'significatif'],
+      earthquakeCaption: (level) =>
+        `zone ${level} sur 5 : « ${['très faible', 'faible', 'modérée', 'moyenne', 'forte'][level - 1]} »`,
+      clayCaption: (level) =>
+        `exposition ${['faible', 'moyenne', 'forte'][level - 1]}, sur 3 niveaux`,
+      radonCaption: (level) =>
+        `catégorie ${level} sur 3 : potentiel « ${['faible', 'faible, transfert facilité', 'significatif'][level - 1]} »`,
+      disasters: 'Catastrophes naturelles',
+      disastersCaption: (count, latest) =>
+        count === 0
+          ? 'aucune reconnue'
+          : `${count > 1 ? 'reconnues' : 'reconnue'}${latest ? `, ${count > 1 ? 'la dernière ' : ''}le ${latest}` : ''}`,
+      flood: 'Commune classée',
+      floodCaption: (name) => `territoire à risque important d’inondation : ${name}`,
+    },
+    population: {
+      title: 'La population',
+      headline: (inhabitants) => `${inhabitants} habitants autour de votre bien.`,
+      within: (meters) => `À moins de ${meters}, valeurs arrondies`,
+      inhabitants: 'habitants',
+      households: 'ménages',
+      perHousehold: 'personnes par ménage',
+      pictogram: (count, what) => `(un pictogramme : ${count} ${what})`,
+    },
+    condominium: {
+      title: 'La copropriété',
+      headline: (lots, from, to) =>
+        `Une copropriété${lots != null ? ` de ${lots} ${lots > 1 ? 'lots' : 'lot'} d’habitation` : ''}${
+          from != null && to != null
+            ? `, construite entre ${from} et ${to}`
+            : to != null
+              ? `, construite avant ${to}`
+              : from != null
+                ? `, construite après ${from}`
+                : ''
+        }.`,
+      atAddress: 'À l’adresse du bien',
+      near: (meters) => `À environ ${meters} du bien`,
+      built: 'construite',
+      today: 'aujourd’hui',
+      lots: 'lots d’habitation',
+      syndic: 'Mandat de syndic',
+      syndicEnded: (day) => `terminé le ${day}`,
+      syndicActive: 'en cours',
+    },
+    sales: {
+      title: 'Les ventes réelles',
+      headline: (count, type, rooms, since) => {
+        const many = count > 1;
+        const noun =
+          type === 'maison'
+            ? many
+              ? 'maisons'
+              : 'maison'
+            : type === 'appartement'
+              ? many
+                ? 'appartements'
+                : 'appartement'
+              : many
+                ? 'logements'
+                : 'logement';
+        const sold = type === 'maison' ? (many ? 'vendues' : 'vendue') : many ? 'vendus' : 'vendu';
+        const size = rooms != null ? (rooms > 1 ? ` de ${rooms} pièces` : ' d’une pièce') : '';
+        return `${count} ${noun}${size} ${sold} autour de chez vous${since ? ` depuis ${since}` : ''}`;
+      },
+      within: (meters) => `À moins de ${meters} de votre bien`,
+      about: (meters) => `à environ ${meters}`,
+      legend:
+        'Chaque point : une vente, à sa date, plus haut quand le prix est plus élevé. Prix de vente réels.',
+      none: 'Aucune vente relevée autour de chez vous.',
+      shortPrice: (thousands) => `${thousands} k€`,
+    },
+  },
   live: {
     perceived: {
       question: 'À quel prix positionneriez-vous aujourd’hui votre bien ?',
@@ -233,6 +416,8 @@ export const FRENCH_TEXTS: ClientTexts = {
       price_analysis: 'Analyse des prix',
       conclusion: 'Conclusion',
       closing_question: 'Prêt à lancer ?',
+      neighbourhood_block: 'Votre quartier',
+      neighbourhood_sales: 'Vos voisins ont vendu',
     },
     shell: {
       kicker: 'Rendez-vous vendeur',

@@ -27,6 +27,7 @@ import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import { formatPercent, formatSquareMeters } from '@/lib/format';
 import type { NeighbourhoodDocumentLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
+import type { NeighbourhoodDocumentContent } from '@/features/neighbourhood-link/components/neighbourhood-document';
 
 // Mission 110, refondue par la mission 113 — la synthèse au vendeur, construite depuis des lignes
 // lues par listes de colonnes autorisées (queries/load-seller-synthesis.ts). Pure. Elle suit
@@ -128,6 +129,7 @@ export type SynthesisInput = {
   brandDeclarations: string;
   // Mission 157 B — le lien « Vivre ici » du bien (absent : aucun).
   neighbourhood?: NeighbourhoodDocumentLink | null;
+  quartier?: NeighbourhoodDocumentContent | null;
 };
 
 const strings = (value: unknown): string[] =>
@@ -474,6 +476,17 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
       : null;
   const commune = input.property?.city?.trim() || null;
 
+  const salesSeen =
+    shown.every((row) => {
+      const answer = responseById.get(row.id);
+      return (
+        answer != null &&
+        (answer.seller_serious_competitor === 'no' ||
+          answer.seller_estimated_listing_price != null ||
+          answer.shown_directly_at != null)
+      );
+    }) &&
+    (input.summary?.seller_revised_property_price != null || input.commercializationPrice != null);
   return {
     language,
     sellerName: input.sellerName,
@@ -540,5 +553,17 @@ export function buildSellerSynthesis(input: SynthesisInput): SellerSynthesis {
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
     neighbourhood: input.neighbourhood ?? null,
+    // Mission 159 — les blocs vus au Live : rien sans Live ; le quartier suit « Votre valeur
+    // perçue », il a été vu dès le Live commencé ; les ventes réelles suivent « Votre prix après le
+    // marché » et précèdent la conclusion : vues seulement si chaque concurrent montré a été passé
+    // ET que le vendeur a reformulé son prix ou qu'un prix de commercialisation a été convenu (le
+    // Live est allé au-delà). Prudent : une vente vue sans aucune de ces deux traces n'est pas dite.
+    quartier:
+      input.quartier && input.liveStartedAt
+        ? {
+            ...input.quartier,
+            keys: input.quartier.keys.filter((key) => key !== 'ventes' || salesSeen),
+          }
+        : null,
   };
 }

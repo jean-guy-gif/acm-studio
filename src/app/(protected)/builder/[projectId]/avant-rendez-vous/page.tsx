@@ -106,6 +106,12 @@ import {
   AddressViewSection,
 } from '@/features/academia/components/address-view-section';
 import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
+import { createClient } from '@/lib/supabase/server';
+import { NeighbourhoodChoiceSection } from '@/features/academia/components/neighbourhood-choice-section';
+import {
+  neighbourhoodKeys,
+  readNeighbourhoodSnapshot,
+} from '@/features/neighbourhood-link/queries/read-neighbourhood-snapshot';
 
 type BeforeMeetingPageProps = {
   params: Promise<{ projectId: string }>;
@@ -248,12 +254,25 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
   // directe ; « Document seul » n'a pas de Live (le déroulé reste, à titre indicatif).
   const presentationMode = presentation.project.presentationMode;
   const sequenceMode = presentationMode === 'direct' ? 'direct' : 'interactive';
-  const sequence = buildLiveSequence(liveCompetitors, property != null, rhythm, sequenceMode);
+  // Mission 159 — les écrans du quartier cochés comptent dans le déroulé et la durée.
+  const quartierKeys = profile
+    ? neighbourhoodKeys(
+        await readNeighbourhoodSnapshot(await createClient(), profile.agency_id, projectId),
+      )
+    : [];
+  const sequence = buildLiveSequence(
+    liveCompetitors,
+    property != null,
+    rhythm,
+    sequenceMode,
+    quartierKeys,
+  );
   const other = buildLiveSequence(
     liveCompetitors,
     property != null,
     rhythm === 'accelerated' ? 'complete' : 'accelerated',
     sequenceMode,
+    quartierKeys,
   );
   const bothEstimates = bothRhythmsLabel(
     rhythm === 'accelerated' ? sequence : other,
@@ -426,6 +445,23 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
               max: property.advisor_price_max != null ? Number(property.advisor_price_max) : null,
             }}
             demo={demo}
+          />
+        </Suspense>
+      ) : null}
+
+      {/* Mission 159 — le quartier montré au vendeur, coché bloc par bloc, sous le dossier d'adresse. */}
+      {addressAccess && profile && property ? (
+        <Suspense fallback={null}>
+          <NeighbourhoodChoiceSection
+            agencyId={profile.agency_id}
+            projectId={projectId}
+            access={addressAccess}
+            property={{
+              address: propertyAddress,
+              propertyType: property.property_type,
+              rooms: property.rooms_count,
+              surface: property.surface_area != null ? Number(property.surface_area) : null,
+            }}
           />
         </Suspense>
       ) : null}

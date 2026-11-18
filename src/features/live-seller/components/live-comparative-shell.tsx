@@ -80,6 +80,11 @@ import type {
 import type { LiveComparableResponse, LiveSellerSummary } from '@/features/live-seller/types';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
 import type { NeighbourhoodLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
+import {
+  NEIGHBOURHOOD_BLOCK_KEYS,
+  type NeighbourhoodBlocks,
+} from '@/features/neighbourhood-link/services/neighbourhood-blocks';
+import { LivePageNeighbourhood } from '@/features/live-seller/components/live-page-neighbourhood';
 import { signalClientError } from '@/lib/app-errors/signal-client-error';
 
 export type LiveStageTheme = 'dark' | 'light';
@@ -108,6 +113,7 @@ export function LiveComparativeShell({
   buyersReveal = null,
   language: initialLanguage = 'fr',
   neighbourhood = null,
+  quartier = null,
 }: {
   projectId: string;
   // Donnée PROJETÉE : concurrents neutres tant que non estimés (aucun prix dans la
@@ -140,6 +146,8 @@ export function LiveComparativeShell({
   buyersReveal?: LiveBuyersReveal | null;
   // Mission 157 B — le lien « Vivre ici » du bien, montré sur « Votre bien » ; null sans lien.
   neighbourhood?: NeighbourhoodLink | null;
+  // Mission 159 — les blocs du quartier cochés par le conseiller (le dernier instantané valable).
+  quartier?: NeighbourhoodBlocks | null;
   // Mission 140 — la langue du dossier : celle de tout ce que voit le vendeur ; le conseiller la
   // change en direct dans « Réglages » (ce qui a été répondu est gardé).
   language?: ClientLanguage;
@@ -336,6 +344,12 @@ export function LiveComparativeShell({
     router.push(thanksHref);
   };
 
+  const quartierKeys = useMemo(
+    () => NEIGHBOURHOOD_BLOCK_KEYS.filter((key) => quartier?.[key] != null),
+    [quartier],
+  );
+  const quartierYear = new Date().getFullYear();
+
   // Concurrents EFFECTIFS : projetés, recouverts des fragments livrés et des réponses
   // mises à jour côté client, sans rechargement.
   const comparables = useMemo<SellerComparable[]>(() => {
@@ -354,7 +368,11 @@ export function LiveComparativeShell({
       ...(dangerousOverride ?? {}),
     } as LiveSellerSummary;
   }, [live, perceivedOverride, dangerousOverride, revisedOverride]);
-  const navLive = useMemo(() => ({ comparables, sellerSummary: summary }), [comparables, summary]);
+  // Mission 159 — les blocs du quartier : leurs seuls noms vont au moteur du Live.
+  const navLive = useMemo(
+    () => ({ comparables, sellerSummary: summary, neighbourhood: quartierKeys }),
+    [comparables, summary, quartierKeys],
+  );
 
   const pages = useMemo(
     () => buildLivePages(navLive, hasSubjectProperty, rhythm, mode),
@@ -906,8 +924,13 @@ export function LiveComparativeShell({
       } else setAwaitError(errorFor(r.error, t.saveFailed));
       return;
     }
-    // Mission 80 — « Le DPE face au marché » ne recueille aucune réponse : on avance.
-    if (page.type === 'dpe_market') {
+    // Mission 80 — « Le DPE face au marché » ne recueille aucune réponse : on avance. Mission 159
+    // — les écrans du quartier non plus.
+    if (
+      page.type === 'dpe_market' ||
+      page.type === 'neighbourhood_block' ||
+      page.type === 'neighbourhood_sales'
+    ) {
       go(1);
       return;
     }
@@ -1418,6 +1441,10 @@ export function LiveComparativeShell({
               busy={busy}
               onPick={(id) => void pickClosest(id)}
             />
+          ) : (page.type === 'neighbourhood_block' || page.type === 'neighbourhood_sales') &&
+            quartier &&
+            page.block ? (
+            <LivePageNeighbourhood blocks={quartier} block={page.block} year={quartierYear} />
           ) : page.type === 'dpe_market' ? (
             <LivePageDpe
               subjectEnergyRating={property?.energyRating ?? null}
