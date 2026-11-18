@@ -564,15 +564,23 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const step = row.getByTestId('suivi-next-step');
     await expect(step).toContainText(/Prochaine étape · le \d{2}\/\d{2}/i);
     await expect(row.getByTestId('suivi-step-button')).toHaveText(`Relancer ${dossierName}`);
-    // Plus aucun lien vers la préparation depuis la relance.
-    await expect(step.locator('a[href^="/builder"]')).toHaveCount(0);
-
-    // Rien n'a disparu : le détail s'ouvre dans la carte.
-    await row.getByTestId('suivi-link-details').click();
-    await expect(row.getByRole('link', { name: 'Ouvrir le dossier' })).toHaveAttribute(
+    // La relance s'ouvre dans la carte : son bouton ne mène pas à la préparation ; le seul lien vers
+    // le dossier est « Ouvrir le dossier → », en dernier des liens (M160).
+    await expect(step.getByTestId('suivi-step-button')).not.toHaveAttribute('href', /.*/);
+    await expect(step.locator('a[href^="/builder"]')).toHaveCount(1);
+    await expect(step.getByTestId('suivi-open-dossier')).toHaveAttribute(
       'href',
       `/builder/${projectId}`,
     );
+
+    // Rien n'a disparu : le détail s'ouvre dans la carte ; « Ouvrir le dossier » l'a quitté (M160),
+    // et le nom du vendeur mène aussi au dossier.
+    await row.getByTestId('suivi-link-details').click();
+    await expect(row.getByTestId('suivi-seller-link')).toHaveAttribute(
+      'href',
+      `/builder/${projectId}`,
+    );
+    await expect(row.getByText('Ouvrir le dossier', { exact: true })).toHaveCount(0);
     // Mission 110 — les objections cochées à la conclusion.
     await expect(row.getByTestId('objections-line')).toHaveText(
       'Ce qui le freine : le prix, le délai',
