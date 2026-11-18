@@ -29,6 +29,11 @@ export const isNeighbourhoodBlockKey = (value: unknown): value is NeighbourhoodB
 // (`client-texts`, `quartier.sources`) : seul le jour de ses données vient de la vue.
 export type BlockSource = { date: string | null };
 
+// Le début de la période des ventes réelles : Academia les compte depuis 2021 (confirmé par
+// Jean-Guy le 18/11, docs/DECISIONS.md). La vue « bien-client » ne le donne pas encore ; le jour où
+// elle le donne (`depuis`), c'est sa valeur qui compte. Écrit ici seulement.
+export const SALES_COUNTED_SINCE = 2021;
+
 export type NeighbourhoodSale = {
   month: string;
   type: 'maison' | 'appartement' | null;
