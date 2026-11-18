@@ -13,31 +13,44 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/features/meeting-conclusion/actions/conclude-meeting', () => ({}));
 const { SuiviRow } = await import('@/features/meeting-conclusion/components/suivi-row');
+const { SuiviLeadProvider } = await import('@/features/meeting-conclusion/components/suivi-lead');
 
 const PROJECT = '0ccccccc-0000-4000-8000-000000000160';
 
 const card = (
   outcome: 'signed' | 'follow_up' | 'sold_elsewhere' | 'withdrawn',
   panel?: 'details',
+  options: { example?: boolean; dueButton?: boolean } = {},
 ) =>
   renderToStaticMarkup(
-    createElement(SuiviRow, {
-      dossier: {
-        project: { id: PROJECT, seller_name: 'M. Lefebvre', is_example: false },
-        property: null,
-        conclusion: { outcome, concludedAt: '2026-10-18T10:00:00Z', mandateType: 'exclusive' },
-      } as never,
-      followUp: { contacts: [], message: null, sellerSaid: null } as never,
-      step: {
-        when: 'aujourd’hui',
-        whenLate: false,
-        title: 'Prochaine étape',
-        phrase: '',
-        button: null,
-      },
-      frieze: null,
-      ...(panel ? { initialPanel: panel as never } : {}),
-    }),
+    createElement(
+      SuiviLeadProvider,
+      // La carte mène l'écran : son étape due porte le seul bouton plein (M146).
+      { dueIds: options.dueButton ? [PROJECT] : [] } as Parameters<typeof SuiviLeadProvider>[0],
+      createElement(SuiviRow, {
+        dossier: {
+          project: {
+            id: PROJECT,
+            seller_name: 'M. Lefebvre',
+            is_example: options.example ?? false,
+          },
+          property: null,
+          conclusion: { outcome, concludedAt: '2026-10-18T10:00:00Z', mandateType: 'exclusive' },
+        } as never,
+        followUp: { contacts: [], message: null, sellerSaid: null } as never,
+        step: {
+          when: 'aujourd’hui',
+          whenLate: false,
+          title: 'Prochaine étape',
+          phrase: '',
+          button: options.dueButton
+            ? { label: 'Faire le point marché', action: { kind: 'market_update' }, primary: true }
+            : null,
+        },
+        frieze: null,
+        ...(panel ? { initialPanel: panel as never } : {}),
+      }),
+    ),
   );
 
 const linksOf = (html: string) =>
@@ -55,8 +68,8 @@ describe('la carte du Suivi : un accès direct au dossier', () => {
 
     it(`${outcome} : « Ouvrir le dossier → » en dernier dans la rangée des liens`, () => {
       const links = linksOf(card(outcome));
-      expect(links).toMatch(/Ouvrir le dossier →<\/a>\s*$|Ouvrir le dossier →<\/a><\/div>$/);
-      expect(links.lastIndexOf('Ouvrir le dossier →')).toBeGreaterThan(
+      expect(links).toMatch(/Ouvrir le dossier <span aria-hidden="true">→<\/span><\/a><\/div>$/);
+      expect(links.lastIndexOf('Ouvrir le dossier')).toBeGreaterThan(
         links.lastIndexOf('Détail des prix'),
       );
       expect(links).toContain(`href="/builder/${PROJECT}"`);
@@ -69,7 +82,15 @@ describe('la carte du Suivi : un accès direct au dossier', () => {
     expect(html.match(/>Ouvrir le dossier/g)).toHaveLength(1);
   });
 
-  it('aucun bouton plein de plus', () => {
-    expect(card('signed')).not.toContain('btn-filled');
+  it('aucun bouton plein de plus : l’étape due garde le seul plein de la carte', () => {
+    const html = card('signed', undefined, { dueButton: true });
+    expect(html.match(/btn-filled/g)).toHaveLength(1);
+    expect(html).toMatch(/btn-filled[^>]*>Faire le point marché</);
+  });
+
+  it('le dossier d’exemple compris', () => {
+    const html = card('follow_up', undefined, { example: true });
+    expect(html).toMatch(/data-testid="suivi-seller-link"[^>]*>M\. Lefebvre</);
+    expect(html).toContain('data-testid="suivi-open-project"');
   });
 });

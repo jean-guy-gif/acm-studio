@@ -384,7 +384,8 @@ export function SuiviRow({
       ? 'Compléter'
       : 'Changer l’issue';
   // Mission 130 — trois liens au plus, selon l'étape (designer) : jamais un geste perdu — la
-  // prospection reste à un clic sur tout mandat signé qui a des concurrents.
+  // prospection reste à un clic sur tout mandat signé qui a des concurrents. Mission 160 — plus
+  // « Ouvrir le dossier → », toujours en dernier (quatre liens au plus).
   const stepKind = step.button?.action.kind ?? null;
   const pointInButton = stepKind === 'market_update' || stepKind === 'point_panel';
   type LinkKey = 'point' | 'prospection' | 'details' | 'issue';
@@ -599,10 +600,10 @@ export function SuiviRow({
                   « Détail des prix »). */}
               <Link
                 href={`/builder/${project.id}`}
-                data-testid="suivi-open-dossier"
+                data-testid="suivi-open-project"
                 className={`${link} text-sm font-semibold`}
               >
-                Ouvrir le dossier →
+                Ouvrir le dossier <span aria-hidden>→</span>
               </Link>
             </div>
           </div>
