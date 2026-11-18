@@ -75,7 +75,8 @@ export async function resolveAcademiaDossier(input: {
     return { kind: 'none' };
   }
   // Mission 161 — en préparation chez Academia (20 à 60 secondes pour une adresse neuve) : on lui
-  // demande où il en est, et la base garde la réponse ; l'écran se relit toutes les 5 secondes.
+  // demande où il en est (une lecture, rien n'est écrit pendant l'affichage) ; l'écran se relit
+  // toutes les 5 secondes. Une relecture en échec est dite comme telle, jamais comme l'attente (M98).
   let state = request.state;
   if (state === 'en_cours') {
     const read = await readAcademiaRequest(input.access.key, request.academia_id, input.fetchImpl);
@@ -88,9 +89,8 @@ export async function resolveAcademiaDossier(input: {
         input.label,
         new Error(`Academia : ${read.reason}${read.detail ? ` — ${read.detail}` : ''}`),
       );
-      return { kind: 'waiting' };
+      return { kind: 'failed' };
     }
-    if (state !== 'en_cours') await saveRequestState(input, state);
   }
   if (state === 'en_cours') return { kind: 'waiting' };
   if (state !== 'pret') return { kind: 'request_failed' };
@@ -118,30 +118,15 @@ export async function resolveAcademiaDossier(input: {
   };
 }
 
-// L'état d'une demande, gardé en base (la clé de service) ; un échec d'écriture entre au journal.
-async function saveRequestState(
-  input: { admin: SupabaseClient<Database>; agencyId: string; projectId: string; label: string },
-  state: string,
-): Promise<void> {
-  const { error } = await input.admin
-    .from('project_academia_requests')
-    .update({ state })
-    .eq('project_id', input.projectId)
-    .eq('agency_id', input.agencyId);
-  if (error) await reportServerError(input.label, error);
-}
-
 // La lecture d'une vue (« bien » ou « bien-client ») qui a échoué : en préparation (409), effacé
-// chez Academia (404, la demande passe en erreur), ou un échec dit (M98).
+// chez Academia (404 : à recréer depuis Bien vendeur, dont l'action redemande le dossier), ou un
+// échec dit (M98). Rien n'est écrit pendant l'affichage.
 export async function viewFailure(
-  input: { admin: SupabaseClient<Database>; agencyId: string; projectId: string; label: string },
+  input: { label: string },
   reply: AcademiaFailure,
 ): Promise<'waiting' | 'request_failed' | 'failed'> {
   if (reply.reason === 'not_ready') return 'waiting';
-  if (reply.reason === 'not_found') {
-    await saveRequestState(input, 'erreur');
-    return 'request_failed';
-  }
+  if (reply.reason === 'not_found') return 'request_failed';
   await reportServerError(
     input.label,
     new Error(`Academia : ${reply.reason}${reply.detail ? ` — ${reply.detail}` : ''}`),

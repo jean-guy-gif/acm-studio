@@ -36,7 +36,7 @@ import { formatDay } from '@/lib/format';
 const POLL_EVERY_MS = 5_000;
 const POLL_MAX = 24;
 
-type View =
+export type View =
   | { kind: 'idle'; stale: boolean }
   | { kind: 'waiting'; gaveUp: boolean }
   | { kind: 'ready'; url: string; expiresAt: string; expiry: LivingHereExpiry | null }
@@ -45,7 +45,12 @@ type View =
   | { kind: 'no_address' }
   | { kind: 'failed'; message: string; retry: boolean };
 
-function fromState(result: LivingHereLinkState, previous: View): View {
+// Mission 161 — à l'ouverture, un lien de 7 jours ou plus se renouvelle (une fois). Pur.
+export function shouldRenewOnOpen(view: View, now: Date): boolean {
+  return view.kind === 'ready' && linkNeedsRenewal(view.expiresAt, now);
+}
+
+export function fromState(result: LivingHereLinkState, previous: View): View {
   switch (result.state) {
     case 'ready':
       return {
@@ -152,8 +157,8 @@ export function LivingHereApiPanel({
   // (un écran du conseiller) ; en échec, le lien encore valable reste (décision de Jean-Guy, 18/11).
   const renewed = useRef(false);
   useEffect(() => {
-    if (renewed.current || view.kind !== 'ready') return;
-    if (!linkNeedsRenewal(view.expiresAt, new Date())) return;
+    if (renewed.current || !shouldRenewOnOpen(view, new Date())) return;
+    if (view.kind !== 'ready') return;
     renewed.current = true;
     void refreshLivingHereLink(projectId)
       .then((result) => {

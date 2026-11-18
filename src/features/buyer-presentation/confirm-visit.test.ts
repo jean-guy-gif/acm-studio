@@ -52,10 +52,11 @@ vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({ revalidatePath: () => undefined }));
 // Mission 161 — le lien de 7 jours ou plus est renouvelé avant le message (simulé ici).
 const renewals = vi.hoisted(() => [] as string[]);
+const renewal = vi.hoisted(() => ({ result: 'fresh' as 'fresh' | 'kept' }));
 vi.mock('@/features/academia/services/living-here-renewal', () => ({
   renewLivingHereLinkIfOld: async (input: { projectId: string }) => {
     renewals.push(input.projectId);
-    return 'fresh';
+    return renewal.result;
   },
 }));
 vi.mock('@/features/demo/services/is-demo-agency', () => ({ isDemoAgency: async () => false }));
@@ -142,6 +143,13 @@ describe('« Confirmer la visite »', () => {
       error: 'Indiquez le jour et l’heure de la visite.',
     });
     expect(service.writes()).toEqual([]);
+  });
+
+  it('161 · le renouvellement du lien en échec (Academia muette) ne bloque jamais l’envoi', async () => {
+    const { confirmVisit } = await import('@/features/buyer-presentation/actions/confirm-visit');
+    renewal.result = 'kept';
+    expect((await confirmVisit(VISIT, tomorrow(), '10:30')).ok).toBe(true);
+    renewal.result = 'fresh';
   });
 
   it('sans lien collé sur le mandat : la sélection seule', async () => {

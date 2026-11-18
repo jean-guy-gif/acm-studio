@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { btnSecondary, hintText } from '@/components/ui/styles';
 
@@ -12,23 +12,39 @@ import { btnSecondary, hintText } from '@/components/ui/styles';
 export const ACADEMIA_REFRESH_EVERY_MS = 5_000;
 export const ACADEMIA_REFRESH_MAX = 24;
 
+// La cadence elle-même, sans React : `refresh` toutes les `every` ms, `max` fois au plus, puis
+// `onGiveUp`. Rend de quoi l'arrêter.
+export function startAcademiaRefresh(input: {
+  refresh: () => void;
+  onGiveUp: () => void;
+  every?: number;
+  max?: number;
+}): () => void {
+  const every = input.every ?? ACADEMIA_REFRESH_EVERY_MS;
+  const max = input.max ?? ACADEMIA_REFRESH_MAX;
+  let count = 0;
+  const timer = setInterval(() => {
+    if (count >= max) {
+      clearInterval(timer);
+      input.onGiveUp();
+      return;
+    }
+    count += 1;
+    input.refresh();
+  }, every);
+  return () => clearInterval(timer);
+}
+
 export function AcademiaAutoRefresh({ testId }: { testId: string }) {
   const router = useRouter();
   const [round, setRound] = useState(0);
   const [gaveUp, setGaveUp] = useState(false);
-  const count = useRef(0);
   useEffect(() => {
     if (gaveUp) return;
-    const timer = setInterval(() => {
-      if (count.current >= ACADEMIA_REFRESH_MAX) {
-        clearInterval(timer);
-        setGaveUp(true);
-        return;
-      }
-      count.current += 1;
-      router.refresh();
-    }, ACADEMIA_REFRESH_EVERY_MS);
-    return () => clearInterval(timer);
+    return startAcademiaRefresh({
+      refresh: () => router.refresh(),
+      onGiveUp: () => setGaveUp(true),
+    });
   }, [gaveUp, round, router]);
   if (!gaveUp) return null;
   return (
@@ -41,7 +57,6 @@ export function AcademiaAutoRefresh({ testId }: { testId: string }) {
         type="button"
         className={`${btnSecondary} self-start text-sm`}
         onClick={() => {
-          count.current = 0;
           setGaveUp(false);
           setRound((value) => value + 1);
           router.refresh();

@@ -63,7 +63,8 @@ describe('les blocs vides et non vérifiés', () => {
       neighbourhoodView(blocks, key, CLIENT_TEXTS.fr, 'fr')?.headline;
     expect(say('permis')).toBe('Aucun permis de construire relevé à moins de 300 m.');
     expect(say('ventes')).toBe('Aucune vente relevée autour de chez vous.');
-    expect(say('urbanisme')).toBe('Rien de relevé sur votre parcelle, ni à moins de 40 m.');
+    // Rien jusqu'à 300 m : la même échelle que chez le conseiller.
+    expect(say('urbanisme')).toBe('Rien de relevé sur votre parcelle, ni à moins de 300 m.');
     expect(neighbourhoodBlockStatuses(json)).toEqual({
       urbanisme: 'empty',
       risques: 'unchecked',

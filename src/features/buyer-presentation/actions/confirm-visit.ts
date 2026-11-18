@@ -104,6 +104,7 @@ export async function confirmVisit(
         demo: await isDemoAgency(context.profile.agency_id),
         agencyId: context.profile.agency_id,
       }),
+      timeoutMs: 2_500,
     });
     const read = await readMandateAcademiaLinks(admin, context.profile.agency_id, [item.reference]);
     // Jamais un message sans le lien EN SILENCE parce qu'il n'a pas pu être lu (M98) : l'échec est

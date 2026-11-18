@@ -268,7 +268,9 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
       </div>
       {sales.empty ? (
         <p className="text-sm text-zinc-800" data-testid="address-view-empty">
-          Aucune vente relevée autour du bien.
+          Aucune vente relevée
+          {sales.listRadius ? ` à moins de ${meters(sales.listRadius)}` : ' autour du bien'}
+          {sales.since ? ` depuis ${sales.since}` : ''}.
         </p>
       ) : sales.unchecked ? (
         <p className="text-sm text-zinc-800" data-testid="address-view-unchecked">
@@ -412,7 +414,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
         <Block
           title="Urbanisme"
           info={planning}
-          empty="Rien de relevé sur la parcelle ni à moins de 300 m."
+          empty={`Rien de relevé sur la parcelle, ni à moins de ${meters(300)}.`}
         >
           {planning.sentence ? <p className="text-sm text-zinc-800">{planning.sentence}</p> : null}
           {planning.parcel || risks?.planningZone ? (
@@ -566,7 +568,7 @@ export function AddressViewPanel({
         <>
           <p className="text-sm text-zinc-800" role="status" data-testid="address-view-waiting">
             Academia prépare le dossier d’adresse : 20 à 60 secondes. Il s’affiche ici dès qu’il est
-            prêt, sans recharger.
+            prêt.
           </p>
           <p className={hintText}>
             Le reste de la page est déjà là ; votre décision de prix ne l’attend pas.

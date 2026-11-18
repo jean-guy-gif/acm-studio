@@ -12,6 +12,7 @@ import {
 import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
 import { academiaQuotaMessage } from '@/features/academia/services/academia-messages';
 import { linkNeedsRenewal } from '@/features/academia/services/living-here-age';
+import { renewLivingHereLinkIfOld } from '@/features/academia/services/living-here-renewal';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { propertyAddressLine } from '@/lib/academia';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
@@ -359,4 +360,22 @@ export async function createLivingHereLink(
 // puis à l'ouverture suivante, modèle du Localisateur, M75) : jamais une nouvelle demande de dossier.
 export async function refreshLivingHereLink(projectId: unknown): Promise<LivingHereLinkState> {
   return run(projectId, false, null);
+}
+
+// Mission 161 — à l'ouverture d'« Avant le rendez-vous » (un écran du conseiller) : le lien « Vivre
+// ici » de 7 jours ou plus est renouvelé, en action et jamais pendant l'affichage ; en échec, le
+// lien encore valable reste. Rien n'est rendu à l'écran : il se relit à l'ouverture suivante.
+export async function renewLivingHereLinkOnOpen(projectId: unknown): Promise<void> {
+  const ctx = await context(projectId);
+  if ('error' in ctx) return;
+  const { profile, admin, project } = ctx;
+  await renewLivingHereLinkIfOld({
+    admin,
+    agencyId: profile.agency_id,
+    projectId: project.id,
+    access: academiaApiAccess({
+      demo: await isDemoAgency(profile.agency_id),
+      agencyId: profile.agency_id,
+    }),
+  });
 }

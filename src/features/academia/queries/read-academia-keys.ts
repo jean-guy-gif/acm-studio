@@ -4,7 +4,7 @@ import { checkAcademiaKey, type AcademiaFetch } from '@/features/academia/servic
 import type { AcademiaKeyStatus } from '@/features/academia/services/academia-key-status';
 
 // Mission 161 — `GET /etat` pour chaque clé posée dans Vercel, à l'ouverture de `/erreurs` (les
-// opérateurs seuls) ; une clé absente ne part pas. Délai court : la page ne l'attend que 4 s.
+// opérateurs seuls) ; une clé absente ne part pas. Délai court : 4 s par essai, deux essais au plus.
 export async function readAcademiaKeys(
   env: Record<string, string | undefined> = process.env,
   fetchImpl: AcademiaFetch = fetch,

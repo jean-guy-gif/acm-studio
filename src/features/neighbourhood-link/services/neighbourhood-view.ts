@@ -137,7 +137,12 @@ export function neighbourhoodView(
       kind: 'rings',
       block: 'urbanisme',
       title: t.planning.title,
-      headline: t.planning.headline(total(block.parcel), near, meters(NEAR)),
+      // Rien jusqu'à 300 m : la phrase le dit à 300 m, la même échelle que chez le conseiller.
+      headline: t.planning.headline(
+        total(block.parcel),
+        near,
+        meters(near === 0 && around === 0 ? AROUND : NEAR),
+      ),
       scale: t.within(meters(AROUND)),
       inner: near
         ? {

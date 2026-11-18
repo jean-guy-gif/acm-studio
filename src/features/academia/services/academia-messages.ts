@@ -1,3 +1,5 @@
+import { formatDay } from '@/lib/format';
+
 // Mission 161 — le délai dit par Academia (`Retry-After`) : une limite par minute, ou celle des
 // nouveaux dossiers du jour (200 par 24 h, toutes agences confondues).
 const QUOTA_MINUTES_MAX = 3600;
@@ -29,7 +31,15 @@ export function academiaQuotaMessage(
   })
     .format(at)
     .split(':');
-  const when = `${parisDay(at) === parisDay(now) ? '' : 'demain, '}à partir de ${Number(hours)} h ${minutes}`;
+  const tomorrow = parisDay(new Date(now.getTime() + 86_400_000));
+  const day = parisDay(at);
+  const prefix =
+    day === parisDay(now)
+      ? ''
+      : day === tomorrow
+        ? 'demain, '
+        : `le ${formatDay(at, 'fr', 'short')}, `;
+  const when = `${prefix}à partir de ${Number(hours)} h ${minutes}`;
   return {
     message: `Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui : réessayez ${when}.${tail}`,
     retry: false,

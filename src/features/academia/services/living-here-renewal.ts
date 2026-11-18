@@ -28,6 +28,9 @@ export async function renewLivingHereLinkIfOld(input: {
   access: AcademiaAccess | null;
   now?: Date;
   fetchImpl?: AcademiaFetch;
+  // Un délai court sur le chemin d'un envoi (« Confirmer la visite ») : Academia muette ne le
+  // retarde que de quelques secondes (deux essais au plus).
+  timeoutMs?: number;
 }): Promise<LinkRenewal> {
   try {
     return await renew(input);
@@ -44,6 +47,9 @@ async function renew(input: {
   access: AcademiaAccess | null;
   now?: Date;
   fetchImpl?: AcademiaFetch;
+  // Un délai court sur le chemin d'un envoi (« Confirmer la visite ») : Academia muette ne le
+  // retarde que de quelques secondes (deux essais au plus).
+  timeoutMs?: number;
 }): Promise<LinkRenewal> {
   if (!input.access) return 'none';
   const now = input.now ?? new Date();
@@ -83,7 +89,12 @@ async function renew(input: {
   if (!address || address !== row.property_address) return 'none';
   if (!linkNeedsRenewal(row.link_expires_at, now)) return 'fresh';
 
-  const link = await createAcademiaClientLink(input.access.key, row.academia_id, input.fetchImpl);
+  const link = await createAcademiaClientLink(
+    input.access.key,
+    row.academia_id,
+    input.fetchImpl,
+    input.timeoutMs,
+  );
   if (!link.ok) {
     await reportServerError(
       'academia:renew-link',
