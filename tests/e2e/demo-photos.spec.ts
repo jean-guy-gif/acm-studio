@@ -30,10 +30,8 @@ test('la démo : une photo chargée pour chaque concurrent montré', async ({ pa
   // Le dossier à relancer s'ouvre depuis le Suivi (« Ma démo » y mène).
   await page.goto('/suivi');
   const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Lambert-Duval' });
-  await followUp.getByTestId('suivi-link-details').click();
-  const followUpHref = await followUp
-    .getByRole('link', { name: 'Ouvrir le dossier' })
-    .getAttribute('href');
+  // Mission 160 — « Ouvrir le dossier → » est sur la carte, en dernier de ses liens.
+  const followUpHref = await followUp.getByTestId('suivi-open-project').getAttribute('href');
   ids.push(/\/builder\/([^/]+)/.exec(followUpHref ?? '')?.[1] ?? '');
   expect(ids.filter(Boolean)).toHaveLength(11);
   for (const id of ids) {

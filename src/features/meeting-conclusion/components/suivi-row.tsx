@@ -384,7 +384,8 @@ export function SuiviRow({
       ? 'Compléter'
       : 'Changer l’issue';
   // Mission 130 — trois liens au plus, selon l'étape (designer) : jamais un geste perdu — la
-  // prospection reste à un clic sur tout mandat signé qui a des concurrents.
+  // prospection reste à un clic sur tout mandat signé qui a des concurrents. Mission 160 — plus
+  // « Ouvrir le dossier → », toujours en dernier (quatre liens au plus).
   const stepKind = step.button?.action.kind ?? null;
   const pointInButton = stepKind === 'market_update' || stepKind === 'point_panel';
   type LinkKey = 'point' | 'prospection' | 'details' | 'issue';
@@ -431,9 +432,15 @@ export function SuiviRow({
           {/* Le vendeur et son bien. */}
           <div className="flex min-w-0 flex-col gap-1 p-4 pb-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-title text-xl font-bold text-zinc-900 @2xl:text-2xl stage:text-white">
+              {/* Mission 160 — le nom mène à la Vue d'ensemble du dossier (maquette M160-1). */}
+              <Link
+                href={`/builder/${project.id}`}
+                data-testid="suivi-seller-link"
+                aria-label={`Ouvrir le dossier de ${sellerName}`}
+                className="font-title text-xl font-bold text-zinc-900 underline-offset-4 hover:underline @2xl:text-2xl stage:text-white"
+              >
                 {sellerName}
-              </span>
+              </Link>
               {project.is_example ? <ExampleBadge /> : null}
               {badge && outcome ? (
                 <span
@@ -535,7 +542,10 @@ export function SuiviRow({
                 </button>
               )
             ) : null}
-            <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 whitespace-nowrap">
+            <div
+              data-testid="suivi-links"
+              className="flex flex-wrap gap-x-3 gap-y-1 pt-1 whitespace-nowrap"
+            >
               {acceptedOfferBuyer ? (
                 <Link
                   href={`/acquereurs/${acceptedOfferBuyer.buyerId}`}
@@ -586,6 +596,15 @@ export function SuiviRow({
                   </button>
                 ),
               )}
+              {/* Mission 160 — en dernier, le dossier lui-même ; un seul endroit (il a quitté
+                  « Détail des prix »). */}
+              <Link
+                href={`/builder/${project.id}`}
+                data-testid="suivi-open-project"
+                className={`${link} text-sm font-semibold`}
+              >
+                Ouvrir le dossier <span aria-hidden>→</span>
+              </Link>
             </div>
           </div>
 
@@ -786,10 +805,6 @@ export function SuiviRow({
                 ? ` · Issue changée ${formatRelativeDay(conclusion.outcomeChangedAt!)}`
                 : null}
             </span>
-
-            <Link href={`/builder/${project.id}`} className={`${link} self-start`}>
-              Ouvrir le dossier
-            </Link>
           </div>
         ) : null}
       </div>
