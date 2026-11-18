@@ -345,10 +345,45 @@ export function pickNeighbourhoodBlocks(
 
 // ─── La réponse de la source, ramenée à la forme d'ACM ──────────────────────────────────────────
 
-// Seul un bloc que la source dit lu passe au vendeur.
-function readable(value: unknown): Json | null {
+// Seul un bloc que la source dit lu passe au vendeur. Mission 161 — « aucun » (lu, rien trouvé) est
+// une information pour l'urbanisme, les permis et les ventes (« Rien de relevé », « Aucun permis… »),
+// jamais pour les autres blocs ; « non_verifie » ne passe jamais.
+function readable(value: unknown, emptyIsNews = false): Json | null {
   const block = obj(value);
-  return block && block.etat === 'ok' ? block : null;
+  if (!block) return null;
+  if (block.etat === 'ok') return block;
+  return emptyIsNews && block.etat === 'aucun' ? block : null;
+}
+
+// Ce que la source a dit de chaque bloc, pour le panneau du conseiller (un bloc qui ne se propose
+// pas dit pourquoi).
+export type NeighbourhoodBlockStatus = 'ok' | 'empty' | 'unchecked' | 'unread';
+const SOURCE_KEYS: Record<NeighbourhoodBlockKey, string> = {
+  urbanisme: 'urbanisme',
+  risques: 'risques',
+  population: 'population',
+  copropriete: 'copropriete',
+  permis: 'permis',
+  ventes: 'ventes',
+};
+export function neighbourhoodBlockStatuses(
+  json: unknown,
+): Record<NeighbourhoodBlockKey, NeighbourhoodBlockStatus> {
+  const blocks = obj(obj(json)?.blocs) ?? {};
+  return Object.fromEntries(
+    NEIGHBOURHOOD_BLOCK_KEYS.map((key) => {
+      const etat = obj(blocks[SOURCE_KEYS[key]])?.etat;
+      const status: NeighbourhoodBlockStatus =
+        etat === 'ok'
+          ? 'ok'
+          : etat === 'aucun'
+            ? 'empty'
+            : etat === 'non_verifie' || etat === 'non vérifié'
+              ? 'unchecked'
+              : 'unread';
+      return [key, status];
+    }),
+  ) as Record<NeighbourhoodBlockKey, NeighbourhoodBlockStatus>;
 }
 
 const LEVELS = { parcelle: 'parcel', a40m: 'within40', a300m: 'within300' } as const;
@@ -424,9 +459,9 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
   const root = obj(json);
   const blocks = root ? obj(root.blocs) : null;
   if (!blocks) return null;
-  const ventes = readable(blocks.ventes);
-  const urbanisme = readable(blocks.urbanisme);
-  const permis = readable(blocks.permis);
+  const ventes = readable(blocks.ventes, true);
+  const urbanisme = readable(blocks.urbanisme, true);
+  const permis = readable(blocks.permis, true);
   const risques = readable(blocks.risques);
   const populationBlock = readable(blocks.population);
   const copropriete = readable(blocks.copropriete);

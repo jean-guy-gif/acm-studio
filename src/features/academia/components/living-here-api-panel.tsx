@@ -31,14 +31,16 @@ import { formatDay } from '@/lib/format';
 // de validité, trois jours avant l'expiration en orange, expiré « Créer un lien neuf », une adresse
 // ambiguë à choisir, et toujours le repli : le champ à coller d'aujourd'hui, replié.
 
-const POLL_EVERY_MS = 10_000;
-const POLL_MAX = 12;
+// Mission 161 — toutes les 5 s (le plus souvent que Laurent permet), 2 minutes au plus.
+const POLL_EVERY_MS = 5_000;
+const POLL_MAX = 24;
 
 type View =
   | { kind: 'idle'; stale: boolean }
   | { kind: 'waiting'; gaveUp: boolean }
   | { kind: 'ready'; url: string; expiresAt: string; expiry: LivingHereExpiry | null }
   | { kind: 'ambiguous'; propositions: string[] }
+  | { kind: 'address_not_found' }
   | { kind: 'no_address' }
   | { kind: 'failed'; message: string; retry: boolean };
 
@@ -57,6 +59,8 @@ function fromState(result: LivingHereLinkState, previous: View): View {
       return { kind: 'ambiguous', propositions: result.propositions };
     case 'no_address':
       return { kind: 'no_address' };
+    case 'address_not_found':
+      return { kind: 'address_not_found' };
     case 'failed':
       return { kind: 'failed', message: result.message, retry: result.retry };
     case 'closed':
@@ -228,9 +232,46 @@ export function LivingHereApiPanel({
           data-testid="living-here-waiting"
         >
           {view.gaveUp
-            ? 'Academia prépare toujours le dossier de l’adresse : revenez dans un moment, le lien vous attendra.'
-            : 'Academia prépare le dossier de l’adresse… jusqu’à 2 minutes. Vous pouvez quitter la page : le lien vous attendra.'}
+            ? 'La préparation prend plus de temps que prévu.'
+            : 'Academia prépare le dossier de cette adresse : 20 à 60 secondes.'}
         </p>
+      ) : null}
+      {view.kind === 'waiting' ? (
+        <p className={hintText} data-testid="living-here-waiting-hint">
+          {view.gaveUp
+            ? 'Revenez sur cette page dans quelques minutes : la demande continue chez Academia.'
+            : 'La page vérifie toute seule, toutes les 5 secondes, deux minutes au plus.'}
+        </p>
+      ) : null}
+      {view.kind === 'waiting' && view.gaveUp ? (
+        <button
+          type="button"
+          className={`${btnSecondary} self-start text-sm`}
+          disabled={pending}
+          onClick={() => {
+            polls.current = 0;
+            setView({ kind: 'waiting', gaveUp: false });
+          }}
+          data-testid="living-here-check-now"
+        >
+          Vérifier maintenant
+        </button>
+      ) : null}
+      {view.kind === 'address_not_found' ? (
+        <>
+          <p className={errorText} role="alert" data-testid="living-here-not-found">
+            Academia ne trouve pas cette adresse. Corrigez le numéro, la rue, le code postal ou la
+            ville du bien, puis recommencez.
+          </p>
+          <a
+            href="#champ-address"
+            className={`${btnSecondary} self-start text-sm`}
+            data-testid="living-here-fix-address"
+          >
+            Corriger l’adresse du bien
+          </a>
+          <p className={hintText}>Ou collez le lien « Vivre ici » vous-même.</p>
+        </>
       ) : null}
       {view.kind === 'ready' ? (
         view.expiry?.level === 'expired' ? (

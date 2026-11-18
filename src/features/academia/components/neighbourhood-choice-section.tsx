@@ -44,6 +44,7 @@ export async function NeighbourhoodChoiceSection({
     <NeighbourhoodChoicePanel
       projectId={projectId}
       blocks={state.blocks}
+      statuses={state.statuses}
       savedKeys={state.saved.snapshot?.keys ?? []}
       stale={state.saved.stale}
       locked={state.saved.locked}

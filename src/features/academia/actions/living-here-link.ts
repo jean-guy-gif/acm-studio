@@ -10,6 +10,7 @@ import {
   type AcademiaFailure,
 } from '@/features/academia/services/academia-api';
 import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
+import { academiaQuotaMessage } from '@/features/academia/services/academia-messages';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { propertyAddressLine } from '@/lib/academia';
 import { reportServerError } from '@/lib/app-errors/report-server-error';
@@ -37,6 +38,8 @@ export type LivingHereLinkState =
   | { state: 'waiting' }
   | { state: 'idle' }
   | { state: 'ambiguous'; propositions: string[] }
+  // Mission 161 — 422 sans proposition : le conseiller corrige l'adresse du bien.
+  | { state: 'address_not_found' }
   | { state: 'no_address' }
   | { state: 'closed' }
   // `retry` : « Réessayer » a un sens (pas au plafond du jour : « réessayez demain »).
@@ -46,12 +49,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ACADEMIA_DOWN =
   'Academia ne répond pas pour l’instant. Réessayez dans un moment, ou collez le lien vous-même.';
-const ACADEMIA_QUOTA =
-  'Academia a atteint sa limite du jour : réessayez demain, ou collez le lien vous-même.';
 const ACADEMIA_REFUSED =
   'Academia refuse la demande pour l’instant : l’équipe ACM Studio est prévenue. Collez le lien vous-même.';
 const ACADEMIA_PREPARATION_FAILED =
-  'Academia n’a pas pu préparer le dossier de cette adresse. Vérifiez l’adresse du bien, ou collez le lien vous-même.';
+  'Academia n’a pas pu préparer le dossier de cette adresse pour l’instant : réessayez plus tard, ou collez le lien vous-même.';
+const ACADEMIA_GONE =
+  'Le dossier de cette adresse a été effacé chez Academia : touchez « Réessayer » pour en refaire un.';
 const READ_FAILED = 'La demande à Academia n’a pas pu être lue. Réessayez dans un moment.';
 const SAVE_FAILED = 'Le lien n’a pas pu être enregistré. Réessayez.';
 const ADDRESS_MAX = 300;
@@ -79,7 +82,10 @@ async function failed(reason: AcademiaFailure, where: string): Promise<LivingHer
     `academia:${where}`,
     new Error(`Academia : ${reason.reason}${reason.detail ? ` — ${reason.detail}` : ''}`),
   );
-  if (reason.reason === 'quota') return fail(ACADEMIA_QUOTA, false);
+  if (reason.reason === 'quota') {
+    const quota = academiaQuotaMessage(reason.retryAfter);
+    return fail(quota.message, quota.retry);
+  }
   if (reason.reason === 'unavailable') return fail(ACADEMIA_DOWN);
   return fail(ACADEMIA_REFUSED);
 }
@@ -118,7 +124,7 @@ async function linkFor(
   key: string,
   row: { academia_id: string; link_url: string | null; link_expires_at: string | null },
   currentUrl: string | null,
-): Promise<LivingHereLinkState> {
+): Promise<LivingHereLinkState | 'gone'> {
   if (
     row.link_url &&
     row.link_expires_at &&
@@ -129,8 +135,12 @@ async function linkFor(
   }
   const link = await createAcademiaClientLink(key, row.academia_id);
   if (!link.ok) {
-    // Un dossier qu'Academia n'a plus : le geste suivant en redemande un.
-    if (link.reason === 'not_found') await markError(admin, agencyId, projectId);
+    // Mission 161 — un dossier qu'Academia a effacé (90 jours, `effaceLe`) : il est redemandé, avec
+    // un nouveau lien, dans le même geste.
+    if (link.reason === 'not_found') {
+      await markError(admin, agencyId, projectId);
+      return 'gone';
+    }
     return failed(link, 'client-link');
   }
   const { error: rowError } = await admin
@@ -160,12 +170,15 @@ async function follow(
   key: string,
   row: RequestRow,
   currentUrl: string | null,
-): Promise<LivingHereLinkState> {
+): Promise<LivingHereLinkState | 'gone'> {
   let state = row.state;
   if (state === 'en_cours') {
     const read = await readAcademiaRequest(key, row.academia_id);
     if (!read.ok) {
-      if (read.reason === 'not_found') await markError(admin, agencyId, projectId);
+      if (read.reason === 'not_found') {
+        await markError(admin, agencyId, projectId);
+        return 'gone';
+      }
       return failed(read, 'read-request');
     }
     state = read.etat;
@@ -194,7 +207,10 @@ async function run(
   const ctx = await context(projectId);
   if ('error' in ctx) return fail(ctx.error ?? 'Dossier introuvable.', false);
   const { profile, admin, project } = ctx;
-  const access = academiaApiAccess(await isDemoAgency(profile.agency_id));
+  const access = academiaApiAccess({
+    demo: await isDemoAgency(profile.agency_id),
+    agencyId: profile.agency_id,
+  });
   if (!access) return { state: 'closed' };
 
   const { data: subject, error: subjectError } = await admin
@@ -234,9 +250,18 @@ async function run(
   // Le dossier de l'adresse du bien, encore valable : on le suit, sans nouvelle demande (un dossier
   // compte dans le plafond commun ; un lien, non).
   if (row && row.property_address === propertyAddress && row.state !== 'erreur') {
-    return follow(admin, profile.agency_id, project.id, access.key, row, currentUrl);
-  }
-  if (!create) {
+    const followed = await follow(
+      admin,
+      profile.agency_id,
+      project.id,
+      access.key,
+      row,
+      currentUrl,
+    );
+    if (followed !== 'gone') return followed;
+    // Effacé chez Academia : un geste du conseiller le redemande ; une simple relecture le dit.
+    if (!create) return fail(ACADEMIA_GONE);
+  } else if (!create) {
     return row && row.property_address === propertyAddress
       ? fail(ACADEMIA_PREPARATION_FAILED)
       : { state: 'idle' };
@@ -274,6 +299,13 @@ async function run(
       return { state: 'ambiguous', propositions: request.propositions };
     }
   }
+  if (!request.ok && request.reason === 'address_not_found') {
+    await reportServerError(
+      'academia:create-request',
+      new Error(`Academia : adresse introuvable${request.detail ? ` — ${request.detail}` : ''}`),
+    );
+    return { state: 'address_not_found' };
+  }
   if (!request.ok) return failed(request, 'create-request');
   const saved = {
     academia_id: request.id,
@@ -298,7 +330,9 @@ async function run(
   }
   if (request.etat === 'en_cours') return { state: 'waiting' };
   if (request.etat === 'erreur') return fail(ACADEMIA_PREPARATION_FAILED);
-  return linkFor(admin, profile.agency_id, project.id, access.key, saved, currentUrl);
+  const made = await linkFor(admin, profile.agency_id, project.id, access.key, saved, currentUrl);
+  // Un dossier tout juste créé, déjà introuvable : dit, jamais une boucle.
+  return made === 'gone' ? fail(ACADEMIA_GONE) : made;
 }
 
 export async function createLivingHereLink(

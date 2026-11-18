@@ -79,7 +79,10 @@ export async function saveNeighbourhoodChoice(
     await reportServerError('academia:save-neighbourhood', property.error);
     return { ok: false, error: 'Le choix n’a pas pu être enregistré. Réessayez.' };
   }
-  const access = academiaApiAccess(await isDemoAgency(profile.agency_id));
+  const access = academiaApiAccess({
+    demo: await isDemoAgency(profile.agency_id),
+    agencyId: profile.agency_id,
+  });
   if (!access) return { ok: false, error: 'Dossier introuvable.' };
   const address = property.data
     ? propertyAddressLine({

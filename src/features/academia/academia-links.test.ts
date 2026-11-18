@@ -348,7 +348,11 @@ describe('AcademiaCard, l’API ouverte', () => {
     expect(withApi({ kind: 'idle', stale: false }, null)).toContain('Coller le lien à la main');
   });
 
-  it('en préparation : l’attente, dite', () => {
-    expect(withApi({ kind: 'waiting' })).toContain('Academia prépare le dossier de l’adresse…');
+  it('en préparation : l’attente, dite (20 à 60 secondes, vérifiée toutes les 5 s, M161)', () => {
+    const html = withApi({ kind: 'waiting' });
+    expect(html).toContain('Academia prépare le dossier de cette adresse : 20 à 60 secondes.');
+    expect(html).toContain(
+      'La page vérifie toute seule, toutes les 5 secondes, deux minutes au plus.',
+    );
   });
 });

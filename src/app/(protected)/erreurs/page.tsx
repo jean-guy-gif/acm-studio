@@ -33,6 +33,9 @@ import {
   budgetWarningLabel,
 } from '@/features/search-budget/services/budget';
 import { formatRelativeMoment } from '@/lib/format';
+import { readAcademiaKeys } from '@/features/academia/queries/read-academia-keys';
+import { academiaKeyLine } from '@/features/academia/services/academia-key-status';
+import { ACADEMIA_API_AGENCES_OUVERTES } from '@/features/academia/services/academia-api-access';
 
 // Mission 100 — la page « Erreurs », réservée aux comptes de ACM_OPERATOR_EMAILS, écran ET
 // adresse : pour tout autre compte (conseiller, manager), elle n'existe pas (404). Le garde
@@ -43,12 +46,14 @@ export default async function ErrorsPage() {
     notFound();
   }
 
-  const [report, budgets, importFailures, aiBudgets] = await Promise.all([
+  const [report, budgets, importFailures, aiBudgets, academiaKeys] = await Promise.all([
     getErrorReport(),
     getAgencyBudgets(),
     getImportFailureReport(),
     // Mission 151 — le budget d'IA de chaque agence (lecture des notes, classement des annonces).
     getAiBudgets(),
+    // Mission 161 — ce que `GET /etat` dit des clés Academia posées dans Vercel.
+    readAcademiaKeys(),
   ]);
 
   return (
@@ -153,6 +158,37 @@ export default async function ErrorsPage() {
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2" data-testid="academia-keys">
+        <h2 className={sectionTitle}>Academia</h2>
+        {(['agencies', 'demo'] as const).map((kind) => {
+          const line = academiaKeyLine(kind, academiaKeys[kind]);
+          return (
+            <p key={kind} className="text-sm text-zinc-700 stage:text-white/75">
+              {line.label} :{' '}
+              <span
+                className={
+                  line.good ? 'font-semibold text-emerald-700' : 'font-semibold text-amber-700'
+                }
+              >
+                {line.text}
+              </span>
+            </p>
+          );
+        })}
+        <p className={hintText}>
+          Ouvert aux agences :{' '}
+          {ACADEMIA_API_AGENCES_OUVERTES === 'toutes'
+            ? 'toutes'
+            : budgets
+                .filter(({ agencyId }) =>
+                  (ACADEMIA_API_AGENCES_OUVERTES as readonly string[]).includes(agencyId),
+                )
+                .map(({ agencyName }) => agencyName)
+                .join(', ') || 'aucune'}{' '}
+          · la démo par sa clé d’essai.
+        </p>
       </div>
 
       <div className="flex flex-col gap-4">
