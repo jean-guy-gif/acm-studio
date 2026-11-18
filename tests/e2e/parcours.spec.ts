@@ -567,8 +567,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // La relance s'ouvre dans la carte : son bouton ne mène pas à la préparation ; le seul lien vers
     // le dossier est « Ouvrir le dossier → », en dernier des liens (M160).
     await expect(step.getByTestId('suivi-step-button')).not.toHaveAttribute('href', /.*/);
-    await expect(step.locator('a[href^="/builder"]')).toHaveCount(1);
-    await expect(step.getByTestId('suivi-open-dossier')).toHaveAttribute(
+    await expect(step.locator(`a[href="/builder/${projectId}"]`)).toHaveCount(1);
+    await expect(step.getByTestId('suivi-open-project')).toHaveAttribute(
       'href',
       `/builder/${projectId}`,
     );
