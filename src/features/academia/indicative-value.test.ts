@@ -125,10 +125,15 @@ describe('la valeur indicative d’Academia ne peut pas atteindre le vendeur', (
     expect(empty).toMatch(/data-testid="your-range-min" value=""/);
     expect(empty).toMatch(/data-testid="your-range-max" value=""/);
     expect(empty).toContain('Modifiable, c’est la seule enregistrée.');
-    // Sa fourchette enregistrée s'affiche telle quelle, jamais remplacée par celle d'Academia.
+    // Sa fourchette enregistrée s'affiche telle quelle, jamais remplacée par celle d'Academia,
+    // écrite avec l'espace des milliers (Jean-Guy, 18/11).
     const saved = render(900000, 990000);
-    expect(saved).toMatch(/data-testid="your-range-min" value="900000"/);
-    expect(saved).toMatch(/data-testid="your-range-max" value="990000"/);
+    expect(saved).toMatch(/data-testid="your-range-min" value="900\u202f000"/);
+    expect(saved).toMatch(/data-testid="your-range-max" value="990\u202f000"/);
+    // Les permis du dossier d'adresse disent leur état en français (Jean-Guy, 18/11).
+    expect(saved).toContain('terminé, à 234');
+    expect(saved).toContain('autorisé, à 128');
+    expect(saved).not.toMatch(/\btermine\b|\bautorise\b/);
     // Jamais le mot interdit à l'écran (M105).
     expect(empty).not.toMatch(/estimation|estimateur/i);
   });

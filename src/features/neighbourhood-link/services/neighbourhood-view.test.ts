@@ -97,8 +97,8 @@ describe('le quartier, dit au vendeur', () => {
     });
     const sales = fr('ventes');
     expect(sales).toMatchObject({
-      // La vue « bien-client » ne dit pas depuis quand : rien n'est ajouté.
-      headline: '11 maisons de 5 pièces vendues autour de chez vous',
+      // La vue « bien-client » ne dit pas encore depuis quand : 2021, confirmé par Jean-Guy.
+      headline: '11 maisons de 5 pièces vendues autour de chez vous depuis 2021',
       scale: `À moins de 250${NB}m de votre bien`,
     });
     expect(sales?.kind === 'sales' && sales.cards[0]).toEqual({
@@ -108,7 +108,14 @@ describe('le quartier, dit au vendeur', () => {
       facts: `118${NB}m² · à environ 100${NB}m`,
     });
     expect(en('ventes')).toMatchObject({
-      headline: '11 houses with 5 rooms sold around you',
+      headline: '11 houses with 5 rooms sold around you since 2021',
+    });
+  });
+
+  it('le jour où la vue donne le début de la période, le titre reprend sa valeur', () => {
+    const withSince = { ...blocks, ventes: { ...blocks.ventes!, since: 2022 } };
+    expect(neighbourhoodView(withSince, 'ventes', CLIENT_TEXTS.fr, 'fr')).toMatchObject({
+      headline: '11 maisons de 5 pièces vendues autour de chez vous depuis 2022',
     });
   });
 
