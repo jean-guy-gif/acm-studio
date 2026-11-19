@@ -4,19 +4,20 @@ import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './su
 
 // Mission 147 (partie A) — Academia à la place du dossier d'adresse et du « Vivre ici » d'ACM, sur
 // l'URL d'essai, avec le compte de l'agence de démonstration (remise à zéro d'abord) :
-//   1. Bien vendeur et « Avant le rendez-vous » : les liens vers Academia (la démo ouvre sa page de
-//      présentation, sans copier l'adresse inventée) ; plus de dossier d'adresse ni de ligne des
-//      ventes réelles d'ACM ;
-//   2. le lien client « Vivre ici » collé sur le mandat de Mougins : un autre site refusé, un lien
-//      d'Academia enregistré ; il s'affiche sous le bien sur le lien des Keller, ouvert sur un
-//      téléphone ; puis il est retiré (la démo ne sème aucun lien, M114) ;
+//   1. Bien vendeur et « Avant le rendez-vous » : la démo a l'accès à l'API (sa clé d'essai) ; depuis
+//      les correctifs 161, ni « Dossier d'adresse ↗ » ni « Ventes réelles dans Academia ↗ » : tout
+//      est dans ACM ; plus de dossier d'adresse construit par ACM ;
+//   2. le lien client « Vivre ici » du mandat de Mougins, créé en un clic (le champ à coller n'est
+//      plus que le repli quand Academia ne répond pas) ; il s'affiche sous le bien sur le lien des
+//      Keller, ouvert sur un téléphone ; puis il est retiré (la démo ne sème aucun lien, M114) ;
+//      Academia muette : la suite est sautée, « Academia ne répond pas » (décision du 18/11) ;
 //   3. « La vente » des Keller : Dossier d'adresse et Vivre ici ;
 //   4. « Confirmer la visite » (M142) des Wilson, sur une annonce : la sélection seule, en anglais.
 // Le message avec le lien Academia est prouvé par les tests unitaires (aucune visite à confirmer sur
 // un mandat dans la démo).
 
 const ACADEMIA = 'https://app.myacademia.ai';
-const E2E_LINK = 'https://app.myacademia.ai/l/e2e-acm.0147';
+const ACADEMIA_DOWN = 'Academia ne répond pas';
 
 async function resetDemo(page: Page): Promise<void> {
   await resetDemoByScreen(page);
@@ -46,15 +47,13 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
   const garcia = await dossierId(page, 'ready');
   const mougins = await dossierId(page, 'signed', 'M. Lefebvre');
 
-  await test.step('Bien vendeur : « Le bien dans Academia », la présentation en démo', async () => {
+  await test.step('Bien vendeur : « Le bien dans Academia », tout dans ACM', async () => {
     await page.goto(`/builder/${garcia}/property`);
     const card = page.getByTestId('academia-card');
     await expect(card).toContainText('Le bien dans Academia');
     await expect(card).toContainText('Pour vous seul.');
-    await expect(card.getByTestId('academia-address')).toHaveAttribute('href', ACADEMIA);
-    await expect(card.getByTestId('academia-address')).toHaveAttribute('target', '_blank');
-    await expect(card.getByTestId('academia-living')).toHaveAttribute('href', ACADEMIA);
-    await expect(card).toContainText('S’ouvre sur la présentation d’Academia.');
+    await expect(card.getByTestId('academia-address')).toHaveCount(0);
+    await expect(card.getByTestId('academia-living')).toHaveCount(0);
     // Jamais l'adresse inventée du scénario à copier.
     await expect(card).not.toContainText('Adresse copiée en un toucher');
     // Le dossier d'adresse d'ACM n'existe plus.
@@ -63,41 +62,52 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
     await expectOneFilled(page, 'Bien vendeur');
   });
 
-  await test.step('Avant le rendez-vous : « Ventes réelles dans Academia ↗ »', async () => {
+  await test.step('Avant le rendez-vous : plus de « Ventes réelles dans Academia ↗ »', async () => {
     await page.goto(`/builder/${garcia}/avant-rendez-vous`);
-    const sales = page.getByTestId('academia-sales');
-    await expect(sales).toHaveText('Ventes réelles dans Academia ↗');
-    await expect(sales).toHaveAttribute('href', ACADEMIA);
+    await expect(page.getByTestId('academia-sales')).toHaveCount(0);
     await expect(page.getByTestId('real-sales-line')).toHaveCount(0);
     await expect(page.getByTestId('real-sales-missing')).toHaveCount(0);
     await expectOneFilled(page, 'Avant le rendez-vous');
   });
 
   try {
-    await test.step('Le lien « Vivre ici » collé sur le mandat de Mougins', async () => {
+    let created = '';
+    await test.step('Le lien « Vivre ici » du mandat de Mougins, créé en un clic', async () => {
       await page.goto(`/builder/${mougins}/property`);
-      // Mission 157 — avec la clé d'essai, la démo crée le lien en un clic ; le champ à coller est
-      // le repli, replié sous « Coller le lien à la main ».
-      const fallback = page.getByTestId('living-here-fallback');
-      if ((await fallback.count()) > 0 && (await fallback.getAttribute('open')) == null) {
-        await fallback.locator('summary').click();
+      const card = page.getByTestId('academia-card');
+      await card.getByTestId('living-here-create').click();
+      const open = card.getByRole('link', { name: 'Ouvrir ↗' });
+      let outcome = 'waiting' as 'ready' | 'failed' | 'waiting';
+      try {
+        await expect
+          .poll(
+            async () => {
+              if ((await open.count()) > 0) outcome = 'ready';
+              else if ((await card.getByTestId('living-here-failed').count()) > 0)
+                outcome = 'failed';
+              return outcome;
+            },
+            { timeout: 150_000, intervals: [1_000, 2_000, 5_000] },
+          )
+          .not.toBe('waiting');
+      } catch {
+        // Le délai est dépassé : Academia n'a pas répondu.
       }
-      const field = page.getByTestId('academia-living-link');
-      await expect(field).toContainText('Montré sur le lien de chaque acquéreur');
-      await field
-        .getByTestId('academia-living-input')
-        .fill('https://www.seloger.com/annonces/1.htm');
-      await field.getByTestId('academia-living-save').click();
-      await expect(field.getByTestId('academia-living-error')).toHaveText(
-        'Collez le lien « Vivre ici » donné par Academia : il commence par https://app.myacademia.ai/l/',
-      );
-      await field.getByTestId('academia-living-input').fill(E2E_LINK);
-      await field.getByTestId('academia-living-save').click();
-      await expect(field.getByTestId('academia-living-saved')).toHaveText('✓ Lien enregistré');
-      await page.reload();
-      await expect(page.getByTestId('academia-living-input')).toHaveValue(E2E_LINK);
-      await expect(page.getByTestId('academia-living-remove')).toBeVisible();
-      await expectOneFilled(page, 'Bien vendeur (lien collé)');
+      if (outcome !== 'ready') {
+        // Academia muette ou en échec : le repli, et lui seul, est proposé (correctifs 161) ; seule
+        // l'étape du lien des Keller est sautée, la suite ne dépend pas d'Academia.
+        if (outcome === 'failed') {
+          await expect(card.getByTestId('living-here-fallback')).toBeVisible();
+        }
+        test
+          .info()
+          .annotations.push({ type: 'skip', description: `${ACADEMIA_DOWN} (${outcome})` });
+        return;
+      }
+      created = (await open.getAttribute('href')) ?? '';
+      expect(created).toMatch(/^https:\/\/app\.myacademia\.ai\/l\//);
+      await expect(card.getByTestId('living-here-fallback')).toHaveCount(0);
+      await expectOneFilled(page, 'Bien vendeur (lien créé)');
     });
 
     let kellerPath = '';
@@ -115,6 +125,7 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
     });
 
     await test.step('Le lien des Keller, sur un téléphone : « Vivre ici » sous le mandat', async () => {
+      if (!created) return;
       await page.goto(`${kellerPath}/dossier`);
       // « Créer un nouveau lien » si les Keller en ont déjà un (M122 B).
       await page
@@ -139,7 +150,7 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
           await visitor.getByTestId('deck-open-item').first().click();
         }
         await expect(living.first()).toBeVisible();
-        await expect(living.first()).toHaveAttribute('href', E2E_LINK);
+        await expect(living.first()).toHaveAttribute('href', created);
         await expect(living.first()).toHaveAttribute('target', '_blank');
         await expect(living.first()).toContainText('Vivre ici');
         await expect(living.first()).toContainText('Le quartier, les écoles, les commerces');
@@ -153,10 +164,10 @@ test('Academia : les liens du conseiller, le lien « Vivre ici » collé, et « 
   } finally {
     // Le lien de l'e2e est retiré : la démo ne garde aucun lien Academia inventé.
     await page.goto(`/builder/${mougins}/property`);
-    const remove = page.getByTestId('academia-living-remove');
+    const remove = page.getByTestId('living-here-remove');
     if ((await remove.count()) > 0) {
       await remove.click();
-      await expect(page.getByTestId('academia-living-remove')).toHaveCount(0);
+      await expect(page.getByTestId('living-here-remove')).toHaveCount(0);
     }
   }
 

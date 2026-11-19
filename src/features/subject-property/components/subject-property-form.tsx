@@ -57,6 +57,7 @@ import { SubjectPropertyPhotosField } from '@/features/subject-property-photos/c
 import type { UpdatePropertyPhotosResult } from '@/features/subject-property-photos/actions/update-property-photos';
 import type { UploadPropertyPhotosResult } from '@/features/subject-property-photos/actions/upload-property-photos';
 import type { SignedPhoto } from '@/features/subject-property-photos/services/property-photo-storage';
+import { propertyAddressLine } from '@/lib/academia';
 
 type ScalarState = {
   property_type: string;
@@ -169,6 +170,7 @@ export function SubjectPropertyForm({
   onDirty,
   complementsSlot,
   onComplementsCount,
+  onAddressChange,
   ref,
 }: {
   property: SubjectProperty | null;
@@ -186,6 +188,8 @@ export function SubjectPropertyForm({
   complementsSlot: HTMLElement | null;
   // Mission 110 — ce que la ligne de résumé des compléments compte, tenu à jour à la saisie.
   onComplementsCount?: (counts: { filled: number; toVerify: number }) => void;
+  // Correctifs 161 — l'adresse telle que tapée (rue, code postal, ville), pour la carte Academia.
+  onAddressChange?: (line: string | null) => void;
   ref?: Ref<SheetSectionHandle>;
 }) {
   const [scalars, setScalars] = useState<ScalarState>(() => initialScalars(property, imported));
@@ -234,6 +238,15 @@ export function SubjectPropertyForm({
   useEffect(() => {
     onComplementsCount?.({ filled: complementsFilled, toVerify: complementsToVerify });
   }, [onComplementsCount, complementsFilled, complementsToVerify]);
+
+  const typedAddress = propertyAddressLine({
+    address: scalars.address,
+    postalCode: scalars.postal_code,
+    city: scalars.city,
+  });
+  useEffect(() => {
+    onAddressChange?.(typedAddress);
+  }, [onAddressChange, typedAddress]);
 
   useImperativeHandle(ref, () => ({
     entries: (): SheetEntries => [

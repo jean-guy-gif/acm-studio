@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
+import { usePropertyDraft } from '@/features/academia/components/property-draft';
+import { reportedDraft } from '@/features/academia/services/card-address';
 import { BasculeBanner } from '@/features/projects/components/bascule-banner';
 import { CondominiumForm } from '@/features/subject-property-condominium/components/condominium-form';
 import type { SubjectPropertyCondominium } from '@/features/subject-property-condominium/types';
@@ -182,6 +184,13 @@ export function SubjectPropertyImportForm({
   }
 
   const isDirty = dirty.property || dirty.diagnostics || dirty.condominium;
+  // Correctifs 161 — l'adresse tapée et pas encore enregistrée, pour la carte Academia d'à côté :
+  // « Enregistrez d'abord la fiche » ; enregistrée, plus rien à dire (la page relit l'adresse).
+  const [typedAddress, setTypedAddress] = useState<string | null>(null);
+  const { report: reportDraft } = usePropertyDraft();
+  useEffect(() => {
+    reportDraft(reportedDraft(dirty.property, typedAddress));
+  }, [reportDraft, dirty.property, typedAddress]);
   // Mission 93 — actualiser, fermer l'onglet ou cliquer dans le menu avec des modifications non
   // enregistrées demande confirmation. Les deux sorties de la barre, elles, enregistrent d'abord.
   useUnsavedChangesGuard(isDirty);
@@ -216,6 +225,9 @@ export function SubjectPropertyImportForm({
       if (result.becameReady) {
         setBecameReady(true);
       }
+      // Correctifs 161 — le reste de la fiche est enregistré, l'adresse comprise : la page la relit,
+      // pour que la carte Academia ne dise pas « Enregistrez d'abord la fiche » pour rien.
+      router.refresh();
       return false;
     }
     setErrors(NO_SHEET_ERRORS);
@@ -341,6 +353,7 @@ export function SubjectPropertyImportForm({
         imported={imported ?? undefined}
         errors={errors.property}
         onDirty={() => markDirty('property')}
+        onAddressChange={setTypedAddress}
         complementsSlot={complementsSlot}
         onComplementsCount={setPropertyComplements}
       />

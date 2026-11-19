@@ -203,14 +203,11 @@ describe('AcademiaCard, l’API ouverte', () => {
       ),
     );
 
-  it('rien encore : l’adresse enregistrée, le bouton en contour, le champ à coller replié', () => {
+  it('rien encore : l’adresse enregistrée, le bouton en contour, pas de repli (correctifs 161)', () => {
     const html = withApi({ kind: 'idle', stale: false });
     expect(html).toContain('Créer le lien « Vivre ici »');
     expect(html).toContain(ADDRESS);
-    expect(html).toContain('Coller le lien à la main');
-    expect(html).not.toContain(
-      '<details class="text-sm text-zinc-600" data-testid="living-here-fallback" open',
-    );
+    expect(html).not.toContain('Coller le lien à la main');
     expect(html).not.toContain('btn-filled');
   });
 
@@ -268,10 +265,11 @@ describe('AcademiaCard, l’API ouverte', () => {
     expect(text).not.toMatch(/demonstration|démonstration/i);
   });
 
-  it('un lien collé à la main : le repli ouvert, pour le voir', () => {
-    expect(withApi({ kind: 'idle', stale: false }, ADDRESS, LINK)).toMatch(
-      /data-testid="living-here-fallback" open/,
-    );
+  it('un lien collé à la main : montré tel quel, sans le champ (correctifs 161)', () => {
+    const html = withApi({ kind: 'idle', stale: false }, ADDRESS, LINK);
+    expect(html).toContain('data-testid="living-here-pasted"');
+    expect(html).toContain(LINK);
+    expect(html).not.toContain('Coller le lien à la main');
   });
 
   it('le lien créé : sa validité, Ouvrir, Copier, Retirer', () => {
@@ -344,8 +342,8 @@ describe('AcademiaCard, l’API ouverte', () => {
     expect(html).not.toContain('montré à chaque acquéreur');
   });
 
-  it('sans adresse : le repli reste ouvert à la main', () => {
-    expect(withApi({ kind: 'idle', stale: false }, null)).toContain('Coller le lien à la main');
+  it('sans adresse : pas de repli, l’adresse d’abord (correctifs 161)', () => {
+    expect(withApi({ kind: 'idle', stale: false }, null)).not.toContain('Coller le lien à la main');
   });
 
   it('en préparation : l’attente, dite (20 à 60 secondes, vérifiée toutes les 5 s, M161)', () => {

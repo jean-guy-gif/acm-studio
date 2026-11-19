@@ -88,6 +88,7 @@ export function AcademiaLinks({
   variant = 'buttons',
   leading = null,
   unread = false,
+  saveFirst = false,
 }: {
   addressLink: AcademiaLink | null;
   livingLink: AcademiaLink | null;
@@ -96,9 +97,22 @@ export function AcademiaLinks({
   leading?: ReactNode;
   // L'adresse n'a pas pu être lue : ni lien, ni « Ajoutez l'adresse du bien », qui serait faux (M98).
   unread?: boolean;
+  // Correctifs 161 — l'adresse tapée sur la fiche n'est pas encore enregistrée : les liens
+  // copieraient l'ancienne (ou aucune) ; la carte le dit.
+  saveFirst?: boolean;
 }) {
   const { state, copy } = useCopyOnOpen();
   const row = 'flex flex-wrap items-center gap-x-5 gap-y-2';
+  if (saveFirst && !unread) {
+    return (
+      <div className={row} data-testid="academia-links">
+        {leading}
+        <p className="text-sm font-medium text-zinc-800" data-testid="academia-save-first">
+          Enregistrez d’abord la fiche
+        </p>
+      </div>
+    );
+  }
   if (unread || !addressLink || !livingLink) {
     return (
       <div className={row} data-testid="academia-links">
@@ -157,11 +171,16 @@ export function AcademiaLinks({
 export function AcademiaSalesLink({
   salesLink,
   missingHref,
+  hidden = false,
 }: {
   salesLink: AcademiaLink | null;
   missingHref: string;
+  // Correctifs 161 — l'API ouverte : les ventes sont dans le dossier d'adresse, juste au-dessus
+  // (règle de Jean-Guy, 19/11 : un bouton vers Academia part quand ACM montre déjà la même chose).
+  hidden?: boolean;
 }) {
   const { state, copy } = useCopyOnOpen();
+  if (hidden) return null;
   if (!salesLink) return <MissingAddress href={missingHref} />;
   return (
     <div className="flex flex-col gap-1" data-testid="academia-sales-block">
