@@ -330,7 +330,7 @@ export const FRENCH_TEXTS: ClientTexts = {
         street: 'Rue',
         rooms: 'Pièces',
         surface: 'Surface',
-        distance: 'Distance',
+        distance: 'À environ',
         price: 'Prix',
       },
       none: 'Aucune vente relevée autour de chez vous.',

@@ -41,6 +41,9 @@ export function placeTimelineLabels(
   only: Set<number>,
   width = Infinity,
   bottom = Infinity,
+  // Le rayon des points (8, ou 5 au-delà de 12 ventes) : un prix s'écarte d'un point de ce rayon et
+  // de 3 px, pas plus.
+  dot = 8,
   charWidth = 9.5,
 ): PlacedLabel[] {
   type Box = PlacedLabel & { x0: number; x1: number; y0: number; y1: number };
@@ -53,7 +56,12 @@ export function placeTimelineLabels(
     b.y1 > bottom ||
     boxes.some((o) => b.x0 < o.x1 && o.x0 < b.x1 && b.y0 < o.y1 && o.y0 < b.y1) ||
     points.some(
-      (p, i) => i !== own && p.x > b.x0 - 8 && p.x < b.x1 + 8 && p.y > b.y0 - 8 && p.y < b.y1 + 8,
+      (p, i) =>
+        i !== own &&
+        p.x > b.x0 - dot - 3 &&
+        p.x < b.x1 + dot + 3 &&
+        p.y > b.y0 - dot - 3 &&
+        p.y < b.y1 + dot + 3,
     );
   points.forEach((p, i) => {
     if (!only.has(i)) return;
