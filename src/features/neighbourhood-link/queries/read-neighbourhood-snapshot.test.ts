@@ -46,7 +46,10 @@ function client(): SupabaseClient<Database> {
 const SNAPSHOT = {
   blocks: {
     risques: { source: 'Géorisques', date: '2026-10-07', clay: 2, earthquake: 4, radon: 1 },
-    ventes: { list: [{ month: '2025-11', price: 876800, street: 'Rue des Oliviers' }] },
+    ventes: {
+      listRadius: 250,
+      list: [{ month: '2025-11', price: 876800, street: 'Rue des Oliviers' }],
+    },
     estimation: { middle: 980000 },
   },
   taken_at: '2026-11-17T18:00:00Z',

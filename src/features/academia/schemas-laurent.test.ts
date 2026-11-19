@@ -31,6 +31,7 @@ vi.mock('@/features/subject-property/actions/save-advisor-range', () => ({
 const { AddressViewPanel } = await import('@/features/academia/components/address-view-panel');
 
 const NB = ' ';
+const plain = (html: string) => html.replace(/&#x27;|&#39;/g, '’');
 const schema = (name: string) =>
   JSON.parse(readFileSync(`missions/academia-api-laurent/${name}`, 'utf8')) as Record<
     string,
@@ -151,9 +152,10 @@ describe('la rue inventée du dossier de démonstration ne s’écrit nulle part
   });
 });
 
-// L'« anneau » vide : aucun cercle ne réunit 5 ventes (README de Laurent). Ce qu'ACM affiche au
-// 19/11, avant la décision de Jean-Guy.
-describe('l’anneau vide : ce qu’ACM affiche aujourd’hui', () => {
+// L'« anneau » vide : aucun cercle ne réunit 5 ventes (README de Laurent). Décision de Jean-Guy
+// (19/11) : le vendeur ne voit pas le bloc des ventes ; le conseiller lit les nombres par rayon et
+// « Moins de 5 ventes comparables à moins de 800 m : Academia ne donne pas de liste. »
+describe('l’anneau vide', () => {
   const withoutRing = (json: unknown, emptyList: boolean) => {
     const copy = structuredClone(json) as { blocs: { ventes: Record<string, unknown> } };
     copy.blocs.ventes.anneau = null;
@@ -176,37 +178,97 @@ describe('l’anneau vide : ce qu’ACM affiche aujourd’hui', () => {
     expect(schemaErrors(SCHEMA_CLIENT, withoutRing(exempleBienClient, true))).toEqual([]);
   });
 
-  it('le conseiller : les anneaux comptés, aucun en avant, « Aucune vente comparable relevée »', () => {
+  it('le conseiller : les nombres par rayon, aucun en avant, puis « Moins de 5 ventes comparables »', () => {
     const view = parsePropertyView(withoutRing(exempleBien, true))!;
     expect(view.sales).toMatchObject({ listRadius: null, list: [] });
+    const html = plain(
+      renderToStaticMarkup(
+        createElement(AddressViewPanel, {
+          projectId: 'p1',
+          state: { kind: 'ready', view, facts: { type: 'appartement', rooms: 4, surface: 80 } },
+          savedRange: { min: null, max: null },
+          demo: false,
+        }),
+      ),
+    );
+    expect(html).toContain('data-testid="address-view-rings"');
+    expect(html).toContain(`800${NB}m · <b>4</b>`);
+    expect(html).not.toContain('border-indigo-200');
+    expect(html).not.toContain('la liste ci-dessous');
+    expect(html).toContain(
+      `Moins de 5 ventes comparables à moins de 800${NB}m : Academia ne donne pas de liste.`,
+    );
+    expect(html).not.toContain('Aucune vente comparable relevée');
+    expect(html.indexOf('address-view-rings')).toBeLessThan(html.indexOf('address-view-no-ring'));
+  });
+
+  it('le vendeur : le bloc n’est pas proposé, ni au Live ni dans les documents', () => {
+    for (const emptyList of [true, false]) {
+      const blocks = parseNeighbourhoodBlocks(withoutRing(exempleBienClient, emptyList))!;
+      expect(isShowableBlock(blocks, 'ventes')).toBe(false);
+      expect(neighbourhoodView(blocks, 'ventes', CLIENT_TEXTS.fr, 'fr')).toBeNull();
+      expect(neighbourhoodView(blocks, 'ventes', CLIENT_TEXTS.en, 'en')).toBeNull();
+      expect(pickNeighbourhoodBlocks(blocks, ['ventes'])).toEqual({});
+    }
+  });
+
+  it('un quartier déjà enregistré avec un anneau vide ne montre plus ses ventes', () => {
+    const kept = pickNeighbourhoodBlocks(parseNeighbourhoodBlocks(clientView)!, ['ventes']);
+    const stored = structuredClone(kept) as { ventes: { listRadius: number | null } };
+    stored.ventes.listRadius = null;
+    const blocks = readStoredNeighbourhood(stored);
+    expect(isShowableBlock(blocks, 'ventes')).toBe(false);
+    expect(neighbourhoodView(blocks, 'ventes', CLIENT_TEXTS.fr, 'fr')).toBeNull();
+  });
+
+  it('avec un anneau, le bloc reste proposé', () => {
+    const blocks = parseNeighbourhoodBlocks(exempleBienClient)!;
+    expect(isShowableBlock(blocks, 'ventes')).toBe(true);
+  });
+});
+
+describe('les permis suivent les schémas de Laurent', () => {
+  const withPermit = <T>(json: T, permit: Record<string, unknown>): T => {
+    const copy = structuredClone(json) as { blocs: { permis: { construire: unknown[] } } };
+    copy.blocs.permis.construire = [permit, ...copy.blocs.permis.construire];
+    return copy as T;
+  };
+
+  it('« chantier_ouvert » se dit « travaux commencés », chez le conseiller et chez le vendeur', () => {
+    const json = withPermit(exempleBien, {
+      ...(exempleBien.blocs.permis.construire[0] as Record<string, unknown>),
+      etat: 'chantier_ouvert',
+    });
+    expect(schemaErrors(SCHEMA_BIEN, json)).toEqual([]);
     const html = renderToStaticMarkup(
       createElement(AddressViewPanel, {
         projectId: 'p1',
-        state: { kind: 'ready', view, facts: { type: 'appartement', rooms: 4, surface: 80 } },
+        state: {
+          kind: 'ready',
+          view: parsePropertyView(json)!,
+          facts: { type: 'appartement', rooms: 4, surface: 80 },
+        },
         savedRange: { min: null, max: null },
         demo: false,
       }),
     );
-    expect(html).toContain('data-testid="address-view-rings"');
-    expect(html).not.toContain('la liste ci-dessous');
-    expect(html).toContain('Aucune vente comparable relevée autour du bien.');
+    expect(html).toContain('travaux commencés');
+    const client = withPermit(exempleBienClient, {
+      ...(exempleBienClient.blocs.permis.construire[0] as Record<string, unknown>),
+      etat: 'chantier_ouvert',
+    });
+    expect(schemaErrors(SCHEMA_CLIENT, client)).toEqual([]);
+    const blocks = parseNeighbourhoodBlocks(client)!;
+    expect(blocks.permis!.build[0]!.state).toBe('commence');
   });
 
-  it('le vendeur : le bloc reste proposé, « Aucune vente relevée autour de chez vous. », sans échelle', () => {
-    const blocks = parseNeighbourhoodBlocks(withoutRing(exempleBienClient, true))!;
-    expect(isShowableBlock(blocks, 'ventes')).toBe(true);
-    expect(neighbourhoodView(blocks, 'ventes', CLIENT_TEXTS.fr, 'fr')).toMatchObject({
-      headline: 'Aucune vente relevée autour de chez vous.',
-      scale: null,
-      timeline: [],
+  it('la rue inventée ne s’écrit pas dans les permis du conseiller', () => {
+    const json = withPermit(exempleBien, {
+      ...(exempleBien.blocs.permis.construire[0] as Record<string, unknown>),
+      adresse: '12 Avenue de la Demonstration',
     });
-  });
-
-  it('le vendeur, si une liste arrivait quand même : le titre, sans « À moins de »', () => {
-    const blocks = parseNeighbourhoodBlocks(withoutRing(exempleBienClient, false))!;
-    expect(neighbourhoodView(blocks, 'ventes', CLIENT_TEXTS.fr, 'fr')).toMatchObject({
-      headline: `37 appartements de 60 à 100${NB}m² vendus autour de chez vous depuis 2021`,
-      scale: null,
-    });
+    const view = parsePropertyView(json)!;
+    expect(view.permits!.build[0]!.address).toBeNull();
+    expect(JSON.stringify(view.permits)).not.toMatch(/d[eé]monstration/i);
   });
 });

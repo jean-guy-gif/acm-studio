@@ -144,6 +144,8 @@ function Indicative({ value }: { value: IndicativeValue }) {
 // L'état d'un permis, tel que la source le code (« termine »), écrit en français.
 const PERMIT_STATES: Record<string, string> = {
   autorise: 'autorisé',
+  // Un permis de construire dit « chantier_ouvert » (schémas de Laurent du 19/11).
+  chantier_ouvert: 'travaux commencés',
   commence: 'travaux commencés',
   termine: 'terminé',
 };
@@ -372,6 +374,16 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
                 </tbody>
               </table>
             </div>
+          ) : sales.listRadius == null ? (
+            // Correctifs 161 — l'« anneau » vide : aucun cercle ne réunit 5 ventes (README de
+            // Laurent) ; les nombres par rayon restent au-dessus (décision de Jean-Guy, 19/11).
+            <p className={hintText} data-testid="address-view-no-ring">
+              Moins de 5 ventes comparables à moins de{' '}
+              {meters(
+                sales.rings.length ? Math.max(...sales.rings.map((ring) => ring.radius)) : 800,
+              )}{' '}
+              : Academia ne donne pas de liste.
+            </p>
           ) : (
             <p className={hintText}>Aucune vente comparable relevée autour du bien.</p>
           )}

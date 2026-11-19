@@ -26,6 +26,7 @@ const { PropertyDraftContext } = await import('@/features/academia/components/pr
 const { showsFallback } = await import('@/features/academia/services/card-address');
 const { cardAddressState, reportedDraft, saveFirstKind } =
   await import('@/features/academia/services/card-address');
+const { livingHereAgeLine } = await import('@/features/academia/services/living-here-age');
 const { AcademiaSalesLink } = await import('@/features/academia/components/academia-links');
 const { PositioningDecisionForm } =
   await import('@/features/price-positioning/components/positioning-decision-form');
@@ -187,6 +188,23 @@ describe('un lien déjà collé à la main avant l’ouverture', () => {
     expect(html).toContain('Créer le lien « Vivre ici »');
     expect(html).not.toContain('Coller le lien à la main');
     expect(html).not.toContain(`value="${PASTED}"`);
+  });
+
+  it('un lien collé qui ne vaut plus reste affiché, avec « Retirer » et sa ligne orange', () => {
+    const now = new Date('2026-11-19T10:00:00Z');
+    for (const savedLine of [
+      livingHereAgeLine('2026-10-10T10:00:00Z', now, { canCreate: true }),
+      livingHereAgeLine('2026-11-10T10:00:00Z', now, { moved: true, canCreate: true }),
+      livingHereAgeLine(null, now, { canCreate: true }),
+    ]) {
+      expect(savedLine?.tone).toBe('warn');
+      const html = cardHtml({ api: IDLE, savedUrl: PASTED, savedLine });
+      expect(html).toContain('data-testid="living-here-pasted"');
+      expect(html).toContain(PASTED);
+      expect(html).toContain('data-testid="living-here-pasted-remove"');
+      expect(html).toContain('n’est plus montré, ni au vendeur ni aux acquéreurs');
+      expect(html).toContain('Créer le lien « Vivre ici »');
+    }
   });
 
   it('sans lien collé : aucun bloc', () => {
