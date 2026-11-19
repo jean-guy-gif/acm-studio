@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { RenewLinkOnOpen } from '@/features/academia/components/renew-link-on-open';
 import { AddressViewPanel } from '@/features/academia/components/address-view-panel';
 import {
   readAddressView,
@@ -36,7 +37,11 @@ export async function AddressViewSection({
     access,
   });
   return (
-    <AddressViewPanel projectId={projectId} state={state} savedRange={savedRange} demo={demo} />
+    <>
+      {/* Mission 161 — le lien « Vivre ici » de 7 jours ou plus, renouvelé par une action. */}
+      <RenewLinkOnOpen projectId={projectId} />
+      <AddressViewPanel projectId={projectId} state={state} savedRange={savedRange} demo={demo} />
+    </>
   );
 }
 

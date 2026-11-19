@@ -22,6 +22,8 @@ export type FakeAcademiaRoutes = {
   readView?: FakeAcademiaReply[];
   // Mission 159 — la vue « bien-client », la seule qui va au vendeur.
   readClientView?: FakeAcademiaReply[];
+  // Mission 161 — `GET /etat` : la clé vue par Academia.
+  status?: FakeAcademiaReply[];
 };
 
 export const FAKE_ACADEMIA_ID = 'dos_8f2c1a9e';
@@ -40,6 +42,7 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
     ],
     readView: [...(routes.readView ?? [{ status: 200, body: { blocs: {} } }])],
     readClientView: [...(routes.readClientView ?? [{ status: 200, body: { blocs: {} } }])],
+    status: [...(routes.status ?? [{ status: 200, body: { ok: true } }])],
     createLink: [
       ...(routes.createLink ?? [
         { status: 201, body: { url: FAKE_LINK, expire_le: '2026-12-16T00:00:00Z' } },
@@ -89,6 +92,7 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
       reply = next(queues.readRequest);
     else if (method === 'POST' && /^\/api\/v1\/dossiers\/[^/]+\/liens-client$/.test(url.pathname))
       reply = next(queues.createLink);
+    else if (method === 'GET' && url.pathname === '/api/v1/etat') reply = next(queues.status);
     if (reply === 'timeout') {
       // Le délai du client coupe l'appel : on attend son signal.
       return new Promise((_, reject) => {

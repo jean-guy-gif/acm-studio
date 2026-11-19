@@ -21,6 +21,7 @@ import type {
   SourceInfo,
 } from '@/features/academia/services/property-view';
 import { GroupedDigitsInput, priceDigits } from '@/features/live-seller/components/price-input';
+import { AcademiaAutoRefresh } from '@/features/academia/components/academia-auto-refresh';
 import { saveAdvisorRange } from '@/features/subject-property/actions/save-advisor-range';
 import {
   formatDay,
@@ -65,11 +66,14 @@ function Block({
   title,
   info,
   children,
+  empty,
   hideNote = false,
 }: {
   title: string;
   info: SourceInfo;
   children: React.ReactNode;
+  // Mission 161 — ce que dit le bloc quand la source n'a rien trouvé (« aucun »), avec son échelle.
+  empty: string;
   // La note d'Academia déjà dite autrement dans le bloc (les permis de démolir).
   hideNote?: boolean;
 }) {
@@ -81,6 +85,17 @@ function Block({
       <h3 className="font-title text-base font-semibold text-zinc-900">{title}</h3>
       {info.ok ? (
         children
+      ) : info.empty ? (
+        <p className="text-sm text-zinc-800" data-testid="address-view-empty">
+          {empty}
+        </p>
+      ) : info.unchecked ? (
+        <>
+          <p className="text-sm text-zinc-800" data-testid="address-view-unchecked">
+            Non vérifié pour cette adresse.
+          </p>
+          <p className="text-xs text-zinc-500">Pas montré au vendeur.</p>
+        </>
       ) : (
         <p className="text-sm text-amber-700">La source n’a pas pu être lue pour cette adresse.</p>
       )}
@@ -251,7 +266,17 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
           </span>
         ) : null}
       </div>
-      {!sales.ok ? (
+      {sales.empty ? (
+        <p className="text-sm text-zinc-800" data-testid="address-view-empty">
+          Aucune vente relevée
+          {sales.listRadius ? ` à moins de ${meters(sales.listRadius)}` : ' autour du bien'}
+          {sales.since ? ` depuis ${sales.since}` : ''}.
+        </p>
+      ) : sales.unchecked ? (
+        <p className="text-sm text-zinc-800" data-testid="address-view-unchecked">
+          Non vérifié pour cette adresse. Pas montré au vendeur.
+        </p>
+      ) : !sales.ok ? (
         <p className="text-sm text-amber-700">La source n’a pas pu être lue pour cette adresse.</p>
       ) : (
         <>
@@ -367,7 +392,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {dpe ? (
-        <Block title="DPE de l’adresse" info={dpe}>
+        <Block title="DPE de l’adresse" info={dpe} empty="Aucun DPE enregistré à cette adresse.">
           {dpe.latest ? (
             <p className="text-sm text-zinc-800">
               {[
@@ -386,7 +411,11 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
         </Block>
       ) : null}
       {planning ? (
-        <Block title="Urbanisme" info={planning}>
+        <Block
+          title="Urbanisme"
+          info={planning}
+          empty={`Rien de relevé sur la parcelle, ni à moins de ${meters(300)}.`}
+        >
           {planning.sentence ? <p className="text-sm text-zinc-800">{planning.sentence}</p> : null}
           {planning.parcel || risks?.planningZone ? (
             <p className="text-sm text-zinc-500">
@@ -398,7 +427,12 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
         </Block>
       ) : null}
       {permits ? (
-        <Block title="Permis autour" info={permits} hideNote={permits.demolitionUnchecked}>
+        <Block
+          title="Permis autour"
+          info={permits}
+          hideNote={permits.demolitionUnchecked}
+          empty={`Aucun permis de construire relevé${permits.radius ? ` à moins de ${meters(permits.radius)}` : ' autour du bien'}${permits.since ? ` depuis ${permits.since}` : ''}.`}
+        >
           <p className="text-sm text-zinc-800">
             {permits.build.length === 0
               ? `Aucun permis de construire relevé${permits.radius ? ` à moins de ${meters(permits.radius)}` : ''}.`
@@ -423,7 +457,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
         </Block>
       ) : null}
       {risks ? (
-        <Block title="Risques" info={risks}>
+        <Block title="Risques" info={risks} empty="Aucun risque relevé pour cette adresse.">
           <p className="text-sm text-zinc-800">
             {[
               risks.clay ? `Argiles (à l’adresse du bien) : ${risks.clay.toLowerCase()}` : null,
@@ -445,6 +479,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
         <Block
           title={`Population${population.radius ? ` à ${meters(population.radius)}` : ''}`}
           info={population}
+          empty="Aucune donnée de population pour ce secteur."
         >
           <p className="text-sm text-zinc-800">
             {[
@@ -464,7 +499,11 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
         </Block>
       ) : null}
       {condominium ? (
-        <Block title="Copropriété" info={condominium}>
+        <Block
+          title="Copropriété"
+          info={condominium}
+          empty="Aucune copropriété enregistrée à cette adresse."
+        >
           <p className="text-sm text-zinc-800">
             {[
               // Le nom de la copropriété fictive de la démo n'est pas écrit (M114).
@@ -526,14 +565,20 @@ export function AddressViewPanel({
         </p>
       ) : null}
       {state.kind === 'waiting' ? (
-        <p className={hintText} data-testid="address-view-waiting">
-          Academia prépare le dossier d’adresse : il apparaîtra ici à la prochaine ouverture de la
-          page.
-        </p>
+        <>
+          <p className="text-sm text-zinc-800" role="status" data-testid="address-view-waiting">
+            Academia prépare le dossier d’adresse : 20 à 60 secondes. Il s’affiche ici dès qu’il est
+            prêt.
+          </p>
+          <p className={hintText}>
+            Le reste de la page est déjà là ; votre décision de prix ne l’attend pas.
+          </p>
+          <AcademiaAutoRefresh testId="address-view-waiting-long" />
+        </>
       ) : null}
       {state.kind === 'request_failed' ? (
         <p className={hintText} data-testid="address-view-request-failed">
-          Academia n’a pas pu préparer le dossier d’adresse.{' '}
+          Academia n’a pas pu préparer le dossier d’adresse pour l’instant, ou l’a effacé.{' '}
           <Link href={`/builder/${projectId}/property`} className={link}>
             Recréez le lien « Vivre ici » depuis Bien vendeur
           </Link>

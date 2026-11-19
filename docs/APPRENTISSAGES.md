@@ -613,6 +613,22 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   reformaté le passage (une signature passée sur plusieurs lignes) : relire le fichier avant.
 - 17/11 · M158 · Durées : suite e2e complète 39 min (28 sur 28), les sept specs qui passent par
   « Avant le rendez-vous » 24 min ; relecteur une passe, 3 min.
+- 19/11 · M161 · Un composant serveur ne doit rien écrire pendant son rendu, même « en passant »
+  (l'état d'une demande relu chez Academia, un lien renouvelé) : le relecteur l'a vu, la règle de
+  CLAUDE.md le refuse ; l'écriture passe par une action, déclenchée une fois à l'ouverture par un
+  petit composant client (`RenewLinkOnOpen`).
+- 19/11 · M161 · Une relecture en échec ne se lit jamais comme une attente : un 429 ou un 503 pendant
+  qu'Academia prépare le dossier disait « 20 à 60 secondes » et écrivait au journal toutes les 5 s.
+- 19/11 · M161 · Sans DOM dans les tests, une cadence (toutes les 5 s, 24 fois au plus) se prouve en
+  sortant sa logique du composant (`startAcademiaRefresh`) et en avançant des minuteries simulées
+  (`vi.useFakeTimers`).
+- 19/11 · M161 · Un fichier « use server » n'exporte que des actions : une fonction pure qui y était
+  (le message du plafond) doit vivre dans un service à part.
+- 19/11 · M161 · Prettier écrit les espaces insécables en clair (« \u00a0 » devient le caractère) :
+  un remplacement par script qui cherche l'échappement ne trouve plus rien.
+- 19/11 · M161 · Durées : suite e2e complète 37 min (27 sur 29, deux échecs de connexion du compte de
+  test verts au rejeu en 3,8 min) ; relecteur 3 min ; l'essai de Jean-Guy dans Start Academy, dossier
+  neuf prêt en 17 s chez Academia.
 - 18/11 · M159 · Le faux client Supabase (`fake-supabase`) répond selon la DERNIÈRE table de la
   chaîne : trois lectures lancées ensemble (`Promise.all`) reçoivent toutes la réponse de la dernière
   et un garde passe par accident ; dans une action testée ainsi, les lectures gardées se font l'une

@@ -161,17 +161,39 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect(server.calls).toEqual([]);
   });
 
-  it('un lien valable déjà rangé : rendu tel quel, sans appel', async () => {
+  it('un lien de moins de 7 jours déjà rangé : rendu tel quel, sans appel (M161)', async () => {
     state.project = { ...state.project, academia_living_here_url: FAKE_LINK };
     state.request = {
       academia_id: FAKE_ACADEMIA_ID,
       state: 'pret',
       property_address: ADDRESS,
       link_url: FAKE_LINK,
-      link_expires_at: new Date(Date.now() + 10 * 86_400_000).toISOString(),
+      link_expires_at: new Date(Date.now() + 28 * 86_400_000).toISOString(),
     };
     expect((await createLivingHereLink(PROJECT)).state).toBe('ready');
     expect(server.calls).toEqual([]);
+  });
+
+  it('161 · un lien de 7 jours ou plus : un neuf ; la création en échec garde le lien valable, au journal', async () => {
+    const old = 'https://app.myacademia.ai/l/ancien0123';
+    const oldRequest = {
+      academia_id: FAKE_ACADEMIA_ID,
+      state: 'pret',
+      property_address: ADDRESS,
+      link_url: old,
+      link_expires_at: new Date(Date.now() + 20 * 86_400_000).toISOString(),
+    };
+    state.project = { ...state.project, academia_living_here_url: old };
+    state.request = oldRequest;
+    expect(await refreshLivingHereLink(PROJECT)).toMatchObject({ state: 'ready', url: FAKE_LINK });
+    db.reset();
+    const { reportServerError } = await import('@/lib/app-errors/report-server-error');
+    vi.mocked(reportServerError).mockClear();
+    server = fakeAcademia({ createLink: [{ status: 503 }, { status: 503 }] });
+    vi.stubGlobal('fetch', server.fetch);
+    expect(await refreshLivingHereLink(PROJECT)).toMatchObject({ state: 'ready', url: old });
+    expect(written('projects', 'update')).toBeNull();
+    expect(reportServerError).toHaveBeenCalled();
   });
 
   it('un lien expiré : un lien neuf sur le même dossier, sans nouveau dossier (il ne compte pas)', async () => {
@@ -279,10 +301,10 @@ describe('« Créer le lien « Vivre ici » »', () => {
         'Academia ne répond pas pour l’instant. Réessayez dans un moment, ou collez le lien vous-même.',
         true,
       ],
-      // Au plafond du jour : « réessayez demain », sans « Réessayer » (Retry-After, contrat §3).
+      // Au plafond, sans Retry-After : « réessayez demain », sans « Réessayer » (M161).
       [
         429,
-        'Academia a atteint sa limite du jour : réessayez demain, ou collez le lien vous-même.',
+        'Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui : réessayez demain. Les dossiers déjà prêts restent lisibles. Ou collez le lien vous-même.',
         false,
       ],
       [
@@ -318,7 +340,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect(await refreshLivingHereLink(PROJECT)).toEqual({
       state: 'failed',
       message:
-        'Academia n’a pas pu préparer le dossier de cette adresse. Vérifiez l’adresse du bien, ou collez le lien vous-même.',
+        'Academia n’a pas pu préparer le dossier de cette adresse pour l’instant : réessayez plus tard, ou collez le lien vous-même.',
       retry: true,
     });
     expect(written('project_academia_requests', 'update')).toEqual({ state: 'erreur' });
@@ -375,5 +397,96 @@ describe('« Créer le lien « Vivre ici » »', () => {
   it('la clé n’est jamais dans ce que rend l’action', async () => {
     const result = await createLivingHereLink(PROJECT);
     expect(JSON.stringify(result)).not.toContain('msk_');
+  });
+
+  // Mission 161 — l'API réelle (Laurent, 18/11), contre un faux serveur.
+  it('161 · « echec » chez Academia : réessayer plus tard ; le geste suivant redemande un dossier', async () => {
+    state.request = {
+      academia_id: FAKE_ACADEMIA_ID,
+      state: 'en_cours',
+      property_address: ADDRESS,
+      link_url: null,
+      link_expires_at: null,
+    };
+    server = fakeAcademia({
+      readRequest: [{ status: 200, body: { id: FAKE_ACADEMIA_ID, statut: 'echec' } }],
+    });
+    vi.stubGlobal('fetch', server.fetch);
+    expect(await refreshLivingHereLink(PROJECT)).toMatchObject({
+      state: 'failed',
+      retry: true,
+      message: expect.stringContaining('réessayez plus tard'),
+    });
+    state.request = { ...state.request!, state: 'erreur' };
+    db.reset();
+    server = fakeAcademia();
+    vi.stubGlobal('fetch', server.fetch);
+    expect((await createLivingHereLink(PROJECT)).state).toBe('ready');
+    expect(server.calls[0]).toMatchObject({ method: 'POST', path: '/api/v1/dossiers' });
+  });
+
+  it('161 · adresse introuvable (422 sans proposition) : le conseiller corrige l’adresse, rien de rangé', async () => {
+    server = fakeAcademia({
+      createRequest: [{ status: 422, body: { erreur: 'Adresse introuvable', code: 'adresse' } }],
+    });
+    vi.stubGlobal('fetch', server.fetch);
+    expect(await createLivingHereLink(PROJECT)).toEqual({ state: 'address_not_found' });
+    expect(writes()).toEqual([]);
+  });
+
+  it('161 · plafond par minute : « réessayez dans N minutes », « Réessayer » ; du jour : l’heure, sans', async () => {
+    server = fakeAcademia({
+      createRequest: [{ status: 429, body: {}, headers: { 'retry-after': '90' } }],
+    });
+    vi.stubGlobal('fetch', server.fetch);
+    expect(await createLivingHereLink(PROJECT)).toEqual({
+      state: 'failed',
+      message: 'Academia reçoit beaucoup de demandes en ce moment : réessayez dans 2 minutes.',
+      retry: true,
+    });
+    server = fakeAcademia({
+      createRequest: [{ status: 429, body: {}, headers: { 'retry-after': '36000' } }],
+    });
+    vi.stubGlobal('fetch', server.fetch);
+    expect(await createLivingHereLink(PROJECT)).toMatchObject({
+      state: 'failed',
+      retry: false,
+      message: expect.stringMatching(
+        /^Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui : réessayez (demain, )?à partir de \d{1,2} h \d{2}\./,
+      ),
+    });
+  });
+
+  it('161 · un dossier effacé chez Academia (404) : redemandé, avec un nouveau lien, dans le même geste', async () => {
+    state.request = {
+      academia_id: FAKE_ACADEMIA_ID,
+      state: 'pret',
+      property_address: ADDRESS,
+      link_url: null,
+      link_expires_at: null,
+    };
+    server = fakeAcademia({
+      createLink: [
+        { status: 404, body: { code: 'introuvable' } },
+        { status: 201, body: { url: FAKE_LINK, expire_le: '2026-12-16T00:00:00Z' } },
+      ],
+    });
+    vi.stubGlobal('fetch', server.fetch);
+    expect(await createLivingHereLink(PROJECT)).toMatchObject({ state: 'ready', url: FAKE_LINK });
+    expect(server.calls.map((call) => `${call.method} ${call.path}`)).toEqual([
+      `POST /api/v1/dossiers/${FAKE_ACADEMIA_ID}/liens-client`,
+      'POST /api/v1/dossiers',
+      `POST /api/v1/dossiers/${FAKE_ACADEMIA_ID}/liens-client`,
+    ]);
+    // Une simple relecture ne redemande rien : elle le dit.
+    db.reset();
+    state.request = { ...state.request!, state: 'en_cours' };
+    server = fakeAcademia({ readRequest: [{ status: 404, body: {} }] });
+    vi.stubGlobal('fetch', server.fetch);
+    expect(await refreshLivingHereLink(PROJECT)).toMatchObject({
+      state: 'failed',
+      message: expect.stringContaining('effacé chez Academia'),
+    });
+    expect(server.calls).toHaveLength(1);
   });
 });

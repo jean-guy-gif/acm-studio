@@ -5,6 +5,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   academiaPropertyType,
   readAcademiaPropertyView,
+  readAcademiaRequest,
+  type AcademiaFailure,
   type AcademiaFetch,
 } from '@/features/academia/services/academia-api';
 import type { AcademiaAccess } from '@/features/academia/services/academia-api-access';
@@ -56,6 +58,7 @@ export async function resolveAcademiaDossier(input: {
   property: AddressViewProperty | null;
   access: AcademiaAccess | null;
   label: string;
+  fetchImpl?: AcademiaFetch;
 }): Promise<AcademiaDossierState> {
   if (!input.access) return { kind: 'closed' };
   const { data: request, error } = await input.admin
@@ -71,8 +74,26 @@ export async function resolveAcademiaDossier(input: {
   if (!request || !input.property?.address || request.property_address !== input.property.address) {
     return { kind: 'none' };
   }
-  if (request.state === 'en_cours') return { kind: 'waiting' };
-  if (request.state !== 'pret') return { kind: 'request_failed' };
+  // Mission 161 — en préparation chez Academia (20 à 60 secondes pour une adresse neuve) : on lui
+  // demande où il en est (une lecture, rien n'est écrit pendant l'affichage) ; l'écran se relit
+  // toutes les 5 secondes. Une relecture en échec est dite comme telle, jamais comme l'attente (M98).
+  let state = request.state;
+  if (state === 'en_cours') {
+    const read = await readAcademiaRequest(input.access.key, request.academia_id, input.fetchImpl);
+    if (read.ok) {
+      state = read.etat;
+    } else if (read.reason === 'not_found') {
+      state = 'erreur';
+    } else {
+      await reportServerError(
+        input.label,
+        new Error(`Academia : ${read.reason}${read.detail ? ` — ${read.detail}` : ''}`),
+      );
+      return { kind: 'failed' };
+    }
+  }
+  if (state === 'en_cours') return { kind: 'waiting' };
+  if (state !== 'pret') return { kind: 'request_failed' };
   const type = academiaPropertyType(input.property.propertyType);
   const rooms = input.property.rooms && input.property.rooms > 0 ? input.property.rooms : null;
   const surface =
@@ -97,6 +118,22 @@ export async function resolveAcademiaDossier(input: {
   };
 }
 
+// La lecture d'une vue (« bien » ou « bien-client ») qui a échoué : en préparation (409), effacé
+// chez Academia (404 : à recréer depuis Bien vendeur, dont l'action redemande le dossier), ou un
+// échec dit (M98). Rien n'est écrit pendant l'affichage.
+export async function viewFailure(
+  input: { label: string },
+  reply: AcademiaFailure,
+): Promise<'waiting' | 'request_failed' | 'failed'> {
+  if (reply.reason === 'not_ready') return 'waiting';
+  if (reply.reason === 'not_found') return 'request_failed';
+  await reportServerError(
+    input.label,
+    new Error(`Academia : ${reply.reason}${reply.detail ? ` — ${reply.detail}` : ''}`),
+  );
+  return 'failed';
+}
+
 export async function readAddressView(input: {
   // La clé de service : l'identifiant chez Academia n'est pas lisible par le navigateur (M157).
   admin: SupabaseClient<Database>;
@@ -116,11 +153,7 @@ export async function readAddressView(input: {
     input.fetchImpl,
   );
   if (!reply.ok) {
-    await reportServerError(
-      'academia:read-address-view',
-      new Error(`Academia : ${reply.reason}${reply.detail ? ` — ${reply.detail}` : ''}`),
-    );
-    return { kind: 'failed' };
+    return { kind: await viewFailure({ ...input, label: 'academia:read-address-view' }, reply) };
   }
   const view = parsePropertyView(reply.json);
   if (!view) {
