@@ -28,7 +28,10 @@ describe('/confidentialite à l’ouverture d’Academia', () => {
     );
   });
 
-  it('le quartier montré au vendeur', () => {
+  it('le quartier montré au vendeur, après l’alinéa du 9 novembre', () => {
+    expect(page.indexOf('Jusqu’au 9 novembre 2026')).toBeLessThan(
+      page.indexOf('Le quartier montré au vendeur.'),
+    );
     expect(page).toContain('Le quartier montré au vendeur.');
     expect(page).toContain(
       'jamais le nom ni l’immatriculation d’une copropriété, ni une valeur du bien',
@@ -37,7 +40,7 @@ describe('/confidentialite à l’ouverture d’Academia', () => {
 
   it('aucune référence n’est envoyée : Academia refuse tout autre champ que l’adresse et le bien', () => {
     expect(page).not.toMatch(/référence sans signification/);
-    const api = readFileSync(join(__dirname, 'services', 'academia-api.ts'), 'utf8');
-    expect(api).toMatch(/const body = \{\s*adresse: input\.adresse,\s*\.\.\.\(input\.bien/);
+    // Ce que le code envoie est prouvé par le faux serveur d'Academia, qui refuse tout autre champ
+    // que `adresse` et `bien` (Correctifs 161, contrat du 17/11).
   });
 });

@@ -331,6 +331,13 @@ export default function ConfidentialitePage() {
               Academia. Quand le conseiller confirme une visite, la fiche de l’acquéreur garde le
               jour et l’heure de cette visite.
               <span className="mt-2 block">
+                Jusqu’au 9 novembre 2026, ACM Studio préparait lui-même ces deux documents à partir
+                de données publiques. Ces dossiers et ces fiches ne sont plus lus ni montrés, et ils
+                seront effacés au plus tard le 23 novembre 2026. Il en va de même pour le lieu qu’un
+                acquéreur avait pu indiquer comme important (son travail, l’école de ses enfants),
+                le temps de trajet calculé jusqu’à ce lieu et ses priorités autour du bien.
+              </span>
+              <span className="mt-2 block">
                 <b>Le quartier montré au vendeur.</b> Au choix du conseiller, des informations
                 publiques sur le quartier du bien (urbanisme, risques, population, copropriété,
                 permis de construire, ventes réelles), rassemblées par Academia à partir de sources
@@ -342,13 +349,6 @@ export default function ConfidentialitePage() {
                 calculées, et le conseiller qui les a choisies ; jamais le nom ni l’immatriculation
                 d’une copropriété, ni une valeur du bien. Ces informations sont visibles par la
                 seule agence et effacées avec le dossier.
-              </span>
-              <span className="mt-2 block">
-                Jusqu’au 9 novembre 2026, ACM Studio préparait lui-même ces deux documents à partir
-                de données publiques. Ces dossiers et ces fiches ne sont plus lus ni montrés, et ils
-                seront effacés au plus tard le 23 novembre 2026. Il en va de même pour le lieu qu’un
-                acquéreur avait pu indiquer comme important (son travail, l’école de ses enfants),
-                le temps de trajet calculé jusqu’à ce lieu et ses priorités autour du bien.
               </span>
             </li>
             <li>
