@@ -180,7 +180,7 @@ export default async function ErrorsPage() {
         <p className={hintText}>
           Ouvert aux agences :{' '}
           {ACADEMIA_API_AGENCES_OUVERTES === 'toutes'
-            ? 'toutes'
+            ? 'toutes, sauf celle des tests automatiques'
             : budgets
                 .filter(({ agencyId }) =>
                   (ACADEMIA_API_AGENCES_OUVERTES as readonly string[]).includes(agencyId),
