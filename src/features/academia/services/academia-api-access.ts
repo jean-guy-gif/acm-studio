@@ -15,8 +15,14 @@ import 'server-only';
 // Sans accès : le geste d'aujourd'hui (le lien du mandat à coller, M147 A).
 
 export const START_ACADEMY_AGENCY_ID = '93c038d3-e532-408f-bb6a-d8fac760e811';
-export const ACADEMIA_API_AGENCES_OUVERTES: readonly string[] | 'toutes' = [
-  START_ACADEMY_AGENCY_ID,
+// Toutes les agences depuis le 19/11 (décision de Jean-Guy), avec les textes de `/confidentialite`
+// validés ; Start Academy l'était seule depuis le 18/11.
+export const ACADEMIA_API_AGENCES_OUVERTES: readonly string[] | 'toutes' = 'toutes';
+
+// L'agence des tests automatiques (« TEST AUTOMATIQUE — ne pas utiliser », celle de l'e2e) : jamais
+// ouverte, quoi que dise l'interrupteur. Aucun test n'appelle l'API réelle (Jean-Guy, 19/11).
+export const ACADEMIA_API_AGENCES_FERMEES: readonly string[] = [
+  'ee9c5ad0-8c1e-45ba-b311-666415cf5db4',
 ];
 
 // L'adresse fictive du dossier de démonstration fixe d'Academia, donnée par Laurent avec la clé
@@ -38,7 +44,7 @@ export function academiaApiAccess(
     const address = demoAddress?.trim();
     return key && address ? { key, demoAddress: address } : null;
   }
-  if (!agency.agencyId) return null;
+  if (!agency.agencyId || ACADEMIA_API_AGENCES_FERMEES.includes(agency.agencyId)) return null;
   if (open !== 'toutes' && !open.includes(agency.agencyId)) return null;
   const key = env.ACADEMIA_API_KEY?.trim();
   return key ? { key, demoAddress: null } : null;
