@@ -254,7 +254,7 @@ function RankingRow({
       data-testid="market-study-ranking-row"
     >
       <td className="w-1 py-2 pr-0 align-top print:py-1">
-        <span className={`mt-1 block h-10 w-1.5 rounded print:h-8 ${tier.bar}`} />
+        <span className={`mt-1 block h-10 w-1.5 rounded print:h-8 ${tier.bar} ${tier.barMark}`} />
       </td>
       <td className="py-2 pr-3 print:py-1">
         <div className="flex items-start gap-3">
@@ -301,8 +301,8 @@ function StudyRankingView({
                 key={index}
                 className={`h-3 flex-1 rounded ${
                   index === ranking.subject!.rank - 1
-                    ? `${TIER_CLASSES[cell].bar} h-5 ring-2 ring-zinc-800 ring-offset-1`
-                    : TIER_CLASSES[cell].cell
+                    ? `${TIER_CLASSES[cell].bar} ${TIER_CLASSES[cell].barMark} h-5 ring-2 ring-zinc-800 ring-offset-1`
+                    : `${TIER_CLASSES[cell].cell} ${TIER_CLASSES[cell].cellMark}`
                 }`}
               />
             ))}
@@ -339,7 +339,9 @@ function StudyRankingView({
         >
           {(['green', 'orange', 'red'] as const).map((tier, index) => (
             <span key={tier} className="flex items-center gap-1.5">
-              <span className={`inline-block h-3.5 w-3.5 rounded ${TIER_CLASSES[tier].bar}`} />
+              <span
+                className={`inline-block h-3.5 w-3.5 rounded ${TIER_CLASSES[tier].bar} ${TIER_CLASSES[tier].barMark}`}
+              />
               <span>
                 {r.legendTiers[index].number}
                 {r.legendTiers[index].sup ? <sup>{r.legendTiers[index].sup}</sup> : null}
@@ -469,22 +471,28 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
         ) : null}
         {document.quartier && quartierBlocks.length > 0 ? (
           <section className="flex flex-col gap-3">
-            <SectionTitle number={sectionNumber('quartier')} title={texts.quartier.kicker} />
             <NeighbourhoodDocumentBlocks
               content={document.quartier}
               only={quartierBlocks}
               language={language}
+              heading={
+                <SectionTitle number={sectionNumber('quartier')} title={texts.quartier.kicker} />
+              }
             />
           </section>
         ) : null}
         {hasCompetitors ? (
           <section className="flex flex-col gap-3" data-testid="market-study-competitors">
-            <SectionTitle
-              number={sectionNumber('competitors')}
-              title={t.competitorsTitle}
-              hint={t.competitorsHint}
-            />
-            {document.competitors.map((item) => (
+            {/* Mission 162 — le titre s'imprime avec la première fiche : jamais seul en bas de page. */}
+            <div className="flex flex-col gap-3 break-inside-avoid">
+              <SectionTitle
+                number={sectionNumber('competitors')}
+                title={t.competitorsTitle}
+                hint={t.competitorsHint}
+              />
+              <CompetitorPage item={document.competitors[0]!} language={language} />
+            </div>
+            {document.competitors.slice(1).map((item) => (
               <CompetitorPage key={item.id} item={item} language={language} />
             ))}
           </section>
@@ -492,11 +500,14 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
 
         {document.quartier && quartierSales ? (
           <section className="flex flex-col gap-3">
-            <SectionTitle number={sectionNumber('sales')} title={texts.quartier.sales.title} />
             <NeighbourhoodDocumentBlocks
               content={document.quartier}
               only={['ventes']}
               language={language}
+              heading={
+                <SectionTitle number={sectionNumber('sales')} title={texts.quartier.sales.title} />
+              }
+              blockTitles={false}
             />
           </section>
         ) : null}

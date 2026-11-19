@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { demoCredentials, login, resetDemoByScreen } from '../../../tests/e2e/support';
@@ -10,6 +10,10 @@ import { demoCredentials, login, resetDemoByScreen } from '../../../tests/e2e/su
 // Sortie : `M162_OUT` (par défaut missions/maquettes/M162-avant). Pages en images :
 // `node missions/maquettes/M162-generateur/rendre-pages.mjs <dossier>`.
 const OUT = process.env.M162_OUT ?? path.resolve('missions/maquettes/M162-avant');
+// `M162_ID` : un dossier déjà mené, seulement imprimé (pour rendre l'avant et l'après sur les mêmes
+// données) ; `M162_KEEP=1` : garder le dossier mené (son identifiant dans `dossier.txt`).
+const ONLY_ID = process.env.M162_ID;
+const KEEP = process.env.M162_KEEP === '1';
 
 async function waitAcademia(page: Page, done: () => Promise<boolean>, failed: string) {
   await expect
@@ -49,6 +53,11 @@ test('les PDF A4 de l’Étude de marché et de la synthèse', async ({ page }) 
   page.on('dialog', (dialog) => void dialog.accept());
   await page.setViewportSize({ width: 1280, height: 900 });
   await login(page, demoCredentials());
+  if (ONLY_ID) {
+    await printPdf(page, `/builder/${ONLY_ID}/etude-de-marche`, 'market-study', path.join(OUT, 'etude.pdf'));
+    await printPdf(page, `/builder/${ONLY_ID}/synthese`, 'seller-synthesis', path.join(OUT, 'synthese.pdf'));
+    return;
+  }
   await resetDemoByScreen(page);
   const href = await page
     .locator('[data-testid="demo-dossier"][data-stage="ready"] a')
@@ -134,9 +143,12 @@ test('les PDF A4 de l’Étude de marché et de la synthèse', async ({ page }) 
     await page.setViewportSize({ width: 1280, height: 900 });
     await printPdf(page, `/builder/${id}/etude-de-marche`, 'market-study', path.join(OUT, 'etude.pdf'));
     await printPdf(page, `/builder/${id}/synthese`, 'seller-synthesis', path.join(OUT, 'synthese.pdf'));
+    if (KEEP) writeFileSync(path.join(OUT, 'dossier.txt'), id);
   } finally {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/builder');
-    await resetDemoByScreen(page);
+    if (!KEEP) {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.goto('/builder');
+      await resetDemoByScreen(page);
+    }
   }
 });
