@@ -301,7 +301,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     },
     sales: {
       title: 'Les ventes réelles',
-      headline: (count, type, rooms, since) => {
+      headline: (count, type, surface, since) => {
         const many = count > 1;
         const noun =
           type === 'maison'
@@ -316,13 +316,23 @@ export const FRENCH_TEXTS: ClientTexts = {
                 ? 'logements'
                 : 'logement';
         const sold = type === 'maison' ? (many ? 'vendues' : 'vendue') : many ? 'vendus' : 'vendu';
-        const size = rooms != null ? (rooms > 1 ? ` de ${rooms} pièces` : ' d’une pièce') : '';
+        const size = surface ? ` de ${surface.from} à ${surface.to}` : '';
         return `${count} ${noun}${size} ${sold} autour de chez vous${since ? ` depuis ${since}` : ''}`;
       },
       within: (meters) => `À moins de ${meters} de votre bien`,
       about: (meters) => `à environ ${meters}`,
       legend:
         'Chaque point : une vente, à sa date, plus haut quand le prix est plus élevé. Prix de vente réels.',
+      legendMany:
+        'Chaque point : une vente, à sa date, plus haut quand le prix est plus élevé. Prix écrits, quand la place le permet : le plus bas, le plus haut et le plus récent. Prix de vente réels.',
+      columns: {
+        month: 'Vendue en',
+        street: 'Rue',
+        rooms: 'Pièces',
+        surface: 'Surface',
+        distance: 'Distance',
+        price: 'Prix',
+      },
       none: 'Aucune vente relevée autour de chez vous.',
       shortPrice: (thousands) => `${thousands} k€`,
     },

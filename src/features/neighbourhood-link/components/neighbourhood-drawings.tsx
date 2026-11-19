@@ -1,5 +1,12 @@
 import { useId, type ReactNode } from 'react';
 
+import {
+  labelledSales,
+  placeTimelineLabels,
+  TIMELINE_ALL_PRICES_UP_TO,
+  timelineDotRadius,
+} from '@/features/neighbourhood-link/services/sales-timeline';
+
 // Mission 159 — les dessins du quartier (planches M159-2 et M159-3, validées par Jean-Guy le 17/11),
 // communs au Live et aux documents : des traits et des aplats en `currentColor`, lisibles sur la
 // scène claire ou sombre comme en noir et blanc à l'impression. Rien n'y est inventé : les anneaux
@@ -179,70 +186,6 @@ export function SegmentGauge({
 
 export type TimelineSale = { month: string; price: number; label: string };
 
-// Les prix écrits à côté des points : à droite, sinon à gauche, au-dessus ou au-dessous, jamais
-// l'un sur l'autre.
-function placeLabels(points: { x: number; y: number; text: string }[]) {
-  type Box = {
-    x: number;
-    y: number;
-    anchor: 'start' | 'end' | 'middle';
-    x0: number;
-    x1: number;
-    y0: number;
-    y1: number;
-  };
-  const boxes: Box[] = [];
-  const w = 56;
-  const clash = (b: Box, own: { x: number; y: number }) =>
-    boxes.some((o) => b.x0 < o.x1 && o.x0 < b.x1 && b.y0 < o.y1 && o.y0 < b.y1) ||
-    points.some(
-      (p) => p !== own && p.x > b.x0 - 8 && p.x < b.x1 + 8 && p.y > b.y0 - 8 && p.y < b.y1 + 8,
-    );
-  return points.map((p) => {
-    const tries: Box[] = [
-      {
-        x: p.x + 12,
-        y: p.y + 6,
-        anchor: 'start',
-        x0: p.x + 12,
-        x1: p.x + 12 + w,
-        y0: p.y - 8,
-        y1: p.y + 8,
-      },
-      {
-        x: p.x - 12,
-        y: p.y + 6,
-        anchor: 'end',
-        x0: p.x - 12 - w,
-        x1: p.x - 12,
-        y0: p.y - 8,
-        y1: p.y + 8,
-      },
-      {
-        x: p.x,
-        y: p.y - 14,
-        anchor: 'middle',
-        x0: p.x - w / 2,
-        x1: p.x + w / 2,
-        y0: p.y - 28,
-        y1: p.y - 12,
-      },
-      {
-        x: p.x,
-        y: p.y + 26,
-        anchor: 'middle',
-        x0: p.x - w / 2,
-        x1: p.x + w / 2,
-        y0: p.y + 12,
-        y1: p.y + 28,
-      },
-    ];
-    const pick = tries.find((t) => !clash(t, p)) ?? tries[0]!;
-    boxes.push(pick);
-    return { ...pick, text: p.text };
-  });
-}
-
 const monthTime = (month: string) =>
   Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1, 15);
 
@@ -277,6 +220,10 @@ export function SalesTimeline({
     y: y(sale.price),
     text: sale.label,
   }));
+  // Correctifs 161 — beaucoup de ventes : des points plus petits, trois prix écrits, jamais deux
+  // textes l'un sur l'autre (`sales-timeline.ts`).
+  const dot = timelineDotRadius(sales.length);
+  const many = sales.length > TIMELINE_ALL_PRICES_UP_TO;
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className={className} role="img">
       <line
@@ -318,16 +265,16 @@ export function SalesTimeline({
           <line
             x1={point.x}
             x2={point.x}
-            y1={point.y + 8}
+            y1={point.y + dot}
             y2={height - 30}
             stroke="currentColor"
-            strokeOpacity={0.25}
+            strokeOpacity={many ? 0.12 : 0.25}
           />
-          <circle cx={point.x} cy={point.y} r={8} fill="currentColor" />
+          <circle cx={point.x} cy={point.y} r={dot} fill="currentColor" />
         </g>
       ))}
       {labels
-        ? placeLabels(points).map((label, i) => (
+        ? placeTimelineLabels(points, labelledSales(sales), width, height - 34).map((label, i) => (
             <text
               key={i}
               x={label.x}

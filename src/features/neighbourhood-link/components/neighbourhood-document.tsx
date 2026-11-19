@@ -10,6 +10,7 @@ import type {
   NeighbourhoodBlocks,
 } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
 import { neighbourhoodView } from '@/features/neighbourhood-link/services/neighbourhood-view';
+import { TIMELINE_ALL_PRICES_UP_TO } from '@/features/neighbourhood-link/services/sales-timeline';
 import type { ClientLanguage } from '@/lib/client-language';
 import { clientTexts } from '@/lib/client-texts';
 import { formatDay } from '@/lib/format';
@@ -187,19 +188,53 @@ export function NeighbourhoodDocumentBlocks({
               height={210}
               className="h-auto w-full text-zinc-900"
             />
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {view.cards.map((card, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col gap-0.5 border border-zinc-300 px-2.5 py-2 text-xs break-inside-avoid"
-                >
-                  <b className="font-title text-lg leading-none">{card.price}</b>
-                  <span className="font-semibold uppercase">{card.month}</span>
-                  {card.street ? <span>{card.street}</span> : null}
-                  <span>{card.facts}</span>
-                </div>
-              ))}
-            </div>
+            {view.cards.length > TIMELINE_ALL_PRICES_UP_TO ? (
+              // Correctifs 161 — beaucoup de ventes (37 sur le dossier de démonstration) : une ligne
+              // par vente, dans un tableau, pour que tout tienne sur la page imprimée.
+              <table
+                className="w-full text-left text-[0.65rem] leading-[1.2]"
+                data-testid="neighbourhood-sales-compact"
+              >
+                <thead>
+                  <tr className="border-b border-zinc-400 text-zinc-600">
+                    <th className="py-0.5 pr-2 font-semibold">{view.columns.month}</th>
+                    <th className="py-0.5 pr-2 font-semibold">{view.columns.street}</th>
+                    <th className="py-0.5 pr-2 text-right font-semibold">{view.columns.rooms}</th>
+                    <th className="py-0.5 pr-2 text-right font-semibold">{view.columns.surface}</th>
+                    <th className="py-0.5 pr-2 text-right font-semibold">
+                      {view.columns.distance}
+                    </th>
+                    <th className="py-0.5 text-right font-semibold">{view.columns.price}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {view.cards.map((card, i) => (
+                    <tr key={i} className="border-b border-zinc-200 break-inside-avoid">
+                      <td className="py-0 pr-2 whitespace-nowrap">{card.month}</td>
+                      <td className="py-0 pr-2">{card.street}</td>
+                      <td className="py-0 pr-2 text-right">{card.rooms}</td>
+                      <td className="py-0 pr-2 text-right whitespace-nowrap">{card.surface}</td>
+                      <td className="py-0 pr-2 text-right whitespace-nowrap">{card.distance}</td>
+                      <td className="py-0 text-right font-bold whitespace-nowrap">{card.price}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {view.cards.map((card, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-0.5 border border-zinc-300 px-2.5 py-2 text-xs break-inside-avoid"
+                  >
+                    <b className="font-title text-lg leading-none">{card.price}</b>
+                    <span className="font-semibold uppercase">{card.month}</span>
+                    {card.street ? <span>{card.street}</span> : null}
+                    <span>{card.facts}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {source([view.legend, view.source].filter(Boolean).join(' '))}
           </div>
         );

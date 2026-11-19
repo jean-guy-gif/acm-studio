@@ -62,6 +62,11 @@ export type PlanningLevel = {
 export type NeighbourhoodSales = BlockSource & {
   type: 'maison' | 'appartement' | null;
   rooms: number | null;
+  // Correctifs 161 — la règle de Laurent (19/11) : les ventes du même type, de surface comprise dans
+  // une fourchette (la surface du bien à ±25 %, bornes comprises), toutes pièces confondues ; la vue
+  // rend la fourchette appliquée. Un instantané d'avant ne l'a pas : le titre dit alors le type seul.
+  surfaceMin: number | null;
+  surfaceMax: number | null;
   since: number | null;
   listRadius: number | null;
   list: NeighbourhoodSale[];
@@ -166,11 +171,25 @@ const source = (block: Json): BlockSource => ({ date: day(block.date) });
 
 // ─── La forme d'ACM, relue champ par champ (réponse de la source ou instantané en base) ──────────
 
+// La fourchette de surface des ventes : deux bornes de 9 à 1 000 m² (l'API de Laurent), la plus
+// petite d'abord ; sinon aucune, jamais une borne seule.
+function surfaceRange(
+  minValue: unknown,
+  maxValue: unknown,
+): { surfaceMin: number | null; surfaceMax: number | null } {
+  const min = int(minValue, 1000);
+  const max = int(maxValue, 1000);
+  return min != null && max != null && min >= 9 && min < max
+    ? { surfaceMin: min, surfaceMax: max }
+    : { surfaceMin: null, surfaceMax: null };
+}
+
 function sales(block: Json): NeighbourhoodSales {
   return {
     ...source(block),
     type: propertyType(block.type),
     rooms: int(block.rooms, 100),
+    ...surfaceRange(block.surfaceMin, block.surfaceMax),
     since: year(block.since),
     listRadius: int(block.listRadius, 10_000),
     list: list(block.list, 50).flatMap((sale) => {
@@ -471,6 +490,8 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
       date: ventes.date,
       type: ventes.type,
       rooms: ventes.pieces,
+      surfaceMin: ventes.surfaceMin,
+      surfaceMax: ventes.surfaceMax,
       since: ventes.depuis,
       listRadius: ventes.anneau,
       list: list(ventes.liste, 50).map((sale) => ({

@@ -248,9 +248,13 @@ function YourRange({
 function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> }) {
   const [all, setAll] = useState(false);
   const shown = all ? sales.list : sales.list.slice(0, 8);
+  // Correctifs 161 — le type et la fourchette de surface rendue par Academia (±25 %, toutes pièces
+  // confondues, règle de Laurent du 19/11) ; chaque vente garde ses pièces, dans la liste.
   const what = [
     sales.type === 'maison' ? 'Maisons' : sales.type === 'appartement' ? 'Appartements' : 'Biens',
-    sales.rooms != null ? `de ${sales.rooms} pièces` : null,
+    sales.surfaceMin != null && sales.surfaceMax != null
+      ? `de ${formatNumber(sales.surfaceMin)} à ${formatSquareMeters(sales.surfaceMax)}`
+      : null,
   ]
     .filter(Boolean)
     .join(' ');
