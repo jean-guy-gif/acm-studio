@@ -144,6 +144,8 @@ function Indicative({ value }: { value: IndicativeValue }) {
 // L'état d'un permis, tel que la source le code (« termine »), écrit en français.
 const PERMIT_STATES: Record<string, string> = {
   autorise: 'autorisé',
+  // Un permis de construire dit « chantier_ouvert » (schémas de Laurent du 19/11).
+  chantier_ouvert: 'travaux commencés',
   commence: 'travaux commencés',
   termine: 'terminé',
 };

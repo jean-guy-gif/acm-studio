@@ -226,3 +226,49 @@ describe('l’anneau vide', () => {
     expect(isShowableBlock(blocks, 'ventes')).toBe(true);
   });
 });
+
+describe('les permis suivent les schémas de Laurent', () => {
+  const withPermit = <T>(json: T, permit: Record<string, unknown>): T => {
+    const copy = structuredClone(json) as { blocs: { permis: { construire: unknown[] } } };
+    copy.blocs.permis.construire = [permit, ...copy.blocs.permis.construire];
+    return copy as T;
+  };
+
+  it('« chantier_ouvert » se dit « travaux commencés », chez le conseiller et chez le vendeur', () => {
+    const json = withPermit(exempleBien, {
+      ...(exempleBien.blocs.permis.construire[0] as Record<string, unknown>),
+      etat: 'chantier_ouvert',
+    });
+    expect(schemaErrors(SCHEMA_BIEN, json)).toEqual([]);
+    const html = renderToStaticMarkup(
+      createElement(AddressViewPanel, {
+        projectId: 'p1',
+        state: {
+          kind: 'ready',
+          view: parsePropertyView(json)!,
+          facts: { type: 'appartement', rooms: 4, surface: 80 },
+        },
+        savedRange: { min: null, max: null },
+        demo: false,
+      }),
+    );
+    expect(html).toContain('travaux commencés');
+    const client = withPermit(exempleBienClient, {
+      ...(exempleBienClient.blocs.permis.construire[0] as Record<string, unknown>),
+      etat: 'chantier_ouvert',
+    });
+    expect(schemaErrors(SCHEMA_CLIENT, client)).toEqual([]);
+    const blocks = parseNeighbourhoodBlocks(client)!;
+    expect(blocks.permis!.build[0]!.state).toBe('commence');
+  });
+
+  it('la rue inventée ne s’écrit pas dans les permis du conseiller', () => {
+    const json = withPermit(exempleBien, {
+      ...(exempleBien.blocs.permis.construire[0] as Record<string, unknown>),
+      adresse: '12 Avenue de la Demonstration',
+    });
+    const view = parsePropertyView(json)!;
+    expect(view.permits!.build[0]!.address).toBeNull();
+    expect(JSON.stringify(view.permits)).not.toMatch(/d[eé]monstration/i);
+  });
+});

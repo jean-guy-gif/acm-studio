@@ -158,8 +158,8 @@ const list = (value: unknown, max = 50): Json[] =>
     : [];
 
 // La rue d'une vente ; jamais la rue inventée du dossier de démonstration (correctifs 161, M114).
-const streetOf = (value: unknown): string | null => {
-  const found = text(value, 120);
+const streetOf = (value: unknown, max = 120): string | null => {
+  const found = text(value, max);
   return found && !isDemonstrationStreet(found) ? found : null;
 };
 
@@ -279,7 +279,8 @@ function permits(block: Json | null): ViewPermits | null {
       dwellings: num(permit.logements),
       surface: num(permit.surface),
       distance: num(permit.distance),
-      address: text(permit.adresse, 160),
+      // M114 — la rue inventée du dossier de démonstration ne s'écrit pas, comme pour les ventes.
+      address: streetOf(permit.adresse, 160),
     })),
     demolitionUnchecked: block.demolirEtat === 'non_verifie',
   };

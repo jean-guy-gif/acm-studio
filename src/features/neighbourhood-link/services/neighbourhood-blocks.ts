@@ -519,7 +519,8 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
       since: permis.depuis,
       build: list(permis.construire, 30).map((permit) => ({
         authorizedOn: permit.autorise,
-        state: permit.etat,
+        // Le chantier ouvert d'un permis de construire (schémas de Laurent du 19/11) : « commence ».
+        state: permit.etat === 'chantier_ouvert' ? 'commence' : permit.etat,
         dwellings: permit.logements,
         surface: permit.surface,
         distance: permit.distance,
