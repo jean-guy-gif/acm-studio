@@ -1,7 +1,7 @@
 // Mission 162 — une image PNG de chaque page des PDF d'un dossier (`etude.pdf`, `synthese.pdf`),
 // en couleur et en niveaux de gris, rendue par pdf.js dans Chromium (aucun outil du poste) :
 //   node missions/maquettes/M162-generateur/rendre-pages.mjs missions/maquettes/M162-avant
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
 
@@ -26,7 +26,7 @@ await page.route('http://pages.local/**', (route) => {
 });
 await page.goto('http://pages.local/index.html');
 
-for (const doc of ['etude', 'synthese']) {
+for (const doc of ['etude', 'synthese'].filter((d) => existsSync(path.join(dir, `${d}.pdf`)))) {
   const pages = await page.evaluate(
     async ({ doc, scale }) => {
       const pdfjsLib = await import('http://pages.local/pdf.mjs');
