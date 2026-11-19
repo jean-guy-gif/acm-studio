@@ -52,14 +52,51 @@ describe('le titre de section ne reste jamais seul en bas de page', () => {
     const table = html.indexOf('data-testid="neighbourhood-sales-compact"');
     expect(avoid).toBeLessThan(html.indexOf('data-testid="section"'));
     expect(table).toBeGreaterThan(html.indexOf('<svg'));
-    // Le tableau n'est pas dans un groupe insécable : il peut continuer sur la page suivante.
+    // Le tableau n'est dans aucun groupe insécable : il peut continuer sur la page suivante.
     const before = html.slice(0, table);
     const opened = (before.match(/<div class="[^"]*break-inside-avoid/g) ?? []).length;
-    const groupEnd = before.lastIndexOf('</svg></div></div>');
+    const closedAfterSvg = before.slice(before.indexOf('</svg>')).match(/<\/div>/g) ?? [];
     expect(opened).toBe(1);
-    expect(groupEnd).toBeGreaterThan(avoid);
-    expect(html).toContain('text-xs leading-[1.3]');
-    expect(html).not.toContain('text-[0.65rem]');
+    expect(closedAfterSvg.length).toBeGreaterThanOrEqual(2);
+    // 9 pt à l'impression ; l'écran garde sa taille.
+    expect(html).toContain('print:text-xs');
+  });
+
+  it('peu de ventes, sans titre de bloc : les cartes, un seul titre', () => {
+    const html = render(clientView, ['ventes'], {
+      heading: createElement('h2', { 'data-testid': 'section' }, 'Les ventes réelles'),
+      blockTitles: false,
+    });
+    expect(html.match(/Les ventes réelles/g)).toHaveLength(1);
+    expect(html).not.toContain('neighbourhood-sales-compact');
+  });
+
+  it('en anglais aussi', () => {
+    const html = renderToStaticMarkup(
+      createElement(NeighbourhoodDocumentBlocks, {
+        content: contentOf(exempleBienClient),
+        only: ['ventes'] as never,
+        language: 'en',
+        heading: createElement('h2', { 'data-testid': 'section' }, 'Real sales'),
+        blockTitles: false,
+      }),
+    );
+    expect(html).toContain('37 flats from 60 to 100');
+    expect(html.indexOf('data-testid="section"')).toBeLessThan(html.indexOf('37 flats'));
+  });
+
+  it('aucun bloc à montrer : le titre reste seul, les numéros des sections ne sautent pas', () => {
+    const html = render(clientView, ['ventes'], { heading: HEADING });
+    expect(html).toContain('data-testid="section"');
+    const empty = renderToStaticMarkup(
+      createElement(NeighbourhoodDocumentBlocks, {
+        content: { ...contentOf(clientView), keys: [] },
+        only: ['ventes'] as never,
+        language: 'fr',
+        heading: HEADING,
+      }),
+    );
+    expect(empty).toContain('data-testid="section"');
   });
 
   it('sans titre de section, rien ne change', () => {
@@ -86,6 +123,23 @@ describe('les anneaux imprimés', () => {
     for (let i = 1; i < boxes.length; i++) {
       expect(boxes[i]!.top).toBeGreaterThanOrEqual(boxes[i - 1]!.bottom - 0.5);
     }
+  });
+});
+
+describe('les anneaux du Live', () => {
+  it('sans « paper », les positions et les tailles d’avant la mission', () => {
+    const html = renderToStaticMarkup(
+      createElement(DistanceRings, {
+        inner: { hit: false, range: '0 à 40 m', count: 'aucun' },
+        outer: { hit: true, range: '40 à 300 m', count: '3', label: 'éléments relevés' },
+        center: 'Votre bien',
+      } as never),
+    );
+    const texts = [...html.matchAll(/<text x="[^"]+" y="([^"]+)"[^>]*font-size="([^"]+)"/g)].map(
+      (m) => `${m[1]}/${m[2]}`,
+    );
+    // c = 220, r0 = 104, r1 = 214 : les valeurs du code d'avant (M159).
+    expect(texts).toEqual(['286/17', '146/16', '170/20', '36/16', '82/52', '106/15']);
   });
 });
 

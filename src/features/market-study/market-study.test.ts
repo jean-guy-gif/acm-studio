@@ -266,6 +266,21 @@ describe('l’Étude de marché dans la langue du vendeur', () => {
     ).toEqual([]);
   });
 
+  // Mission 162 — le titre des biens en vente s'imprime avec la première fiche ; toutes les fiches
+  // restent, dans l'ordre, avec un, plusieurs ou aucun concurrent.
+  it('chaque fiche une fois, la première avec le titre de la section', () => {
+    const all = input().competitors;
+    for (const count of [all.length, 1, 0]) {
+      const study = buildMarketStudy({ ...input(), competitors: all.slice(0, count) });
+      const html = renderToStaticMarkup(createElement(MarketStudyDocument, { document: study }));
+      const cards = html.match(/data-testid="market-study-competitor"/g) ?? [];
+      expect(cards).toHaveLength(study.competitors.length);
+      const title = html.indexOf('Les biens en vente face au vôtre');
+      if (study.competitors.length === 0) expect(title).toBe(-1);
+      else expect(title).toBeLessThan(html.indexOf('data-testid="market-study-competitor"'));
+    }
+  });
+
   it('en français, le message d’envoi ne change pas ; en anglais, il est en anglais', () => {
     expect(marketStudyShareMessage('https://x.test/e', 'Camille')).toContain(
       'Bonjour, voici l’Étude de marché de votre bien',

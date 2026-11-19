@@ -53,7 +53,9 @@ export function NeighbourhoodDocumentBlocks({
     .filter((key) => content.keys.includes(key))
     .map((key) => ({ key, view: neighbourhoodView(content.blocks, key, texts, language) }))
     .filter((entry) => entry.view != null);
-  if (views.length === 0) return null;
+  // Aucun bloc à montrer : le titre de section reste seul, comme avant, pour que les numéros des
+  // sections ne sautent pas.
+  if (views.length === 0) return sectionHeading ? <>{sectionHeading}</> : null;
   const source = (value: string | null) =>
     value ? <p className="text-[0.7rem] text-zinc-500">{value}</p> : null;
   const heading = (title: string, headline: string, scale: string | null) => (
@@ -99,13 +101,13 @@ export function NeighbourhoodDocumentBlocks({
     if (view.kind === 'rings') {
       return (
         <div key={key} className={frame}>
-          <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-[17rem_1fr]">
+          <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-[14rem_1fr] print:grid-cols-[17rem_1fr]">
             <DistanceRings
               inner={view.inner}
               outer={view.outer}
               center={texts.quartier.home}
               paper
-              className="mx-auto h-auto w-[17rem] text-zinc-900"
+              className="mx-auto h-auto w-56 text-zinc-900 print:w-[17rem]"
             />
             <div className="flex flex-col gap-1.5 text-sm">
               {heading(view.title, view.headline, view.scale)}
@@ -180,7 +182,7 @@ export function NeighbourhoodDocumentBlocks({
                 <span>
                   <b className="font-title text-2xl">{group.value}</b> {group.label}{' '}
                   {group.note ? (
-                    <small className="whitespace-nowrap text-zinc-500">{group.note}</small>
+                    <small className="text-zinc-500 print:whitespace-nowrap">{group.note}</small>
                   ) : null}
                 </span>
               </div>
@@ -266,7 +268,7 @@ export function NeighbourhoodDocumentBlocks({
             vente, dans un tableau. Mission 162 — il peut continuer sur la page suivante, son
             en-tête répété, plutôt que de laisser une demi-page vide. */}
         <table
-          className="w-full text-left text-xs leading-[1.3]"
+          className="w-full text-left text-[0.65rem] leading-[1.2] print:text-xs print:leading-[1.3]"
           data-testid="neighbourhood-sales-compact"
         >
           <thead>
