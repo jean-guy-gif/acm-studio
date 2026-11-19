@@ -644,6 +644,12 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 19/11 · Correctifs 161 · Avant de changer ce qu'un instantané déjà enregistré montre au Live,
   compter en base ceux qu'il touche (ici 0 sur 2) : un écran retiré en plein Live décalerait
   « Reprendre ». Durées : les trois specs Academia 3,6 à 4,4 min ; relecteur 2,7 min.
+- 19/11 · Ouverture d'Academia · Ouvrir un interrupteur à « toutes » ouvre aussi l'agence des
+  tests automatiques, qui est une vraie agence : l'e2e aurait pu appeler l'API réelle. Avant
+  d'élargir un accès, chercher quelles specs tournent sur une vraie agence et la fermer à part.
+- 19/11 · Ouverture d'Academia · Un texte validé par la juriste se relit contre le code avant d'être
+  publié : « une référence sans signification » datait du contrat du 14/11, et le champ avait été
+  retiré le 17/11 ; le relecteur compare le texte publié au texte validé, mot pour mot, par programme.
 - 18/11 · M159 · Le faux client Supabase (`fake-supabase`) répond selon la DERNIÈRE table de la
   chaîne : trois lectures lancées ensemble (`Promise.all`) reçoivent toutes la réponse de la dernière
   et un garde passe par accident ; dans une action testée ainsi, les lectures gardées se font l'une
