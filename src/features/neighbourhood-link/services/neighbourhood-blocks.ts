@@ -343,6 +343,11 @@ export function isShowableBlock(blocks: NeighbourhoodBlocks, key: NeighbourhoodB
           c.syndicMandateActive != null)
       );
     }
+    case 'ventes':
+      // Correctifs 161 — l'« anneau » vide (aucun cercle ne réunit 5 ventes, README de Laurent) :
+      // le bloc n'est pas proposé au vendeur (décision de Jean-Guy, 19/11), « rien de relevé »
+      // compris, faute d'échelle à lui dire.
+      return blocks.ventes != null && blocks.ventes.listRadius != null;
     default:
       return blocks[key] != null;
   }

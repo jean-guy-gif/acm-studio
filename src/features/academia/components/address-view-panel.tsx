@@ -372,6 +372,16 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
                 </tbody>
               </table>
             </div>
+          ) : sales.listRadius == null ? (
+            // Correctifs 161 — l'« anneau » vide : aucun cercle ne réunit 5 ventes (README de
+            // Laurent) ; les nombres par rayon restent au-dessus (décision de Jean-Guy, 19/11).
+            <p className={hintText} data-testid="address-view-no-ring">
+              Moins de 5 ventes comparables à moins de{' '}
+              {meters(
+                sales.rings.length ? Math.max(...sales.rings.map((ring) => ring.radius)) : 800,
+              )}{' '}
+              : Academia ne donne pas de liste.
+            </p>
           ) : (
             <p className={hintText}>Aucune vente comparable relevée autour du bien.</p>
           )}

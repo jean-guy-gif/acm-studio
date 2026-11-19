@@ -49,7 +49,7 @@ describe('les blocs vides et non vérifiés', () => {
     expect(html).not.toContain('La source n’a pas pu être lue');
   });
 
-  it('côté vendeur : « aucun » est une information pour l’urbanisme, les permis et les ventes, jamais pour le reste', () => {
+  it('côté vendeur : « aucun » est une information pour l’urbanisme et les permis, jamais pour le reste', () => {
     const json = empty(
       empty(clientView, ['permis', 'ventes', 'urbanisme', 'copropriete', 'population'], 'aucun'),
       ['risques'],
@@ -62,7 +62,9 @@ describe('les blocs vides et non vérifiés', () => {
     const say = (key: 'permis' | 'ventes' | 'urbanisme') =>
       neighbourhoodView(blocks, key, CLIENT_TEXTS.fr, 'fr')?.headline;
     expect(say('permis')).toBe('Aucun permis de construire relevé à moins de 300 m.');
-    expect(say('ventes')).toBe('Aucune vente relevée autour de chez vous.');
+    // Correctifs 161 — sans vente, pas d'« anneau » : le bloc des ventes n'est pas proposé
+    // (décision de Jean-Guy, 19/11 ; remplace M161, « aucun » proposé pour les ventes).
+    expect(say('ventes')).toBeUndefined();
     // Rien jusqu'à 300 m : la même échelle que chez le conseiller.
     expect(say('urbanisme')).toBe('Rien de relevé sur votre parcelle, ni à moins de 300 m.');
     expect(neighbourhoodBlockStatuses(json)).toEqual({
