@@ -114,7 +114,11 @@ export function DistanceRings({
       />
       {text(c + 66, center, paper ? 19 : 17)}
       {text(c - r0 + 30, inner.range, paper ? 18 : 16)}
-      {text(c - r0 + 56, inner.label ? `${inner.count} ${inner.label}` : inner.count, 20)}
+      {text(
+        paper ? c - r0 + 60 : c - r0 + 54,
+        inner.label ? `${inner.count} ${inner.label}` : inner.count,
+        20,
+      )}
       {/* Mission 162 — à l'impression, la distance, le nombre et son mot ne se recouvrent jamais :
           l'anneau extérieur (110 unités) les tient l'un sous l'autre, en lettres plus grandes. */}
       {text(c - r1 + 30, outer.range, paper ? 18 : 16)}
