@@ -212,8 +212,11 @@ export function SalesTimeline({
   const lo = Math.min(...prices);
   const hi = Math.max(...prices);
   const x = (time: number) => 40 + ((width - 90) * (time - t0)) / (t1 - t0);
+  // Correctifs 161 — au-delà de 12 ventes, la frise laisse sous son point le plus bas la place
+  // d'écrire son prix, au-dessus de l'axe (le plus bas tombait presque toujours).
+  const floor = sales.length > TIMELINE_ALL_PRICES_UP_TO ? height - 62 : height - 46;
   const y = (price: number) =>
-    hi === lo ? height / 2 : height - 46 - ((height - 96) * (price - lo)) / (hi - lo);
+    hi === lo ? height / 2 : floor - ((floor - 50) * (price - lo)) / (hi - lo);
   const years = Array.from({ length: lastYear - firstYear + 1 }, (_, i) => firstYear + i);
   const points = sales.map((sale) => ({
     x: x(monthTime(sale.month)),
@@ -268,25 +271,27 @@ export function SalesTimeline({
             y1={point.y + dot}
             y2={height - 30}
             stroke="currentColor"
-            strokeOpacity={many ? 0.12 : 0.25}
+            strokeOpacity={many ? 0.18 : 0.25}
           />
           <circle cx={point.x} cy={point.y} r={dot} fill="currentColor" />
         </g>
       ))}
       {labels
-        ? placeTimelineLabels(points, labelledSales(sales), width, height - 34).map((label, i) => (
-            <text
-              key={i}
-              x={label.x}
-              y={label.y}
-              textAnchor={label.anchor}
-              fontSize={16}
-              fontWeight={700}
-              fill="currentColor"
-            >
-              {label.text}
-            </text>
-          ))
+        ? placeTimelineLabels(points, labelledSales(sales), width, height - 34, dot).map(
+            (label, i) => (
+              <text
+                key={i}
+                x={label.x}
+                y={label.y}
+                textAnchor={label.anchor}
+                fontSize={16}
+                fontWeight={700}
+                fill="currentColor"
+              >
+                {label.text}
+              </text>
+            ),
+          )
         : null}
     </svg>
   );

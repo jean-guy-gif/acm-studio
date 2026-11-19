@@ -207,6 +207,8 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
           return { labels: texts.length, overlaps };
         });
         expect(sales.overlaps).toBe(false);
+        // Au moins un prix écrit sur la frise (au-delà de 12 ventes : trois au plus).
+        expect(sales.labels).toBeGreaterThan(0);
         await page.emulateMedia({ media: 'print' });
         await page.setViewportSize({ width: 794, height: 1123 });
         // Une page A4 à 96 points par pouce, moins des marges de 15 mm : 1 010 px de haut au plus.

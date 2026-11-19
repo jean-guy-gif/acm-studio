@@ -129,6 +129,22 @@ describe('ce qu’ACM envoie à Academia : ni surfaceMin ni surfaceMax', () => {
     expect([...query.keys()].sort()).toEqual(['pieces', 'surface', 'type']);
   });
 
+  it('le faux serveur suit la règle des vues : une fourchette fausse ou sans pièces, 400', async () => {
+    const server = fakeAcademia({ readView: [{ status: 200, body: advisorView }] });
+    const base = `https://app.myacademia.ai/api/v1/dossiers/${FAKE_ACADEMIA_ID}`;
+    const status = async (path: string) =>
+      (await server.fetch(`${base}${path}`, { method: 'GET', headers: {} })).status;
+    expect(await status('/bien?type=maison&surface=135')).toBe(400);
+    expect(
+      await status('/bien-client?type=maison&pieces=5&surface=135&surfaceMin=150&surfaceMax=120'),
+    ).toBe(400);
+    expect(await status('/bien?type=maison&pieces=5&surface=135&surfaceMin=5')).toBe(400);
+    expect(await status('/bien?type=maison&pieces=5&surface=135&surfaceMax=1200')).toBe(400);
+    expect(
+      await status('/bien?type=maison&pieces=5&surface=135&surfaceMin=100&surfaceMax=170'),
+    ).toBe(200);
+  });
+
   it('le faux serveur suit la règle : une fourchette à l’envers ou hors bornes, 400', async () => {
     const server = fakeAcademia();
     const refused = await createAcademiaRequest(
@@ -225,6 +241,21 @@ describe('beaucoup de ventes : la frise lisible, la page imprimée tenue', () =>
     expect(svg.match(/<circle/g)).toHaveLength(37);
     expect(svg).toContain('r="5"');
     expect((svg.match(/font-weight="700"/g) ?? []).length).toBeLessThanOrEqual(3);
+  });
+
+  it('au-delà de 12 ventes, le prix le plus bas, le plus haut et le plus récent sont bien écrits', () => {
+    for (const count of [13, 20, 37, 50]) {
+      const blocks = parseNeighbourhoodBlocks(withSales(count))!;
+      const view = neighbourhoodView(blocks, 'ventes', CLIENT_TEXTS.fr, 'fr');
+      if (view?.kind !== 'sales') throw new Error('vue des ventes attendue');
+      const svg = renderToStaticMarkup(createElement(SalesTimeline, { sales: view.timeline }));
+      const written = [...svg.matchAll(/font-weight="700"[^>]*>([^<]+)</g)].map((m) => m[1]);
+      const byPrice = [...view.timeline].sort((a, b) => a.price - b.price);
+      const latest = [...view.timeline].sort((a, b) => b.month.localeCompare(a.month))[0]!;
+      expect(written, `${count} ventes`).toEqual(
+        expect.arrayContaining([byPrice[0]!.label, byPrice.at(-1)!.label, latest.label]),
+      );
+    }
   });
 
   it('l’impression : au-delà de 12 ventes, une ligne par vente dans un tableau, les pièces dites', () => {

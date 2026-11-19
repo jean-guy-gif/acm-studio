@@ -364,7 +364,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
         street: 'Street',
         rooms: 'Rooms',
         surface: 'Area',
-        distance: 'Distance',
+        distance: 'About',
         price: 'Price',
       },
       none: 'No sale recorded around you.',
