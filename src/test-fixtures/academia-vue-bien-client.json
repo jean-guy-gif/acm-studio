@@ -17,6 +17,8 @@
       "note": null,
       "type": "maison",
       "pieces": 5,
+      "surfaceMin": 101,
+      "surfaceMax": 169,
       "anneau": 250,
       "liste": [
         {
@@ -31,7 +33,7 @@
         {
           "mois": "2024-04",
           "type": "maison",
-          "pieces": 5,
+          "pieces": 4,
           "surface": 119,
           "prix": 945575,
           "distance": 150,
@@ -40,7 +42,7 @@
         {
           "mois": "2023-07",
           "type": "maison",
-          "pieces": 5,
+          "pieces": 6,
           "surface": 134,
           "prix": 783266,
           "distance": 250,
@@ -58,7 +60,7 @@
         {
           "mois": "2023-03",
           "type": "maison",
-          "pieces": 5,
+          "pieces": 4,
           "surface": 121,
           "prix": 663830,
           "distance": 250,
@@ -76,7 +78,7 @@
         {
           "mois": "2022-04",
           "type": "maison",
-          "pieces": 5,
+          "pieces": 3,
           "surface": 125,
           "prix": 640615,
           "distance": 100,
@@ -85,7 +87,7 @@
         {
           "mois": "2022-01",
           "type": "maison",
-          "pieces": 5,
+          "pieces": 6,
           "surface": 132,
           "prix": 754667,
           "distance": 150,
@@ -103,7 +105,7 @@
         {
           "mois": "2021-08",
           "type": "maison",
-          "pieces": 5,
+          "pieces": 4,
           "surface": 136,
           "prix": 628193,
           "distance": 150,

@@ -666,6 +666,8 @@ describe('les prix de la synthèse (mission 111)', () => {
           date: '2026-10-07',
           type: null,
           rooms: null,
+          surfaceMin: null,
+          surfaceMax: null,
           since: null,
           listRadius: 250,
           list: [],

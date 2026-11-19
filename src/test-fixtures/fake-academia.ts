@@ -29,6 +29,25 @@ export type FakeAcademiaRoutes = {
 export const FAKE_ACADEMIA_ID = 'dos_8f2c1a9e';
 export const FAKE_LINK = 'https://app.myacademia.ai/l/Vb4nT8wLp2';
 
+// Correctifs 161 — la fourchette de surface des ventes (Laurent, 19/11) : deux paramètres
+// facultatifs, de 9 à 1 000 m², seuls ou ensemble ; le minimum plus petit que le maximum.
+const invalidSurface: FakeAcademiaReply = {
+  status: 400,
+  body: {
+    erreur: { code: 'demande', message: 'Demande invalide : surfaceMin, surfaceMax, pieces.' },
+  },
+};
+function surfaceRangeError(bien: unknown): boolean {
+  if (!bien || typeof bien !== 'object') return false;
+  const { surfaceMin, surfaceMax } = bien as { surfaceMin?: unknown; surfaceMax?: unknown };
+  const read = (value: unknown) => (value == null ? null : Number(value));
+  const min = read(surfaceMin);
+  const max = read(surfaceMax);
+  const outside = (value: number | null) =>
+    value != null && (!Number.isFinite(value) || value < 9 || value > 1000);
+  return outside(min) || outside(max) || (min != null && max != null && min >= max);
+}
+
 export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
   const calls: FakeAcademiaCall[] = [];
   const queues: Required<FakeAcademiaRoutes> = {
@@ -82,8 +101,24 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
           },
         },
       };
+    } else if (
+      method === 'POST' &&
+      url.pathname === '/api/v1/dossiers' &&
+      surfaceRangeError(body && typeof body === 'object' ? (body as { bien?: unknown }).bien : null)
+    ) {
+      // Laurent, 19/11 : surfaceMin et surfaceMax facultatifs, de 9 à 1 000 m², le minimum plus
+      // petit que le maximum ; sinon 400.
+      reply = invalidSurface;
     } else if (method === 'POST' && url.pathname === '/api/v1/dossiers')
       reply = next(queues.createRequest);
+    else if (
+      method === 'GET' &&
+      /^\/api\/v1\/dossiers\/[^/]+\/bien(-client)?$/.test(url.pathname) &&
+      (!url.searchParams.get('pieces') ||
+        surfaceRangeError(Object.fromEntries(url.searchParams.entries())))
+    )
+      // « pieces » reste obligatoire dans l'appel des vues (Laurent, 19/11).
+      reply = invalidSurface;
     else if (method === 'GET' && /^\/api\/v1\/dossiers\/[^/]+\/bien$/.test(url.pathname))
       reply = next(queues.readView);
     else if (method === 'GET' && /^\/api\/v1\/dossiers\/[^/]+\/bien-client$/.test(url.pathname))

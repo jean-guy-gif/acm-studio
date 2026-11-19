@@ -43,7 +43,7 @@ describe('le quartier dans les documents du vendeur', () => {
 
   it('les ventes réelles, à part, et en anglais', () => {
     const html = render(['ventes'], 'en');
-    expect(html).toContain('11 houses with 5 rooms sold around you');
+    expect(html).toContain('11 houses from 101 to 169\u00a0m² sold around you');
     expect(html).toContain('Public information as of 17 November 2026');
     expect(html).not.toContain('Planning');
   });

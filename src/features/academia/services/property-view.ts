@@ -31,6 +31,10 @@ export type ViewSale = {
 export type ViewSales = SourceInfo & {
   type: string | null;
   rooms: number | null;
+  // Correctifs 161 — la fourchette de surface appliquée par Academia (la surface du bien à ±25 %,
+  // toutes pièces confondues, règle de Laurent du 19/11) ; deux bornes, ou aucune.
+  surfaceMin: number | null;
+  surfaceMax: number | null;
   since: number | null;
   // Le rayon retenu par Academia pour la liste, et les ventes cumulées par rayon.
   listRadius: number | null;
@@ -162,6 +166,15 @@ function sourceOf(block: Json): SourceInfo {
   };
 }
 
+function surfaceRange(
+  min: number | null,
+  max: number | null,
+): { surfaceMin: number | null; surfaceMax: number | null } {
+  return min != null && max != null && min >= 9 && max <= 1000 && min < max
+    ? { surfaceMin: Math.round(min), surfaceMax: Math.round(max) }
+    : { surfaceMin: null, surfaceMax: null };
+}
+
 function sales(block: Json | null): ViewSales | null {
   if (!block) return null;
   const at = obj(block.venteALAdresse);
@@ -170,6 +183,7 @@ function sales(block: Json | null): ViewSales | null {
     ...sourceOf(block),
     type: text(block.type, 30),
     rooms: num(block.pieces),
+    ...surfaceRange(num(block.surfaceMin), num(block.surfaceMax)),
     since: num(block.depuis),
     listRadius: num(block.anneau),
     rings: list(block.anneaux, 12).flatMap((ring) => {

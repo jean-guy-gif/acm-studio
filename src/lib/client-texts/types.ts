@@ -212,12 +212,25 @@ export type ClientTexts = {
       headline: (
         count: number,
         type: 'maison' | 'appartement' | null,
-        rooms: number | null,
+        // Correctifs 161 — la fourchette de surface rendue par Academia, déjà écrite : « 80 »,
+        // « 134 m² » ; sans elle (un instantané d'avant), le type seul.
+        surface: { from: string; to: string } | null,
         since: number | null,
       ) => string;
       within: (meters: string) => string;
       about: (meters: string) => string;
       legend: string;
+      // Au-delà de 12 ventes, seuls le prix le plus bas, le plus haut et le plus récent s'écrivent.
+      legendMany: string;
+      // Au-delà de 12 ventes, le document imprimé les range dans un tableau.
+      columns: {
+        month: string;
+        street: string;
+        rooms: string;
+        surface: string;
+        distance: string;
+        price: string;
+      };
       none: string;
       // « 877 k€ », écrit à côté de chaque point de la frise.
       shortPrice: (thousands: string) => string;

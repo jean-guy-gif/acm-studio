@@ -9,6 +9,7 @@ import {
   PLANNING_CATEGORIES,
   SALES_COUNTED_SINCE,
 } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
+import { TIMELINE_ALL_PRICES_UP_TO } from '@/features/neighbourhood-link/services/sales-timeline';
 import type { ClientLanguage } from '@/lib/client-language';
 import type { ClientTexts } from '@/lib/client-texts/types';
 import {
@@ -93,7 +94,16 @@ export type NeighbourhoodView =
       headline: string;
       scale: string | null;
       timeline: { month: string; price: number; label: string }[];
-      cards: { price: string; month: string; street: string | null; facts: string }[];
+      cards: {
+        price: string;
+        month: string;
+        street: string | null;
+        rooms: string | null;
+        surface: string | null;
+        distance: string | null;
+        facts: string;
+      }[];
+      columns: ClientTexts['quartier']['sales']['columns'];
       legend: string;
       source: string | null;
     };
@@ -358,7 +368,17 @@ export function neighbourhoodView(
     kind: 'sales',
     title: s.title,
     headline: block.list.length
-      ? s.headline(block.list.length, block.type, block.rooms, block.since ?? SALES_COUNTED_SINCE)
+      ? s.headline(
+          block.list.length,
+          block.type,
+          block.surfaceMin != null && block.surfaceMax != null
+            ? {
+                from: formatNumber(block.surfaceMin, { language }),
+                to: formatSquareMeters(block.surfaceMax, { language }),
+              }
+            : null,
+          block.since ?? SALES_COUNTED_SINCE,
+        )
       : s.none,
     scale: block.listRadius != null ? s.within(meters(block.listRadius)) : null,
     timeline: block.list.map((sale) => ({
@@ -370,14 +390,21 @@ export function neighbourhoodView(
       price: formatEuro(sale.price, { language }),
       month: formatMonth(sale.month, language),
       street: sale.street,
+      // Le tableau imprimé au-delà de 12 ventes : une colonne par fait.
+      rooms: sale.rooms != null ? String(sale.rooms) : null,
+      surface: sale.surface != null ? formatSquareMeters(sale.surface, { language }) : null,
+      distance: sale.distance != null ? meters(sale.distance) : null,
+      // Toutes pièces confondues (règle du 19/11) : chaque vente dit les siennes.
       facts: [
+        sale.rooms != null ? texts.common.rooms(sale.rooms) : null,
         sale.surface != null ? formatSquareMeters(sale.surface, { language }) : null,
         sale.distance != null ? s.about(meters(sale.distance)) : null,
       ]
         .filter(Boolean)
         .join(' · '),
     })),
-    legend: s.legend,
+    columns: s.columns,
+    legend: block.list.length > TIMELINE_ALL_PRICES_UP_TO ? s.legendMany : s.legend,
     source: source(block),
   };
 }
