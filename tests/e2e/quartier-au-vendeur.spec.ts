@@ -26,7 +26,9 @@ const TABLETS = [
   { width: 1180, height: 750 },
   { width: 820, height: 1110 },
 ] as const;
-const FORBIDDEN = /[Aa]cademia|[Ee]stimation|[Vv]aleur indicative|[Ff]iabilit/;
+// Correctifs 161 — ni la rue inventée du dossier de démonstration d'Academia (« Avenue de la
+// Demonstration »), ni le mot, devant le vendeur (M114).
+const FORBIDDEN = /[Aa]cademia|[Ee]stimation|[Vv]aleur indicative|[Ff]iabilit|[Dd][eé]monstration/;
 
 async function garciaId(page: Page): Promise<string> {
   const href = await page
@@ -131,6 +133,8 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
         60_000,
       );
       await expect(panel).toBeVisible({ timeout: 60_000 });
+      // Côté conseiller non plus, la rue inventée du dossier de démonstration ne s'écrit pas (M114).
+      expect(await page.getByTestId('address-view').innerText()).not.toMatch(/d[eé]monstration/i);
       await expect(panel).toContainText('Ce que verra le vendeur : le quartier');
       await expect(page.getByTestId('neighbourhood-choice-count')).toHaveText(
         'Aucun écran ajouté au Live',

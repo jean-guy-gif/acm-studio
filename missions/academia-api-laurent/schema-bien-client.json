@@ -1,0 +1,1009 @@
+{
+  "$id": "https://app.myacademia.ai/api/v1/schema-bien-client.json",
+  "title": "Réponse de GET /api/v1/dossiers/{id}/bien-client",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "dossier": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "bien": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "appartement",
+            "maison"
+          ]
+        },
+        "pieces": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "surface": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "pieces",
+        "surface"
+      ],
+      "additionalProperties": false
+    },
+    "calculeLe": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "vue": {
+      "type": "string",
+      "const": "client"
+    },
+    "blocs": {
+      "type": "object",
+      "properties": {
+        "ventes": {
+          "type": "object",
+          "properties": {
+            "etat": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "aucun",
+                "non_verifie"
+              ]
+            },
+            "source": {
+              "type": "string"
+            },
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "appartement",
+                "maison"
+              ]
+            },
+            "pieces": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "surfaceMin": {
+              "type": "number"
+            },
+            "surfaceMax": {
+              "type": "number"
+            },
+            "anneau": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "liste": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "mois": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}$"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "appartement",
+                      "maison"
+                    ]
+                  },
+                  "pieces": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "surface": {
+                    "type": "number"
+                  },
+                  "prix": {
+                    "type": "number"
+                  },
+                  "distance": {
+                    "type": "integer",
+                    "minimum": 50,
+                    "maximum": 9007199254740991,
+                    "multipleOf": 50
+                  },
+                  "rue": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "mois",
+                  "type",
+                  "pieces",
+                  "surface",
+                  "prix",
+                  "distance",
+                  "rue"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "etat",
+            "source",
+            "date",
+            "note",
+            "type",
+            "pieces",
+            "surfaceMin",
+            "surfaceMax",
+            "anneau",
+            "liste"
+          ],
+          "additionalProperties": false
+        },
+        "urbanisme": {
+          "type": "object",
+          "properties": {
+            "etat": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "aucun",
+                "non_verifie"
+              ]
+            },
+            "source": {
+              "type": "string"
+            },
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "zonage": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "plu",
+                    "cc",
+                    "rnu",
+                    "none"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "phrase": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "niveaux": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "parcelle": {
+                      "type": "object",
+                      "properties": {
+                        "voirie": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "alignement": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "equipement": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "logements": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "attente": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "oap": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "perimetre": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "voirie",
+                        "alignement",
+                        "equipement",
+                        "logements",
+                        "attente",
+                        "oap",
+                        "perimetre"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "a40m": {
+                      "type": "object",
+                      "properties": {
+                        "voirie": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "alignement": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "equipement": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "logements": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "attente": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "oap": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "perimetre": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "voirie",
+                        "alignement",
+                        "equipement",
+                        "logements",
+                        "attente",
+                        "oap",
+                        "perimetre"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "a300m": {
+                      "type": "object",
+                      "properties": {
+                        "voirie": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "alignement": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "equipement": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "logements": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "attente": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "oap": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "perimetre": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "voirie",
+                        "alignement",
+                        "equipement",
+                        "logements",
+                        "attente",
+                        "oap",
+                        "perimetre"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "parcelle",
+                    "a40m",
+                    "a300m"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "elements": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "niveau": {
+                    "type": "string",
+                    "enum": [
+                      "parcelle",
+                      "a40m",
+                      "a300m"
+                    ]
+                  },
+                  "categorie": {
+                    "type": "string",
+                    "enum": [
+                      "voirie",
+                      "alignement",
+                      "equipement",
+                      "logements",
+                      "attente",
+                      "oap",
+                      "perimetre"
+                    ]
+                  },
+                  "libelle": {
+                    "type": "string"
+                  },
+                  "objet": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "distance": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "niveau",
+                  "categorie",
+                  "libelle",
+                  "objet",
+                  "code",
+                  "distance"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "etat",
+            "source",
+            "date",
+            "note",
+            "zonage",
+            "phrase",
+            "niveaux",
+            "elements"
+          ],
+          "additionalProperties": false
+        },
+        "permis": {
+          "type": "object",
+          "properties": {
+            "etat": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "aucun",
+                "non_verifie"
+              ]
+            },
+            "source": {
+              "type": "string"
+            },
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "rayon": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "depuis": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "construire": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "autorise": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "etat": {
+                    "type": "string",
+                    "enum": [
+                      "autorise",
+                      "chantier_ouvert",
+                      "termine"
+                    ]
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "logements": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "surface": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "distance": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "rue": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "demandeur": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "autorise",
+                  "etat",
+                  "type",
+                  "logements",
+                  "surface",
+                  "distance",
+                  "rue",
+                  "demandeur"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "demolirEtat": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "aucun",
+                "non_verifie"
+              ]
+            },
+            "demolir": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "autorise": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "etat": {
+                    "type": "string",
+                    "enum": [
+                      "autorise",
+                      "commence",
+                      "termine"
+                    ]
+                  },
+                  "distance": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "rue": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "demandeur": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "autorise",
+                  "etat",
+                  "distance",
+                  "rue",
+                  "demandeur"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "etat",
+            "source",
+            "date",
+            "note",
+            "rayon",
+            "depuis",
+            "construire",
+            "demolirEtat",
+            "demolir"
+          ],
+          "additionalProperties": false
+        },
+        "risques": {
+          "type": "object",
+          "properties": {
+            "etat": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "aucun",
+                "non_verifie"
+              ]
+            },
+            "source": {
+              "type": "string"
+            },
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "argile": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "seisme": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "radon": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "tri": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "catastrophesNaturelles": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "nombre": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "derniere": {
+                      "type": "string"
+                    },
+                    "types": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    }
+                  },
+                  "required": [
+                    "nombre",
+                    "derniere",
+                    "types"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "zonagePlu": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "zone": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "libelle": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "zone",
+                    "libelle"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "nonLus": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "etat",
+            "source",
+            "date",
+            "note",
+            "argile",
+            "seisme",
+            "radon",
+            "tri",
+            "catastrophesNaturelles",
+            "zonagePlu",
+            "nonLus"
+          ],
+          "additionalProperties": false
+        },
+        "population": {
+          "type": "object",
+          "properties": {
+            "etat": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "aucun",
+                "non_verifie"
+              ]
+            },
+            "source": {
+              "type": "string"
+            },
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "rayon": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "habitants": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "menages": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "personnesParMenage": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "etat",
+            "source",
+            "date",
+            "note",
+            "rayon",
+            "habitants",
+            "menages",
+            "personnesParMenage"
+          ],
+          "additionalProperties": false
+        },
+        "copropriete": {
+          "type": "object",
+          "properties": {
+            "etat": {
+              "type": "string",
+              "enum": [
+                "ok",
+                "aucun",
+                "non_verifie"
+              ]
+            },
+            "source": {
+              "type": "string"
+            },
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "rattachement": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "adresse",
+                    "proche"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "distance": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "nom": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "immatriculation": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "lotsHabitation": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "periodeConstruction": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "mandatEnCours": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "finMandat": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "etat",
+            "source",
+            "date",
+            "note",
+            "rattachement",
+            "distance",
+            "nom",
+            "immatriculation",
+            "lotsHabitation",
+            "periodeConstruction",
+            "mandatEnCours",
+            "finMandat"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "ventes",
+        "urbanisme",
+        "permis",
+        "risques",
+        "population",
+        "copropriete"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "dossier",
+    "bien",
+    "calculeLe",
+    "vue",
+    "blocs"
+  ],
+  "additionalProperties": false
+}

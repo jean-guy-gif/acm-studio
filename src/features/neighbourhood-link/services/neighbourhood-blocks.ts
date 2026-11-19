@@ -12,6 +12,8 @@
 // Une seule relecture : la réponse de la source est d'abord ramenée à la forme d'ACM, puis passe
 // par les mêmes fonctions que l'instantané relu en base (`readStoredNeighbourhood`). Pur.
 
+import { isDemonstrationStreet } from '@/lib/academia';
+
 export const NEIGHBOURHOOD_BLOCK_KEYS = [
   'urbanisme',
   'risques',
@@ -162,10 +164,11 @@ const year = (value: unknown): number | null => {
   const found = int(value, 2200);
   return found != null && found >= 1500 ? found : null;
 };
-// Une rue sans numéro : un texte qui commence par un chiffre n'en est pas une.
+// Une rue sans numéro : un texte qui commence par un chiffre n'en est pas une ; la rue inventée du
+// dossier de démonstration d'Academia ne s'écrit pas (correctifs 161, M114).
 const street = (value: unknown): string | null => {
   const found = text(value, 120);
-  return found && !/^\d/.test(found) ? found : null;
+  return found && !/^\d/.test(found) && !isDemonstrationStreet(found) ? found : null;
 };
 const source = (block: Json): BlockSource => ({ date: day(block.date) });
 
