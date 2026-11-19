@@ -20,8 +20,10 @@ import type { LivingHereApiInitial } from '@/features/academia/queries/living-he
 import {
   linkNeedsRenewal,
   livingHereExpiry,
+  type LivingHereAgeLine,
   type LivingHereExpiry,
 } from '@/features/academia/services/living-here-age';
+import { showsFallback } from '@/features/academia/services/card-address';
 import { setAcademiaLivingHereLink } from '@/features/projects/actions/set-academia-link';
 import { formatDay } from '@/lib/format';
 
@@ -98,7 +100,8 @@ export function LivingHereApiPanel({
   address,
   initial,
   fallback,
-  pasted = false,
+  pasted = null,
+  saveFirst = null,
   signed,
   showAddress = true,
 }: {
@@ -107,7 +110,12 @@ export function LivingHereApiPanel({
   initial: LivingHereApiInitial;
   // Le champ à coller d'aujourd'hui (M147 A, M156), le repli ; ouvert quand un lien y est collé.
   fallback: ReactNode;
-  pasted?: boolean;
+  // Correctifs 161 — un lien collé à la main avant l'ouverture : montré tel quel, avec « Retirer »,
+  // sans le champ ; « Créer le lien » le remplace (Jean-Guy, 19/11).
+  pasted?: { url: string; line: LivingHereAgeLine | null } | null;
+  // Correctifs 161 — l'adresse tapée sur la fiche n'est pas encore enregistrée : sur une fiche sans
+  // adresse (`new`) ou sur une adresse modifiée (`changed`) ; le lien se crée sur l'enregistrée.
+  saveFirst?: 'new' | 'changed' | null;
   // Le lien ne part vers les acquéreurs que pour un mandat signé (M147 A).
   signed: boolean;
   // Dans l'agence de démonstration, l'adresse envoyée (celle du dossier fixe d'Academia) et le lien
@@ -211,15 +219,26 @@ export function LivingHereApiPanel({
   );
 
   const repli = (
-    <details
-      className="text-sm text-zinc-600"
-      data-testid="living-here-fallback"
-      open={(view.kind === 'idle' && pasted) || undefined}
-    >
+    <details className="text-sm text-zinc-600" data-testid="living-here-fallback">
       <summary className="cursor-pointer">Coller le lien à la main</summary>
       <div className="pt-2">{fallback}</div>
     </details>
   );
+
+  if (saveFirst) {
+    return (
+      <div className="flex flex-col gap-2" data-testid="living-here-api">
+        <span className={fieldLabel}>Lien « Vivre ici » pour les acquéreurs</span>
+        <p className={hintText} data-testid="living-here-save-first">
+          {showAddress
+            ? `Enregistrez d’abord la fiche : le lien se crée sur l’adresse enregistrée du bien${
+                saveFirst === 'changed' ? ' (vous l’avez modifiée)' : ''
+              }.`
+            : 'Enregistrez d’abord la fiche.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2" data-testid="living-here-api">
@@ -292,7 +311,6 @@ export function LivingHereApiPanel({
           >
             Corriger l’adresse du bien
           </a>
-          <p className={hintText}>Ou collez le lien « Vivre ici » vous-même.</p>
         </>
       ) : null}
       {view.kind === 'ready' ? (
@@ -422,7 +440,39 @@ export function LivingHereApiPanel({
           {view.retry ? button('Réessayer') : null}
         </>
       ) : null}
-      {view.kind === 'ready' && view.expiry?.level !== 'expired' ? null : repli}
+      {pasted && view.kind !== 'ready' ? (
+        <div className="flex flex-col gap-1 pt-1" data-testid="living-here-pasted">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-800">
+            <span className="font-medium">Lien collé à la main :</span>
+            {showAddress ? (
+              <span className="rounded-lg bg-zinc-100 px-2 py-0.5 font-mono text-xs break-all text-zinc-900">
+                {pasted.url}
+              </span>
+            ) : (
+              <span>enregistré</span>
+            )}
+            <button
+              type="button"
+              className={`${linkStyle} text-sm`}
+              disabled={pending}
+              onClick={remove}
+              data-testid="living-here-pasted-remove"
+            >
+              Retirer
+            </button>
+          </p>
+          {pasted.line ? (
+            <p
+              className={pasted.line.tone === 'warn' ? AGE_WARN_CLASS : hintText}
+              data-tone={pasted.line.tone}
+            >
+              {pasted.line.text}
+            </p>
+          ) : null}
+          {view.kind === 'idle' ? <p className={hintText}>Le lien créé le remplacera.</p> : null}
+        </div>
+      ) : null}
+      {showsFallback(view) ? repli : null}
     </div>
   );
 }

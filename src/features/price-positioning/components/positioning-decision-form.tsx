@@ -37,6 +37,8 @@ type Props = {
   // Mission 147 (partie A) — « Ventes réelles dans Academia ↗ » : la médiane en un clic au moment
   // de décider ; un lien, jamais un prix pour le bien. `null` : pas d'adresse sur la fiche.
   salesLink?: AcademiaLink | null;
+  // Correctifs 161 — l'API ouverte : le dossier d'adresse est juste au-dessus, le lien part.
+  salesLinkHidden?: boolean;
 };
 
 const shownToSeller = 'text-xs font-medium text-amber-700 stage:text-amber-300';
@@ -62,6 +64,7 @@ export function PositioningDecisionForm({
   projectId,
   locked = false,
   salesLink = null,
+  salesLinkHidden = false,
 }: Props) {
   const router = useRouter();
   const [becameReady, setBecameReady] = useState(false);
@@ -169,12 +172,14 @@ export function PositioningDecisionForm({
       </label>
 
       {/* Mission 147 (partie A) — hors du libellé du champ : un lien discret, pas son nom. */}
-      <div className="-mt-2">
-        <AcademiaSalesLink
-          salesLink={salesLink}
-          missingHref={`/builder/${projectId}/property#champ-address`}
-        />
-      </div>
+      {salesLinkHidden ? null : (
+        <div className="-mt-2">
+          <AcademiaSalesLink
+            salesLink={salesLink}
+            missingHref={`/builder/${projectId}/property#champ-address`}
+          />
+        </div>
+      )}
 
       <label className="flex flex-col gap-1.5">
         <span className={fieldLabel}>Justification (facultatif)</span>
