@@ -174,6 +174,49 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
       expect(await study.innerText()).not.toMatch(FORBIDDEN);
     });
 
+    // Correctifs 161 — la règle de Laurent (19/11) : les ventes par type et surface, toutes pièces
+    // confondues ; 37 sur le dossier de démonstration. Le titre dit le type et la fourchette de
+    // surface ; la frise n'écrit jamais deux prix l'un sur l'autre ; imprimé, le bloc tient sur une
+    // page A4.
+    if (checked.includes('ventes')) {
+      await test.step('Les ventes : par surface, lisibles, sur une page imprimée', async () => {
+        const study = page.getByTestId('market-study');
+        const block = study
+          .getByTestId('neighbourhood-document')
+          .locator('> div')
+          .filter({ hasText: 'Les ventes réelles' })
+          .first();
+        await expect(block).toContainText(
+          /\d+ (maisons|appartements) de \d+ à \d[\d\u202f\u00a0]*\u00a0m² vendu(e)?s autour de chez vous depuis/,
+        );
+        await expect(block).not.toContainText(/de \d+ pièces vendu/);
+        const sales = await block.evaluate((node) => {
+          const texts = [...node.querySelectorAll('svg text[font-weight="700"]')].map((t) =>
+            t.getBoundingClientRect(),
+          );
+          const overlaps = texts.some((a, i) =>
+            texts.some(
+              (b, j) =>
+                j > i &&
+                a.left < b.right &&
+                b.left < a.right &&
+                a.top < b.bottom &&
+                b.top < a.bottom,
+            ),
+          );
+          return { labels: texts.length, overlaps };
+        });
+        expect(sales.overlaps).toBe(false);
+        await page.emulateMedia({ media: 'print' });
+        await page.setViewportSize({ width: 794, height: 1123 });
+        // Une page A4 à 96 points par pouce, moins des marges de 15 mm : 1 010 px de haut au plus.
+        const height = await block.evaluate((node) => node.getBoundingClientRect().height);
+        expect(height).toBeLessThan(1010);
+        await page.emulateMedia({ media: 'screen' });
+        await page.setViewportSize({ width: 1280, height: 900 });
+      });
+    }
+
     await test.step('Le Live : à leur place, sans défiler, dans les deux langues', async () => {
       await page.setViewportSize(TABLETS[0]);
       await page.goto(`/live/${garcia}`);
