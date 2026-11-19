@@ -4,6 +4,8 @@
 // elle ne s'affiche qu'au conseiller, ne s'enregistre jamais et n'atteint jamais le vendeur
 // (CLAUDE.md, décision de Jean-Guy du 17/11). Pur.
 
+import { isDemonstrationStreet } from '@/lib/academia';
+
 export type SourceInfo = {
   // `etat` d'Academia : « ok », sinon la source n'a pas pu être lue (dit, jamais « rien », M98).
   ok: boolean;
@@ -155,6 +157,12 @@ const list = (value: unknown, max = 50): Json[] =>
         .slice(0, max)
     : [];
 
+// La rue d'une vente ; jamais la rue inventée du dossier de démonstration (correctifs 161, M114).
+const streetOf = (value: unknown): string | null => {
+  const found = text(value, 120);
+  return found && !isDemonstrationStreet(found) ? found : null;
+};
+
 function sourceOf(block: Json): SourceInfo {
   return {
     ok: block.etat === 'ok',
@@ -215,7 +223,7 @@ function sales(block: Json | null): ViewSales | null {
               land: num(sale.terrain),
               pricePerSquareMeter: num(sale.prixM2),
               distance: num(sale.distance),
-              street: text(sale.rue, 120),
+              street: streetOf(sale.rue),
             },
           ]
         : [];

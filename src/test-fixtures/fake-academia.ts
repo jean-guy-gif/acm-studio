@@ -3,6 +3,9 @@
 // les tests : jamais un appel au vrai service. Chaque appel est noté (méthode, chemin, clé, corps),
 // et chaque route répond ce qu'on lui demande (statut, corps, en-têtes), ou ne répond pas (délai).
 
+import exempleBienClient from '@/test-fixtures/academia-exemple-bien-client.json';
+import exempleBien from '@/test-fixtures/academia-exemple-bien.json';
+
 export type FakeAcademiaCall = {
   method: string;
   path: string;
@@ -59,9 +62,24 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
     readRequest: [
       ...(routes.readRequest ?? [{ status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'pret' } }]),
     ],
-    readView: [...(routes.readView ?? [{ status: 200, body: { blocs: {} } }])],
-    readClientView: [...(routes.readClientView ?? [{ status: 200, body: { blocs: {} } }])],
-    status: [...(routes.status ?? [{ status: 200, body: { ok: true } }])],
+    // Correctifs 161 — par défaut, les réponses exactes du dossier de démonstration données par
+    // Laurent (`missions/academia-api-laurent/`, 19/11).
+    readView: [...(routes.readView ?? [{ status: 200, body: exempleBien }])],
+    readClientView: [...(routes.readClientView ?? [{ status: 200, body: exempleBienClient }])],
+    status: [
+      ...(routes.status ?? [
+        {
+          status: 200,
+          body: {
+            ok: true,
+            version: '1',
+            plafondDossiersParJour: 200,
+            appelsParMinute: 120,
+            conservationJours: 90,
+          },
+        },
+      ]),
+    ],
     createLink: [
       ...(routes.createLink ?? [
         { status: 201, body: { url: FAKE_LINK, expire_le: '2026-12-16T00:00:00Z' } },
