@@ -12,6 +12,8 @@
 // Une seule relecture : la réponse de la source est d'abord ramenée à la forme d'ACM, puis passe
 // par les mêmes fonctions que l'instantané relu en base (`readStoredNeighbourhood`). Pur.
 
+import { isDemonstrationStreet } from '@/lib/academia';
+
 export const NEIGHBOURHOOD_BLOCK_KEYS = [
   'urbanisme',
   'risques',
@@ -62,6 +64,11 @@ export type PlanningLevel = {
 export type NeighbourhoodSales = BlockSource & {
   type: 'maison' | 'appartement' | null;
   rooms: number | null;
+  // Correctifs 161 — la règle de Laurent (19/11) : les ventes du même type, de surface comprise dans
+  // une fourchette (la surface du bien à ±25 %, bornes comprises), toutes pièces confondues ; la vue
+  // rend la fourchette appliquée. Un instantané d'avant ne l'a pas : le titre dit alors le type seul.
+  surfaceMin: number | null;
+  surfaceMax: number | null;
   since: number | null;
   listRadius: number | null;
   list: NeighbourhoodSale[];
@@ -157,20 +164,35 @@ const year = (value: unknown): number | null => {
   const found = int(value, 2200);
   return found != null && found >= 1500 ? found : null;
 };
-// Une rue sans numéro : un texte qui commence par un chiffre n'en est pas une.
+// Une rue sans numéro : un texte qui commence par un chiffre n'en est pas une ; la rue inventée du
+// dossier de démonstration d'Academia ne s'écrit pas (correctifs 161, M114).
 const street = (value: unknown): string | null => {
   const found = text(value, 120);
-  return found && !/^\d/.test(found) ? found : null;
+  return found && !/^\d/.test(found) && !isDemonstrationStreet(found) ? found : null;
 };
 const source = (block: Json): BlockSource => ({ date: day(block.date) });
 
 // ─── La forme d'ACM, relue champ par champ (réponse de la source ou instantané en base) ──────────
+
+// La fourchette de surface des ventes : deux bornes de 9 à 1 000 m² (l'API de Laurent), la plus
+// petite d'abord ; sinon aucune, jamais une borne seule.
+function surfaceRange(
+  minValue: unknown,
+  maxValue: unknown,
+): { surfaceMin: number | null; surfaceMax: number | null } {
+  const min = int(minValue, 1000);
+  const max = int(maxValue, 1000);
+  return min != null && max != null && min >= 9 && min < max
+    ? { surfaceMin: min, surfaceMax: max }
+    : { surfaceMin: null, surfaceMax: null };
+}
 
 function sales(block: Json): NeighbourhoodSales {
   return {
     ...source(block),
     type: propertyType(block.type),
     rooms: int(block.rooms, 100),
+    ...surfaceRange(block.surfaceMin, block.surfaceMax),
     since: year(block.since),
     listRadius: int(block.listRadius, 10_000),
     list: list(block.list, 50).flatMap((sale) => {
@@ -321,6 +343,11 @@ export function isShowableBlock(blocks: NeighbourhoodBlocks, key: NeighbourhoodB
           c.syndicMandateActive != null)
       );
     }
+    case 'ventes':
+      // Correctifs 161 — l'« anneau » vide (aucun cercle ne réunit 5 ventes, README de Laurent) :
+      // le bloc n'est pas proposé au vendeur (décision de Jean-Guy, 19/11), « rien de relevé »
+      // compris, faute d'échelle à lui dire.
+      return blocks.ventes != null && blocks.ventes.listRadius != null;
     default:
       return blocks[key] != null;
   }
@@ -471,6 +498,8 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
       date: ventes.date,
       type: ventes.type,
       rooms: ventes.pieces,
+      surfaceMin: ventes.surfaceMin,
+      surfaceMax: ventes.surfaceMax,
       since: ventes.depuis,
       listRadius: ventes.anneau,
       list: list(ventes.liste, 50).map((sale) => ({
@@ -490,7 +519,8 @@ export function parseNeighbourhoodBlocks(json: unknown): NeighbourhoodBlocks | n
       since: permis.depuis,
       build: list(permis.construire, 30).map((permit) => ({
         authorizedOn: permit.autorise,
-        state: permit.etat,
+        // Le chantier ouvert d'un permis de construire (schémas de Laurent du 19/11) : « commence ».
+        state: permit.etat === 'chantier_ouvert' ? 'commence' : permit.etat,
         dwellings: permit.logements,
         surface: permit.surface,
         distance: permit.distance,

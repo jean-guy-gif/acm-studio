@@ -1,0 +1,502 @@
+{
+  "dossier": {
+    "id": "0de30000-0000-4000-8000-000000000001"
+  },
+  "bien": {
+    "type": "appartement",
+    "pieces": 4,
+    "surface": 80
+  },
+  "calculeLe": "2026-10-07",
+  "vue": "client",
+  "blocs": {
+    "ventes": {
+      "etat": "ok",
+      "source": "DVF (DGFiP), ventes de logements anciens",
+      "date": "2026-10-07",
+      "note": null,
+      "type": "appartement",
+      "pieces": 4,
+      "surfaceMin": 60,
+      "surfaceMax": 100,
+      "anneau": 250,
+      "liste": [
+        {
+          "mois": "2025-10",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 95,
+          "prix": 495293,
+          "distance": 200,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2025-08",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 63,
+          "prix": 373790,
+          "distance": 250,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2025-05",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 68,
+          "prix": 373142,
+          "distance": 250,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2025-04",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 66,
+          "prix": 364087,
+          "distance": 150,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2025-03",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 83,
+          "prix": 493770,
+          "distance": 250,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2025-02",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 71,
+          "prix": 429642,
+          "distance": 250,
+          "rue": "Rue des Oliviers"
+        },
+        {
+          "mois": "2025-02",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 96,
+          "prix": 442075,
+          "distance": 200,
+          "rue": "Avenue de la Demonstration"
+        },
+        {
+          "mois": "2024-11",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 80,
+          "prix": 335077,
+          "distance": 150,
+          "rue": "Avenue de Nice"
+        },
+        {
+          "mois": "2024-11",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 64,
+          "prix": 305008,
+          "distance": 200,
+          "rue": "Avenue de Nice"
+        },
+        {
+          "mois": "2024-04",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 79,
+          "prix": 416922,
+          "distance": 150,
+          "rue": "Chemin du Val Fleuri"
+        },
+        {
+          "mois": "2024-02",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 74,
+          "prix": 433438,
+          "distance": 150,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2024-01",
+          "type": "appartement",
+          "pieces": 5,
+          "surface": 99,
+          "prix": 419998,
+          "distance": 250,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2023-12",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 82,
+          "prix": 405518,
+          "distance": 150,
+          "rue": "Avenue de la Demonstration"
+        },
+        {
+          "mois": "2023-11",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 85,
+          "prix": 403085,
+          "distance": 200,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2023-11",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 98,
+          "prix": 467286,
+          "distance": 200,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2023-06",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 91,
+          "prix": 454005,
+          "distance": 200,
+          "rue": "Chemin du Val Fleuri"
+        },
+        {
+          "mois": "2023-05",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 63,
+          "prix": 282602,
+          "distance": 200,
+          "rue": "Rue des Oliviers"
+        },
+        {
+          "mois": "2023-05",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 71,
+          "prix": 366106,
+          "distance": 200,
+          "rue": "Avenue de Nice"
+        },
+        {
+          "mois": "2023-03",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 73,
+          "prix": 284326,
+          "distance": 100,
+          "rue": "Chemin du Val Fleuri"
+        },
+        {
+          "mois": "2023-02",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 64,
+          "prix": 373221,
+          "distance": 150,
+          "rue": "Avenue de la Demonstration"
+        },
+        {
+          "mois": "2023-02",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 63,
+          "prix": 330580,
+          "distance": 150,
+          "rue": "Avenue de la Demonstration"
+        },
+        {
+          "mois": "2022-11",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 76,
+          "prix": 378418,
+          "distance": 200,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2022-11",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 90,
+          "prix": 364812,
+          "distance": 200,
+          "rue": "Avenue de la Demonstration"
+        },
+        {
+          "mois": "2022-10",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 83,
+          "prix": 316151,
+          "distance": 250,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2022-08",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 64,
+          "prix": 299528,
+          "distance": 100,
+          "rue": "Rue des Oliviers"
+        },
+        {
+          "mois": "2022-07",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 74,
+          "prix": 352652,
+          "distance": 150,
+          "rue": "Avenue de la Demonstration"
+        },
+        {
+          "mois": "2022-07",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 98,
+          "prix": 535181,
+          "distance": 200,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2022-07",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 82,
+          "prix": 359784,
+          "distance": 150,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2022-03",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 82,
+          "prix": 399171,
+          "distance": 200,
+          "rue": "Avenue de Nice"
+        },
+        {
+          "mois": "2022-03",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 92,
+          "prix": 506654,
+          "distance": 50,
+          "rue": "Rue des Oliviers"
+        },
+        {
+          "mois": "2022-02",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 85,
+          "prix": 365752,
+          "distance": 250,
+          "rue": "Chemin des Collettes"
+        },
+        {
+          "mois": "2021-12",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 78,
+          "prix": 345800,
+          "distance": 200,
+          "rue": "Avenue de Nice"
+        },
+        {
+          "mois": "2021-11",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 75,
+          "prix": 389634,
+          "distance": 200,
+          "rue": "Boulevard Marechal Juin"
+        },
+        {
+          "mois": "2021-11",
+          "type": "appartement",
+          "pieces": 4,
+          "surface": 82,
+          "prix": 330682,
+          "distance": 200,
+          "rue": "Avenue de la Demonstration"
+        },
+        {
+          "mois": "2021-09",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 72,
+          "prix": 326669,
+          "distance": 100,
+          "rue": "Avenue de Nice"
+        },
+        {
+          "mois": "2021-07",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 65,
+          "prix": 332509,
+          "distance": 100,
+          "rue": "Chemin du Val Fleuri"
+        },
+        {
+          "mois": "2021-01",
+          "type": "appartement",
+          "pieces": 3,
+          "surface": 65,
+          "prix": 333015,
+          "distance": 150,
+          "rue": "Avenue de Nice"
+        }
+      ]
+    },
+    "urbanisme": {
+      "etat": "ok",
+      "source": "Géoportail de l'urbanisme (IGN, Géoplateforme)",
+      "date": "2026-10-07",
+      "note": null,
+      "zonage": "plu",
+      "phrase": "Rien de relevé sur la parcelle ni à moins de 40 m. 3 emplacements réservés de voirie entre 40 et 300 m, le plus proche à 153 m.",
+      "niveaux": {
+        "parcelle": {
+          "voirie": 0,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        },
+        "a40m": {
+          "voirie": 0,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        },
+        "a300m": {
+          "voirie": 3,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        }
+      },
+      "elements": [
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "V37",
+          "distance": 153
+        },
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "V47",
+          "distance": 279
+        },
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "P27",
+          "distance": 296
+        }
+      ]
+    },
+    "permis": {
+      "etat": "ok",
+      "source": "Sitadel (SDES), permis de construire et de démolir",
+      "date": "2026-10-07",
+      "note": "Permis de démolir non vérifiés : actualisez le dossier.",
+      "rayon": 300,
+      "depuis": 2022,
+      "construire": [
+        {
+          "autorise": "2025-08-17",
+          "etat": "termine",
+          "type": "PC",
+          "logements": 2,
+          "surface": 124,
+          "distance": 234,
+          "demandeur": null,
+          "rue": "Chemin du Val Fleuri"
+        },
+        {
+          "autorise": "2024-03-12",
+          "etat": "autorise",
+          "type": "PC",
+          "logements": 1,
+          "surface": 62,
+          "distance": 128,
+          "demandeur": null,
+          "rue": "Rue des Oliviers"
+        }
+      ],
+      "demolirEtat": "non_verifie",
+      "demolir": []
+    },
+    "risques": {
+      "etat": "ok",
+      "source": "Géorisques (ministère de la Transition écologique)",
+      "date": "2026-10-07",
+      "note": null,
+      "argile": "Exposition moyenne",
+      "seisme": "4 - MOYENNE",
+      "radon": "1",
+      "tri": "TRI Nice Cannes Mandelieu",
+      "catastrophesNaturelles": {
+        "nombre": 2,
+        "derniere": "2023-03-31",
+        "types": {
+          "Inondations et/ou Coulées de Boue": 1,
+          "Mouvement de Terrain": 1
+        }
+      },
+      "zonagePlu": {
+        "zone": "UFb4",
+        "libelle": "Zone UF : zones pavillonnaires"
+      },
+      "nonLus": []
+    },
+    "population": {
+      "etat": "ok",
+      "source": "Insee, revenus fiscaux localisés (Filosofi), carreaux de 200 m",
+      "date": "2026-10-07",
+      "note": "Valeurs arrondies (secret statistique).",
+      "rayon": 300,
+      "habitants": 1120,
+      "menages": 500,
+      "personnesParMenage": 2.2
+    },
+    "copropriete": {
+      "etat": "ok",
+      "source": "Registre national des copropriétés (Anah)",
+      "date": "2026-10-07",
+      "note": null,
+      "rattachement": "adresse",
+      "distance": null,
+      "nom": "Résidence Le Clos de la Démonstration",
+      "immatriculation": "AC1",
+      "lotsHabitation": 6,
+      "periodeConstruction": "1975-1993",
+      "mandatEnCours": false,
+      "finMandat": "2026-01-17"
+    }
+  }
+}

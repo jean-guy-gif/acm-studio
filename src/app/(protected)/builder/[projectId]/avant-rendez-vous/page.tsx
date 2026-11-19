@@ -500,6 +500,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
                 projectId={projectId}
                 locked={isDecisionLocked(project.status)}
                 salesLink={salesLink}
+                salesLinkHidden={addressAccess != null}
               />
             ) : (
               <div className="flex flex-col gap-2">

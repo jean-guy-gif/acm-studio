@@ -3,6 +3,9 @@
 // les tests : jamais un appel au vrai service. Chaque appel est noté (méthode, chemin, clé, corps),
 // et chaque route répond ce qu'on lui demande (statut, corps, en-têtes), ou ne répond pas (délai).
 
+import exempleBienClient from '@/test-fixtures/academia-exemple-bien-client.json';
+import exempleBien from '@/test-fixtures/academia-exemple-bien.json';
+
 export type FakeAcademiaCall = {
   method: string;
   path: string;
@@ -29,6 +32,25 @@ export type FakeAcademiaRoutes = {
 export const FAKE_ACADEMIA_ID = 'dos_8f2c1a9e';
 export const FAKE_LINK = 'https://app.myacademia.ai/l/Vb4nT8wLp2';
 
+// Correctifs 161 — la fourchette de surface des ventes (Laurent, 19/11) : deux paramètres
+// facultatifs, de 9 à 1 000 m², seuls ou ensemble ; le minimum plus petit que le maximum.
+const invalidSurface: FakeAcademiaReply = {
+  status: 400,
+  body: {
+    erreur: { code: 'demande', message: 'Demande invalide : surfaceMin, surfaceMax, pieces.' },
+  },
+};
+function surfaceRangeError(bien: unknown): boolean {
+  if (!bien || typeof bien !== 'object') return false;
+  const { surfaceMin, surfaceMax } = bien as { surfaceMin?: unknown; surfaceMax?: unknown };
+  const read = (value: unknown) => (value == null ? null : Number(value));
+  const min = read(surfaceMin);
+  const max = read(surfaceMax);
+  const outside = (value: number | null) =>
+    value != null && (!Number.isFinite(value) || value < 9 || value > 1000);
+  return outside(min) || outside(max) || (min != null && max != null && min >= max);
+}
+
 export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
   const calls: FakeAcademiaCall[] = [];
   const queues: Required<FakeAcademiaRoutes> = {
@@ -40,9 +62,24 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
     readRequest: [
       ...(routes.readRequest ?? [{ status: 200, body: { id: FAKE_ACADEMIA_ID, etat: 'pret' } }]),
     ],
-    readView: [...(routes.readView ?? [{ status: 200, body: { blocs: {} } }])],
-    readClientView: [...(routes.readClientView ?? [{ status: 200, body: { blocs: {} } }])],
-    status: [...(routes.status ?? [{ status: 200, body: { ok: true } }])],
+    // Correctifs 161 — par défaut, les réponses exactes du dossier de démonstration données par
+    // Laurent (`missions/academia-api-laurent/`, 19/11).
+    readView: [...(routes.readView ?? [{ status: 200, body: exempleBien }])],
+    readClientView: [...(routes.readClientView ?? [{ status: 200, body: exempleBienClient }])],
+    status: [
+      ...(routes.status ?? [
+        {
+          status: 200,
+          body: {
+            ok: true,
+            version: '1',
+            plafondDossiersParJour: 200,
+            appelsParMinute: 120,
+            conservationJours: 90,
+          },
+        },
+      ]),
+    ],
     createLink: [
       ...(routes.createLink ?? [
         { status: 201, body: { url: FAKE_LINK, expire_le: '2026-12-16T00:00:00Z' } },
@@ -82,8 +119,24 @@ export function fakeAcademia(routes: FakeAcademiaRoutes = {}) {
           },
         },
       };
+    } else if (
+      method === 'POST' &&
+      url.pathname === '/api/v1/dossiers' &&
+      surfaceRangeError(body && typeof body === 'object' ? (body as { bien?: unknown }).bien : null)
+    ) {
+      // Laurent, 19/11 : surfaceMin et surfaceMax facultatifs, de 9 à 1 000 m², le minimum plus
+      // petit que le maximum ; sinon 400.
+      reply = invalidSurface;
     } else if (method === 'POST' && url.pathname === '/api/v1/dossiers')
       reply = next(queues.createRequest);
+    else if (
+      method === 'GET' &&
+      /^\/api\/v1\/dossiers\/[^/]+\/bien(-client)?$/.test(url.pathname) &&
+      (!url.searchParams.get('pieces') ||
+        surfaceRangeError(Object.fromEntries(url.searchParams.entries())))
+    )
+      // « pieces » reste obligatoire dans l'appel des vues (Laurent, 19/11).
+      reply = invalidSurface;
     else if (method === 'GET' && /^\/api\/v1\/dossiers\/[^/]+\/bien$/.test(url.pathname))
       reply = next(queues.readView);
     else if (method === 'GET' && /^\/api\/v1\/dossiers\/[^/]+\/bien-client$/.test(url.pathname))

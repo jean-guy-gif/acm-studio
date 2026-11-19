@@ -337,7 +337,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
     },
     sales: {
       title: 'Actual sales',
-      headline: (count, type, rooms, since) => {
+      headline: (count, type, surface, since) => {
         const many = count > 1;
         const noun =
           type === 'maison'
@@ -351,12 +351,22 @@ export const ENGLISH_TEXTS: ClientTexts = {
               : many
                 ? 'homes'
                 : 'home';
-        const size = rooms != null ? ` with ${rooms} ${rooms > 1 ? 'rooms' : 'room'}` : '';
+        const size = surface ? ` from ${surface.from} to ${surface.to}` : '';
         return `${count} ${noun}${size} sold around you${since ? ` since ${since}` : ''}`;
       },
       within: (meters) => `Within ${meters} of your property`,
       about: (meters) => `about ${meters} away`,
       legend: 'Each dot: a sale, at its date, higher when the price is higher. Actual sale prices.',
+      legendMany:
+        'Each dot: a sale, at its date, higher when the price is higher. Prices shown where there is room: the lowest, the highest and the most recent. Actual sale prices.',
+      columns: {
+        month: 'Sold in',
+        street: 'Street',
+        rooms: 'Rooms',
+        surface: 'Area',
+        distance: 'About',
+        price: 'Price',
+      },
       none: 'No sale recorded around you.',
       shortPrice: (thousands) => `€${thousands}k`,
     },

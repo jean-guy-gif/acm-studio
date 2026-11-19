@@ -105,3 +105,11 @@ export function academiaLivingHereUrl(value: unknown): string | null {
   }
   return url;
 }
+
+// Correctifs 161 — la rue inventée du dossier de démonstration d'Academia (« Avenue de la
+// Démonstration », écrite sans accent dans ses ventes et ses permis) ne s'écrit nulle part, ni côté
+// conseiller ni côté vendeur (M114) : la vente ou le permis reste, sans sa rue. Lu à chaque
+// lecture, quartiers déjà enregistrés compris. Pur.
+export function isDemonstrationStreet(street: string): boolean {
+  return /d[eé]monstration/i.test(street.normalize('NFC'));
+}

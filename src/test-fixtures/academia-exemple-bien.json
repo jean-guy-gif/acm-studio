@@ -1,0 +1,328 @@
+{
+  "dossier": {
+    "id": "0de30000-0000-4000-8000-000000000001"
+  },
+  "bien": {
+    "type": "appartement",
+    "pieces": 4,
+    "surface": 80
+  },
+  "calculeLe": "2026-10-07",
+  "blocs": {
+    "ventes": {
+      "etat": "ok",
+      "source": "DVF (DGFiP), ventes de logements anciens",
+      "date": "2026-10-07",
+      "note": null,
+      "type": "appartement",
+      "pieces": 4,
+      "surfaceMin": 60,
+      "surfaceMax": 100,
+      "depuis": 2021,
+      "anneau": 50,
+      "anneaux": [
+        {
+          "rayon": 50,
+          "ventes": 8
+        },
+        {
+          "rayon": 100,
+          "ventes": 10
+        },
+        {
+          "rayon": 250,
+          "ventes": 44
+        },
+        {
+          "rayon": 300,
+          "ventes": 54
+        },
+        {
+          "rayon": 500,
+          "ventes": 126
+        },
+        {
+          "rayon": 800,
+          "ventes": 330
+        }
+      ],
+      "venteALAdresse": {
+        "date": "2022-04-28",
+        "prix": 524950,
+        "surface": 65,
+        "pieces": 3,
+        "type": "maison",
+        "prixM2": 8076
+      },
+      "liste": [
+        {
+          "date": "2025-09-12",
+          "prix": 386399,
+          "surface": 79,
+          "pieces": 2,
+          "terrain": null,
+          "prixM2": 4891,
+          "distance": 24,
+          "rue": "Avenue de la Demonstration",
+          "aLAdresse": false
+        },
+        {
+          "date": "2025-06-12",
+          "prix": 342971,
+          "surface": 70,
+          "pieces": 3,
+          "terrain": null,
+          "prixM2": 4900,
+          "distance": 25,
+          "rue": "Avenue de la Demonstration",
+          "aLAdresse": false
+        },
+        {
+          "date": "2025-03-12",
+          "prix": 312841,
+          "surface": 61,
+          "pieces": 3,
+          "terrain": null,
+          "prixM2": 5129,
+          "distance": 24,
+          "rue": "Avenue de la Demonstration",
+          "aLAdresse": false
+        },
+        {
+          "date": "2024-08-12",
+          "prix": 371084,
+          "surface": 76,
+          "pieces": 3,
+          "terrain": null,
+          "prixM2": 4883,
+          "distance": 24,
+          "rue": "Avenue de la Demonstration",
+          "aLAdresse": false
+        },
+        {
+          "date": "2024-05-12",
+          "prix": 313703,
+          "surface": 67,
+          "pieces": 2,
+          "terrain": null,
+          "prixM2": 4682,
+          "distance": 24,
+          "rue": "Avenue de la Demonstration",
+          "aLAdresse": false
+        },
+        {
+          "date": "2023-07-12",
+          "prix": 347159,
+          "surface": 73,
+          "pieces": 3,
+          "terrain": null,
+          "prixM2": 4756,
+          "distance": 23,
+          "rue": "Avenue de la Demonstration",
+          "aLAdresse": false
+        },
+        {
+          "date": "2023-04-12",
+          "prix": 312676,
+          "surface": 64,
+          "pieces": 3,
+          "terrain": null,
+          "prixM2": 4886,
+          "distance": 23,
+          "rue": "Avenue de la Demonstration",
+          "aLAdresse": false
+        },
+        {
+          "date": "2022-03-12",
+          "prix": 506654,
+          "surface": 92,
+          "pieces": 4,
+          "terrain": null,
+          "prixM2": 5507,
+          "distance": 23,
+          "rue": "Rue des Oliviers",
+          "aLAdresse": false
+        }
+      ]
+    },
+    "estimation": {
+      "source": "Calcul Mon secteur (estimateur v1) sur les ventes DVF",
+      "date": "2026-10-07",
+      "mention": "Valeur indicative : elle ne remplace pas un avis de valeur.",
+      "comparables": 6,
+      "rayon": 300,
+      "etat": "ok",
+      "note": null,
+      "prix": 505000,
+      "bas": 440000,
+      "haut": 515000,
+      "prixM2": 6307,
+      "fiabilite": "moyenne",
+      "rayonNecessaire": null
+    },
+    "dpe": {
+      "etat": "ok",
+      "source": "ADEME, diagnostics de performance énergétique des logements",
+      "date": "2026-10-07",
+      "note": "Aucun DPE de l'adresse ne correspond au type et à la surface du bien (10 % près).",
+      "dernier": {
+        "date": "2021-12-07",
+        "etiquette": "E",
+        "etiquetteOrigine": "F",
+        "etiquette2027": "D",
+        "type": "maison",
+        "surface": 82.6,
+        "annee": 1960,
+        "etage": null,
+        "numero": "2600E0000001X",
+        "correspond": false,
+        "ecartSurfacePct": 3.2
+      },
+      "aLAdresse": [],
+      "correspondants": 0
+    },
+    "population": {
+      "etat": "ok",
+      "source": "Insee, revenus fiscaux localisés (Filosofi), carreaux de 200 m",
+      "date": "2026-10-07",
+      "note": "Valeurs arrondies (secret statistique).",
+      "rayon": 300,
+      "habitants": 1120,
+      "menages": 500,
+      "personnesParMenage": 2.2
+    },
+    "urbanisme": {
+      "etat": "ok",
+      "source": "Géoportail de l'urbanisme (IGN, Géoplateforme)",
+      "date": "2026-10-07",
+      "note": null,
+      "parcelle": "06027000BA0100",
+      "zonage": "plu",
+      "phrase": "Rien de relevé sur la parcelle ni à moins de 40 m. 3 emplacements réservés de voirie entre 40 et 300 m, le plus proche à 153 m.",
+      "niveaux": {
+        "parcelle": {
+          "voirie": 0,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        },
+        "a40m": {
+          "voirie": 0,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        },
+        "a300m": {
+          "voirie": 3,
+          "alignement": 0,
+          "equipement": 0,
+          "logements": 0,
+          "attente": 0,
+          "oap": 0,
+          "perimetre": 0
+        }
+      },
+      "elements": [
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "V37",
+          "distance": 153
+        },
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "V47",
+          "distance": 279
+        },
+        {
+          "niveau": "a300m",
+          "categorie": "voirie",
+          "libelle": "Voirie : création ou élargissement",
+          "objet": "Emplacement réservé voirie et équipement public",
+          "code": "P27",
+          "distance": 296
+        }
+      ]
+    },
+    "permis": {
+      "etat": "ok",
+      "source": "Sitadel (SDES), permis de construire et de démolir",
+      "date": "2026-10-07",
+      "note": "Permis de démolir non vérifiés : actualisez le dossier.",
+      "rayon": 300,
+      "depuis": 2022,
+      "construire": [
+        {
+          "autorise": "2025-08-17",
+          "etat": "termine",
+          "type": "PC",
+          "logements": 2,
+          "surface": 124,
+          "distance": 234,
+          "adresse": "17 Chemin du Val Fleuri",
+          "demandeur": null
+        },
+        {
+          "autorise": "2024-03-12",
+          "etat": "autorise",
+          "type": "PC",
+          "logements": 1,
+          "surface": 62,
+          "distance": 128,
+          "adresse": "12 Rue des Oliviers",
+          "demandeur": null
+        }
+      ],
+      "demolirEtat": "non_verifie",
+      "demolir": []
+    },
+    "risques": {
+      "etat": "ok",
+      "source": "Géorisques (ministère de la Transition écologique)",
+      "date": "2026-10-07",
+      "note": null,
+      "argile": "Exposition moyenne",
+      "seisme": "4 - MOYENNE",
+      "radon": "1",
+      "tri": "TRI Nice Cannes Mandelieu",
+      "catastrophesNaturelles": {
+        "nombre": 2,
+        "derniere": "2023-03-31",
+        "types": {
+          "Inondations et/ou Coulées de Boue": 1,
+          "Mouvement de Terrain": 1
+        }
+      },
+      "zonagePlu": {
+        "zone": "UFb4",
+        "libelle": "Zone UF : zones pavillonnaires"
+      },
+      "nonLus": []
+    },
+    "copropriete": {
+      "etat": "ok",
+      "source": "Registre national des copropriétés (Anah)",
+      "date": "2026-10-07",
+      "note": null,
+      "rattachement": "adresse",
+      "distance": null,
+      "nom": "Résidence Le Clos de la Démonstration",
+      "immatriculation": "AC1",
+      "lotsHabitation": 6,
+      "periodeConstruction": "1975-1993",
+      "mandatEnCours": false,
+      "finMandat": "2026-01-17"
+    }
+  }
+}

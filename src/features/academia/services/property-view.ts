@@ -4,6 +4,8 @@
 // elle ne s'affiche qu'au conseiller, ne s'enregistre jamais et n'atteint jamais le vendeur
 // (CLAUDE.md, décision de Jean-Guy du 17/11). Pur.
 
+import { isDemonstrationStreet } from '@/lib/academia';
+
 export type SourceInfo = {
   // `etat` d'Academia : « ok », sinon la source n'a pas pu être lue (dit, jamais « rien », M98).
   ok: boolean;
@@ -31,6 +33,10 @@ export type ViewSale = {
 export type ViewSales = SourceInfo & {
   type: string | null;
   rooms: number | null;
+  // Correctifs 161 — la fourchette de surface appliquée par Academia (la surface du bien à ±25 %,
+  // toutes pièces confondues, règle de Laurent du 19/11) ; deux bornes, ou aucune.
+  surfaceMin: number | null;
+  surfaceMax: number | null;
   since: number | null;
   // Le rayon retenu par Academia pour la liste, et les ventes cumulées par rayon.
   listRadius: number | null;
@@ -151,6 +157,12 @@ const list = (value: unknown, max = 50): Json[] =>
         .slice(0, max)
     : [];
 
+// La rue d'une vente ; jamais la rue inventée du dossier de démonstration (correctifs 161, M114).
+const streetOf = (value: unknown, max = 120): string | null => {
+  const found = text(value, max);
+  return found && !isDemonstrationStreet(found) ? found : null;
+};
+
 function sourceOf(block: Json): SourceInfo {
   return {
     ok: block.etat === 'ok',
@@ -162,6 +174,15 @@ function sourceOf(block: Json): SourceInfo {
   };
 }
 
+function surfaceRange(
+  min: number | null,
+  max: number | null,
+): { surfaceMin: number | null; surfaceMax: number | null } {
+  return min != null && max != null && min >= 9 && max <= 1000 && min < max
+    ? { surfaceMin: Math.round(min), surfaceMax: Math.round(max) }
+    : { surfaceMin: null, surfaceMax: null };
+}
+
 function sales(block: Json | null): ViewSales | null {
   if (!block) return null;
   const at = obj(block.venteALAdresse);
@@ -170,6 +191,7 @@ function sales(block: Json | null): ViewSales | null {
     ...sourceOf(block),
     type: text(block.type, 30),
     rooms: num(block.pieces),
+    ...surfaceRange(num(block.surfaceMin), num(block.surfaceMax)),
     since: num(block.depuis),
     listRadius: num(block.anneau),
     rings: list(block.anneaux, 12).flatMap((ring) => {
@@ -201,7 +223,7 @@ function sales(block: Json | null): ViewSales | null {
               land: num(sale.terrain),
               pricePerSquareMeter: num(sale.prixM2),
               distance: num(sale.distance),
-              street: text(sale.rue, 120),
+              street: streetOf(sale.rue),
             },
           ]
         : [];
@@ -257,7 +279,8 @@ function permits(block: Json | null): ViewPermits | null {
       dwellings: num(permit.logements),
       surface: num(permit.surface),
       distance: num(permit.distance),
-      address: text(permit.adresse, 160),
+      // M114 — la rue inventée du dossier de démonstration ne s'écrit pas, comme pour les ventes.
+      address: streetOf(permit.adresse, 160),
     })),
     demolitionUnchecked: block.demolirEtat === 'non_verifie',
   };

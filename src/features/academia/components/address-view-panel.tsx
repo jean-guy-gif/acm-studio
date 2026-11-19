@@ -144,6 +144,8 @@ function Indicative({ value }: { value: IndicativeValue }) {
 // L'état d'un permis, tel que la source le code (« termine »), écrit en français.
 const PERMIT_STATES: Record<string, string> = {
   autorise: 'autorisé',
+  // Un permis de construire dit « chantier_ouvert » (schémas de Laurent du 19/11).
+  chantier_ouvert: 'travaux commencés',
   commence: 'travaux commencés',
   termine: 'terminé',
 };
@@ -248,9 +250,13 @@ function YourRange({
 function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> }) {
   const [all, setAll] = useState(false);
   const shown = all ? sales.list : sales.list.slice(0, 8);
+  // Correctifs 161 — le type et la fourchette de surface rendue par Academia (±25 %, toutes pièces
+  // confondues, règle de Laurent du 19/11) ; chaque vente garde ses pièces, dans la liste.
   const what = [
     sales.type === 'maison' ? 'Maisons' : sales.type === 'appartement' ? 'Appartements' : 'Biens',
-    sales.rooms != null ? `de ${sales.rooms} pièces` : null,
+    sales.surfaceMin != null && sales.surfaceMax != null
+      ? `de ${formatNumber(sales.surfaceMin)} à ${formatSquareMeters(sales.surfaceMax)}`
+      : null,
   ]
     .filter(Boolean)
     .join(' ');
@@ -368,6 +374,16 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
                 </tbody>
               </table>
             </div>
+          ) : sales.listRadius == null ? (
+            // Correctifs 161 — l'« anneau » vide : aucun cercle ne réunit 5 ventes (README de
+            // Laurent) ; les nombres par rayon restent au-dessus (décision de Jean-Guy, 19/11).
+            <p className={hintText} data-testid="address-view-no-ring">
+              Moins de 5 ventes comparables à moins de{' '}
+              {meters(
+                sales.rings.length ? Math.max(...sales.rings.map((ring) => ring.radius)) : 800,
+              )}{' '}
+              : Academia ne donne pas de liste.
+            </p>
           ) : (
             <p className={hintText}>Aucune vente comparable relevée autour du bien.</p>
           )}

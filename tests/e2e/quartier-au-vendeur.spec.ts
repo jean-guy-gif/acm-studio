@@ -26,7 +26,9 @@ const TABLETS = [
   { width: 1180, height: 750 },
   { width: 820, height: 1110 },
 ] as const;
-const FORBIDDEN = /[Aa]cademia|[Ee]stimation|[Vv]aleur indicative|[Ff]iabilit/;
+// Correctifs 161 — ni la rue inventée du dossier de démonstration d'Academia (« Avenue de la
+// Demonstration »), ni le mot, devant le vendeur (M114).
+const FORBIDDEN = /[Aa]cademia|[Ee]stimation|[Vv]aleur indicative|[Ff]iabilit|[Dd][eé]monstration/;
 
 async function garciaId(page: Page): Promise<string> {
   const href = await page
@@ -131,6 +133,8 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
         60_000,
       );
       await expect(panel).toBeVisible({ timeout: 60_000 });
+      // Côté conseiller non plus, la rue inventée du dossier de démonstration ne s'écrit pas (M114).
+      expect(await page.getByTestId('address-view').innerText()).not.toMatch(/d[eé]monstration/i);
       await expect(panel).toContainText('Ce que verra le vendeur : le quartier');
       await expect(page.getByTestId('neighbourhood-choice-count')).toHaveText(
         'Aucun écran ajouté au Live',
@@ -173,6 +177,51 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
       if (checked.includes('ventes')) await expect(study).toContainText('Les ventes réelles');
       expect(await study.innerText()).not.toMatch(FORBIDDEN);
     });
+
+    // Correctifs 161 — la règle de Laurent (19/11) : les ventes par type et surface, toutes pièces
+    // confondues ; 37 sur le dossier de démonstration. Le titre dit le type et la fourchette de
+    // surface ; la frise n'écrit jamais deux prix l'un sur l'autre ; imprimé, le bloc tient sur une
+    // page A4.
+    if (checked.includes('ventes')) {
+      await test.step('Les ventes : par surface, lisibles, sur une page imprimée', async () => {
+        const study = page.getByTestId('market-study');
+        const block = study
+          .getByTestId('neighbourhood-document')
+          .locator('> div')
+          .filter({ hasText: 'Les ventes réelles' })
+          .first();
+        await expect(block).toContainText(
+          /\d+ (maisons|appartements) de \d+ à \d[\d\u202f\u00a0]*\u00a0m² vendu(e)?s autour de chez vous depuis/,
+        );
+        await expect(block).not.toContainText(/de \d+ pièces vendu/);
+        const sales = await block.evaluate((node) => {
+          const texts = [...node.querySelectorAll('svg text[font-weight="700"]')].map((t) =>
+            t.getBoundingClientRect(),
+          );
+          const overlaps = texts.some((a, i) =>
+            texts.some(
+              (b, j) =>
+                j > i &&
+                a.left < b.right &&
+                b.left < a.right &&
+                a.top < b.bottom &&
+                b.top < a.bottom,
+            ),
+          );
+          return { labels: texts.length, overlaps };
+        });
+        expect(sales.overlaps).toBe(false);
+        // Au moins un prix écrit sur la frise (au-delà de 12 ventes : trois au plus).
+        expect(sales.labels).toBeGreaterThan(0);
+        await page.emulateMedia({ media: 'print' });
+        await page.setViewportSize({ width: 794, height: 1123 });
+        // Une page A4 à 96 points par pouce, moins des marges de 15 mm : 1 010 px de haut au plus.
+        const height = await block.evaluate((node) => node.getBoundingClientRect().height);
+        expect(height).toBeLessThan(1010);
+        await page.emulateMedia({ media: 'screen' });
+        await page.setViewportSize({ width: 1280, height: 900 });
+      });
+    }
 
     await test.step('Le Live : à leur place, sans défiler, dans les deux langues', async () => {
       await page.setViewportSize(TABLETS[0]);

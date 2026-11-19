@@ -98,24 +98,47 @@ describe('le quartier, dit au vendeur', () => {
     const sales = fr('ventes');
     expect(sales).toMatchObject({
       // La vue « bien-client » ne dit pas encore depuis quand : 2021, confirmé par Jean-Guy.
-      headline: '11 maisons de 5 pièces vendues autour de chez vous depuis 2021',
+      // Correctifs 161 — le type et la fourchette de surface rendue par Academia (±25 %, toutes
+      // pièces confondues, règle de Laurent du 19/11), jamais un nombre de pièces.
+      headline: `11 maisons de 101 à 169${NB}m² vendues autour de chez vous depuis 2021`,
       scale: `À moins de 250${NB}m de votre bien`,
     });
-    expect(sales?.kind === 'sales' && sales.cards[0]).toEqual({
+    expect(sales?.kind === 'sales' && sales.cards[0]).toMatchObject({
       price: `876${THIN}800${NB}€`,
       month: 'novembre 2025',
       street: 'Boulevard Marechal Juin',
-      facts: `118${NB}m² · à environ 100${NB}m`,
+      // Chaque vente garde ses pièces.
+      facts: `5 pièces · 118${NB}m² · à environ 100${NB}m`,
     });
+    expect(sales?.kind === 'sales' && sales.cards[1]?.facts).toBe(
+      `4 pièces · 119${NB}m² · à environ 150${NB}m`,
+    );
     expect(en('ventes')).toMatchObject({
-      headline: '11 houses with 5 rooms sold around you since 2021',
+      headline: `11 houses from 101 to 169${NB}m² sold around you since 2021`,
+    });
+    const english = en('ventes');
+    expect(english?.kind === 'sales' && english.cards[1]?.facts).toBe(
+      `4 rooms · 119${NB}m² · about 150${NB}m away`,
+    );
+  });
+
+  it('un instantané d’avant la fourchette de surface : le type seul, jamais des pièces', () => {
+    const older = {
+      ...blocks,
+      ventes: { ...blocks.ventes!, rooms: 5, surfaceMin: null, surfaceMax: null },
+    };
+    expect(neighbourhoodView(older, 'ventes', CLIENT_TEXTS.fr, 'fr')).toMatchObject({
+      headline: '11 maisons vendues autour de chez vous depuis 2021',
+    });
+    expect(neighbourhoodView(older, 'ventes', CLIENT_TEXTS.en, 'en')).toMatchObject({
+      headline: '11 houses sold around you since 2021',
     });
   });
 
   it('le jour où la vue donne le début de la période, le titre reprend sa valeur', () => {
     const withSince = { ...blocks, ventes: { ...blocks.ventes!, since: 2022 } };
     expect(neighbourhoodView(withSince, 'ventes', CLIENT_TEXTS.fr, 'fr')).toMatchObject({
-      headline: '11 maisons de 5 pièces vendues autour de chez vous depuis 2022',
+      headline: `11 maisons de 101 à 169${NB}m² vendues autour de chez vous depuis 2022`,
     });
   });
 

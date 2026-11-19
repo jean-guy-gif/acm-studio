@@ -155,11 +155,13 @@ export function NeighbourhoodChoicePanel({
               />
               <span>
                 <span className="font-semibold">{NAMES[key]}</span> —{' '}
-                {statuses?.[key] === 'unchecked'
-                  ? 'non vérifié par la source : jamais proposé au vendeur'
-                  : statuses?.[key] === 'unread'
-                    ? 'la source n’a pas pu être lue pour cette adresse'
-                    : 'rien à montrer pour cette adresse'}
+                {key === 'ventes' && blocks.ventes != null && blocks.ventes.listRadius == null
+                  ? 'moins de 5 ventes comparables autour du bien : Academia ne donne pas de liste'
+                  : statuses?.[key] === 'unchecked'
+                    ? 'non vérifié par la source : jamais proposé au vendeur'
+                    : statuses?.[key] === 'unread'
+                      ? 'la source n’a pas pu être lue pour cette adresse'
+                      : 'rien à montrer pour cette adresse'}
               </span>
             </li>
           ))}

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { kickerLabel, pageTitle } from '@/components/ui/styles';
 import { AcademiaCard } from '@/features/academia/components/academia-card';
+import { PropertyDraftProvider } from '@/features/academia/components/property-draft';
 import { livingHereApiInitial } from '@/features/academia/queries/living-here-api-view';
 import { academiaApiAccess } from '@/features/academia/services/academia-api-access';
 import { livingHereAgeLine, pastedLinkStatus } from '@/features/academia/services/living-here-age';
@@ -97,56 +98,60 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         <h1 className={pageTitle}>Bien vendeur</h1>
       </div>
 
-      <SubjectPropertyImportForm
-        property={property}
-        saveAction={save}
-        photos={photos}
-        uploadPhotosAction={uploadPhotos}
-        updatePhotosAction={updatePhotos}
-        importAction={importFromUrl}
-        importHtmlAction={importFromHtml}
-        recoverAction={recoverPhoto}
-        parseBrochureAction={parseBrochureText}
-        depositBrochureAction={depositBrochure}
-        diagnostics={diagnostics}
-        condominium={condominium}
-        findHref={`/builder/${projectId}/comparables/find`}
-        backHref={`/builder/${projectId}`}
-        projectId={projectId}
-        demoListings={demo ? demoSubjectListingChoices() : null}
-        demoBrochures={demo ? demoBrochureChoices() : null}
-      />
+      {/* Correctifs 161 — la fiche dit à la carte Academia l'adresse tapée et pas encore enregistrée. */}
+      <PropertyDraftProvider>
+        <SubjectPropertyImportForm
+          property={property}
+          saveAction={save}
+          photos={photos}
+          uploadPhotosAction={uploadPhotos}
+          updatePhotosAction={updatePhotos}
+          importAction={importFromUrl}
+          importHtmlAction={importFromHtml}
+          recoverAction={recoverPhoto}
+          parseBrochureAction={parseBrochureText}
+          depositBrochureAction={depositBrochure}
+          diagnostics={diagnostics}
+          condominium={condominium}
+          findHref={`/builder/${projectId}/comparables/find`}
+          backHref={`/builder/${projectId}`}
+          projectId={projectId}
+          demoListings={demo ? demoSubjectListingChoices() : null}
+          demoBrochures={demo ? demoBrochureChoices() : null}
+        />
 
-      <AcademiaCard
-        projectId={projectId}
-        addressLink={academiaLinkView({ target: 'address', address, demo })}
-        livingLink={academiaLinkView({ target: 'living', address, demo })}
-        savedUrl={academiaLivingHereUrl(project.academia_living_here_url)}
-        savedLine={
-          academiaLivingHereUrl(project.academia_living_here_url)
-            ? livingHereAgeLine(project.academia_living_here_pasted_at ?? null, now, {
-                // Mission 157 — un lien collé dont l'adresse du bien a changé depuis n'est plus
-                // montré : la carte le dit, et propose de créer un lien neuf quand c'est possible.
-                moved:
-                  pastedLinkStatus({
-                    pastedAt: project.academia_living_here_pasted_at ?? null,
-                    pastedProperty: project.academia_living_here_property ?? null,
-                    currentAddress: address,
-                    now,
-                  }) === 'moved',
-                canCreate: access != null && address != null,
-              })
-            : null
-        }
-        signed={conclusion?.outcome === 'signed'}
-        api={
-          access && apiInitial
-            ? // L'adresse dite à l'écran est celle qui part ; dans la démo, celle de son dossier fixe
-              // dit « démonstration » : la carte ne la montre pas (M114 ; Jean-Guy, 17/11).
-              { address, initial: apiInitial, showAddress: access.demoAddress == null }
-            : null
-        }
-      />
+        <AcademiaCard
+          projectId={projectId}
+          addressLink={academiaLinkView({ target: 'address', address, demo })}
+          livingLink={academiaLinkView({ target: 'living', address, demo })}
+          savedUrl={academiaLivingHereUrl(project.academia_living_here_url)}
+          savedLine={
+            academiaLivingHereUrl(project.academia_living_here_url)
+              ? livingHereAgeLine(project.academia_living_here_pasted_at ?? null, now, {
+                  // Mission 157 — un lien collé dont l'adresse du bien a changé depuis n'est plus
+                  // montré : la carte le dit, et propose de créer un lien neuf quand c'est possible.
+                  moved:
+                    pastedLinkStatus({
+                      pastedAt: project.academia_living_here_pasted_at ?? null,
+                      pastedProperty: project.academia_living_here_property ?? null,
+                      currentAddress: address,
+                      now,
+                    }) === 'moved',
+                  canCreate: access != null && address != null,
+                })
+              : null
+          }
+          signed={conclusion?.outcome === 'signed'}
+          savedAddress={address}
+          api={
+            access && apiInitial
+              ? // L'adresse dite à l'écran est celle qui part ; dans la démo, celle de son dossier fixe
+                // dit « démonstration » : la carte ne la montre pas (M114 ; Jean-Guy, 17/11).
+                { address, initial: apiInitial, showAddress: access.demoAddress == null }
+              : null
+          }
+        />
+      </PropertyDraftProvider>
     </div>
   );
 }
