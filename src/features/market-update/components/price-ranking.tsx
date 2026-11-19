@@ -20,7 +20,18 @@ const rankingTexts = (language: TextLanguage): RankingTexts =>
 
 export const TIER_CLASSES: Record<
   RankingTier,
-  { text: string; bar: string; soft: string; border: string; cell: string; fill: string }
+  {
+    text: string;
+    bar: string;
+    soft: string;
+    border: string;
+    cell: string;
+    fill: string;
+    // Mission 162 — à l'impression, le tiers « danger » est hachuré : en noir et blanc, le vert et
+    // le rouge donnent le même gris ; les hachures les distinguent (sur une barre, sur une case).
+    barMark: string;
+    cellMark: string;
+  }
 > = {
   green: {
     text: 'text-emerald-700',
@@ -29,6 +40,8 @@ export const TIER_CLASSES: Record<
     border: 'border-emerald-600',
     cell: 'bg-emerald-200',
     fill: 'bg-emerald-600 text-white',
+    barMark: '',
+    cellMark: '',
   },
   orange: {
     text: 'text-amber-700',
@@ -37,6 +50,8 @@ export const TIER_CLASSES: Record<
     border: 'border-amber-600',
     cell: 'bg-orange-200',
     fill: 'bg-amber-600 text-white',
+    barMark: '',
+    cellMark: '',
   },
   red: {
     text: 'text-red-700',
@@ -45,6 +60,10 @@ export const TIER_CLASSES: Record<
     border: 'border-red-600',
     cell: 'bg-red-200',
     fill: 'bg-red-600 text-white',
+    barMark:
+      'print:bg-[image:repeating-linear-gradient(135deg,rgba(255,255,255,0.7)_0_2px,transparent_2px_5px)]',
+    cellMark:
+      'print:bg-[image:repeating-linear-gradient(135deg,rgba(0,0,0,0.45)_0_1.5px,transparent_1.5px_5px)]',
   },
 };
 
@@ -88,8 +107,8 @@ function Strip({ step }: { step: RankingStep }) {
           key={index}
           className={`h-3 flex-1 rounded ${
             index === step.subjectIndex
-              ? `${TIER_CLASSES[tier].bar} h-5 ring-2 ring-zinc-800 ring-offset-1`
-              : TIER_CLASSES[tier].cell
+              ? `${TIER_CLASSES[tier].bar} ${TIER_CLASSES[tier].barMark} h-5 ring-2 ring-zinc-800 ring-offset-1`
+              : `${TIER_CLASSES[tier].cell} ${TIER_CLASSES[tier].cellMark}`
           }`}
         />
       ))}
@@ -303,7 +322,7 @@ function Row({ row, language }: { row: RankingRow; language: TextLanguage }) {
       data-dangerous={row.dangerous ?? undefined}
     >
       <td className="w-1 py-2 pr-0 align-top print:py-1">
-        <span className={`mt-1 block h-10 w-1.5 rounded print:h-8 ${tier.bar}`} />
+        <span className={`mt-1 block h-10 w-1.5 rounded print:h-8 ${tier.bar} ${tier.barMark}`} />
       </td>
       <td className="py-2 pr-3 print:py-1">
         <div className="flex items-start gap-3">
@@ -393,7 +412,9 @@ export function PriceRankingView({
       >
         {(['green', 'orange', 'red'] as const).map((tier, index) => (
           <span key={tier} className="flex items-center gap-1.5">
-            <span className={`inline-block h-3.5 w-3.5 rounded ${TIER_CLASSES[tier].bar}`} />
+            <span
+              className={`inline-block h-3.5 w-3.5 rounded ${TIER_CLASSES[tier].bar} ${TIER_CLASSES[tier].barMark}`}
+            />
             <span>
               {t.legendTiers[index].number}
               {t.legendTiers[index].sup ? <sup>{t.legendTiers[index].sup}</sup> : null}

@@ -112,13 +112,23 @@ export function DistanceRings({
         strokeWidth={2.4}
         strokeLinejoin="round"
       />
-      {text(c + 66, center, 17)}
-      {text(c - r0 + 30, inner.range, 16)}
-      {text(c - r0 + 54, inner.label ? `${inner.count} ${inner.label}` : inner.count, 20)}
-      {text(c - r1 + 30, outer.range, 16)}
-      {text(c - r1 + 76, outer.count, outer.label ? 52 : 26)}
-      {text(c - r1 + 100, outer.label, 15, 500)}
-      {text(c + r1 - 34, outer.sub, 15, 500)}
+      {text(c + 66, center, paper ? 19 : 17)}
+      {text(c - r0 + 30, inner.range, paper ? 18 : 16)}
+      {text(
+        paper ? c - r0 + 60 : c - r0 + 54,
+        inner.label ? `${inner.count} ${inner.label}` : inner.count,
+        20,
+      )}
+      {/* Mission 162 — à l'impression, la distance, le nombre et son mot ne se recouvrent jamais :
+          l'anneau extérieur (110 unités) les tient l'un sous l'autre, en lettres plus grandes. */}
+      {text(c - r1 + 30, outer.range, paper ? 18 : 16)}
+      {text(
+        paper ? c - r1 + 74 : c - r1 + 76,
+        outer.count,
+        outer.label ? (paper ? 36 : 52) : paper ? 24 : 26,
+      )}
+      {text(c - r1 + 100, outer.label, paper ? 17 : 15, 500)}
+      {text(c + r1 - 34, outer.sub, paper ? 17 : 15, 500)}
     </svg>
   );
 }
