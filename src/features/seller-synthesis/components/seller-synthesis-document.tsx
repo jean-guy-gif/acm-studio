@@ -123,8 +123,8 @@ export function Grid({
       <tbody>
         {competitor.features.map((feature) => (
           <tr key={feature.label} className="border-b border-zinc-100">
-            <td className="w-[30%] py-1 pr-2 text-zinc-500">{feature.label}</td>
-            <td className="py-1 pr-2 break-words">
+            <td className="w-[30%] py-1 pr-2 text-zinc-500 print:py-0.5">{feature.label}</td>
+            <td className="py-1 pr-2 break-words print:py-0.5">
               {feature.value}
               {feature.sellerValue ? (
                 <span className="text-zinc-500">
@@ -132,7 +132,7 @@ export function Grid({
                 </span>
               ) : null}
             </td>
-            <td className="py-1 text-right">
+            <td className="py-1 text-right print:py-0.5">
               <span
                 className={`inline-block rounded-full border px-2 py-px text-[0.65rem] font-semibold sm:whitespace-nowrap ${STATUS[feature.status].className}`}
               >
@@ -202,7 +202,7 @@ function CompetitorCard({
       {competitor.photoUrl ? (
         <Photo url={competitor.photoUrl} alt={competitor.label} className="h-44 w-full sm:h-full" />
       ) : null}
-      <div className="flex flex-col gap-2 p-3.5">
+      <div className="flex flex-col gap-2 p-3.5 print:gap-1.5 print:p-3">
         <div>
           <div className={kicker}>
             {texts.live.competitorReview.competitor(competitor.position)}
@@ -761,11 +761,13 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
 
         {synthesis.quartier && quartierBlocks.length > 0 ? (
           <section className="flex flex-col gap-3">
-            <SectionTitle number={sectionNumber('quartier')} title={texts.quartier.kicker} />
             <NeighbourhoodDocumentBlocks
               content={synthesis.quartier}
               only={quartierBlocks}
               language={language}
+              heading={
+                <SectionTitle number={sectionNumber('quartier')} title={texts.quartier.kicker} />
+              }
             />
           </section>
         ) : null}
@@ -773,12 +775,16 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
         {/* 02 · Les biens regardés ensemble — une fiche par concurrent montré, dans l'ordre du Live. */}
         {synthesis.competitors.length > 0 ? (
           <section className="flex flex-col gap-3">
-            <SectionTitle
-              number={sectionNumber('competitors')}
-              title={t.competitorsTitle}
-              hint={t.competitorsHint}
-            />
-            {synthesis.competitors.map((competitor) => (
+            {/* Mission 162 — le titre s'imprime avec la première fiche : jamais seul en bas de page. */}
+            <div className="flex flex-col gap-3 break-inside-avoid">
+              <SectionTitle
+                number={sectionNumber('competitors')}
+                title={t.competitorsTitle}
+                hint={t.competitorsHint}
+              />
+              <CompetitorCard competitor={synthesis.competitors[0]!} language={language} />
+            </div>
+            {synthesis.competitors.slice(1).map((competitor) => (
               <CompetitorCard key={competitor.id} competitor={competitor} language={language} />
             ))}
           </section>
@@ -842,11 +848,14 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
 
         {synthesis.quartier && quartierSales ? (
           <section className="flex flex-col gap-3">
-            <SectionTitle number={sectionNumber('sales')} title={texts.quartier.sales.title} />
             <NeighbourhoodDocumentBlocks
               content={synthesis.quartier}
               only={['ventes']}
               language={language}
+              heading={
+                <SectionTitle number={sectionNumber('sales')} title={texts.quartier.sales.title} />
+              }
+              blockTitles={false}
             />
           </section>
         ) : null}
@@ -1052,7 +1061,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
             </div>
           ) : null}
           {synthesis.guessLines.length > 0 ? (
-            <div className="border-l-4 border-brand-deep bg-brand-soft px-5 py-3">
+            <div className="border-l-4 border-brand-deep bg-brand-soft px-5 py-3 break-inside-avoid">
               <div className={`${kicker} text-brand-deep`}>{t.answersTitle}</div>
               {synthesis.guessLines.map((line) => (
                 <p key={line} className="mt-1 text-[0.95rem]">
