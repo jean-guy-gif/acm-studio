@@ -52,8 +52,9 @@ test('la carte Academia : sans les boutons, « Enregistrez d’abord la fiche »
     const street = page.locator('#champ-address');
     const saved = await street.inputValue();
     await street.fill(`${saved} bis`);
+    // Dans la démo, l'adresse qui part vers Academia n'est pas celle du bien : la phrase courte.
     await expect(card.getByTestId('living-here-save-first')).toHaveText(
-      'Enregistrez d’abord la fiche : le lien se crée sur l’adresse enregistrée du bien (vous l’avez modifiée).',
+      'Enregistrez d’abord la fiche.',
     );
     await expect(card.getByTestId('living-here-create')).toHaveCount(0);
     // Revenue à l'adresse enregistrée : la carte d'avant, sans rien enregistrer.
@@ -70,8 +71,9 @@ test('la carte Academia : sans les boutons, « Enregistrez d’abord la fiche »
       );
       await page.locator('#champ-address').fill('9 avenue des Mimosas');
       await page.locator('#champ-city').fill('Antibes');
+      // Dans la démo, l'adresse qui part vers Academia n'est pas celle du bien : la phrase courte.
       await expect(card.getByTestId('living-here-save-first')).toHaveText(
-        'Enregistrez d’abord la fiche : le lien se crée sur l’adresse enregistrée du bien.',
+        'Enregistrez d’abord la fiche.',
       );
       await expect(card.getByTestId('living-here-no-address')).toHaveCount(0);
       await page.getByRole('button', { name: 'Enregistrer', exact: true }).click();
