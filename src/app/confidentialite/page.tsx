@@ -310,16 +310,39 @@ export default function ConfidentialitePage() {
             </li>
             <li>
               Le dossier d’adresse et « Vivre ici » : pour le bien vendeur, le conseiller peut
-              ouvrir dans Academia (app.myacademia.ai), un service distinct d’ACM Studio, le dossier
-              d’adresse du bien et sa fiche « Vivre ici ». ACM Studio copie l’adresse du bien dans
-              le presse-papiers du conseiller, qui la colle lui-même dans Academia : ACM Studio
-              n’envoie rien à Academia. Pour un bien dont l’agence a le mandat, le conseiller peut
-              enregistrer le lien « Vivre ici » qu’Academia lui donne pour ce bien. ACM Studio garde
-              ce lien avec le dossier du vendeur, et le montre à l’acquéreur qui va visiter ce bien
-              : sur le lien de sa sélection, et dans le message qui confirme sa visite. En ouvrant
-              ce lien, l’acquéreur quitte ACM Studio pour Academia. Aucune donnée de l’acquéreur
-              n’est envoyée à Academia. Quand le conseiller confirme une visite, la fiche de
-              l’acquéreur garde le jour et l’heure de cette visite.
+              obtenir de Mon secteur, le service d’Academia (app.myacademia.ai), distinct d’ACM
+              Studio, le dossier d’adresse du bien et sa fiche « Vivre ici ». Quand le conseiller le
+              demande, ACM Studio envoie à Mon secteur, par le compte d’ACM Studio, l’adresse du
+              bien, son type, son nombre de pièces et sa surface, et rien d’autre : ni le nom, ni
+              les coordonnées du vendeur ou d’un acquéreur, ni le texte ou le lien d’une annonce.
+              Aucun autre bien que celui du vendeur n’est envoyé à Mon secteur. Mon secteur renvoie
+              des données publiques sur l’adresse et son quartier (ventes, urbanisme, risques,
+              population, copropriété, diagnostic de performance énergétique) et une valeur de
+              marché indicative ; elles sont montrées au conseiller, qui seul voit la valeur
+              indicative et le diagnostic. ACM Studio garde seulement de quoi retrouver le dossier,
+              sans en garder de copie à l’écran. Le conseiller peut choisir de montrer au vendeur,
+              pendant le rendez-vous et dans le document qui lui est remis, certaines de ces données
+              publiques (les ventes autour, avec leur rue sans numéro, jamais une vente à l’adresse
+              même du bien ; l’urbanisme, les permis, les risques, la population, la copropriété) :
+              ce qu’il a choisi est alors figé dans ce document, avec sa source et sa date, et gardé
+              avec le dossier du vendeur. Le lien « Vivre ici » du bien vendeur, valable 30 jours,
+              peut être donné au vendeur et aux acquéreurs à qui ce bien est proposé ; en l’ouvrant,
+              ils quittent ACM Studio pour Academia. Aucune donnée de l’acquéreur n’est envoyée à
+              Academia. Quand le conseiller confirme une visite, la fiche de l’acquéreur garde le
+              jour et l’heure de cette visite.
+              <span className="mt-2 block">
+                <b>Le quartier montré au vendeur.</b> Au choix du conseiller, des informations
+                publiques sur le quartier du bien (urbanisme, risques, population, copropriété,
+                permis de construire, ventes réelles), rassemblées par Academia à partir de sources
+                publiques (Géoportail de l’urbanisme, Géorisques, Insee, registre national des
+                copropriétés, Sitadel, DVF), peuvent être montrées au vendeur pendant le rendez-vous
+                et figurer dans les documents qui lui sont remis. ACM Studio garde les seules
+                informations choisies par le conseiller, le jour où il les a choisies, l’adresse, le
+                type, le nombre de pièces et la surface du bien pour lesquels elles ont été
+                calculées, et le conseiller qui les a choisies ; jamais le nom ni l’immatriculation
+                d’une copropriété, ni une valeur du bien. Ces informations sont visibles par la
+                seule agence et effacées avec le dossier.
+              </span>
               <span className="mt-2 block">
                 Jusqu’au 9 novembre 2026, ACM Studio préparait lui-même ces deux documents à partir
                 de données publiques. Ces dossiers et ces fiches ne sont plus lus ni montrés, et ils
@@ -408,6 +431,12 @@ export default function ConfidentialitePage() {
               pour la situer. Ni le nom, ni l’e-mail, ni le téléphone du vendeur ne leur sont
               transmis. Le dernier résultat d’une recherche est gardé sur le dossier, pour être
               rouvert sans nouvel appel ; il part avec le dossier.
+            </li>
+            <li>
+              Mon secteur, d’Academia (app.myacademia.ai) : l’adresse du bien vendeur, son type, son
+              nombre de pièces et sa surface, par le compte d’ACM Studio, quand le conseiller
+              demande son dossier d’adresse ou son lien « Vivre ici ». Ni le nom, ni l’e-mail, ni le
+              téléphone du vendeur ou d’un acquéreur ne lui sont transmis.
             </li>
             <li>
               Sur le Suivi, « Mettre à jour les prix des concurrents » relit, par l’extension, les

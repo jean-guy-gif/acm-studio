@@ -629,6 +629,21 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 19/11 · M161 · Durées : suite e2e complète 37 min (27 sur 29, deux échecs de connexion du compte de
   test verts au rejeu en 3,8 min) ; relecteur 3 min ; l'essai de Jean-Guy dans Start Academy, dossier
   neuf prêt en 17 s chez Academia.
+- 19/11 · Correctifs 161 · Des exemples d'API qui ne montrent pas tout ne prouvent pas un lecteur :
+  ceux de Laurent n'avaient ni « chantier_ouvert » ni la rue inventée dans un permis, et nos tests
+  passaient ; le relecteur a lu les `enum` des schémas eux-mêmes. Lire les valeurs permises du
+  schéma, pas seulement l'exemple, et écrire un test par valeur que le code traduit.
+- 19/11 · Correctifs 161 · Un contrôle de schéma maison (`json-schema-check.ts`, sans dépendance)
+  suffit aux tests s'il refuse tout mot-clé qu'il ne lit pas : sinon une réponse passerait sans être
+  vérifiée.
+- 19/11 · Correctifs 161 · `supabase db query --linked` est refusé en mode agent (« Confirmation
+  required ») ; une lecture passe par `--remote --read-only`.
+- 19/11 · Correctifs 161 · Le contournement de la protection de l'essai se lit dans
+  `E2E_VERCEL_BYPASS` (`.env.e2e.local`), à côté de `E2E_BASE_URL` ; sous un autre nom, la boucle
+  d'attente du déploiement tourne dix minutes sur « Protected by Vercel Authentication ».
+- 19/11 · Correctifs 161 · Avant de changer ce qu'un instantané déjà enregistré montre au Live,
+  compter en base ceux qu'il touche (ici 0 sur 2) : un écran retiré en plein Live décalerait
+  « Reprendre ». Durées : les trois specs Academia 3,6 à 4,4 min ; relecteur 2,7 min.
 - 18/11 · M159 · Le faux client Supabase (`fake-supabase`) répond selon la DERNIÈRE table de la
   chaîne : trois lectures lancées ensemble (`Promise.all`) reçoivent toutes la réponse de la dernière
   et un garde passe par accident ; dans une action testée ainsi, les lectures gardées se font l'une
