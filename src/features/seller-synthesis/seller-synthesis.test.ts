@@ -722,6 +722,26 @@ describe('les prix de la synthèse (mission 111)', () => {
     ).toEqual(['risques', 'ventes']);
   });
 
+  // Mission 162 — le titre des biens regardés s'imprime avec la première fiche ; toutes les fiches
+  // restent, dans l'ordre, avec un, plusieurs ou aucun concurrent.
+  it('chaque fiche une fois, la première avec le titre de la section', () => {
+    for (const count of [base.competitors.length, 1, 0]) {
+      const synthesis = buildSellerSynthesis({
+        ...base,
+        competitors: base.competitors.slice(0, count),
+      });
+      const html = renderToStaticMarkup(createElement(SellerSynthesisDocument, { synthesis }));
+      const cards = html.match(/data-testid="synthesis-competitor"/g) ?? [];
+      expect(cards).toHaveLength(synthesis.competitors.length);
+      const title = html.indexOf('Les biens que nous avons regardés ensemble');
+      if (synthesis.competitors.length === 0) expect(title).toBe(-1);
+      else {
+        expect(title).toBeGreaterThan(-1);
+        expect(title).toBeLessThan(html.indexOf('data-testid="synthesis-competitor"'));
+      }
+    }
+  });
+
   it('sans décision ni conclusion : aucun prix final', () => {
     const synthesis = buildSellerSynthesis(base);
     expect(synthesis.decision).toBeNull();
