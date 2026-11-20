@@ -53,6 +53,14 @@ const digitsOf = (text: string): string[] =>
     .split(/\s+/)
     .filter(Boolean);
 
+// Le texte de l'Étude hors des fiches des biens en vente.
+async function outsideCompetitors(page: Page): Promise<string> {
+  const texts = await page
+    .locator('[data-study-page]:not([data-study-page="competitors"])')
+    .allInnerTexts();
+  return texts.join('\n');
+}
+
 async function studyPages(page: Page): Promise<string[]> {
   return page
     .locator('[data-study-page]')
@@ -110,9 +118,10 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     const text = await study.innerText();
     expect(text).not.toMatch(FORBIDDEN);
     expect(text).not.toContain('que je vous propose');
-    // L'analyse de valeur n'est nulle part : ni dans la page, ni dans ce qu'elle a reçu.
-    expect(digitsOf(text)).not.toContain(analysis);
-    expect(digitsOf(await page.content())).not.toContain(analysis);
+    // L'analyse de valeur n'est nulle part hors des fiches : un concurrent peut afficher le même
+    // prix (740 000 € chez Mme Garcia). Que la charge ne la reçoive jamais est prouvé par le test
+    // unitaire, avec un montant piège.
+    expect(digitsOf(await outsideCompetitors(page))).not.toContain(analysis);
   });
 
   await test.step('Mme Garcia : imprimée, une page A4 par page, aucune fiche coupée', async () => {
@@ -150,8 +159,7 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     );
     expect(agreed).not.toBe('');
     if (analysis !== agreed) {
-      expect(digitsOf(text)).not.toContain(analysis);
-      expect(digitsOf(await page.content())).not.toContain(analysis);
+      expect(digitsOf(await outsideCompetitors(page))).not.toContain(analysis);
     }
     expect(await studyPrintedPages(page)).toBe(pages.length);
   });
