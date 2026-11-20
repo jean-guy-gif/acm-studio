@@ -15,6 +15,7 @@ import type { SellerSynthesis, SynthesisFeature } from '@/features/seller-synthe
 import { isPropertyType } from '@/features/subject-property/services/property-type-choice';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatSquareMeters } from '@/lib/format';
+import { buildStudyStory } from '@/features/market-study/services/study-story';
 import type { NeighbourhoodDocumentLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
 import type { NeighbourhoodDocumentContent } from '@/features/neighbourhood-link/components/neighbourhood-document';
 
@@ -35,6 +36,8 @@ type PropertyRow = {
   outdoor_spaces: unknown;
   parking_types: unknown;
   exposure: string | null;
+  // Mission 163 A — le terrain d'une maison, sur la couverture.
+  land_area?: number | null;
 };
 
 export type MarketStudyCompetitorRow = {
@@ -114,6 +117,7 @@ const features = (
       ? []
       : [
           {
+            criterion: item.criterion,
             label: item.displayLabel,
             value: item.comparableValue,
             sellerValue: item.subjectValue,
@@ -316,25 +320,48 @@ export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
     canonicalType != null && isPropertyType(canonicalType)
       ? texts.labels.propertyType[canonicalType]
       : null;
+  const ranking = buildStudyRanking(
+    competitors,
+    subjectLabel,
+    referencePrice(input.commercializationPrice, input.advisorAnalysis),
+    language,
+  );
+  const sellerName = input.sellerName?.trim() ?? '';
+  const quartier = input.quartier ?? null;
   return {
     language,
     madeAt: input.madeAt,
-    sellerName: input.sellerName?.trim() ?? '',
+    sellerName,
     propertyLabel: property ? [typeLabel, city].filter(Boolean).join(' · ') || null : null,
     subjectLabel,
     commune: city,
     coverPhotoUrl: input.coverPhotoUrl,
     coverFigures,
     competitors,
-    ranking: buildStudyRanking(
-      competitors,
-      subjectLabel,
-      referencePrice(input.commercializationPrice, input.advisorAnalysis),
-      language,
-    ),
+    ranking,
     agency: input.agency,
     brandDeclarations: input.brandDeclarations,
     neighbourhood: input.neighbourhood ?? null,
-    quartier: input.quartier ?? null,
+    quartier,
+    story: buildStudyStory({
+      language,
+      madeAt: input.madeAt,
+      sellerName,
+      subject: property
+        ? {
+            propertyType: property.property_type,
+            city,
+            district: property.district,
+            surface: property.surface_area,
+            rooms: property.rooms_count,
+            landArea: property.land_area ?? null,
+          }
+        : null,
+      competitors,
+      ranking,
+      agency: input.agency,
+      quartier,
+      vivreIci: input.neighbourhood != null,
+    }),
   };
 }
