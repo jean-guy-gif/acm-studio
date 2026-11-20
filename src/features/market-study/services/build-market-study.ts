@@ -75,10 +75,10 @@ export type MarketStudyInput = {
   coverPhotoUrl: string | null;
   // Les concurrents RETENUS du dossier, hors Live compris (décision du 05/11).
   competitors: MarketStudyCompetitorRow[];
-  // Le prix de référence : convenu à la conclusion, sinon l'analyse du conseiller de la décision
-  // de prix enregistrée ; aucun des deux : pas de ligne vendeur, pas de verdict.
-  commercializationPrice: number | null;
-  advisorAnalysis: number | null;
+  // Mission 163 C — le prix de commercialisation CONVENU (`agreedPrice`) : le seul qui classe le
+  // bien ; sans lui, pas de ligne vendeur, pas de verdict, pas de chapitre. L'analyse du conseiller
+  // n'entre jamais dans l'Étude.
+  agreedPrice: number | null;
   agency: SellerSynthesis['agency'];
   brandDeclarations: string;
   // Mission 157 B — le lien « Vivre ici » du bien (absent : aucun).
@@ -203,7 +203,7 @@ function detailOf(item: MarketStudyCompetitor, language: TextLanguage): string |
 export function buildStudyRanking(
   competitors: MarketStudyCompetitor[],
   subjectLabel: string,
-  reference: { price: number; source: 'agreed' | 'advisor' } | null,
+  agreed: number | null,
   // Mission 140 — dans la langue du vendeur (le français par défaut).
   language: TextLanguage = 'fr',
 ): MarketStudyRanking {
@@ -211,7 +211,8 @@ export function buildStudyRanking(
   const listed = competitors
     .filter((item) => item.goneAt == null && item.price > 0)
     .sort((a, b) => a.price - b.price || a.position - b.position);
-  if (!reference) {
+  const reference = positive(agreed);
+  if (reference == null) {
     const total = listed.length;
     return {
       subject: null,
@@ -229,7 +230,7 @@ export function buildStudyRanking(
   const total = listed.length + 1;
   const subjectPosition = subjectRank(
     listed.map((item) => item.price),
-    reference.price,
+    reference,
   );
   const subjectRow = (rank: number): MarketStudyRankingRow => ({
     key: 'subject',
@@ -237,11 +238,8 @@ export function buildStudyRanking(
     rank,
     tier: tierOf(rank, total),
     label: subjectLabel,
-    price: reference.price,
-    detail:
-      reference.source === 'agreed'
-        ? texts.marketUpdate.ranking.agreedTogether
-        : texts.marketStudy.advisorProposed,
+    price: reference,
+    detail: texts.marketUpdate.ranking.agreedTogether,
   });
   const rows: MarketStudyRankingRow[] = [];
   let rank = 1;
@@ -265,8 +263,7 @@ export function buildStudyRanking(
   const tier = tierOf(subjectPosition, total);
   return {
     subject: {
-      price: reference.price,
-      source: reference.source,
+      price: reference,
       rank: subjectPosition,
       total,
       tier,
@@ -277,14 +274,16 @@ export function buildStudyRanking(
   };
 }
 
-export function referencePrice(
-  commercializationPrice: number | null,
-  advisorAnalysis: number | null,
-): { price: number; source: 'agreed' | 'advisor' } | null {
-  const agreed = positive(commercializationPrice);
-  if (agreed) return { price: agreed, source: 'agreed' };
-  const advisor = positive(advisorAnalysis);
-  return advisor ? { price: advisor, source: 'advisor' } : null;
+// Mission 163 C — le prix de commercialisation CONVENU : celui d'un dossier conclu (Live conclu, ou
+// conclusion en « Document seul »), dont la conclusion porte une issue. Un prix saisi au Live sur
+// un dossier pas encore conclu n'est pas convenu (la ligne de conclusion peut exister sans issue,
+// M111) ; jamais l'analyse du conseiller à sa place.
+export function agreedPrice(
+  projectStatus: string | null | undefined,
+  conclusion: { outcome: string | null; commercialization_price: number | string | null } | null,
+): number | null {
+  if (projectStatus !== 'meeting_completed' || !conclusion?.outcome) return null;
+  return positive(Number(conclusion.commercialization_price));
 }
 
 export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
@@ -320,12 +319,7 @@ export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
     canonicalType != null && isPropertyType(canonicalType)
       ? texts.labels.propertyType[canonicalType]
       : null;
-  const ranking = buildStudyRanking(
-    competitors,
-    subjectLabel,
-    referencePrice(input.commercializationPrice, input.advisorAnalysis),
-    language,
-  );
+  const ranking = buildStudyRanking(competitors, subjectLabel, input.agreedPrice, language);
   const sellerName = input.sellerName?.trim() ?? '';
   const quartier = input.quartier ?? null;
   return {

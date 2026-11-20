@@ -85,7 +85,7 @@ export const ENGLISH_STUDY: StudyTexts = {
       `This study does not calculate it: it shows the market as your buyers see it. ${
         agreed
           ? `The price, we set together: ${agreed}.`
-          : 'The price is something we set together.'
+          : 'The price, we will set together at our meeting.'
       }`,
   },
 
@@ -270,8 +270,8 @@ export const ENGLISH_STUDY: StudyTexts = {
         : `Your price, compared with the ${word(inSale)} ${NOUNS[kind].many} for sale, from cheapest to most expensive.`,
     itemBefore: 'Your price ranks ',
     itemAfter: (total, count, kind) => ` of ${total}: ${cheaperPhrase(count, kind)}.`,
-    itemSub: (price, agreed, count) =>
-      `At ${price}, ${agreed ? 'the price we set together' : 'the price I suggest'}.${
+    itemSub: (price, count) =>
+      `At ${price}, the price we set together.${
         count === 0
           ? ''
           : count === 1
@@ -290,10 +290,8 @@ export const ENGLISH_STUDY: StudyTexts = {
           }`,
     verdictNote:
       'The first third is no problem, the second needs your attention, the last is a danger.',
-    source: (day, agreed, kind) =>
-      `Asking prices, as known on ${day}. Your ${NOUNS[kind].one} at ${
-        agreed ? 'the price we set together' : 'the price I suggest'
-      }. At equal prices, your ${NOUNS[kind].one} takes the better rank.`,
+    source: (day, kind) =>
+      `Asking prices, as known on ${day}. Your ${NOUNS[kind].one} at the price we set together. At equal prices, your ${NOUNS[kind].one} takes the better rank.`,
   },
 
   quartier: {
@@ -394,7 +392,7 @@ export const ENGLISH_STUDY: StudyTexts = {
         withSales ? '; those of the actual sales were signed at the notary' : ''
       }; floor areas and features as advertised, to be checked. It does not give the value of your ${
         NOUNS[kind].one
-      }: ${agreed ? 'we have set the price together' : 'the price is something we set together'}. No seller or buyer is named.`,
+      }: ${agreed ? 'we have set the price together' : 'we will set the price together at our meeting'}. No seller or buyer is named.`,
     sourceRows: {
       competitors: 'Properties for sale',
       sales: 'Sales',

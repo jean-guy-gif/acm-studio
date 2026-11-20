@@ -103,7 +103,7 @@ export const FRENCH_STUDY: StudyTexts = {
       `Cette étude ne la calcule pas : elle montre le marché tel que vos acheteurs le voient. ${
         agreed
           ? `Le prix, nous l’avons retenu ensemble : ${agreed}.`
-          : 'Le prix, nous le fixons ensemble.'
+          : 'Le prix, nous le fixerons ensemble au rendez-vous.'
       }`,
   },
 
@@ -333,7 +333,7 @@ export const FRENCH_STUDY: StudyTexts = {
     },
     itemBefore: 'Votre prix est ',
     itemAfter: (total, count, kind) => ` sur ${total} : ${cheaperPhrase(count, NOUNS[kind])}.`,
-    itemSub: (price, agreed, count, kind) => {
+    itemSub: (price, count, kind) => {
       const n = NOUNS[kind];
       const who =
         count === 0
@@ -341,7 +341,7 @@ export const FRENCH_STUDY: StudyTexts = {
           : count === 1
             ? ` C’est ${n.feminine ? 'elle' : 'lui'} que vos acheteurs visiteront d’abord.`
             : ` Ce sont ${n.feminine ? 'elles' : 'eux'} que vos acheteurs visiteront d’abord.`;
-      return `À ${price}, ${agreed ? 'le prix retenu ensemble' : 'le prix que je vous propose'}.${who}`;
+      return `À ${price}, le prix retenu ensemble.${who}`;
     },
     avis: (count, kind, strengths) => {
       const n = NOUNS[kind];
@@ -361,11 +361,9 @@ export const FRENCH_STUDY: StudyTexts = {
     },
     verdictNote:
       'Le premier tiers ne pose pas de problème, le deuxième demande votre attention, le dernier est un danger.',
-    source: (day, agreed, kind) => {
+    source: (day, kind) => {
       const n = NOUNS[kind];
-      return `Prix affichés, tels que connus le ${day}. Votre ${n.one} au ${
-        agreed ? 'prix retenu ensemble' : 'prix que je vous propose'
-      }. À égalité de prix, votre ${n.one} prend le meilleur rang.`;
+      return `Prix affichés, tels que connus le ${day}. Votre ${n.one} au prix retenu ensemble. À égalité de prix, votre ${n.one} prend le meilleur rang.`;
     },
   },
 
@@ -475,7 +473,7 @@ export const FRENCH_STUDY: StudyTexts = {
       }. Les prix des biens en vente sont ceux des annonces, pas des prix de vente${
         withSales ? ' ; ceux des ventes réelles ont été signés chez le notaire' : ''
       } ; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one} : le prix, ${
-        agreed ? 'nous l’avons retenu ensemble' : 'nous le fixons ensemble'
+        agreed ? 'nous l’avons retenu ensemble' : 'nous le fixerons ensemble au rendez-vous'
       }. Aucun nom de vendeur ni d’acheteur n’est cité.`;
     },
     sourceRows: {

@@ -692,6 +692,16 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 18/11 · M160 · Durées : suite e2e complète 46 min (28 sur 29, un aléa vert au rejeu en 1,4 min) ;
   relecteur une passe, 1,6 min.
 
+- 20/11 · M163 A · Essai très chargé : la suite complète a pris 1 h 12 (`carte-academia`
+  18 min) et 8 specs sont tombées sur des remises à zéro de la démo de plus de 3 min ou des pages
+  à plus de 45 s ; 7 vertes au rejeu, `demo` rouge deux fois à deux endroits différents (partie
+  acquéreurs, hors mission), puis verte rejouée seule (6,8 min). Deux échecs à des étapes
+  différentes sur un essai lent pointent l'essai, pas le code ; un troisième passage seul tranche.
+- 20/11 · M163 A · Deux défauts de la spec, pas du produit, au premier passage : un repère de test
+  (`study-chapter-title`) porté aussi par le résumé, et un `data-testid` posé sur le corps de la
+  page alors que le titre est dans le bandeau. Viser une page par `[data-study-page="…"]` puis son
+  titre.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -833,6 +843,18 @@ null` doit laisser passer la seule mise à nul de cette clé, sinon la suppressi
 - 30/10 · M127 B · « Ça gêne » du parcoureur sur un détail de données de démo (photos mélangées,
   prix de vente estimé juste avant le prix du vendeur) : à noter, pas à corriger ; la règle de
   l'agence et l'ordre des phrases sont des décisions, pas des défauts.
+
+- 20/11 · M163 A · Le PDF A4 d'un document se mesure sans l'essai : un test écrit le HTML du
+  document (fixture Academia de démonstration), relié au CSS de `npm run build`
+  (`.next/static/chunks/*.css`), Chromium l'imprime (`page.pdf`) et `rendre-pages.mjs` en fait des
+  images. Trois tours de 3 min ont trouvé ce que la maquette ne disait pas : le texte courant à
+  10,8 pt au lieu de 9,4 pt (racine à 14 px à l'impression), la page des ventes et celle du
+  quartier qui débordaient de quelques millimètres (267 mm sur 271). Mesurer chaque page en
+  millimètres (`getBoundingClientRect`, média « print ») permet de caler une estimation de hauteur.
+- 20/11 · M163 A · Un résumé qui cite des numéros de page ne peut pas reposer sur une estimation
+  seule : la coupe doit être faite par le code (classement coupé à 9 lignes, quartier sur deux
+  pages au-delà d'une hauteur estimée) ; l'e2e compare le nombre de pages du PDF de Chromium
+  (`/Type /Page`) au nombre de pages du document (`studyPrintedPages`).
 
 ## L'atelier et les hooks
 

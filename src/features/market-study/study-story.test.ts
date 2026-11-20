@@ -101,8 +101,7 @@ function input(extra: Partial<MarketStudyInput> = {}): MarketStudyInput {
       competitor('c4', 3, 715000, { surface_area: 130 }),
       competitor('c5', 4, 760000, { surface_area: 150 }),
     ],
-    commercializationPrice: 745000,
-    advisorAnalysis: null,
+    agreedPrice: 745000,
     agency: {
       name: 'Agence Horizon Côte d’Azur',
       logoUrl: null,
@@ -235,11 +234,15 @@ describe('un chapitre sans données disparaît du résumé et de la numérotatio
     ]);
   });
 
-  it('sans prix : ni classement ni prix retenu, « le prix, nous le fixons ensemble »', () => {
-    const story = buildMarketStudy(input({ commercializationPrice: null })).story;
+  it('sans prix convenu : ni classement ni prix retenu, « nous le fixerons ensemble au rendez-vous »', () => {
+    const story = buildMarketStudy(input({ agreedPrice: null })).story;
     expect(story.ranking).toBeNull();
     expect(story.summary.items[0]!.chapter).toBe('competitors');
-    expect(story.summary.value).toContain('Le prix, nous le fixons ensemble.');
+    expect(story.summary.value).toContain('Le prix, nous le fixerons ensemble au rendez-vous.');
+    expect(story.next.is).toContain('le prix, nous le fixerons ensemble au rendez-vous');
+    const english = buildMarketStudy({ ...input({ agreedPrice: null }), language: 'en' }).story;
+    expect(english.summary.value).toContain('The price, we will set together at our meeting.');
+    expect(english.next.is).toContain('we will set the price together at our meeting');
     expect(story.summary.kpis.some((kpi) => kpi.sup)).toBe(false);
   });
 
@@ -389,10 +392,9 @@ describe('les variantes des phrases', () => {
       out.push(t.coverTitle(kind, 'Vence'), t.coverTitle(kind, null), t.footer(kind, null, 'x'));
       out.push(t.summary.valueTitle(kind), ...t.next.papers(kind));
       for (const step of t.next.steps(kind)) out.push(step.title, step.text);
-      for (const flag of [true, false]) {
+      out.push(t.ranking.source('x', kind));
+      for (const flag of [true, false])
         out.push(t.summary.how(flag, flag, !flag, kind), t.next.is(kind, 'x', flag, !flag));
-        out.push(t.ranking.source('x', flag, kind));
-      }
       for (const n of COUNTS) {
         out.push(t.summary.title(n, kind), t.summary.kpiCompetitors(n, kind));
         out.push(t.summary.kpiSales(n, kind, 2021));
@@ -402,7 +404,7 @@ describe('les variantes des phrases', () => {
         out.push(t.sales.itemSub(Math.max(n, 1), Math.min(Math.max(n, 1), 6), kind));
         out.push(t.sales.avis(Math.max(n, 1), kind, '5 pièces', '135 m²'));
         out.push(t.ranking.title('1 €', n, kind), t.ranking.lead(Math.max(n, 1), kind));
-        out.push(t.ranking.itemAfter(n + 1, n, kind), t.ranking.itemSub('1 €', true, n, kind));
+        out.push(t.ranking.itemAfter(n + 1, n, kind), t.ranking.itemSub('1 €', n, kind));
         for (const strengths of [null, 'son exposition sud'])
           out.push(t.ranking.avis(n, kind, strengths));
         for (const advantaged of [0, 1, 2])

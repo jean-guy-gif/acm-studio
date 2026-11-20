@@ -13,7 +13,10 @@ import {
 // directe, en anglais). Les pages dans l'ordre, une idée par page, le titre qui conclut ; imprimée,
 // une page A4 par page de l'Étude (aucune fiche coupée, rien qui déborde) ; le lien public lisible
 // sur téléphone, sans défilement de côté. Le quartier coché (Academia) est joué par
-// `quartier-au-vendeur`, qui compte alors les 8 pages.
+// `quartier-au-vendeur`, qui compte alors les pages.
+// Mission 163 C — seul le prix de commercialisation CONVENU classe le bien : Mme Garcia (prête, pas
+// conclue) n'a pas de chapitre « Où se place votre prix », et son analyse de valeur n'est nulle
+// part ; M. Lefebvre (mandat signé, Mougins) est classé au prix retenu ensemble.
 
 const FORBIDDEN = /[Ee]stimation|[Ee]stimate|[Vv]aleur indicative|[Aa]cademia|[Dd][eé]monstration/;
 
@@ -26,6 +29,29 @@ async function demoId(page: Page, stage: string): Promise<string> {
   expect(id, `Le dossier de démo « ${stage} » est introuvable dans « Ma démo »`).toBeTruthy();
   return id as string;
 }
+
+// Le montant de « Votre analyse de valeur » d'un dossier, lu sur « Avant le rendez-vous », en
+// chiffres seuls (pour le chercher sous toutes ses écritures).
+async function advisorAnalysis(page: Page, projectId: string): Promise<string> {
+  await page.goto(`/builder/${projectId}/avant-rendez-vous`);
+  const value = await page
+    .locator('label')
+    .filter({ hasText: 'Votre analyse de valeur' })
+    .locator('input')
+    .first()
+    .inputValue({ timeout: 60_000 });
+  const digits = value.replace(/\D/g, '');
+  expect(digits, 'L’analyse de valeur du dossier est vide').not.toBe('');
+  return digits;
+}
+
+// Les nombres d'un texte, groupes de milliers recollés (« 745 000 » → « 745000 »).
+const digitsOf = (text: string): string[] =>
+  text
+    .replace(/[^\d]/g, ' ')
+    .replace(/(\d) (?=\d{3}\b)/g, '$1')
+    .split(/\s+/)
+    .filter(Boolean);
 
 async function studyPages(page: Page): Promise<string[]> {
   return page
@@ -40,36 +66,50 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
   await resetDemoByScreen(page);
   const garcia = await demoId(page, 'ready');
   const bernard = await demoId(page, 'direct');
+  const lefebvreHref = await page
+    .locator('[data-testid="demo-dossier"][data-stage="signed"]')
+    .filter({ hasText: 'M. Lefebvre' })
+    .locator('a')
+    .first()
+    .getAttribute('href');
+  const lefebvre = /\/builder\/([^/]+)\//.exec(lefebvreHref ?? '')?.[1] as string;
+  expect(lefebvre, 'Le mandat de M. Lefebvre est introuvable dans « Ma démo »').toBeTruthy();
 
-  await test.step('Mme Garcia : les pages dans l’ordre, leurs titres-conclusions', async () => {
+  await test.step('Mme Garcia, sans prix convenu : pas de classement, ni son analyse', async () => {
+    const analysis = await advisorAnalysis(page, garcia);
     await page.goto(`/builder/${garcia}/etude-de-marche`);
     const study = page.getByTestId('market-study');
     await expect(study).toBeVisible({ timeout: 60_000 });
     const pages = await studyPages(page);
-    // Sans quartier coché : ni ventes, ni « Ce que votre acheteur demandera ».
+    // Sans quartier coché : ni ventes, ni « Ce que votre acheteur demandera » ; sans prix convenu,
+    // ni « Où se place votre prix ».
     expect(pages[0]).toBe('cover');
     expect(pages[1]).toBe('summary');
     expect(pages.at(-1)).toBe('next');
     expect(pages).toContain('competitors');
     expect(pages).not.toContain('sales');
     expect(pages).not.toContain('quartier');
+    expect(pages).not.toContain('ranking');
     await expect(page.getByTestId('study-cover-title')).toHaveText(
       'Votre maison à Vence face au marché',
     );
-    // La couverture n'a plus de verdict ; il est en tête du résumé, encadré.
     const cover = study.locator('[data-study-page="cover"]');
     await expect(cover.locator('[data-tier]')).toHaveCount(0);
     const summary = study.getByTestId('study-summary');
-    await expect(summary.locator('li').first()).toHaveAttribute('data-chapter', 'ranking');
-    await expect(summary.locator('li').first()).toHaveAttribute('data-tier', /green|orange|red/);
+    await expect(summary.locator('li').first()).toHaveAttribute('data-chapter', 'competitors');
+    await expect(summary.locator('li[data-chapter="ranking"]')).toHaveCount(0);
+    await expect(study.getByTestId('market-study-verdict')).toHaveCount(0);
+    await expect(summary).toContainText('Le prix, nous le fixerons ensemble au rendez-vous.');
     await expect(
       study.locator('[data-study-page="competitors"]').first().getByTestId('study-chapter-title'),
     ).toContainText(/maisons? comme la vôtre (est|sont) en vente/);
-    await expect(
-      study.locator('[data-study-page="ranking"]').getByTestId('study-chapter-title'),
-    ).toContainText(/^À [\d   ]+€, /);
     await expect(study.getByTestId('study-avis').first()).toContainText('L’avis de');
-    expect(await study.innerText()).not.toMatch(FORBIDDEN);
+    const text = await study.innerText();
+    expect(text).not.toMatch(FORBIDDEN);
+    expect(text).not.toContain('que je vous propose');
+    // L'analyse de valeur n'est nulle part : ni dans la page, ni dans ce qu'elle a reçu.
+    expect(digitsOf(text)).not.toContain(analysis);
+    expect(digitsOf(await page.content())).not.toContain(analysis);
   });
 
   await test.step('Mme Garcia : imprimée, une page A4 par page, aucune fiche coupée', async () => {
@@ -79,6 +119,36 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
 
   await test.step('Mme Garcia : le lien public, sur téléphone', async () => {
     await openStudyLinkOnPhone(page);
+  });
+
+  await test.step('M. Lefebvre, mandat signé : classé au prix retenu ensemble', async () => {
+    const analysis = await advisorAnalysis(page, lefebvre);
+    await page.goto(`/builder/${lefebvre}/etude-de-marche`);
+    const study = page.getByTestId('market-study');
+    await expect(study).toBeVisible({ timeout: 60_000 });
+    const pages = await studyPages(page);
+    expect(pages).toContain('ranking');
+    const summary = study.getByTestId('study-summary');
+    await expect(summary.locator('li').first()).toHaveAttribute('data-chapter', 'ranking');
+    await expect(summary.locator('li').first()).toHaveAttribute('data-tier', /green|orange|red/);
+    await expect(summary).toContainText('nous l’avons retenu ensemble');
+    const title = study.locator('[data-study-page="ranking"]').getByTestId('study-chapter-title');
+    await expect(title).toContainText(/^À [\d\s  ]+€, /);
+    await expect(study.locator('[data-subject="true"]')).toContainText('le prix retenu ensemble');
+    const text = await study.innerText();
+    expect(text).not.toMatch(FORBIDDEN);
+    expect(text).not.toContain('que je vous propose');
+    // Le prix du classement est le prix convenu ; l'analyse n'apparaît que si elle lui est égale.
+    const agreed = ((await title.innerText()).match(/À ([\d\s  ]+)€/)?.[1] ?? '').replace(
+      /\D/g,
+      '',
+    );
+    expect(agreed).not.toBe('');
+    if (analysis !== agreed) {
+      expect(digitsOf(text)).not.toContain(analysis);
+      expect(digitsOf(await page.content())).not.toContain(analysis);
+    }
+    expect(await studyPrintedPages(page)).toBe(pages.length);
   });
 
   await test.step('Les Bernard, en anglais : les mêmes pages, ses mots', async () => {
