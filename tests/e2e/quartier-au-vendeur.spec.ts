@@ -177,9 +177,9 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
       // Mission 163 A — le quartier sur une page, à la fin ; les ventes, leur propre chapitre.
       await expect(study.getByTestId('study-quartier')).toBeVisible();
       await expect(study).toContainText('Informations publiques telles qu’au');
-      await expect(study.getByTestId('study-quartier')).toContainText(
-        'Ce que votre acheteur demandera',
-      );
+      await expect(
+        study.locator('[data-study-page="quartier"]').first().getByTestId('study-chapter-title'),
+      ).toContainText('Ce que votre acheteur demandera');
       if (checked.includes('ventes')) await expect(study.getByTestId('study-sales')).toBeVisible();
       expect(await study.innerText()).not.toMatch(FORBIDDEN);
     });

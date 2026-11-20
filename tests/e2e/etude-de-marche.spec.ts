@@ -62,8 +62,9 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     const summary = study.getByTestId('study-summary');
     await expect(summary.locator('li').first()).toHaveAttribute('data-chapter', 'ranking');
     await expect(summary.locator('li').first()).toHaveAttribute('data-tier', /green|orange|red/);
-    const titles = study.getByTestId('study-chapter-title');
-    await expect(titles.first()).toContainText(/maisons? comme la vôtre (est|sont) en vente/);
+    await expect(
+      study.locator('[data-study-page="competitors"]').first().getByTestId('study-chapter-title'),
+    ).toContainText(/maisons? comme la vôtre (est|sont) en vente/);
     await expect(
       study.locator('[data-study-page="ranking"]').getByTestId('study-chapter-title'),
     ).toContainText(/^À [\d   ]+€, /);
@@ -90,9 +91,9 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     await expect(study.locator('[data-study-page="summary"] h2')).toContainText(
       /this study tells you about your house/,
     );
-    await expect(study.getByTestId('study-chapter-title').first()).toContainText(
-      /houses? like yours (is|are) for sale today/,
-    );
+    await expect(
+      study.locator('[data-study-page="competitors"]').first().getByTestId('study-chapter-title'),
+    ).toContainText(/houses? like yours (is|are) for sale today/);
     const text = await study.innerText();
     expect(text).not.toMatch(FORBIDDEN);
     expect(text).not.toMatch(/Quatre choses|comme la vôtre|L’avis de/);
