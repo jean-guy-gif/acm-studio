@@ -100,7 +100,9 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     await expect(summary.locator('li').first()).toHaveAttribute('data-chapter', 'competitors');
     await expect(summary.locator('li[data-chapter="ranking"]')).toHaveCount(0);
     await expect(study.getByTestId('market-study-verdict')).toHaveCount(0);
-    await expect(summary).toContainText('Le prix, nous le fixerons ensemble au rendez-vous.');
+    await expect(study.locator('[data-study-page="summary"]')).toContainText(
+      'Le prix, nous le fixerons ensemble au rendez-vous.',
+    );
     await expect(
       study.locator('[data-study-page="competitors"]').first().getByTestId('study-chapter-title'),
     ).toContainText(/maisons? comme la vôtre (est|sont) en vente/);
@@ -132,7 +134,9 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     const summary = study.getByTestId('study-summary');
     await expect(summary.locator('li').first()).toHaveAttribute('data-chapter', 'ranking');
     await expect(summary.locator('li').first()).toHaveAttribute('data-tier', /green|orange|red/);
-    await expect(summary).toContainText('nous l’avons retenu ensemble');
+    await expect(study.locator('[data-study-page="summary"]')).toContainText(
+      'nous l’avons retenu ensemble',
+    );
     const title = study.locator('[data-study-page="ranking"]').getByTestId('study-chapter-title');
     await expect(title).toContainText(/^À [\d\s  ]+€, /);
     await expect(study.locator('[data-subject="true"]')).toContainText('le prix retenu ensemble');
