@@ -77,10 +77,8 @@ export default async function MarketStudyPage({
           caractéristiques face à son bien, son prix affiché, depuis quand il est en vente — puis où
           se situe son prix. Ni adresse, ni titre, ni lien d’annonce, ni l’agence qui vend.
           {document.ranking.subject
-            ? document.ranking.subject.source === 'agreed'
-              ? ' Son bien y est classé au prix retenu ensemble.'
-              : ' Son bien y est classé au prix de votre analyse de valeur.'
-            : ' Sans prix retenu ni analyse de valeur, son bien n’est pas classé et aucun verdict n’est donné.'}
+            ? ' Son bien y est classé au prix de commercialisation convenu ensemble.'
+            : ' Tant que le prix de commercialisation n’est pas convenu à la conclusion, son bien n’est pas classé : ni « Où se place votre prix », ni verdict. Votre analyse de valeur n’y figure jamais.'}
         </p>
         <SynthesisPhotoChoices
           projectId={projectId}

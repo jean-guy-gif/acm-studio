@@ -95,10 +95,10 @@ export type StudyTexts = {
     lead: (inSale: number, kind: StudyKind) => string;
     itemBefore: string;
     itemAfter: (total: number, cheaper: number, kind: StudyKind) => string;
-    itemSub: (price: string, agreed: boolean, cheaper: number, kind: StudyKind) => string;
+    itemSub: (price: string, cheaper: number, kind: StudyKind) => string;
     avis: (cheaper: number, kind: StudyKind, strengths: string | null) => string;
     verdictNote: string;
-    source: (day: string, agreed: boolean, kind: StudyKind) => string;
+    source: (day: string, kind: StudyKind) => string;
   };
 
   quartier: {

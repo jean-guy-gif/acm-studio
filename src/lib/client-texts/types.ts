@@ -676,7 +676,6 @@ export type DocumentTexts = {
     removedOn: (day: string) => string;
     notRanked: string;
     alreadyDropped: string;
-    advisorProposed: string;
     surface: string;
     rooms: string;
     studied: string;

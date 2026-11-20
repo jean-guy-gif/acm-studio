@@ -486,7 +486,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
           },
           verdictNote: s.ranking.verdictNote,
           avis: s.ranking.avis(cheaper, kind, strengths),
-          source: s.ranking.source(day, subject.source === 'agreed', kind),
+          source: s.ranking.source(day, kind),
         }
       : null;
 
@@ -674,7 +674,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
         { text: r.ordinal(subject.rank), sup: true },
         { text: s.ranking.itemAfter(subject.total, cheaper, kind) },
       ],
-      sub: s.ranking.itemSub(euro(subject.price), subject.source === 'agreed', cheaper, kind),
+      sub: s.ranking.itemSub(euro(subject.price), cheaper, kind),
       page: pageLabel('ranking'),
       tier: subject.tier,
     });
@@ -769,7 +769,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
   ].filter(Boolean);
   const civility = studyCivility(input.sellerName);
   const salutation = civility ? s.salutation(civility, input.sellerName) : null;
-  const agreed = subject?.source === 'agreed' ? euro(subject.price) : null;
+  const agreed = subject ? euro(subject.price) : null;
 
   return {
     footer: s.footer(kind, commune, day),
