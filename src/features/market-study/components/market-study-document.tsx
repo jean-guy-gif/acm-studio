@@ -12,6 +12,7 @@ import type {
   StudyTile,
 } from '@/features/market-study/types';
 import { NeighbourhoodLinkBlock } from '@/features/neighbourhood-link/components/neighbourhood-link-block';
+import { rankingChunks } from '@/features/market-study/services/study-story';
 import { cssString, Photo } from '@/features/seller-synthesis/components/seller-synthesis-document';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatEuro } from '@/lib/format';
@@ -208,9 +209,18 @@ function CompetitorCard({
 
 // La frise des ventes réelles : toutes les ventes en points, les ventes retenues numérotées comme
 // le tableau ; seuls le prix le plus bas et le plus haut s'écrivent. Aucune moyenne (M159).
-function SalesFrise({ sales }: { sales: NonNullable<MarketStudyStory['sales']> }) {
-  const width = 640;
-  const height = 190;
+// Deux largeurs de dessin : 640 pour l'écran large et l'A4, 360 pour le téléphone, où les textes
+// gardent leur taille lisible.
+function SalesFrise({
+  sales,
+  width,
+  className,
+}: {
+  sales: NonNullable<MarketStudyStory['sales']>;
+  width: number;
+  className: string;
+}) {
+  const height = width < 500 ? 210 : 190;
   const left = 30;
   const right = 20;
   const top = 24;
@@ -237,7 +247,7 @@ function SalesFrise({ sales }: { sales: NonNullable<MarketStudyStory['sales']> }
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className="block h-auto w-full text-brand-deep"
+      className={`h-auto w-full text-brand-deep ${className}`}
       role="img"
       data-testid="study-sales-frise"
     >
@@ -422,12 +432,20 @@ function RankingRow({
   );
 }
 
+// Une page du classement : le verdict et la réglette sur la première, la légende sur la dernière ;
+// les lignes coupées là où `rankingChunks` le dit, pour que le résumé cite les vraies pages.
 function StudyRanking({
   ranking,
+  rows,
+  first,
+  last,
   note,
   language,
 }: {
   ranking: MarketStudyRanking;
+  rows: MarketStudyRankingRow[];
+  first: boolean;
+  last: boolean;
   note: string;
   language: TextLanguage;
 }) {
@@ -436,19 +454,21 @@ function StudyRanking({
   const subject = ranking.subject!;
   return (
     <div className="flex flex-col gap-3" data-testid="market-study-price-ranking">
-      <StudyVerdict subject={subject} note={note} language={language} />
-      <div className="flex items-center gap-1" aria-hidden>
-        {subject.cells.map((cell, index) => (
-          <span
-            key={index}
-            className={`h-3 flex-1 rounded ${
-              index === subject.rank - 1
-                ? `${TIER_CLASSES[cell].bar} ${TIER_CLASSES[cell].barMark} h-4 ring-2 ring-zinc-800 ring-offset-1`
-                : `${TIER_CLASSES[cell].cell} ${TIER_CLASSES[cell].cellMark}`
-            }`}
-          />
-        ))}
-      </div>
+      {first ? <StudyVerdict subject={subject} note={note} language={language} /> : null}
+      {first ? (
+        <div className="flex items-center gap-1" aria-hidden>
+          {subject.cells.map((cell, index) => (
+            <span
+              key={index}
+              className={`h-3 flex-1 rounded ${
+                index === subject.rank - 1
+                  ? `${TIER_CLASSES[cell].bar} ${TIER_CLASSES[cell].barMark} h-4 ring-2 ring-zinc-800 ring-offset-1`
+                  : `${TIER_CLASSES[cell].cell} ${TIER_CLASSES[cell].cellMark}`
+              }`}
+            />
+          ))}
+        </div>
+      ) : null}
       <table className="w-full border-collapse text-left text-zinc-800">
         <thead className="[display:table-header-group]">
           <tr className="text-[0.62rem] font-semibold tracking-[0.12em] text-zinc-500 uppercase">
@@ -460,36 +480,38 @@ function StudyRanking({
           </tr>
         </thead>
         <tbody>
-          {ranking.rows.map((item) => (
+          {rows.map((item) => (
             <RankingRow key={item.key} row={item} language={language} />
           ))}
         </tbody>
       </table>
-      <p
-        className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500"
-        data-testid="market-study-ranking-legend"
-      >
-        {(['green', 'orange', 'red'] as const).map((tier, index) => (
-          <span key={tier} className="flex items-center gap-1.5">
-            <span
-              className={`inline-block h-3 w-3 rounded ${TIER_CLASSES[tier].bar} ${TIER_CLASSES[tier].barMark}`}
-            />
-            <span>
-              {r.legendTiers[index].number}
-              {r.legendTiers[index].sup ? <sup>{r.legendTiers[index].sup}</sup> : null}
-              {r.legendTiers[index].rest}
-              {r.legend[tier]}
+      {last ? (
+        <p
+          className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500"
+          data-testid="market-study-ranking-legend"
+        >
+          {(['green', 'orange', 'red'] as const).map((tier, index) => (
+            <span key={tier} className="flex items-center gap-1.5">
+              <span
+                className={`inline-block h-3 w-3 rounded ${TIER_CLASSES[tier].bar} ${TIER_CLASSES[tier].barMark}`}
+              />
+              <span>
+                {r.legendTiers[index].number}
+                {r.legendTiers[index].sup ? <sup>{r.legendTiers[index].sup}</sup> : null}
+                {r.legendTiers[index].rest}
+                {r.legend[tier]}
+              </span>
             </span>
-          </span>
-        ))}
-      </p>
+          ))}
+        </p>
+      ) : null}
     </div>
   );
 }
 
 function Tile({ tile }: { tile: StudyTile }) {
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-zinc-200 px-4 py-3 break-inside-avoid">
+    <div className="flex flex-col gap-1 rounded-lg border border-zinc-200 px-4 py-3 break-inside-avoid print:gap-0.5 print:py-2">
       <span className="text-[0.66rem] font-bold tracking-[0.1em] text-brand-deep uppercase">
         {tile.title}
       </span>
@@ -512,6 +534,24 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
   const pageRules = `@media\tprint{html{font-size:14px}}@page{size:A4;margin:10mm 0 16mm 0;@bottom-left{content:${cssString(story.footer)};padding-left:14mm;font-size:7pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page) " / " counter(pages);padding-right:14mm;font-size:7pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   const vivreIci = document.neighbourhood ? (
     <NeighbourhoodLinkBlock link={document.neighbourhood} language={language} />
+  ) : null;
+  const talk = story.quartier ? (
+    <div className="break-inside-avoid">
+      <h3 className={h3}>{story.quartier.talkTitle}</h3>
+      <ol className="mt-1 list-decimal pl-5 print:text-sm">
+        {story.quartier.talk.map((line) => (
+          <li key={line.lead}>
+            <strong>{line.lead}</strong> {line.text}
+          </li>
+        ))}
+      </ol>
+    </div>
+  ) : null;
+  const quartierEnd = story.quartier ? (
+    <>
+      {story.quartier.avis ? <Avis story={story} text={story.quartier.avis} /> : null}
+      <p className={source}>{story.quartier.frozen}</p>
+    </>
   ) : null;
 
   return (
@@ -663,7 +703,9 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
                 ))}
                 {index === pages.length - 1 ? (
                   <>
-                    <Avis story={story} text={story.competitors!.avis} />
+                    {story.competitors!.avis ? (
+                      <Avis story={story} text={story.competitors!.avis} />
+                    ) : null}
                     <p className={source}>{story.competitors!.source}</p>
                   </>
                 ) : null}
@@ -677,7 +719,8 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
         <Page name="sales">
           <Band band={story.sales.band} />
           <div className={pageBody} data-testid="study-sales">
-            <SalesFrise sales={story.sales} />
+            <SalesFrise sales={story.sales} width={640} className="block max-sm:hidden" />
+            <SalesFrise sales={story.sales} width={360} className="hidden max-sm:block" />
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-3 w-3 rounded-full bg-brand-deep" />
@@ -752,22 +795,41 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
       ) : null}
 
       {/* 03 · Où se place votre prix : le classement de la M129, sous son titre-conclusion. */}
-      {story.ranking ? (
-        <Page name="ranking">
-          <Band band={story.ranking.band} />
-          <div className={pageBody} data-testid="market-study-ranking">
-            <StudyRanking ranking={ranking} note={story.ranking.verdictNote} language={language} />
-            <Avis story={story} text={story.ranking.avis} />
-            <p className={source}>{story.ranking.source}</p>
-          </div>
-        </Page>
-      ) : null}
+      {story.ranking
+        ? rankingChunks(ranking.rows).map((rows, index, chunks) => (
+            <Page key={`ranking-${index}`} name="ranking">
+              {index === 0 ? <Band band={story.ranking!.band} /> : null}
+              <div
+                className={pageBody}
+                data-testid={index === 0 ? 'market-study-ranking' : undefined}
+              >
+                <StudyRanking
+                  ranking={ranking}
+                  rows={rows}
+                  first={index === 0}
+                  last={index === chunks.length - 1}
+                  note={story.ranking!.verdictNote}
+                  language={language}
+                />
+                {index === chunks.length - 1 ? (
+                  <>
+                    <Avis story={story} text={story.ranking!.avis} />
+                    <p className={source}>{story.ranking!.source}</p>
+                  </>
+                ) : null}
+              </div>
+            </Page>
+          ))
+        : null}
 
       {/* 04 · Ce que votre acheteur demandera : le quartier sur une page, à la fin. */}
       {story.quartier ? (
         <Page name="quartier">
           <Band band={story.quartier.band} />
-          <div className={pageBody} data-testid="study-quartier">
+          <div
+            className={pageBody.replace('print:gap-3', 'print:gap-2')}
+            data-testid="study-quartier"
+          >
             {story.quartier.planning || story.quartier.permits ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 {story.quartier.planning ? <Tile tile={story.quartier.planning} /> : null}
@@ -775,13 +837,13 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
               </div>
             ) : null}
             {story.quartier.risks ? (
-              <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 px-4 py-3 break-inside-avoid">
+              <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 px-4 py-3 break-inside-avoid print:gap-1 print:py-2">
                 <span className="text-[0.66rem] font-bold tracking-[0.1em] text-brand-deep uppercase">
                   {story.quartier.risks.title}
                 </span>
                 <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 print:gap-y-1">
                   {story.quartier.risks.cells.map((cell) => (
-                    <div key={cell.title} className="border-b border-zinc-200 pb-1.5">
+                    <div key={cell.title} className="border-b border-zinc-200 pb-1.5 print:pb-1">
                       <div className="font-bold print:text-sm">{cell.title}</div>
                       <div className="text-sm text-zinc-600 print:text-xs">{cell.text}</div>
                     </div>
@@ -790,23 +852,38 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
                 <p className={source}>{story.quartier.risks.source}</p>
               </div>
             ) : null}
-            {/* La copropriété et « Comment en parler » côte à côte : la page tient sur une feuille. */}
-            <div className={`grid gap-3 ${story.quartier.condominium ? 'sm:grid-cols-2' : ''}`}>
-              {story.quartier.condominium ? <Tile tile={story.quartier.condominium} /> : null}
-              <div className="break-inside-avoid">
-                <h3 className={h3}>{story.quartier.talkTitle}</h3>
-                <ol className="mt-1 list-decimal pl-5 print:text-sm">
-                  {story.quartier.talk.map((line) => (
-                    <li key={line.lead}>
-                      <strong>{line.lead}</strong> {line.text}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </div>
+            {story.quartier.split ? (
+              story.quartier.condominium ? (
+                <Tile tile={story.quartier.condominium} />
+              ) : null
+            ) : (
+              <>
+                {talk}
+                {/* La copropriété et Vivre ici côte à côte : la page tient sur une feuille. */}
+                {story.quartier.condominium && vivreIci ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Tile tile={story.quartier.condominium} />
+                    {vivreIci}
+                  </div>
+                ) : (
+                  <>
+                    {story.quartier.condominium ? <Tile tile={story.quartier.condominium} /> : null}
+                    {vivreIci}
+                  </>
+                )}
+                {quartierEnd}
+              </>
+            )}
+          </div>
+        </Page>
+      ) : null}
+      {/* Trop long pour une feuille : la suite du quartier sur une seconde page, explicitement. */}
+      {story.quartier?.split ? (
+        <Page name="quartier">
+          <div className={pageBody}>
+            {talk}
             {vivreIci}
-            {story.quartier.avis ? <Avis story={story} text={story.quartier.avis} /> : null}
-            <p className={source}>{story.quartier.frozen}</p>
+            {quartierEnd}
           </div>
         </Page>
       ) : null}

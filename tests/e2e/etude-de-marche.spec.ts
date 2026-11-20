@@ -1,9 +1,9 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import {
   demoCredentials,
-  expectNoHorizontalScroll,
   login,
+  openStudyLinkOnPhone,
   resetDemoByScreen,
   studyPrintedPages,
 } from './support';
@@ -31,24 +31,6 @@ async function studyPages(page: Page): Promise<string[]> {
   return page
     .locator('[data-study-page]')
     .evaluateAll((pages) => pages.map((node) => node.getAttribute('data-study-page') ?? ''));
-}
-
-// Le lien public, sans compte, dans un navigateur neuf, à la largeur d'un téléphone.
-async function openOnPhone(browser: Browser, link: string): Promise<void> {
-  const bypass = process.env.E2E_VERCEL_BYPASS;
-  const stranger = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-    ...(bypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': bypass } } : {}),
-  });
-  try {
-    const phone = await stranger.newPage();
-    await phone.goto(link);
-    await expect(phone.getByTestId('market-study')).toBeVisible({ timeout: 60_000 });
-    await expect(phone.getByTestId('study-cover-title')).toBeVisible();
-    await expectNoHorizontalScroll(phone, 'L’Étude de marché sur téléphone (390 px)');
-  } finally {
-    await stranger.close();
-  }
 }
 
 test('l’Étude de marché en fil conducteur, en français et en anglais', async ({ page }) => {
@@ -95,12 +77,7 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
   });
 
   await test.step('Mme Garcia : le lien public, sur téléphone', async () => {
-    await page.getByRole('button', { name: /Créer un (nouveau )?lien/ }).click();
-    const link = (await page.getByTestId('market-study-link').innerText()).trim();
-    expect(link).toMatch(/\/etude-de-marche\/[A-Za-z0-9_-]{43}$/);
-    await openOnPhone(page.context().browser()!, link);
-    await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
-    await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
+    await openStudyLinkOnPhone(page);
   });
 
   await test.step('Les Bernard, en anglais : les mêmes pages, ses mots', async () => {
@@ -121,5 +98,6 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     expect(text).not.toMatch(/Quatre choses|comme la vôtre|L’avis de/);
     const pages = await studyPages(page);
     expect(await studyPrintedPages(page)).toBe(pages.length);
+    await openStudyLinkOnPhone(page);
   });
 });

@@ -155,7 +155,7 @@ export type MarketStudyStory = {
     band: StudyBand;
     faceTo: string;
     pages: StudyCard[][];
-    avis: string;
+    avis: string | null;
     source: string;
   } | null;
   sales: {
@@ -188,6 +188,9 @@ export type MarketStudyStory = {
     risks: { title: string; cells: { title: string; text: string }[]; source: string } | null;
     condominium: StudyTile | null;
     talkTitle: string;
+    // La page ne tient pas sur une feuille : « Comment en parler », Vivre ici et l'avis passent sur
+    // une seconde page.
+    split: boolean;
     talk: { lead: string; text: string }[];
     // « Informations publiques telles qu'au … » : le jour du choix des blocs (M159).
     frozen: string;

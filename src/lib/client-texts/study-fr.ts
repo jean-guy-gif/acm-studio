@@ -353,10 +353,7 @@ export const FRENCH_STUDY: StudyTexts = {
                 n.feminine ? 'la' : 'le'
               } fera choisir.`
         }`;
-      return `Votre ${n.one} est ${n.feminine ? 'la moins chère' : 'le moins cher'} des ${n.many} comparé${e(
-        n,
-        true,
-      )} : c’est souvent par ${n.feminine ? 'elle' : 'lui'} qu’un acheteur commence.${
+      return `${cap(cheaperPhrase(0, n))} : c’est souvent par les ${cheaper(n, true)} qu’un acheteur commence.${
         strengths
           ? ` ${n.feminine ? 'Elle' : 'Il'} a aussi pour ${n.feminine ? 'elle' : 'lui'} ${strengths}.`
           : ''
@@ -383,7 +380,18 @@ export const FRENCH_STUDY: StudyTexts = {
         : `${word(count, false)} permis de construire ${within(radius)}`,
     risks: 'les risques de votre adresse',
     figures: 'votre quartier en chiffres',
-    lead: 'Le plan d’urbanisme, ce qui se construit autour, les risques. Votre acheteur les recevra avant de signer : les voici, tels que les données publiques les donnent.',
+    lead: (parts) => {
+      const names = {
+        planning: 'le plan d’urbanisme',
+        permits: 'ce qui se construit autour',
+        risks: 'les risques',
+        population: 'les habitants du quartier',
+        condominium: 'la copropriété',
+      };
+      return `${cap(parts.map((part) => names[part]).join(', '))}. Votre acheteur ${
+        parts.includes('risks') ? 'les recevra avant de signer' : 'les demandera'
+      } : les voici, tels que les données publiques les donnent.`;
+    },
     item: (conclusion) => `${cap(conclusion)}.`,
     riskPapers: 'Votre acheteur recevra l’état des risques avant de signer.',
     risksNote: 'Ce n’est pas l’état des risques officiel, à produire pour la vente.',
@@ -412,7 +420,7 @@ export const FRENCH_STUDY: StudyTexts = {
             dwellings ? `, pour ${dwellings} logement${dwellings > 1 ? 's' : ''} en tout` : ''
           } : c’est une question qu’un acheteur pose souvent, et nous avons la réponse, permis à l’appui.`,
     avisFlood:
-      'Votre commune est classée en territoire à risque important d’inondation : nous le dirons en premier, avec ce que vous avez vécu.',
+      'Votre commune est classée en territoire à risque important d’inondation : nous le dirons en premier, et vous me direz ce que vous avez vécu.',
     avisRisks:
       'Les risques de votre adresse sont publics : nous les présenterons en premier, avec l’état des risques officiel.',
     avisParcel: (count) =>
@@ -464,7 +472,9 @@ export const FRENCH_STUDY: StudyTexts = {
       const n = NOUNS[kind];
       return `Elle compare votre ${n.one} aux ${n.many} en vente le ${day}${
         withSales ? ' et aux ventes publiées autour de chez vous' : ''
-      }. Les prix cités sont ceux des annonces, pas des prix de vente ; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one} : le prix, ${
+      }. Les prix des biens en vente sont ceux des annonces, pas des prix de vente${
+        withSales ? ' ; ceux des ventes réelles ont été signés chez le notaire' : ''
+      } ; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one} : le prix, ${
         agreed ? 'nous l’avons retenu ensemble' : 'nous le fixons ensemble'
       }. Aucun nom de vendeur ni d’acheteur n’est cité.`;
     },

@@ -930,7 +930,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       removedOn: (day) => `Retirée le ${day}`,
       notRanked: 'elle ne compte pas dans le classement',
       alreadyDropped: 'a déjà baissé son prix',
-      advisorProposed: 'prix proposé par votre conseiller',
+      advisorProposed: 'le prix que je vous propose',
       surface: 'Surface',
       rooms: 'Pièces',
       studied: 'Concurrents étudiés',

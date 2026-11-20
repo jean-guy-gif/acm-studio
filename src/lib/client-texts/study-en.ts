@@ -285,7 +285,7 @@ export const ENGLISH_STUDY: StudyTexts = {
               ? `What sets your ${NOUNS[kind].one} apart must show from the listing: ${strengths}.`
               : `The listing for your ${NOUNS[kind].one} must show, from the first photo, what will make buyers choose it.`
           }`
-        : `Your ${NOUNS[kind].one} is the cheapest of the ${NOUNS[kind].many} compared: it is often where a buyer starts.${
+        : `${cap(cheaperPhrase(0, kind))}: buyers often start with the cheapest.${
             strengths ? ` It also has ${strengths} going for it.` : ''
           }`,
     verdictNote:
@@ -306,7 +306,18 @@ export const ENGLISH_STUDY: StudyTexts = {
         : `${word(count)} building permit${count > 1 ? 's' : ''} ${within(radius)}`,
     risks: 'the risks at your address',
     figures: 'your neighbourhood in figures',
-    lead: 'The local plan, what is being built nearby, the risks. Your buyer will receive them before signing: here they are, as the public data gives them.',
+    lead: (parts) => {
+      const names = {
+        planning: 'the local plan',
+        permits: 'what is being built nearby',
+        risks: 'the risks',
+        population: 'the residents of the neighbourhood',
+        condominium: 'the building',
+      };
+      return `${cap(parts.map((part) => names[part]).join(', '))}. Your buyer will ${
+        parts.includes('risks') ? 'receive them before signing' : 'ask about them'
+      }: here they are, as the public data gives them.`;
+    },
     item: (conclusion) => `${cap(conclusion)}.`,
     riskPapers: 'Your buyer will receive the risk statement before signing.',
     risksNote: 'This is not the official risk statement, which must be provided for the sale.',
@@ -333,7 +344,7 @@ export const ENGLISH_STUDY: StudyTexts = {
             dwellings ? `, for ${dwellings} home${dwellings > 1 ? 's' : ''} in all` : ''
           }: it is a question buyers often ask, and we have the answer, permits in hand.`,
     avisFlood:
-      'Your town lies in an area at significant risk of flooding: we will say so first, along with what you have actually experienced.',
+      'Your town lies in an area at significant risk of flooding: we will say so first, and you will tell me what you have actually experienced.',
     avisRisks:
       'The risks at your address are public: we will present them first, with the official risk statement.',
     avisParcel: (count) =>
@@ -379,7 +390,9 @@ export const ENGLISH_STUDY: StudyTexts = {
     is: (kind, day, withSales, agreed) =>
       `It compares your ${NOUNS[kind].one} with the ${NOUNS[kind].many} for sale on ${day}${
         withSales ? ' and with the sales published around your home' : ''
-      }. The prices quoted are asking prices, not sale prices; floor areas and features as advertised, to be checked. It does not give the value of your ${
+      }. The prices of the properties for sale are asking prices, not sale prices${
+        withSales ? '; those of the actual sales were signed at the notary' : ''
+      }; floor areas and features as advertised, to be checked. It does not give the value of your ${
         NOUNS[kind].one
       }: ${agreed ? 'we have set the price together' : 'the price is something we set together'}. No seller or buyer is named.`,
     sourceRows: {

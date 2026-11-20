@@ -897,3 +897,31 @@ export async function studyPrintedPages(page: Page): Promise<number> {
     await page.emulateMedia({ media: 'screen' });
   }
 }
+
+// Mission 163 A — le lien public de l'Étude, créé depuis la page du conseiller, ouvert sans compte
+// dans un navigateur neuf à la largeur d'un téléphone (390 px) : lisible, sans défilement de côté ;
+// puis retiré.
+export async function openStudyLinkOnPhone(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /Créer un (nouveau )?lien/ }).click();
+  const link = (await page.getByTestId('market-study-link').innerText()).trim();
+  expect(link).toMatch(/\/etude-de-marche\/[A-Za-z0-9_-]{43}$/);
+  const bypass = process.env.E2E_VERCEL_BYPASS;
+  const stranger = await page
+    .context()
+    .browser()!
+    .newContext({
+      viewport: { width: 390, height: 844 },
+      ...(bypass ? { extraHTTPHeaders: { 'x-vercel-protection-bypass': bypass } } : {}),
+    });
+  try {
+    const phone = await stranger.newPage();
+    await phone.goto(link);
+    await expect(phone.getByTestId('market-study')).toBeVisible({ timeout: 60_000 });
+    await expect(phone.getByTestId('study-cover-title')).toBeVisible();
+    await expectNoHorizontalScroll(phone, 'L’Étude de marché sur téléphone (390 px)');
+  } finally {
+    await stranger.close();
+  }
+  await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
+  await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
+}

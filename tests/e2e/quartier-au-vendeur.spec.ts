@@ -7,6 +7,7 @@ import {
   expectOneFilled,
   login,
   resetDemoByScreen,
+  openStudyLinkOnPhone,
   studyPrintedPages,
 } from './support';
 
@@ -246,6 +247,8 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
         ]);
       }
       expect(await studyPrintedPages(page)).toBe(pages.length);
+      // Le lien public, ventes et quartier compris, sur téléphone.
+      await openStudyLinkOnPhone(page);
     });
 
     await test.step('Le Live : à leur place, sans défiler, dans les deux langues', async () => {

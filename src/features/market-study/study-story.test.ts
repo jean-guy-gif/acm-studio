@@ -12,6 +12,8 @@ import {
   cardHeight,
   closestSales,
   packCards,
+  quartierHeight,
+  rankingChunks,
   rankingPages,
   studyCivility,
   studyKind,
@@ -295,10 +297,45 @@ describe('les règles de mise en page', () => {
     expect(packCards([card(9), card(9), card(9)]).map((p) => p.length)).toEqual([2, 1]);
   });
 
-  it('le classement passe sur une seconde page au-delà de 12 lignes', () => {
+  it('le classement se coupe à 9 lignes, puis par 18 : le résumé cite les vraies pages', () => {
     expect(rankingPages(6)).toBe(1);
-    expect(rankingPages(12)).toBe(1);
-    expect(rankingPages(13)).toBe(2);
+    expect(rankingPages(9)).toBe(1);
+    expect(rankingPages(10)).toBe(2);
+    expect(rankingPages(27)).toBe(2);
+    expect(rankingPages(28)).toBe(3);
+    const rows = Array.from({ length: 12 }, (_, i) => i);
+    expect(rankingChunks(rows).map((chunk) => chunk.length)).toEqual([9, 3]);
+    expect(rankingChunks(rows.slice(0, 4))).toEqual([[0, 1, 2, 3]]);
+  });
+
+  it('le quartier trop long pour une feuille passe sur deux pages, et le résumé le compte', () => {
+    expect(
+      quartierHeight({ tileLines: 4, riskCells: 6, condominium: true, vivreIci: true, avis: true }),
+    ).toBeGreaterThan(
+      quartierHeight({
+        tileLines: 2,
+        riskCells: 2,
+        condominium: false,
+        vivreIci: false,
+        avis: true,
+      }),
+    );
+    const long = buildMarketStudy(input({ neighbourhood: undefined })).story;
+    const study = buildMarketStudy(
+      input({
+        neighbourhood: {
+          url: 'https://app.myacademia.ai/l/x',
+          validUntil: null,
+          qr: { size: 21, path: '' },
+          printAddress: true,
+        },
+      }),
+    );
+    // Le fichier d'exemple tient sur une page, Vivre ici compris.
+    expect(long.quartier?.split).toBe(false);
+    expect(study.story.quartier?.split).toBe(false);
+    const html = renderToStaticMarkup(createElement(MarketStudyDocument, { document: study }));
+    expect(html.split('data-study-page="quartier"').length - 1).toBe(1);
   });
 
   it('les six ventes les plus proches : pièces, puis surface, puis la plus récente', () => {
@@ -329,6 +366,7 @@ describe('la formule de politesse, tirée du nom du dossier', () => {
     expect(studyCivility('M. Lefebvre')).toBe('monsieur');
     expect(studyCivility('M. et Mme Lopez')).toBe('both');
     expect(studyCivility('Mr and Mrs Bernard')).toBe('both');
+    expect(studyCivility('M. Martin et Mme Durand')).toBe('both');
     expect(studyCivility('Famille Keller')).toBeNull();
     expect(studyCivility('Mathilde Roux')).toBeNull();
     const none = buildMarketStudy(input({ sellerName: 'Famille Keller' })).story;
@@ -414,6 +452,56 @@ describe('les variantes des phrases', () => {
     expect(t.avis(5, 'maison', 2, 'la surface', true, 'son exposition sud')).toBe(
       'Vos acheteurs ne verront pas votre maison seule : ils la compareront à ces cinq-là. Deux sont plus grandes ; la vôtre a pour elle son exposition sud. C’est ce que l’annonce doit montrer.',
     );
+  });
+
+  it('un atout du bien n’est jamais un critère où un bien en vente est meilleur', () => {
+    const story = buildMarketStudy(
+      input({
+        competitors: [
+          competitor('c1', 0, 740000, { surface_area: 160 }),
+          competitor('c2', 1, 729000, { surface_area: 100, exposure: 'north' }),
+        ],
+      }),
+    ).story;
+    expect(story.competitors!.avis).not.toMatch(/135/);
+    expect(story.competitors!.avis).toContain('son exposition sud');
+    expect(story.ranking!.avis).not.toMatch(/135/);
+  });
+
+  it('une annonce retirée a sa fiche, mais ne compte pas dans les phrases', () => {
+    const story = buildMarketStudy(
+      input({
+        competitors: [
+          competitor('c1', 0, 740000),
+          competitor('c2', 1, 729000, {
+            surface_area: 170,
+            listing_gone_at: '2026-11-10T00:00:00.000Z',
+          }),
+        ],
+      }),
+    ).story;
+    expect(story.competitors!.pages.flat()).toHaveLength(2);
+    expect(story.competitors!.avis).toContain('à celle-ci');
+    expect(story.competitors!.avis).toContain('n’a pas d’avantage');
+    const gone = buildMarketStudy(
+      input({
+        competitors: [competitor('c1', 0, 740000, { listing_gone_at: '2026-11-10T00:00:00.000Z' })],
+      }),
+    ).story;
+    expect(gone.competitors!.avis).toBeNull();
+    expect(gone.summary.kpis.some((kpi) => kpi.value === '0')).toBe(false);
+  });
+
+  it('« en tout » seulement quand chaque permis dit son nombre de logements', () => {
+    const blocks = structuredClone(quartier.blocks);
+    blocks.permis!.build = blocks.permis!.build.map((permit, i) => ({
+      ...permit,
+      dwellings: i === 0 ? null : permit.dwellings,
+    }));
+    const story = buildMarketStudy(
+      input({ quartier: { ...quartier, blocks: { ...blocks, risques: null } } }),
+    ).story;
+    expect(story.quartier!.avis).not.toContain('en tout');
   });
 
   it('dans le fil, l’avantage partagé entre deux biens se dit « ou », jamais « et »', () => {

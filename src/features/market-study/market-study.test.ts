@@ -334,14 +334,16 @@ describe('le document de l’Étude de marché', () => {
       expect(html).not.toContain(forbidden);
     }
     expect(html).not.toMatch(/[Ee]stimation|disponible|[Dd]émo/);
-    expect(html).toContain('Les prix cités sont ceux des annonces, pas des prix de vente');
+    expect(html).toContain(
+      'Les prix des biens en vente sont ceux des annonces, pas des prix de vente',
+    );
   });
 
   it('une fiche par retenu, la ligne VOTRE BIEN à l’analyse du conseiller et son verdict', async () => {
     const { html } = await loadFixture();
     expect(html.split('data-testid="market-study-competitor"').length - 1).toBe(3);
     expect(html).toContain('data-subject="true"');
-    expect(html).toContain('prix proposé par votre conseiller');
+    expect(html).toContain('le prix que je vous propose');
     expect(html).toContain('data-testid="market-study-verdict"');
     // Mission 163 A — la couverture n'a plus de verdict (le Point marché garde le sien).
     expect(html).not.toContain('market-study-cover-verdict');

@@ -361,6 +361,7 @@ export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
       ranking,
       agency: input.agency,
       quartier,
+      vivreIci: input.neighbourhood != null,
     }),
   };
 }

@@ -55,6 +55,8 @@ export type StudyStoryInput = {
   ranking: MarketStudyRanking;
   agency: SellerSynthesis['agency'];
   quartier: NeighbourhoodDocumentContent | null;
+  // Le lien « Vivre ici » du bien, montré sur la page du quartier.
+  vivreIci?: boolean;
 };
 
 // Sans les ventes cochées une par une (M163 B) : les six plus proches du bien.
@@ -71,8 +73,12 @@ const CARD_MIN_MM = 62;
 const CARD_GAP_MM = 4;
 const CARDS_PER_PAGE = 3;
 // Le classement : ce qui tient sur la page du bandeau, puis par page de suite.
-const RANKING_ROWS_FIRST = 12;
-const RANKING_ROWS_NEXT = 22;
+// Le classement se coupe à ces nombres de lignes, page par page : le résumé cite ses vraies pages.
+const RANKING_ROWS_FIRST = 9;
+const RANKING_ROWS_NEXT = 18;
+// Le quartier : au-delà de cette hauteur estimée, « Comment en parler », Vivre ici et l'avis passent
+// sur une seconde page, explicitement.
+const QUARTIER_ONE_PAGE_MM = 262;
 
 const positive = (value: number | null | undefined): number | null =>
   value != null && Number.isFinite(value) && value > 0 ? value : null;
@@ -88,8 +94,9 @@ export function studyCivility(name: string): StudyCivility | null {
   const n = name.trim().toLowerCase();
   const her = '(mme|madame|mrs\\.?|ms\\.?|mlle|mademoiselle)';
   const him = '(m\\.|mr\\.?|monsieur)';
+  // « M. et Mme Lopez », mais aussi « M. Martin et Mme Durand ».
   const both = new RegExp(
-    `^(${him}\\s+(et|and|&)\\s+${her}|${her}\\s+(et|and|&)\\s+${him})(\\s|$)`,
+    `^(${him}(\\s.*)?\\s(et|and|&)\\s+${her}|${her}(\\s.*)?\\s(et|and|&)\\s+${him})(\\s|$)`,
   );
   if (both.test(n)) return 'both';
   if (new RegExp(`^${her}(\\s|$)`).test(n)) return 'madame';
@@ -145,6 +152,36 @@ export function rankingPages(rows: number): number {
     : 1 + Math.ceil((rows - RANKING_ROWS_FIRST) / RANKING_ROWS_NEXT);
 }
 
+// Les lignes du classement, découpées page par page (le document coupe exactement là).
+export function rankingChunks<T>(rows: T[]): T[][] {
+  const chunks: T[][] = [rows.slice(0, RANKING_ROWS_FIRST)];
+  for (let i = RANKING_ROWS_FIRST; i < rows.length; i += RANKING_ROWS_NEXT)
+    chunks.push(rows.slice(i, i + RANKING_ROWS_NEXT));
+  return chunks;
+}
+
+// La hauteur estimée de la page du quartier, en millimètres.
+export function quartierHeight(parts: {
+  tileLines: number;
+  riskCells: number;
+  condominium: boolean;
+  vivreIci: boolean;
+  avis: boolean;
+}): number {
+  // Mesuré à l'impression sur le dossier de démonstration (20/11) : le bandeau sur trois lignes,
+  // les cases, la grille des risques par rangée de deux, « Comment en parler », la copropriété et
+  // Vivre ici côte à côte, l'avis, la date et les espaces.
+  return (
+    BAND_MM +
+    (parts.tileLines > 0 ? 22 + parts.tileLines * 5 : 0) +
+    (parts.riskCells > 0 ? 18 + Math.ceil(parts.riskCells / 2) * 12.5 : 0) +
+    24 +
+    (parts.condominium ? 38 : parts.vivreIci ? 26 : 0) +
+    (parts.avis ? 22 : 0) +
+    18
+  );
+}
+
 // Les six ventes les plus proches du bien : le moins d'écart de pièces, puis de surface, puis la
 // plus récente.
 export function closestSales(
@@ -196,9 +233,14 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
   const cards: StudyCard[] = input.competitors.map((item) => {
     const differing = item.features.filter((feature) => feature.status !== 'same');
     const equal = item.features.filter((feature) => feature.status === 'same');
-    if (differing.some((feature) => feature.status === 'competitor_advantage')) advantaged += 1;
-    if (differing.some((feature) => feature.status === 'competitor_weakness')) weaker += 1;
-    for (const feature of differing) {
+    // Les phrases ne comptent que les biens encore en vente : une annonce retirée a sa fiche, mais
+    // elle n'est plus un bien que les acheteurs compareront (comme au classement).
+    const listed = item.goneAt == null;
+    if (listed && differing.some((feature) => feature.status === 'competitor_advantage'))
+      advantaged += 1;
+    if (listed && differing.some((feature) => feature.status === 'competitor_weakness'))
+      weaker += 1;
+    for (const feature of listed ? differing : []) {
       if (!feature.criterion) continue;
       if (feature.status === 'competitor_advantage') advantages.add(feature.criterion);
       else if (feature.sellerValue && !weaknesses.has(feature.criterion))
@@ -252,10 +294,12 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
   const strongCriteria = [...weaknesses.keys()];
   const strong =
     strongCriteria.length > 0 ? (weaker > 1 ? s.or : s.and)(criterionNames(strongCriteria)) : null;
+  // Un atout du bien : au moins un bien en vente est moins bon, et aucun n'est meilleur.
+  const ownStrengths = strongCriteria.filter((criterion) => !advantages.has(criterion));
   const strengths =
-    strongCriteria.length > 0
+    ownStrengths.length > 0
       ? s.and(
-          strongCriteria
+          ownStrengths
             .slice(0, 3)
             .map((criterion) => s.competitors.strength[criterion](weaknesses.get(criterion)!)),
         )
@@ -293,19 +337,6 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
     hasRanking ? 'ranking' : null,
     hasQuartier ? 'quartier' : null,
   ].filter((chapter): chapter is StudyChapter => chapter != null);
-  const pageCount: Record<StudyChapter, number> = {
-    competitors: competitorPages.length,
-    sales: 1,
-    ranking: rankingPages(ranking.rows.length),
-    quartier: 1,
-  };
-  const pageOf = {} as Record<StudyChapter, number>;
-  let page = 3;
-  for (const chapter of chapters) {
-    pageOf[chapter] = page;
-    page += pageCount[chapter];
-  }
-  const nextPage = page;
   const numberOf = (chapter: StudyChapter) =>
     String(chapters.indexOf(chapter) + 1).padStart(2, '0');
 
@@ -347,7 +378,10 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
           },
           faceTo: s.competitors.faceTo(kind),
           pages: competitorPages,
-          avis: s.competitors.avis(shown, kind, advantaged, against, onlySurface, strengths),
+          avis:
+            inSale.length > 0
+              ? s.competitors.avis(inSale.length, kind, advantaged, against, onlySurface, strengths)
+              : null,
           source: s.competitors.source(day),
         }
       : null;
@@ -485,7 +519,10 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       : permitsView
         ? s.quartier.avisPermits(
             permitsCount,
-            dwellings && dwellings.length > 0 ? dwellings.reduce((a, b) => a + b, 0) : null,
+            // « en tout » seulement quand chaque permis dit son nombre de logements.
+            dwellings && dwellings.length > 0 && dwellings.length === permitsCount
+              ? dwellings.reduce((a, b) => a + b, 0)
+              : null,
             radius,
           )
         : planningView
@@ -530,13 +567,23 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       band: {
         number: numberOf('quartier'),
         title: s.quartier.title(conclusion),
-        lead: s.quartier.lead,
+        lead: s.quartier.lead(
+          (
+            [
+              planningView ? 'planning' : null,
+              permitsView ? 'permits' : null,
+              risksView ? 'risks' : null,
+              populationView ? 'population' : null,
+              condominiumView ? 'condominium' : null,
+            ] as const
+          ).filter((part): part is NonNullable<typeof part> => part != null),
+        ),
       },
       planning: tile(planningView, (legend) =>
         legend
           .slice(1)
           .filter((line) => line.text !== q.nothing)
-          .map((line) => `${line.title} : ${line.text}`),
+          .map((line) => `${line.title}${language === 'en' ? ':' : ' :'} ${line.text}`),
       ),
       permits: tile(permitsView, (legend) =>
         legend.map((line) => [line.title, line.text].filter(Boolean).join(' · ')),
@@ -572,10 +619,22 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
             }
           : null,
       talkTitle: s.quartier.talkTitle,
+      split: false,
       talk: s.quartier.talk,
       frozen: q.frozen(formatDay(input.quartier!.takenAt, language)),
       avis,
     };
+    quartier.split =
+      quartierHeight({
+        tileLines: Math.max(
+          quartier.planning ? quartier.planning.detail.length + 2 : 0,
+          quartier.permits ? quartier.permits.detail.length + 2 : 0,
+        ),
+        riskCells: cells.length,
+        condominium: quartier.condominium != null,
+        vivreIci: input.vivreIci === true,
+        avis: avis != null,
+      }) > QUARTIER_ONE_PAGE_MM;
     const capital = (text: string) => `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
     quartierItem = {
       title: s.quartier.item(conclusion),
@@ -587,6 +646,21 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
         .join(' '),
     };
   }
+
+  // ─── Les pages de chaque chapitre ──────────────────────────────────────────────────────────────
+  const pageCount: Record<StudyChapter, number> = {
+    competitors: competitorPages.length,
+    sales: 1,
+    ranking: rankingPages(ranking.rows.length),
+    quartier: quartier?.split ? 2 : 1,
+  };
+  const pageOf = {} as Record<StudyChapter, number>;
+  let page = 3;
+  for (const chapter of chapters) {
+    pageOf[chapter] = page;
+    page += pageCount[chapter];
+  }
+  const nextPage = page;
 
   // ─── Le résumé, page 2 : la place du prix en tête ─────────────────────────────────────────────
   const items: MarketStudyStory['summary']['items'] = [];
@@ -610,7 +684,10 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       chapter: 'competitors',
       number: 0,
       title: [{ text: s.competitors.item(inSale.length, kind, priceRange) }],
-      sub: s.competitors.itemSub(shown, advantaged, against, weaker, strong, kind),
+      sub:
+        inSale.length > 0
+          ? s.competitors.itemSub(inSale.length, advantaged, against, weaker, strong, kind)
+          : '',
       page: pageLabel('competitors'),
       tier: null,
     });
@@ -640,7 +717,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
   });
 
   const kpis: MarketStudyStory['summary']['kpis'] = [];
-  if (shown > 0)
+  if (inSale.length > 0)
     kpis.push({
       value: String(inSale.length),
       sup: null,

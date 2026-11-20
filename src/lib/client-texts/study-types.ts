@@ -10,6 +10,7 @@ import type { ComparisonCriterion } from '@/features/live-seller/constants';
 export type StudyKind = 'maison' | 'appartement' | 'bien';
 export type StudyCivility = 'madame' | 'monsieur' | 'both';
 export type StudyRange = { from: string; to: string };
+export type StudyQuartierPart = 'planning' | 'permits' | 'risks' | 'population' | 'condominium';
 
 export type StudyTexts = {
   kicker: string;
@@ -107,7 +108,7 @@ export type StudyTexts = {
     permits: (count: number, radius: string | null) => string;
     risks: string;
     figures: string;
-    lead: string;
+    lead: (parts: StudyQuartierPart[]) => string;
     item: (conclusion: string) => string;
     riskPapers: string;
     risksNote: string;
