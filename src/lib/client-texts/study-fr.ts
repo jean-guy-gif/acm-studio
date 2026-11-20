@@ -103,7 +103,7 @@ export const FRENCH_STUDY: StudyTexts = {
       `Cette étude ne la calcule pas : elle montre le marché tel que vos acheteurs le voient. ${
         agreed
           ? `Le prix, nous l’avons retenu ensemble : ${agreed}.`
-          : 'Le prix, nous le fixerons ensemble au rendez-vous.'
+          : 'Le prix, nous le fixerons ensemble.'
       }`,
   },
 
@@ -473,7 +473,7 @@ export const FRENCH_STUDY: StudyTexts = {
       }. Les prix des biens en vente sont ceux des annonces, pas des prix de vente${
         withSales ? ' ; ceux des ventes réelles ont été signés chez le notaire' : ''
       } ; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one} : le prix, ${
-        agreed ? 'nous l’avons retenu ensemble' : 'nous le fixerons ensemble au rendez-vous'
+        agreed ? 'nous l’avons retenu ensemble' : 'nous le fixerons ensemble'
       }. Aucun nom de vendeur ni d’acheteur n’est cité.`;
     },
     sourceRows: {
