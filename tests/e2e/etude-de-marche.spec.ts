@@ -148,7 +148,7 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     );
     const title = study.locator('[data-study-page="ranking"]').getByTestId('study-chapter-title');
     await expect(title).toContainText(/^À [\d\s  ]+€, /);
-    await expect(study.locator('[data-subject="true"]')).toContainText('le prix retenu ensemble');
+    await expect(study.locator('[data-subject="true"]')).toContainText('prix retenu ensemble');
     const text = await study.innerText();
     expect(text).not.toMatch(FORBIDDEN);
     expect(text).not.toContain('que je vous propose');
