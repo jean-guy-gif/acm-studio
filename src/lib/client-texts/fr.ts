@@ -1,3 +1,4 @@
+import { FRENCH_STUDY } from '@/lib/client-texts/study-fr';
 import {
   COMPARISON_CRITERION_LABELS,
   DANGEROUS_REASON_LABELS,
@@ -948,6 +949,7 @@ export const FRENCH_TEXTS: ClientTexts = {
           ].join('\n'),
         subject: (day) => (day ? `Étude de marché du ${day}` : 'Étude de marché'),
       },
+      story: FRENCH_STUDY,
     },
   },
   buyer: {

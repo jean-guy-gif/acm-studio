@@ -20,6 +20,11 @@ const ARITY_EXCEPTIONS = new Set([
   'buyer.messages.relaunch.fits',
   'common.linkGone.body',
   'quartier.permits.count',
+  // Mission 163 A — l'anglais ne fait pas l'accord du bien (« elle / il ») ; le français tire la
+  // formule de politesse de la seule civilité, l'anglais la fait suivre du nom.
+  'documents.marketStudy.story.competitors.itemSub',
+  'documents.marketStudy.story.ranking.itemSub',
+  'documents.marketStudy.story.salutation',
 ]);
 
 function shape(tree: Tree, path = ''): string[] {

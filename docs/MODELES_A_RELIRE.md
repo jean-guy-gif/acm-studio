@@ -82,3 +82,14 @@ Jean-Guy, l'anglais **à faire relire par un locuteur natif**. Points à vérifi
 catégories d'urbanisme (« site reserved for a road »…), les échelles officielles (« zone 4 of 5:
 “medium” », « category 1 of 3: “low” potential »), « Listed municipality » pour une commune classée
 en territoire à risque important d'inondation, « Actual sales » et « What your neighbours sold ».
+
+## Mission 163 A — l'Étude de marché en fil conducteur
+
+Les pages de l'Étude (couverture, « Four things this study tells you », les titres-conclusions des
+chapitres, « … ’s view », la suite) lisent leurs mots dans `src/lib/client-texts/study-en.ts`,
+composés depuis les chiffres du dossier, écrits par Claude Code d'après la maquette française
+validée par Jean-Guy le 20/11. L'anglais est **à faire relire par un locuteur natif**. Points à
+vérifier : « Dear Mr and Mrs Bernard, here is what the listings… », « Your house in Vence and the
+market », « … are for sale today », « At €745,000, three houses for sale are cheaper than yours »,
+« What your buyer will ask: nothing recorded on your plot », les avis (« Claire Dumas’s view ») et
+« What comes next, in three steps ».

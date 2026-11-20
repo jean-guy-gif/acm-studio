@@ -94,6 +94,12 @@ describe('le lien « Vivre ici » montré au vendeur : une seule porte, le lien 
       'Pictograms',
       'SalesTimeline',
       'SegmentGauge',
+      // Mission 163 A — l'Étude en fil conducteur lit les mêmes blocs de l'instantané : s'ils sont
+      // montrables, les catégories de l'urbanisme, l'année de début des ventes et leur type.
+      'isShowableBlock',
+      'PLANNING_CATEGORIES',
+      'SALES_COUNTED_SINCE',
+      'NeighbourhoodSale',
     ]);
     const imported: string[] = [];
     for (const path of seller()) {

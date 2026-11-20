@@ -871,3 +871,29 @@ export function readNotesTraces(buyerId: string): string {
     throw new Error('Les traces n’ont pas pu être lues : `supabase db query --remote` a échoué.');
   }
 }
+
+// Mission 163 A — le nombre de pages A4 de l'Étude imprimée par le navigateur (Chromium), images
+// et polices chargées : une par page de l'Étude quand rien ne déborde ni ne se coupe.
+export async function studyPrintedPages(page: Page): Promise<number> {
+  await page.emulateMedia({ media: 'print' });
+  try {
+    await page.evaluate(async () => {
+      for (const img of document.images) img.loading = 'eager';
+      await Promise.all(
+        [...document.images].map((img) =>
+          img.complete
+            ? null
+            : new Promise((resolve) => {
+                img.addEventListener('load', resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true });
+              }),
+        ),
+      );
+      await document.fonts.ready;
+    });
+    const pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+    return (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+  } finally {
+    await page.emulateMedia({ media: 'screen' });
+  }
+}

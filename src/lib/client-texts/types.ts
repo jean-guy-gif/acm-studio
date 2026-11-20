@@ -2,6 +2,7 @@ import type {
   NeighbourhoodBlockKey,
   PlanningCategory,
 } from '@/features/neighbourhood-link/services/neighbourhood-blocks';
+import type { StudyTexts } from '@/lib/client-texts/study-types';
 import type { LivePageType } from '@/features/live-seller/services/build-live-pages';
 import type {
   ComparisonCriterion,
@@ -688,6 +689,8 @@ export type DocumentTexts = {
       message: (url: string) => string;
       subject: (day: string | null) => string;
     };
+    // Mission 163 A — l'Étude en fil conducteur (`study-types.ts`).
+    story: StudyTexts;
   };
 };
 

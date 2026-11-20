@@ -50,7 +50,7 @@ export async function loadMarketStudy(
       supabase
         .from('subject_properties')
         .select(
-          'property_type, city, district, surface_area, rooms_count, bedrooms_count, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, photo_urls',
+          'property_type, city, district, surface_area, land_area, rooms_count, bedrooms_count, energy_rating, ges_rating, general_condition, outdoor_spaces, parking_types, exposure, photo_urls',
         )
         .eq('project_id', projectId)
         .eq('agency_id', agencyId)

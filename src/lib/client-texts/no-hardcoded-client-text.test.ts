@@ -35,6 +35,7 @@ const FILES = [
   'src/features/live-seller/services/live-buyers.ts',
   'src/features/market-update/services/price-ranking.ts',
   'src/features/market-study/services/build-market-study.ts',
+  'src/features/market-study/services/study-story.ts',
   'src/features/seller-synthesis/services/build-seller-synthesis.ts',
   'src/features/live-seller/utils/neutral-comparable-label.ts',
   // Mission 140 B — ce que voit l'acquéreur : la présentation, le lien, le PDF, ses messages.

@@ -1,3 +1,4 @@
+import { ENGLISH_STUDY } from '@/lib/client-texts/study-en';
 import type {
   NeighbourhoodBlockKey,
   PlanningCategory,
@@ -1006,6 +1007,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
           ].join('\n'),
         subject: (day) => (day ? `Market study of ${day}` : 'Market study'),
       },
+      story: ENGLISH_STUDY,
     },
   },
   buyer: {
