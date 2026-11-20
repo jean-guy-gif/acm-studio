@@ -72,7 +72,8 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     .locator('a')
     .first()
     .getAttribute('href');
-  const lefebvre = /\/builder\/([^/]+)\//.exec(lefebvreHref ?? '')?.[1] as string;
+  // Un mandat signé mène à sa Vue d'ensemble (`/builder/<id>`), sans chemin après l'identifiant.
+  const lefebvre = /\/builder\/([^/?#]+)/.exec(lefebvreHref ?? '')?.[1] as string;
   expect(lefebvre, 'Le mandat de M. Lefebvre est introuvable dans « Ma démo »').toBeTruthy();
 
   await test.step('Mme Garcia, sans prix convenu : pas de classement, ni son analyse', async () => {
