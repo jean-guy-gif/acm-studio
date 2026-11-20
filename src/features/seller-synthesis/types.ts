@@ -1,3 +1,4 @@
+import type { ComparisonCriterion } from '@/features/live-seller/constants';
 import type { TextLanguage } from '@/lib/client-texts';
 import type { DpeClass } from '@/features/dpe/services/dpe';
 import type { QrCode } from '@/features/contact-card/services/qr-code';
@@ -16,6 +17,8 @@ import type { NeighbourhoodDocumentContent } from '@/features/neighbourhood-link
 
 // Une ligne de la grille du Live (M40, M80), du point de vue du concurrent.
 export type SynthesisFeature = {
+  // Mission 163 A — le critère, pour composer les phrases de l'Étude (« Équivalent sur : … »).
+  criterion?: ComparisonCriterion;
   label: string;
   value: string;
   sellerValue: string | null;

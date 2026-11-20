@@ -1,3 +1,4 @@
+import { FRENCH_STUDY } from '@/lib/client-texts/study-fr';
 import {
   COMPARISON_CRITERION_LABELS,
   DANGEROUS_REASON_LABELS,
@@ -929,7 +930,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       removedOn: (day) => `Retirée le ${day}`,
       notRanked: 'elle ne compte pas dans le classement',
       alreadyDropped: 'a déjà baissé son prix',
-      advisorProposed: 'prix proposé par votre conseiller',
+      advisorProposed: 'le prix que je vous propose',
       surface: 'Surface',
       rooms: 'Pièces',
       studied: 'Concurrents étudiés',
@@ -948,6 +949,7 @@ export const FRENCH_TEXTS: ClientTexts = {
           ].join('\n'),
         subject: (day) => (day ? `Étude de marché du ${day}` : 'Étude de marché'),
       },
+      story: FRENCH_STUDY,
     },
   },
   buyer: {

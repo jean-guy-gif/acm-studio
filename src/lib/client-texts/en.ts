@@ -1,3 +1,4 @@
+import { ENGLISH_STUDY } from '@/lib/client-texts/study-en';
 import type {
   NeighbourhoodBlockKey,
   PlanningCategory,
@@ -985,7 +986,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       removedOn: (day) => `Withdrawn on ${day}`,
       notRanked: 'it does not count in the ranking',
       alreadyDropped: 'has already reduced its price',
-      advisorProposed: 'price proposed by your adviser',
+      advisorProposed: 'the price I suggest',
       surface: 'Floor area',
       rooms: 'Rooms',
       studied: 'Competing properties studied',
@@ -1006,6 +1007,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
           ].join('\n'),
         subject: (day) => (day ? `Market study of ${day}` : 'Market study'),
       },
+      story: ENGLISH_STUDY,
     },
   },
   buyer: {

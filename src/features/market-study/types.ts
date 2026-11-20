@@ -78,4 +78,133 @@ export type MarketStudyDocument = {
   neighbourhood: NeighbourhoodDocumentLink | null;
   // Mission 159 — les blocs du quartier cochés par le conseiller.
   quartier: NeighbourhoodDocumentContent | null;
+  // Mission 163 A — les pages de l'Étude, composées depuis ce qui précède.
+  story: MarketStudyStory;
+};
+
+// ─── Mission 163 A — l'Étude en fil conducteur (maquette M163-fil-conducteur) ─────────────────────
+// Tout ce que disent les pages, composé une fois par `study-story.ts` depuis les chiffres du
+// dossier : le document ne fait que l'afficher. Une idée par page, la conclusion en titre.
+
+export type StudyChapter = 'competitors' | 'sales' | 'ranking' | 'quartier';
+
+export type StudyBand = { number: string | null; title: string; lead: string };
+
+export type StudyCard = {
+  id: string;
+  kicker: string;
+  label: string;
+  photoUrl: string | null;
+  price: string;
+  perSquareMeter: string | null;
+  // « 35 jours », ou la mention d'une annonce retirée.
+  since: { label: string; value: string } | null;
+  drop: { label: string; value: string } | null;
+  // Seulement les lignes qui diffèrent du bien du vendeur, avec leur pastille.
+  diffs: { label: string; value: string; status: 'competitor_advantage' | 'competitor_weakness' }[];
+  equivalentOn: string | null;
+  equivalentAll: string | null;
+};
+
+export type StudySaleRow = {
+  mark: number;
+  month: string;
+  street: string | null;
+  rooms: string | null;
+  surface: string | null;
+  distance: string | null;
+  price: string;
+};
+
+export type StudyTile = {
+  title: string;
+  headline: string;
+  detail: string[];
+  source: string | null;
+};
+
+export type MarketStudyStory = {
+  footer: string;
+  advisor: { name: string | null; initials: string; photoUrl: string | null; by: string };
+  cover: {
+    kicker: string;
+    title: string;
+    line: string | null;
+    preparedFor: string;
+    by: string;
+    contact: string | null;
+  };
+  summary: {
+    title: string;
+    lead: string;
+    kpis: { value: string; sup: string | null; rest: string | null; label: string }[];
+    items: {
+      chapter: StudyChapter;
+      number: number;
+      title: { text: string; sup?: boolean }[];
+      sub: string;
+      page: string;
+      tier: RankingTier | null;
+    }[];
+    howTitle: string;
+    how: string;
+    valueTitle: string;
+    value: string;
+  };
+  competitors: {
+    band: StudyBand;
+    faceTo: string;
+    pages: StudyCard[][];
+    avis: string | null;
+    source: string;
+  } | null;
+  sales: {
+    band: StudyBand;
+    points: { month: string; price: number; mark: number | null }[];
+    low: string;
+    high: string;
+    legendKept: string;
+    legendOthers: string | null;
+    tableTitle: string;
+    columns: {
+      month: string;
+      street: string;
+      rooms: string;
+      surface: string;
+      distance: string;
+      price: string;
+    };
+    rows: StudySaleRow[];
+    readTitle: string;
+    read: string[];
+    avis: string;
+    source: string;
+  } | null;
+  ranking: { band: StudyBand; verdictNote: string; avis: string; source: string } | null;
+  quartier: {
+    band: StudyBand;
+    planning: StudyTile | null;
+    permits: StudyTile | null;
+    risks: { title: string; cells: { title: string; text: string }[]; source: string } | null;
+    condominium: StudyTile | null;
+    talkTitle: string;
+    // La page ne tient pas sur une feuille : « Comment en parler », Vivre ici et l'avis passent sur
+    // une seconde page.
+    split: boolean;
+    talk: { lead: string; text: string }[];
+    // « Informations publiques telles qu'au … » : le jour du choix des blocs (M159).
+    frozen: string;
+    avis: string | null;
+  } | null;
+  next: {
+    title: string;
+    steps: { title: string; text: string }[];
+    papersTitle: string;
+    papers: string[];
+    questionsTitle: string;
+    contact: string;
+    isTitle: string;
+    is: string;
+    sources: { label: string; value: string }[];
+  };
 };

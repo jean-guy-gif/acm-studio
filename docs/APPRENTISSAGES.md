@@ -650,6 +650,22 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 19/11 · Ouverture d'Academia · Un texte validé par la juriste se relit contre le code avant d'être
   publié : « une référence sans signification » datait du contrat du 14/11, et le champ avait été
   retiré le 17/11 ; le relecteur compare le texte publié au texte validé, mot pour mot, par programme.
+- 19/11 · M162 · Un PDF se juge sur le vrai PDF, page par page : Chrome (`page.pdf`, média « print »)
+  puis pdf.js dans Chromium pour les images (aucun outil sur le poste) ; une planche de toutes les
+  pages (`planche.mjs`) montre d'un coup les pages à moitié vides. Garder le dossier mené
+  (`M162_KEEP`) et réimprimer le même (`M162_ID`) en 15 s donne un avant et un après comparables.
+- 19/11 · M162 · Le serveur local (`.env.local`) parle à une base locale, pas à celle de l'essai :
+  pour imprimer un vrai dossier, déployer sur l'essai et réimprimer ; une passe complète prend
+  environ 5 min (déploiement compris).
+- 19/11 · M162 · `break-after: avoid` ne retient pas un titre dans une colonne flexible de Chrome :
+  le titre et le premier bloc dans un même groupe `break-inside-avoid` le font. Un grand bloc
+  insécable laisse une demi-page vide : ne garder insécable que sa tête (titre et frise), le tableau
+  qui suit répète son en-tête de lui-même.
+- 19/11 · M162 · Une correction « pour l'impression » se pose en `print:` : le relecteur a vu que
+  l'élargissement des anneaux et le tableau changeaient aussi l'écran et le lien public. Le test
+  des positions du dessin sans `paper` garde le Live tel qu'il était.
+- 19/11 · M162 · Une branche rebasée ne se repousse pas sous son nom (refus « fast-forward ») : nouvelle
+  branche `-v2` (M98). Durées : suite e2e complète 42 min (30 sur 30) ; relecteur 2 min.
 - 18/11 · M159 · Le faux client Supabase (`fake-supabase`) répond selon la DERNIÈRE table de la
   chaîne : trois lectures lancées ensemble (`Promise.all`) reçoivent toutes la réponse de la dernière
   et un garde passe par accident ; dans une action testée ainsi, les lectures gardées se font l'une

@@ -7,6 +7,8 @@ import {
   expectOneFilled,
   login,
   resetDemoByScreen,
+  openStudyLinkOnPhone,
+  studyPrintedPages,
 } from './support';
 
 // Mission 159 — le quartier montré au vendeur, sur l'URL d'essai, avec le compte de l'agence de
@@ -172,9 +174,13 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
       await page.goto(`/builder/${garcia}/etude-de-marche`);
       const study = page.getByTestId('market-study');
       await expect(study).toBeVisible({ timeout: 60_000 });
-      await expect(study.getByTestId('neighbourhood-document').first()).toBeVisible();
+      // Mission 163 A — le quartier sur une page, à la fin ; les ventes, leur propre chapitre.
+      await expect(study.getByTestId('study-quartier')).toBeVisible();
       await expect(study).toContainText('Informations publiques telles qu’au');
-      if (checked.includes('ventes')) await expect(study).toContainText('Les ventes réelles');
+      await expect(study.getByTestId('study-quartier')).toContainText(
+        'Ce que votre acheteur demandera',
+      );
+      if (checked.includes('ventes')) await expect(study.getByTestId('study-sales')).toBeVisible();
       expect(await study.innerText()).not.toMatch(FORBIDDEN);
     });
 
@@ -185,17 +191,15 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
     if (checked.includes('ventes')) {
       await test.step('Les ventes : par surface, lisibles, sur une page imprimée', async () => {
         const study = page.getByTestId('market-study');
-        const block = study
-          .getByTestId('neighbourhood-document')
-          .locator('> div')
-          .filter({ hasText: 'Les ventes réelles' })
-          .first();
-        await expect(block).toContainText(
-          /\d+ (maisons|appartements) de \d+ à \d[\d\u202f\u00a0]*\u00a0m² vendu(e)?s autour de chez vous depuis/,
+        // Mission 163 A — la page des ventes : le titre-conclusion, la fourchette de surface dans
+        // le chapeau, toutes les ventes sur la frise ; les prix écrits ne se chevauchent pas.
+        const block = study.locator('[data-study-page="sales"]');
+        await expect(block.getByTestId('study-chapter-title')).toContainText(
+          /(maisons|appartements) comme (la|le) vôtre se sont vendu(e)?s autour de chez vous/,
         );
-        await expect(block).not.toContainText(/de \d+ pièces vendu/);
+        await expect(block).toContainText(/de \d+ à \d[\d\u202f\u00a0]*\u00a0m²/);
         const sales = await block.evaluate((node) => {
-          const texts = [...node.querySelectorAll('svg text[font-weight="700"]')].map((t) =>
+          const texts = [...node.querySelectorAll('svg text[data-price-label]')].map((t) =>
             t.getBoundingClientRect(),
           );
           const overlaps = texts.some((a, i) =>
@@ -211,17 +215,41 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
           return { labels: texts.length, overlaps };
         });
         expect(sales.overlaps).toBe(false);
-        // Au moins un prix écrit sur la frise (au-delà de 12 ventes : trois au plus).
         expect(sales.labels).toBeGreaterThan(0);
         await page.emulateMedia({ media: 'print' });
         await page.setViewportSize({ width: 794, height: 1123 });
-        // Une page A4 à 96 points par pouce, moins des marges de 15 mm : 1 010 px de haut au plus.
+        // Une page A4 à 96 points par pouce, moins les marges de 10 et 16 mm : 1 025 px au plus.
         const height = await block.evaluate((node) => node.getBoundingClientRect().height);
-        expect(height).toBeLessThan(1010);
+        expect(height).toBeLessThan(1025);
         await page.emulateMedia({ media: 'screen' });
         await page.setViewportSize({ width: 1280, height: 900 });
       });
     }
+
+    // Mission 163 A — tous les blocs cochés, ventes comprises : 8 pages, dans l'ordre de la maquette
+    // M163-fil-conducteur, et imprimée, une page A4 par page.
+    await test.step('L’Étude en fil conducteur : 8 pages dans l’ordre, imprimées sans débord', async () => {
+      await page.goto(`/builder/${garcia}/etude-de-marche`);
+      await expect(page.getByTestId('market-study')).toBeVisible({ timeout: 60_000 });
+      const pages = await page
+        .locator('[data-study-page]')
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-study-page')));
+      if (checked.includes('ventes') && checked.length === 6) {
+        expect(pages).toEqual([
+          'cover',
+          'summary',
+          'competitors',
+          'competitors',
+          'sales',
+          'ranking',
+          'quartier',
+          'next',
+        ]);
+      }
+      expect(await studyPrintedPages(page)).toBe(pages.length);
+      // Le lien public, ventes et quartier compris, sur téléphone.
+      await openStudyLinkOnPhone(page);
+    });
 
     await test.step('Le Live : à leur place, sans défiler, dans les deux langues', async () => {
       await page.setViewportSize(TABLETS[0]);

@@ -205,7 +205,7 @@ describe('le constructeur de l’Étude de marché', () => {
       'agence-dupont',
       'sold_by',
       'exclusivity',
-      'title',
+      TRAP_TITLE,
       'listing_url',
     ]) {
       expect(serialized).not.toContain(forbidden);
@@ -254,7 +254,7 @@ describe('l’Étude de marché dans la langue du vendeur', () => {
     const study = buildMarketStudy({ ...input(), language: 'en' });
     const html = renderToStaticMarkup(createElement(MarketStudyDocument, { document: study }));
     expect(html).toContain('Market study');
-    expect(html).toContain('Where your price stands');
+    expect(html).toContain('What this study tells you about your house');
     expect(
       frenchLeaks(html, [
         'M. et Mme Garcia',
@@ -266,8 +266,8 @@ describe('l’Étude de marché dans la langue du vendeur', () => {
     ).toEqual([]);
   });
 
-  // Mission 162 — le titre des biens en vente s'imprime avec la première fiche ; toutes les fiches
-  // restent, dans l'ordre, avec un, plusieurs ou aucun concurrent.
+  // Mission 163 A — le titre-conclusion des biens en vente est sur la page de la première fiche ;
+  // toutes les fiches restent, dans l'ordre ; sans concurrent, le chapitre disparaît.
   it('chaque fiche une fois, la première avec le titre de la section', () => {
     const all = input().competitors;
     for (const count of [all.length, 1, 0]) {
@@ -275,7 +275,7 @@ describe('l’Étude de marché dans la langue du vendeur', () => {
       const html = renderToStaticMarkup(createElement(MarketStudyDocument, { document: study }));
       const cards = html.match(/data-testid="market-study-competitor"/g) ?? [];
       expect(cards).toHaveLength(study.competitors.length);
-      const title = html.indexOf('Les biens en vente face au vôtre');
+      const title = html.indexOf('comme la vôtre');
       if (study.competitors.length === 0) expect(title).toBe(-1);
       else expect(title).toBeLessThan(html.indexOf('data-testid="market-study-competitor"'));
     }
@@ -334,25 +334,31 @@ describe('le document de l’Étude de marché', () => {
       expect(html).not.toContain(forbidden);
     }
     expect(html).not.toMatch(/[Ee]stimation|disponible|[Dd]émo/);
-    expect(html).toContain('Les prix cités sont ceux des annonces, pas des prix de vente.');
+    expect(html).toContain(
+      'Les prix des biens en vente sont ceux des annonces, pas des prix de vente',
+    );
   });
 
   it('une fiche par retenu, la ligne VOTRE BIEN à l’analyse du conseiller et son verdict', async () => {
     const { html } = await loadFixture();
     expect(html.split('data-testid="market-study-competitor"').length - 1).toBe(3);
     expect(html).toContain('data-subject="true"');
-    expect(html).toContain('prix proposé par votre conseiller');
+    expect(html).toContain('le prix que je vous propose');
     expect(html).toContain('data-testid="market-study-verdict"');
-    expect(html).toContain('data-testid="market-study-cover-verdict"');
+    // Mission 163 A — la couverture n'a plus de verdict (le Point marché garde le sien).
+    expect(html).not.toContain('market-study-cover-verdict');
     expect(html).toContain('Baisse de prix connue');
   });
 
-  it('sans prix de référence : le classement des biens, sans ligne vendeur ni verdict', async () => {
-    const { html } = await loadFixture({ project_price_positionings: [] });
+  // Mission 163 A — sans prix pour le classer, le chapitre « Où se place votre prix » disparaît du
+  // résumé et de la numérotation (remplace M131, le classement des biens seuls).
+  it('sans prix de référence : ni classement, ni ligne vendeur, ni verdict', async () => {
+    const { document, html } = await loadFixture({ project_price_positionings: [] });
     expect(html).not.toContain('data-subject="true"');
     expect(html).not.toContain('market-study-verdict');
-    expect(html).toContain('data-testid="market-study-no-reference"');
-    expect(html.split('data-testid="market-study-ranking-row"').length - 1).toBe(3);
+    expect(html).not.toContain('data-testid="market-study-ranking"');
+    expect(document.story.summary.items.map((item) => item.chapter)).toEqual(['competitors']);
+    expect(document.story.summary.value).toContain('nous le fixons ensemble');
   });
 
   it('un dossier archivé ou d’une autre agence n’a pas d’Étude', async () => {
@@ -362,10 +368,18 @@ describe('le document de l’Étude de marché', () => {
 
   it('chaque section commence une page neuve, une fiche ne se coupe jamais', async () => {
     const { html } = await loadFixture();
-    expect(html).toContain('break-after-page');
-    expect(html).toMatch(/data-testid="market-study-ranking"/);
-    expect(html).toMatch(/print:break-before-page[^"]*" data-testid="market-study-ranking"/);
-    expect(html).toMatch(/break-inside-avoid" data-testid="market-study-competitor"/);
+    const pages = [...html.matchAll(/<section class="([^"]*)" data-study-page="([a-z]+)"/g)];
+    expect(pages.map((page) => page[2])).toEqual([
+      'cover',
+      'summary',
+      'competitors',
+      'competitors',
+      'ranking',
+      'next',
+    ]);
+    for (const [, classes, name] of pages)
+      if (name !== 'cover') expect(classes).toContain('print:break-before-page');
+    expect(html).toMatch(/break-inside-avoid[^"]*" data-testid="market-study-competitor"/);
   });
 });
 
