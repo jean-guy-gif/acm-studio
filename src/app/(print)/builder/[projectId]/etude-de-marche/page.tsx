@@ -74,10 +74,10 @@ export default async function MarketStudyPage({
         </p>
         <p className={hintText}>
           Ce document montre au vendeur, au jour d’aujourd’hui, chaque concurrent retenu — ses
-          caractéristiques face à son bien, son prix affiché, depuis quand il est en vente — puis où
-          se situe son prix. Ni adresse, ni titre, ni lien d’annonce, ni l’agence qui vend.
+          caractéristiques face à son bien, son prix affiché, depuis quand il est en vente. Ni
+          adresse, ni titre, ni lien d’annonce, ni l’agence qui vend.
           {document.ranking.subject
-            ? ' Son bien y est classé au prix de commercialisation convenu ensemble.'
+            ? ' Puis où se situe son prix : son bien y est classé au prix de commercialisation convenu ensemble.'
             : ' Tant que le prix de commercialisation n’est pas convenu à la conclusion, son bien n’est pas classé : ni « Où se place votre prix », ni verdict. Votre analyse de valeur n’y figure jamais.'}
         </p>
         <SynthesisPhotoChoices

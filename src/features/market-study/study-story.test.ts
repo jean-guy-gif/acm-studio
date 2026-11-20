@@ -239,6 +239,10 @@ describe('un chapitre sans données disparaît du résumé et de la numérotatio
     expect(story.ranking).toBeNull();
     expect(story.summary.items[0]!.chapter).toBe('competitors');
     expect(story.summary.value).toContain('Le prix, nous le fixerons ensemble au rendez-vous.');
+    expect(story.next.is).toContain('le prix, nous le fixerons ensemble au rendez-vous');
+    const english = buildMarketStudy({ ...input({ agreedPrice: null }), language: 'en' }).story;
+    expect(english.summary.value).toContain('The price, we will set together at our meeting.');
+    expect(english.next.is).toContain('we will set the price together at our meeting');
     expect(story.summary.kpis.some((kpi) => kpi.sup)).toBe(false);
   });
 

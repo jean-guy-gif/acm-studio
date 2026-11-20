@@ -473,7 +473,7 @@ export const FRENCH_STUDY: StudyTexts = {
       }. Les prix des biens en vente sont ceux des annonces, pas des prix de vente${
         withSales ? ' ; ceux des ventes réelles ont été signés chez le notaire' : ''
       } ; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one} : le prix, ${
-        agreed ? 'nous l’avons retenu ensemble' : 'nous le fixons ensemble'
+        agreed ? 'nous l’avons retenu ensemble' : 'nous le fixerons ensemble au rendez-vous'
       }. Aucun nom de vendeur ni d’acheteur n’est cité.`;
     },
     sourceRows: {

@@ -226,9 +226,10 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
       });
     }
 
-    // Mission 163 A — tous les blocs cochés, ventes comprises : 8 pages, dans l'ordre de la maquette
-    // M163-fil-conducteur, et imprimée, une page A4 par page.
-    await test.step('L’Étude en fil conducteur : 8 pages dans l’ordre, imprimées sans débord', async () => {
+    // Mission 163 A — tous les blocs cochés, ventes comprises : les pages dans l'ordre de la maquette
+    // M163-fil-conducteur, et imprimée, une page A4 par page. Mission 163 C — Mme Garcia n'a pas de
+    // prix convenu : pas de « Où se place votre prix », 7 pages.
+    await test.step('L’Étude en fil conducteur : 7 pages dans l’ordre, imprimées sans débord', async () => {
       await page.goto(`/builder/${garcia}/etude-de-marche`);
       await expect(page.getByTestId('market-study')).toBeVisible({ timeout: 60_000 });
       const pages = await page
@@ -241,7 +242,6 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
           'competitors',
           'competitors',
           'sales',
-          'ranking',
           'quartier',
           'next',
         ]);

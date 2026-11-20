@@ -383,7 +383,10 @@ describe('le document de l’Étude de marché', () => {
     for (const extra of <Record<string, unknown[]>[]>[
       {},
       // Un prix saisi au Live, dossier pas encore conclu : pas convenu.
-      { project_meeting_conclusions: [{ outcome: null, commercialization_price: 615000 }] },
+      {
+        ...CONCLUDED,
+        project_meeting_conclusions: [{ outcome: null, commercialization_price: 615000 }],
+      },
     ]) {
       const { document, html } = await loadFixture(extra);
       expect(html).not.toContain('data-subject="true"');
