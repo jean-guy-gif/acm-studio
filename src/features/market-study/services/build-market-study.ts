@@ -274,15 +274,14 @@ export function buildStudyRanking(
   };
 }
 
-// Mission 163 C — le prix de commercialisation CONVENU : celui d'un dossier conclu (Live conclu, ou
-// conclusion en « Document seul »), dont la conclusion porte une issue. Un prix saisi au Live sur
-// un dossier pas encore conclu n'est pas convenu (la ligne de conclusion peut exister sans issue,
-// M111) ; jamais l'analyse du conseiller à sa place.
+// Mission 163 C — le prix de commercialisation CONVENU : un prix ENREGISTRÉ, au Live (« Sur quel
+// prix partons-nous ? », le remplir vaut accord, M85) ou à la conclusion ; le dossier n'a pas
+// besoin d'être conclu (décision de Jean-Guy, 20/11). Sans prix enregistré, aucun ; jamais
+// l'analyse du conseiller à sa place.
 export function agreedPrice(
-  projectStatus: string | null | undefined,
-  conclusion: { outcome: string | null; commercialization_price: number | string | null } | null,
+  conclusion: { commercialization_price: number | string | null } | null,
 ): number | null {
-  if (projectStatus !== 'meeting_completed' || !conclusion?.outcome) return null;
+  if (conclusion?.commercialization_price == null) return null;
   return positive(Number(conclusion.commercialization_price));
 }
 

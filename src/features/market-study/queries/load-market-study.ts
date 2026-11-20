@@ -64,7 +64,7 @@ export async function loadMarketStudy(
       .eq('is_selected', true),
     supabase
       .from('project_meeting_conclusions')
-      .select('outcome, commercialization_price')
+      .select('commercialization_price')
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
       .maybeSingle(),
@@ -90,7 +90,7 @@ export async function loadMarketStudy(
     property: property.data ?? null,
     coverPhotoUrl: cover[0]?.url ?? null,
     competitors: competitors.data ?? [],
-    agreedPrice: agreedPrice(project.status, conclusion.data ?? null),
+    agreedPrice: agreedPrice(conclusion.data ?? null),
     agency: document.agency,
     neighbourhood,
     quartier: quartier.snapshot,

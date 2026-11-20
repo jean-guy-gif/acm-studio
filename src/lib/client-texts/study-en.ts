@@ -83,9 +83,7 @@ export const ENGLISH_STUDY: StudyTexts = {
     valueTitle: (kind) => `And the value of your ${NOUNS[kind].one}?`,
     value: (agreed) =>
       `This study does not calculate it: it shows the market as your buyers see it. ${
-        agreed
-          ? `The price, we set together: ${agreed}.`
-          : 'The price, we will set together at our meeting.'
+        agreed ? `The price, we set together: ${agreed}.` : 'We will set the price together.'
       }`,
   },
 
@@ -392,7 +390,7 @@ export const ENGLISH_STUDY: StudyTexts = {
         withSales ? '; those of the actual sales were signed at the notary' : ''
       }; floor areas and features as advertised, to be checked. It does not give the value of your ${
         NOUNS[kind].one
-      }: ${agreed ? 'we have set the price together' : 'we will set the price together at our meeting'}. No seller or buyer is named.`,
+      }: ${agreed ? 'we have set the price together' : 'we will set the price together'}. No seller or buyer is named.`,
     sourceRows: {
       competitors: 'Properties for sale',
       sales: 'Sales',

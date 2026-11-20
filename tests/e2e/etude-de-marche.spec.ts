@@ -112,7 +112,7 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     await expect(summary.locator('li[data-chapter="ranking"]')).toHaveCount(0);
     await expect(study.getByTestId('market-study-verdict')).toHaveCount(0);
     await expect(study.locator('[data-study-page="summary"]')).toContainText(
-      'Le prix, nous le fixerons ensemble au rendez-vous.',
+      'Le prix, nous le fixerons ensemble.',
     );
     await expect(
       study.locator('[data-study-page="competitors"]').first().getByTestId('study-chapter-title'),

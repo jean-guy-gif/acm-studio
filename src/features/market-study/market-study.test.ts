@@ -158,23 +158,15 @@ describe('le constructeur de l’Étude de marché', () => {
     expect(study.competitors[0].features.every((feature) => feature.value !== '—')).toBe(true);
   });
 
-  // Mission 163 C — seul le prix de commercialisation CONVENU classe le bien : celui d'un dossier
-  // conclu dont la conclusion porte une issue ; jamais l'analyse du conseiller.
-  it('le prix convenu : un dossier conclu avec une issue, sinon rien', () => {
-    const conclusion = { outcome: 'signed', commercialization_price: 615000 };
-    expect(agreedPrice('meeting_completed', conclusion)).toBe(615000);
-    expect(agreedPrice('meeting_completed', { ...conclusion, outcome: 'follow_up' })).toBe(615000);
+  // Mission 163 C — seul le prix de commercialisation CONVENU classe le bien : un prix enregistré,
+  // au Live ou à la conclusion, dossier conclu ou non (Jean-Guy, 20/11) ; jamais l'analyse.
+  it('le prix convenu : un prix de commercialisation enregistré, sinon rien', () => {
+    expect(agreedPrice({ commercialization_price: 615000 })).toBe(615000);
     // La base rend un `numeric` en texte.
-    expect(
-      agreedPrice('meeting_completed', { ...conclusion, commercialization_price: '615000' }),
-    ).toBe(615000);
-    // Un prix saisi au Live sur un dossier pas encore conclu n'est pas convenu (M111).
-    expect(agreedPrice('ready_for_meeting', conclusion)).toBeNull();
-    expect(agreedPrice('meeting_completed', { ...conclusion, outcome: null })).toBeNull();
-    expect(
-      agreedPrice('meeting_completed', { ...conclusion, commercialization_price: null }),
-    ).toBeNull();
-    expect(agreedPrice('meeting_completed', null)).toBeNull();
+    expect(agreedPrice({ commercialization_price: '615000' })).toBe(615000);
+    expect(agreedPrice({ commercialization_price: null })).toBeNull();
+    expect(agreedPrice({ commercialization_price: 0 })).toBeNull();
+    expect(agreedPrice(null)).toBeNull();
 
     const agreed = buildMarketStudy(input({ agreedPrice: 615000 }));
     expect(agreed.ranking.subject).toMatchObject({ price: 615000, rank: 3 });
@@ -341,7 +333,7 @@ describe('le document de l’Étude de marché', () => {
     );
     // Mission 163 C — l'analyse du conseiller n'est jamais lue.
     expect(selected.project_price_positionings).toBeUndefined();
-    expect(selected.project_meeting_conclusions).toBe('outcome, commercialization_price');
+    expect(selected.project_meeting_conclusions).toBe('commercialization_price');
     expect(selected.subject_properties).not.toMatch(/advisor_|vigilance|weak/);
   });
 
@@ -382,11 +374,8 @@ describe('le document de l’Étude de marché', () => {
   it('sans prix convenu : ni classement, ni ligne vendeur, ni verdict, ni l’analyse', async () => {
     for (const extra of <Record<string, unknown[]>[]>[
       {},
-      // Un prix saisi au Live, dossier pas encore conclu : pas convenu.
-      {
-        ...CONCLUDED,
-        project_meeting_conclusions: [{ outcome: null, commercialization_price: 615000 }],
-      },
+      // Un Live mené sans prix enregistré : la ligne de conclusion existe, sans prix.
+      { project_meeting_conclusions: [{ commercialization_price: null }] },
     ]) {
       const { document, html } = await loadFixture(extra);
       expect(html).not.toContain('data-subject="true"');
@@ -394,14 +383,33 @@ describe('le document de l’Étude de marché', () => {
       expect(html).not.toContain('data-testid="market-study-ranking"');
       expect(document.ranking.subject).toBeNull();
       expect(document.story.summary.items.map((item) => item.chapter)).toEqual(['competitors']);
-      expect(document.story.summary.value).toContain(
-        'Le prix, nous le fixerons ensemble au rendez-vous.',
-      );
+      expect(document.story.summary.value).toContain('Le prix, nous le fixerons ensemble.');
       for (const text of [JSON.stringify(document), html]) {
         expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);
         expect(text).not.toContain('que je vous propose');
       }
     }
+  });
+
+  // Mission 163 C — « Sur quel prix partons-nous ? » rempli au Live vaut accord (M85) : le bien est
+  // classé, le dossier n'étant pas encore conclu (la ligne de conclusion sans issue, M111).
+  it('un prix saisi au Live, dossier pas encore conclu : le bien est classé', async () => {
+    const { document, html } = await loadFixture({
+      projects: [
+        {
+          id: PROJECT,
+          seller_name: 'M. et Mme Garcia',
+          advisor_id: null,
+          status: 'ready_for_meeting',
+        },
+      ],
+      project_meeting_conclusions: [{ outcome: null, commercialization_price: 615000 }],
+    });
+    expect(document.ranking.subject?.price).toBe(615000);
+    expect(document.story.summary.items[0]?.chapter).toBe('ranking');
+    expect(html).toContain('data-testid="market-study-verdict"');
+    for (const text of [JSON.stringify(document), html])
+      expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);
   });
 
   it('au prix convenu, l’analyse du conseiller n’apparaît pas non plus', async () => {

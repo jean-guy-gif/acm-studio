@@ -234,15 +234,15 @@ describe('un chapitre sans données disparaît du résumé et de la numérotatio
     ]);
   });
 
-  it('sans prix convenu : ni classement ni prix retenu, « nous le fixerons ensemble au rendez-vous »', () => {
+  it('sans prix convenu : ni classement ni prix retenu, « nous le fixerons ensemble »', () => {
     const story = buildMarketStudy(input({ agreedPrice: null })).story;
     expect(story.ranking).toBeNull();
     expect(story.summary.items[0]!.chapter).toBe('competitors');
-    expect(story.summary.value).toContain('Le prix, nous le fixerons ensemble au rendez-vous.');
-    expect(story.next.is).toContain('le prix, nous le fixerons ensemble au rendez-vous');
+    expect(story.summary.value).toContain('Le prix, nous le fixerons ensemble.');
+    expect(story.next.is).toContain('le prix, nous le fixerons ensemble.');
     const english = buildMarketStudy({ ...input({ agreedPrice: null }), language: 'en' }).story;
-    expect(english.summary.value).toContain('The price, we will set together at our meeting.');
-    expect(english.next.is).toContain('we will set the price together at our meeting');
+    expect(english.summary.value).toContain('We will set the price together.');
+    expect(english.next.is).toContain('we will set the price together.');
     expect(story.summary.kpis.some((kpi) => kpi.sup)).toBe(false);
   });
 
