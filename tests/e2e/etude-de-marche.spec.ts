@@ -53,12 +53,15 @@ const digitsOf = (text: string): string[] =>
     .split(/\s+/)
     .filter(Boolean);
 
-// Le texte de l'Étude hors des fiches des biens en vente.
-async function outsideCompetitors(page: Page): Promise<string> {
-  const texts = await page
-    .locator('[data-study-page]:not([data-study-page="competitors"])')
-    .allInnerTexts();
-  return texts.join('\n');
+// L'analyse de valeur n'apparaît pas dans l'Étude. Un concurrent peut afficher le même montant
+// (740 000 € chez Mme Garcia, 1 690 000 € chez M. Lefebvre) : on ne la cherche que si aucune fiche
+// ne porte ce prix. Que la charge ne la reçoive jamais est prouvé par le test unitaire, avec un
+// montant piège.
+async function expectNoAnalysis(page: Page, analysis: string): Promise<void> {
+  const competitors = await page.locator('[data-study-page="competitors"]').allInnerTexts();
+  if (digitsOf(competitors.join('\n')).includes(analysis)) return;
+  const text = await page.getByTestId('market-study').innerText();
+  expect(digitsOf(text)).not.toContain(analysis);
 }
 
 async function studyPages(page: Page): Promise<string[]> {
@@ -118,10 +121,7 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     const text = await study.innerText();
     expect(text).not.toMatch(FORBIDDEN);
     expect(text).not.toContain('que je vous propose');
-    // L'analyse de valeur n'est nulle part hors des fiches : un concurrent peut afficher le même
-    // prix (740 000 € chez Mme Garcia). Que la charge ne la reçoive jamais est prouvé par le test
-    // unitaire, avec un montant piège.
-    expect(digitsOf(await outsideCompetitors(page))).not.toContain(analysis);
+    await expectNoAnalysis(page, analysis);
   });
 
   await test.step('Mme Garcia : imprimée, une page A4 par page, aucune fiche coupée', async () => {
@@ -159,7 +159,7 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     );
     expect(agreed).not.toBe('');
     if (analysis !== agreed) {
-      expect(digitsOf(await outsideCompetitors(page))).not.toContain(analysis);
+      await expectNoAnalysis(page, analysis);
     }
     expect(await studyPrintedPages(page)).toBe(pages.length);
   });
