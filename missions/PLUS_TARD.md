@@ -29,3 +29,7 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 23/11 · M164 · `reopen_live` et `conclude_meeting` prennent leurs verrous dans l'ordre inverse
   (dossier puis conclusion, conclusion puis dossier) : lancés au même instant sur le même dossier,
   Postgres en annule un ; rien n'est écrit à moitié.
+- 23/11 · M164 · Gardien-sql : `supabase/tests/live_closed_after_conclusion.sql` (l. 213-218) a le
+  même défaut que celui corrigé dans `live_reopening.sql` (un échec levé dans le bloc qui attend le
+  refus est avalé) ; et aucun test ne joue le refus de rouvrir un dossier archivé, que
+  `docs/GESTES_SENSIBLES.md` annonce.
