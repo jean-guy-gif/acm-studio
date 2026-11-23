@@ -112,6 +112,12 @@ test('l’Étude imprimée : pages pleines, numérotées, renvois justes', async
           content: `[data-synthesis]{--font-sans:var(--font-${font})!important;--font-title:var(--font-${font})!important}`,
         });
         await page.evaluate(() => document.fonts.ready);
+        // La police est bien celle demandée, pas une police de repli.
+        const family = await page
+          .locator('[data-print-body] h2')
+          .first()
+          .evaluate((node) => getComputedStyle(node).fontFamily);
+        expect(family.toLowerCase().replace(/[^a-z]/g, '')).toContain(font.replace(/-/g, ''));
         const withFont = await frames(page);
         for (const frame of withFont.slice(1)) {
           expect(
