@@ -66,3 +66,6 @@ next-env.d.ts
 
 # Mission 73 — paquet de l'extension (npm run extension:zip), généré
 /dist
+
+# Correctifs 163 — les pages fabriquées par le banc de l'Étude imprimée (npm run banc:etude)
+/tests/print/.banc/

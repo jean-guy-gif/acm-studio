@@ -212,6 +212,8 @@ export type MarketStudyStory = {
     isTitle: string;
     is: string;
     sources: { label: string; value: string }[];
+    // Les mentions de l'agence (M102), en français (M140 A).
+    mentions: string;
   };
   // Correctifs 163 — les pages imprimées, décidées par le code : la couverture, puis le fil où un
   // bloc ne passe à la page suivante que s'il n'y tient pas. Le résumé cite ces pages.

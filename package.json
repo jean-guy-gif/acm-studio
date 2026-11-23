@@ -20,6 +20,7 @@
     "test": "vitest run",
     "gen:types": "npx --yes supabase@3.0.0 gen types typescript --schema public > src/lib/supabase/database.types.ts && prettier --ignore-path /dev/null --write src/lib/supabase/database.types.ts",
     "e2e": "playwright test",
+    "banc:etude": "node tests/print/banc.mjs",
     "e2e:demo": "playwright test tests/e2e/demo.spec.ts",
     "extension:icons": "node scripts/extension-icons.mjs",
     "extension:zip": "node scripts/extension-zip.mjs",

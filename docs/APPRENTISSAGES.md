@@ -890,6 +890,25 @@ null` doit laisser passer la seule mise à nul de cette clé, sinon la suppressi
   l'espace après le dernier bloc d'une page ne compte pas. Chromium imprime les marges `@page` (« 2 /
   7 »), le navigateur de Jean-Guy non : un numéro de page s'écrit dans la page.
 
+- 23/11 · Correctifs 163 (avis) · Une hauteur estimée au nombre de caractères ne tient ni d'une
+  langue ni d'une police à l'autre : des pages sortaient de leur feuille (une seule case du quartier,
+  l'anglais), et le PDF gagnait une feuille qui faussait numéros et renvois. Les hauteurs viennent
+  maintenant de la géométrie imprimée et de la largeur de chaque caractère par police
+  (`print-font-metrics.generated.json`, à refaire par `node scripts/print-font-metrics.mjs` quand une
+  police change). `npm run banc:etude` (après `npm run build`, environ 3 min) imprime 8 000 Études
+  dans Chromium et échoue si une page déborde : à lancer dès qu'on touche à un bloc de l'Étude
+  imprimée. C'est le relecteur qui a trouvé le défaut, en imprimant des Études que la démo n'a pas.
+
+- 23/11 · Correctifs 163 (avis) · Dans l'outil, la charte est posée à la racine : tout le texte
+  prend la police de l'agence ; sur le lien public, seuls les titres. Une boucle e2e qui injectait la
+  police dans `[data-synthesis]` ne changeait que les titres et ne prouvait rien : le banc joue les
+  deux rendus.
+
+- 23/11 · Correctifs 163 (avis) · Pour comparer la production et l'essai sans rien écrire : imprimer
+  les mêmes Études avec le compte de démo des tests sur les deux adresses (la base est commune) et
+  comparer le texte page à page ; les identifiants se relisent en base après chaque spec, qui remet
+  la démo à zéro.
+
 ## L'atelier et les hooks
 
 - 29/10 · Les hooks de `.claude/settings.json` et les fiches de `.claude/agents/` ne prennent effet
