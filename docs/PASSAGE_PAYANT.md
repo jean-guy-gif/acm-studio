@@ -3,6 +3,70 @@
 Pour Laurent. À faire **juste avant d'inviter les premiers conseillers**, pas avant. Rien de ce qui
 suit n'est activé aujourd'hui (décision du 12/10/2026 : « gratuite d'abord »).
 
+> **État au 23/11/2026** : **Supabase Pro est activé** (l'organisation y est passée le 23/11 à
+> 9 h 45, après la coupure ci-dessous). Les étapes 3 à 7 (la base d'essai séparée, Vercel Pro)
+> restent à faire. L'étape 2 est faite ; vérifiez le plafond de dépense (« Spend cap ») et les
+> sauvegardes quotidiennes.
+
+## La coupure du 23/11/2026 : ce qui s'est passé
+
+**Les faits.** Du dimanche 22/11 au soir (au plus tôt après 3 h 37 UTC, aucun trafic entre-temps)
+au lundi 23/11 à 9 h 45 (heure de Paris), Supabase a répondu **402 (Payment Required)** à toute
+requête venue de l'extérieur : connexions, lectures, écritures. Le projet restait « sain », mais
+l'offre gratuite avait dépassé son quota : l'application était coupée pour toutes les agences,
+production et essai (la base est commune).
+
+**Ce qui a été touché** (journaux de Supabase, relus le 23/11) :
+
+- les deux tâches de nuit de Vercel du lundi : la veille des acquéreurs (2 h 17 UTC) et la
+  revérification des oppositions (3 h 37 UTC), refusées à leur première lecture. Rien n'est à
+  rejouer : aucune opposition n'attendait de revérification, et aucun acquéreur n'était dû pour la
+  veille (derniers passages les 19 et 21/11, prochains les 26 et 28/11, la veille repart d'elle-même
+  à son jour) ;
+- les tâches de nuit de la base elle-même (`pg_cron` : purges du journal, des adresses, des copies
+  et des textes d'annonces) ont tourné normalement : la coupure ne touchait que les appels venus de
+  l'extérieur ;
+- deux renouvellements de session (9 h 15) et quatre connexions de l'e2e (9 h 27 à 9 h 29), refusés ;
+- **rien n'a été perdu** : aucune écriture d'un conseiller ni d'un client (lien public, réponse
+  d'un acquéreur, Live) n'a été refusée pendant la coupure ; seules les deux erreurs des tâches de
+  nuit n'ont pas pu entrer au journal d'erreurs, lui-même refusé.
+
+**La cause : le trafic sortant, pas la taille.** La base fait 27 Mo et les fichiers 145 Mo. Ce qui
+a dépassé, c'est le trafic sortant (« egress ») du stockage : les photos des dossiers, servies par
+des liens signés. Mesuré dans les journaux de Supabase, du 10 au 20/11 :
+
+| Qui télécharge                                      | Volume en 11 jours | Part   |
+| --------------------------------------------------- | ------------------ | ------ |
+| Les navigateurs de l'e2e (Playwright)               | ≈ 3,0 Go           | ≈ 68 % |
+| Les autres (essais à la main, conseillers, serveur) | ≈ 1,4 Go           | ≈ 32 % |
+| **Total des photos du stockage**                    | **≈ 4,4 Go**       |        |
+
+Les jours de suite e2e complète montent à 0,3 à 1,2 Go (le 17/11 : 1,2 Go). Les lectures de la
+base, elles, pèsent peu. Une photo de démo fait 193 Ko en moyenne, et chaque passage la
+retélécharge :
+
+- chaque spec remet la démo à zéro, ce qui redépose ses photos (sans coût de trafic sortant) ;
+- le Live précharge toutes ses photos (M144), et la synthèse, l'Étude et le Point marché les
+  affichent ;
+- un lien signé change à chaque page (nouveau jeton) : ni le navigateur ni le cache de Supabase ne
+  le reconnaissent, la photo repart du stockage à chaque ouverture.
+
+Le quota de l'offre gratuite se lit sur la page **Usage** de l'organisation (5 Go de trafic
+sortant par mois à la rédaction, à vérifier là).
+
+**Comment réduire** (propositions, rien n'est fait) :
+
+1. **L'e2e ne télécharge plus les photos du stockage** sauf là où il les vérifie (`demo-photos`,
+   `live-sans-trou`) : une image minuscule à leur place, servie par le navigateur de test. Gain
+   attendu : les deux tiers du trafic.
+2. **Des liens signés stables** : le même lien pour une photo pendant sa durée de validité (signé
+   une fois, gardé côté serveur jusqu'à peu avant son expiration). Le navigateur et le cache de
+   Supabase la servent alors sans retourner au stockage.
+3. **Des vignettes** pour les petites images (cartes, vignettes du Live) au lieu de la photo
+   entière.
+4. **Surveiller** : un coup d'œil chaque semaine à la page **Usage**, et le plafond de dépense
+   (« Spend cap ») gardé activé, pour qu'un dépassement coûte une alerte, pas une facture.
+
 ## Pourquoi payer
 
 | Aujourd'hui (gratuit)                                                                             | Ce que le payant règle                                   |
