@@ -38,3 +38,7 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   même défaut que celui corrigé dans `live_reopening.sql` (un échec levé dans le bloc qui attend le
   refus est avalé) ; et aucun test ne joue le refus de rouvrir un dossier archivé, que
   `docs/GESTES_SENSIBLES.md` annonce.
+- 23/11 · Méthode · Une tâche planifiée pour la suite e2e de nuit (aujourd'hui, le chef la lance
+  lui-même en fin de journée, accord de Jean-Guy du 23/11).
+- 23/11 · Lancement · Les forfaits en jetons, à la place des coûts en euros (mission 5 du
+  lancement : les coûts disparaissent des écrans du conseiller, les forfaits viendront après).
