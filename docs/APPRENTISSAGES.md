@@ -848,6 +848,23 @@ null` doit laisser passer la seule mise à nul de cette clé, sinon la suppressi
   11 jours). Les tâches `pg_cron` tournent quand même, seules les requêtes venues de l'extérieur
   sont refusées (`docs/PASSAGE_PAYANT.md`).
 
+- 23/11 · M164 · Dans un test SQL, un refus attendu se prouve en levant l'échec HORS du bloc qui
+  attend le refus : `begin perform f(); raise exception 'FAIL'; exception when raise_exception then
+null; end;` passe toujours, que la fonction refuse ou non (l'échec, lui aussi P0001, est avalé, et
+  tout le sous-bloc est annulé). Forme juste : un booléen posé dans le `exception`, relu après le
+  bloc, avec le message attendu (`sqlerrm`). Trouvé par le gardien-sql dans le test de la M104.
+- 23/11 · M164 · Docker éteint sur le poste : pousser la branche tôt, la CI SQL rejoue tous les
+  tests SQL sur une base neuve en 5 minutes, pendant que le gardien-sql relit. Remplacer un montant
+  par recherche dans un test touche aussi les identifiants qui le contiennent (`10411111-…`) :
+  relire le diff des lignes retirées. Une fonction remplacée se vérifie après l'application par
+  `md5(prosrc)`, que le gardien-sql prédit depuis le fichier. Durées : architecte 8 min, gardien-sql
+  12 min, CI SQL 5 min.
+- 23/11 · Méthode · Vercel fabrique une prévisualisation pour chaque branche poussée ; son adresse
+  se lit sur le commit (`gh api "repos/{owner}/{repo}/deployments?sha=…"`, puis ses `statuses`), et
+  elle répond aux tests avec le contournement de `.env.e2e.local` (`/api/version` rend le commit).
+  En local, `.env.local` vise la base locale, qui demande Docker : la prévisualisation est le plus
+  simple.
+
 ## Les rendus
 
 - 05/11 · M129 · `meetingDay()` écrit la date en toutes lettres (« 9 octobre 2026 ») : coupée à cinq

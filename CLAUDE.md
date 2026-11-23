@@ -173,45 +173,61 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
 - **Jean-Guy Ourmières crée et décide le produit** : il écrit les missions, valide et tranche.
   Une décision datée et signée Jean-Guy, ici, dans `docs/DECISIONS.md` ou dans une mission, fait
   autorité sur toute décision antérieure, y compris celles qui citent Laurent.
+- **Objectif : quatre missions par jour** (Jean-Guy, 23/11). Une mission tient en une heure et
+  demie ; au-delà, elle se découpe avant de commencer.
 - **Trois niveaux de mission** (Jean-Guy, 23/11), annoncé au début de chaque mission :
   - **Petit** (texte, affichage, impression, sans base ni Live) : le test avant le code, barrières
-    vertes, les specs e2e concernées seulement, puis production directe ; Jean-Guy apprend après ce
-    qui est parti. Pas de relecteur, pas de suite complète, pas de maquette sauf écran nouveau.
+    vertes, les specs e2e concernées seulement, puis production. Pas de relecteur, pas de maquette
+    sauf écran nouveau.
   - **Moyen** (écran ou fonction nouvelle) : une maquette, une seule fois, puis le code, le
-    relecteur une fois, la suite e2e complète une fois, la production après le feu vert de Jean-Guy.
-  - **Sensible** (base et migrations, Live, ce que voit le vendeur, confidentialité, coûts) : le
-    processus complet, décrit ci-dessous.
+    relecteur une fois, les specs e2e concernées, puis production.
+  - **Sensible** (base et migrations, Live, ce que voit le vendeur, confidentialité, coûts) :
+    l'architecte et le gardien-sql avec une migration, que Jean-Guy applique lui-même ; le
+    relecteur une fois ; l'essai quand Jean-Guy doit essayer lui-même, puis son « valide ».
+- **Jean-Guy n'est plus un point d'arrêt** (Jean-Guy, 23/11) : le chef pose ses questions en une
+  fois, chacune avec sa réponse par défaut, et avance avec elle ; Jean-Guy corrige après. Le chef
+  tranche seul les détails et le dit après. Restent à Jean-Guy : appliquer une migration, et
+  essayer lui-même une mission Sensible quand il le faut.
+- **Petit et Moyen ne passent plus par l'essai** (Jean-Guy, 23/11) : le chef teste sur sa branche,
+  en local ou sur la prévisualisation Vercel de la branche (le plus simple des deux), fait l'essai
+  lui-même dans un vrai navigateur, range deux ou trois captures dans `missions/maquettes/`, puis
+  pousse sur `main` et met en production ; Jean-Guy regarde après. Si quelque chose empêche de
+  tester ainsi (connexion, adresse du site), le chef le dit en une ligne, avec sa solution.
+  L'essai (branche `essai`) ne sert plus qu'aux missions Sensible que Jean-Guy doit essayer
+  lui-même : celles-là attendent son « valide » (`/valide NN`).
+- **Les tests** (Jean-Guy, 23/11) : la suite e2e complète tourne une fois par nuit, plus à chaque
+  mission ; en journée, les specs concernées seulement. Le relecteur ne passe qu'une fois, et pas
+  du tout sur une mission Petit.
+- **Un défaut en production** (Jean-Guy, 23/11) : le chef revient tout de suite à la version
+  précédente sur Vercel, puis prévient Jean-Guy.
 - **Une mission, un objectif** (Jean-Guy, 23/11) : ce qui se découvre en route va dans
   `missions/PLUS_TARD.md`, pas dans la mission en cours, sauf si cela la bloque.
 - **Pas de chasse aux cas rares** (Jean-Guy, 23/11) : on corrige ce qui se voit sur de vrais
   dossiers ; un cas imaginé par un balayage est noté dans `missions/PLUS_TARD.md`, pas corrigé.
-- **Le chef tranche seul les détails** et le dit après (Jean-Guy, 23/11) ; il ne pose une question
-  à Jean-Guy que pour sa méthode, ce que voit le vendeur, ou un coût.
-- **Comptes rendus en dix lignes** (Jean-Guy, 23/11) : ce qui est parti, ce qui reste, ce que
-  Jean-Guy a à faire.
+- **L'impression de l'Étude est gelée** (Jean-Guy, 23/11). Et plus de nouvelle règle après un
+  incident sans l'accord de Jean-Guy.
+- **Le chef mesure** (Jean-Guy, 23/11) : à la fin de chaque mission, une ligne dans
+  `missions/DUREES.md` avec la durée totale, dont l'attente de Jean-Guy, dont les tests ; le soir,
+  le total de la journée.
+- **Un seul point par jour, le soir, en dix lignes** (Jean-Guy, 23/11) : ce qui est parti, ce qui
+  reste, ce que Jean-Guy a à faire.
 - `/mission NN` : branche `mission-NN-…`, périmètre de la mission et rien d'autre, barrières vertes,
-  push, e2e sur l'essai. Puis `/valide NN` fusionne dans `main` et complète `docs/DECISIONS.md`.
-  **Jamais de fusion dans `main` sans « valide »**, sauf une mission de niveau Petit, qui part en
-  production dès ses barrières et ses specs vertes (23/11).
-- **Maquette d'abord** (Jean-Guy, 07/11) : toute mission qui change la disposition ou le parcours
-  d'un écran commence par une maquette des écrans touchés, sur tablette, téléphone et ordinateur,
-  avec des notes avant / après, rangée dans `missions/maquettes/`. Aucun code avant l'accord sur la
-  maquette. Une mission qui corrige sans rien changer à la disposition en est dispensée. Selon le
-  niveau (23/11) : pas de maquette pour une mission Petit, sauf écran nouveau ; une seule, une seule
-  fois, pour une mission Moyen.
-- **Jean-Guy ne teste plus jamais sur l'essai** (Jean-Guy, 06/11) : aucun rapport ne lui donne de
-  scénario sur l'essai ; après le `/valide`, un seul test court, sur la production
-  (acm-studio-henna.vercel.app). L'essai reste l'étape interne : l'e2e et le parcours du relecteur.
-- L'URL d'essai (branche `essai`) est l'étape interne. La base Supabase est partagée avec l'environnement
-  de travail : une migration doit rester compatible avec le code de `main`, et elle s'applique,
-  après comptage, avant l'essai.
+  les tests de son niveau, puis `main` (Petit, Moyen) ou l'essai et `/valide NN` (Sensible) ; la
+  fusion complète `docs/DECISIONS.md`.
+- **Maquette** (Jean-Guy, 07/11 et 23/11) : une mission Moyen ou Sensible qui change la disposition
+  ou le parcours d'un écran commence par une maquette des écrans touchés, sur tablette, téléphone et
+  ordinateur, avec des notes avant / après, une seule fois, rangée dans `missions/maquettes/` ; le
+  chef avance avec elle, Jean-Guy corrige après. Pas de maquette pour une mission Petit, sauf écran
+  nouveau.
+- La base Supabase est partagée entre la production, l'essai et les prévisualisations : une
+  migration doit rester compatible avec le code de `main`, et c'est Jean-Guy qui l'applique, après
+  sauvegarde et comptage.
 - Barrières : `npm run typecheck`, `npm run lint`, `npm test`, `npm run format:check`,
   `npm run build` (la CI les rejoue à chaque push). Une mission n'est finie que vue à l'écran.
-- **Équipe allégée** (Jean-Guy, 05/11) : l'architecte seulement avec une migration ou une nouvelle
-  table ; le gardien-sql seulement avec une migration ; le relecteur une passe, puis les seuls
-  bloquants ; l'e2e joué par le chef, au premier plan ; le designer et le parcoureur ne sont plus
-  lancés (`.claude/commands/mission.md`). Selon le niveau (23/11) : pas de relecteur ni de suite e2e
-  complète pour une mission Petit.
+- **Équipe allégée** (Jean-Guy, 05/11 et 23/11) : l'architecte seulement avec une migration ou une
+  nouvelle table ; le gardien-sql seulement avec une migration ; le relecteur une seule fois, jamais
+  sur une mission Petit ; l'e2e joué par le chef ; le designer et le parcoureur ne sont plus lancés
+  (`.claude/commands/mission.md`).
 - Repères : `docs/ETAT_DU_PRODUIT.md` (ce que fait le code), `docs/01_Method/Storyboard.md` et
   `ACM_Protocol.md` (la méthode), `missions/` (l'historique). `docs/archive/` n'est plus à jour.
 - Les décisions produit, qui font autorité comme ce fichier :

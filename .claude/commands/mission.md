@@ -1,44 +1,59 @@
 ---
-description: Exécute une mission ACM Studio selon son niveau (Petit, Moyen, Sensible) ; seule une mission Petit va d'elle-même jusqu'à la production
+description: Exécute une mission ACM Studio selon son niveau (Petit, Moyen, Sensible) ; Petit et Moyen vont jusqu'à la production, Sensible attend Jean-Guy
 argument-hint: [numéro de mission, ex. 120B] [--parallele]
 ---
 
 Mission à exécuter : **$ARGUMENTS** (le premier mot est le numéro ; `--parallele` lance la mission dans
 son propre worktree, en parallèle d'une autre, voir le point 11).
 
-**D'abord, le niveau** (règle de Jean-Guy, 23/11, CLAUDE.md). Annonce-le en une ligne au début de la
-mission, avec sa raison ; Jean-Guy le corrige s'il le faut.
+**D'abord, le niveau** (règles de Jean-Guy, 23/11, CLAUDE.md). Annonce-le en une ligne au début de
+la mission, avec sa raison. Une mission tient en **une heure et demie** : si elle ne tient pas,
+découpe-la avant de commencer, et dis-le.
 
 - **Petit** (texte, affichage, impression ; ni base, ni Live) : la branche (point 2) → **le test
-  avant le code** → le code (point 5) → les barrières (point 7) → push et `essai`, puis **les seules
-  specs e2e concernées**, au premier plan (point 9) → **production directe**, sans attendre
-  « valide » : tu joues toi-même les étapes 2 à 8 de `/valide` (CI, apprentissages, fusion dans
-  `main`, décisions, `npm run verifier:production`), puis tu dis à Jean-Guy ce qui est parti. Ni
-  architecte, ni relecteur, ni suite e2e complète, ni maquette, sauf écran nouveau. Les points 3, 4, 6
-  et 8 ne s'appliquent pas.
+  avant le code** → le code (point 5) → les barrières (point 7) → **les seules specs e2e concernées**
+  et ton essai dans un vrai navigateur (point 9) → **production**, sans attendre Jean-Guy : tu joues
+  toi-même les étapes 2 à 8 de `/valide`. Ni architecte, ni relecteur, ni maquette, sauf écran
+  nouveau. Les points 3, 6 et 8 ne s'appliquent pas.
 - **Moyen** (écran ou fonction nouvelle, sans base ni Live) : **une maquette, une seule fois**, faite
-  par toi, rangée dans `missions/maquettes/`, et l'accord de Jean-Guy avant de coder → le code → les
-  barrières → **le relecteur une fois** (point 8, sans seconde passe) → push, `essai` et **la suite
-  e2e complète une fois** (point 9) → compte rendu ; la production après le feu vert de Jean-Guy
-  (`/valide`). Ni architecte, ni gardien-sql.
+  par toi et rangée dans `missions/maquettes/` — tu avances avec elle, Jean-Guy corrige après → le
+  code → les barrières → **le relecteur une fois** (point 8) → les specs concernées et ton essai
+  dans un vrai navigateur (point 9) → **production**, par les étapes 2 à 8 de `/valide`. Ni
+  architecte, ni gardien-sql.
 - **Sensible** (base et migrations, Live, ce que voit le vendeur, confidentialité, coûts) : le
-  processus complet ci-dessous, sans rien sauter ; la production après `/valide`.
+  processus ci-dessous — l'architecte et le gardien-sql avec une migration, que Jean-Guy applique
+  lui-même ; le relecteur une fois ; l'essai (branche `essai`) seulement quand Jean-Guy doit essayer
+  lui-même, puis son « valide ».
 
 Quel que soit le niveau (règles du 23/11) :
 
+- **Jean-Guy n'est pas un point d'arrêt** : tu poses tes questions en une fois, chacune avec ta
+  réponse par défaut, et tu avances avec elle ; il corrige après. Tu tranches seul les détails et
+  tu le dis après. Seuls arrêts : une migration à appliquer, une mission Sensible à essayer par lui ;
+- **Petit et Moyen ne passent plus par l'essai** : tu testes sur ta branche, en local ou sur sa
+  prévisualisation Vercel (le plus simple des deux) ; si quelque chose l'empêche (connexion, adresse
+  du site), tu le dis en une ligne, avec ta solution ;
+- **la suite e2e complète tourne une fois par nuit**, plus à chaque mission : en journée, les specs
+  concernées seulement ; **le relecteur ne passe qu'une fois**, jamais sur une mission Petit ;
+- **un défaut en production** : tu reviens tout de suite à la version précédente sur Vercel, puis tu
+  préviens Jean-Guy ;
 - **une mission, un objectif** : ce que tu découvres en route va dans `missions/PLUS_TARD.md`, une
   ligne datée, pas dans la mission en cours, sauf si cela la bloque ;
 - **pas de chasse aux cas rares** : tu corriges ce qui se voit sur de vrais dossiers ; un cas imaginé
   par un balayage est noté dans `missions/PLUS_TARD.md`, pas corrigé ;
-- **tu tranches seul les détails** et tu le dis après ; tu ne poses une question à Jean-Guy que pour
-  sa méthode, ce que voit le vendeur, ou un coût ;
-- **ton compte rendu tient en dix lignes** : ce qui est parti, ce qui reste, ce que Jean-Guy a à faire.
+- **l'impression de l'Étude est gelée** ; et pas de nouvelle règle après un incident sans l'accord de
+  Jean-Guy ;
+- **tu mesures** : à la fin de la mission, une ligne dans `missions/DUREES.md` (durée totale, dont
+  l'attente de Jean-Guy, dont les tests) ; le soir, le total de la journée ;
+- **un seul point par jour, le soir, en dix lignes** : ce qui est parti, ce qui reste, ce que
+  Jean-Guy a à faire.
 
 Le processus complet (niveau Sensible), avec l'équipe allégée (règle de Jean-Guy, 05/11 ; remplace
 l'équipe complète de la mission 126) :
 architecte (seulement avec migration ou nouvelle table) → questions à Jean-Guy → code → gardien-sql
-(seulement avec migration) → accord et application par Jean-Guy → relecteur (une passe, puis le delta
-des seuls bloquants) → push et `essai` → e2e joué par le chef, au premier plan → rapport. Le designer,
+(seulement avec migration) → application par Jean-Guy → relecteur (une seule passe) → push, les
+specs concernées et l'essai du chef dans un vrai navigateur → `essai` seulement si Jean-Guy doit
+essayer lui-même → compte rendu du soir. Le designer,
 le parcoureur et le testeur ne sont plus lancés. Tu es le chef :
 tu codes, tu lances les barrières, tu pousses, tu rapportes ; tu ne te relis pas seul et tu ne valides
 pas. Tu corriges les bloquants et relances l'agent concerné sur le delta ; tu ne discutes jamais un
@@ -64,12 +79,9 @@ Les étapes : `architecte`, `questions`, `code`, `gardien-sql`, `accord`, `relec
    questions numérotées et le risque principal. Sinon, tu lis le code toi-même. Les maquettes validées
    par Jean-Guy (`missions/maquettes/`) font foi ; le designer n'est plus lancé.
 4. **Questions** : seulement pour la méthode de Jean-Guy, ce que voit le vendeur, ou un coût
-   (règle du 23/11) — une décision produit de cet ordre qui manque, ou une mission qui contredit
-   `docs/DECISIONS.md` sur ces points : **arrête-toi et pose-les à Jean-Guy**, numérotées, avec les
-   propositions des agents. Le reste, tu le tranches et tu le dis après. Si la mission demande des
-   mesures avant de coder :
-   fais-les, rends-les sous forme de tableau et arrête-toi. Sinon, dis en 10 lignes au plus les fichiers
-   que tu vas toucher et les tests que tu vas écrire, et continue sans attendre.
+   (règle du 23/11). Pose-les **en une fois, numérotées, chacune avec ta réponse par défaut**, et
+   **avance avec elle** : Jean-Guy corrige après. Le reste, tu le tranches et tu le dis après. Si la
+   mission demande des mesures avant de coder, fais-les et continue avec ce qu'elles disent.
 5. **Code** : implémente le périmètre et rien d'autre, en suivant la maquette validée.
    Pas de « tant qu'on y est ».
 6. **Migration** : si la mission en crée une, la base est partagée avec l'environnement de travail,
@@ -81,38 +93,39 @@ Les étapes : `architecte`, `questions`, `code`, `gardien-sql`, `accord`, `relec
 7. Barrières, toutes vertes : `npm run typecheck`, `npm run lint`, `npm test`,
    `npm run format:check`, `npm run build`.
 8. **Relecteur** (niveaux Moyen et Sensible ; jamais pour une mission Petit) : lance le sous-agent
-   **relecteur** sur la branche, UNE passe. Corrige ses
-   **bloquants** et ses « à corriger » (règle « Ce que le chef tranche seul »), relance les barrières ;
-   le relecteur ne repasse que sur le delta qui corrige un bloquant.
-9. Commit `Mission <numéro> — <titre>`, puis `git push -u origin <branche>`. Si la branche `essai`
-   existe (mission 64), fusionne aussi ta branche dans `essai` et pousse `essai` (`git fetch` puis
-   `git merge --ff-only origin/essai` d'abord : `git pull` échoue sur un auto-stash) : c'est l'étape
-   interne (Jean-Guy n'y teste plus jamais, règle du 06/11). Une fois l'essai déployé (`/api/version` répond ton commit) :
-   - **E2E, par le chef, au premier plan** (jamais en tâche de fond) : pour une mission Petit, les
-     seules specs concernées ; pour une mission Moyen, la suite complète une fois ; pour une mission
-     Sensible, la suite e2e complète si la mission change `src/`, `extension/` ou `supabase/` (sinon,
-     les tests propres à la mission ; décision de Jean-Guy, 29/10) ; toujours après une remise à zéro
-     de la démo par l'écran ; un échec se
-     rejoue UNE fois : vert au second passage, c'est un **aléa**, à nommer ; rouge deux fois, un
-     **défaut**, corrigé avant le rapport, puis la spec rejouée. Les captures hors du dépôt
-     (`~/acm-studio-rendus/<numéro>/`) seulement si Jean-Guy les demande.
-10. Compte rendu, **dix lignes au plus** (règle du 23/11) : ce qui est parti (ou ce qui est prêt
-    sur l'essai), ce qui reste, ce que Jean-Guy a à faire. Dedans :
-    - ce qui a changé, en comportement ;
-    - une ligne pour les agents lancés et l'e2e : ce qui a été corrigé, ce qui remonte — jamais
-      leurs listes ;
-    - aucun scénario sur l'essai : Jean-Guy n'y teste plus (règle du 06/11) ; UN test court sur la
-      production, après la mise en production ;
-    - les décisions prises en route vont dans `docs/DECISIONS.md` à la fusion, ce qui est remis à
-      plus tard dans `missions/PLUS_TARD.md`.
+   **relecteur** sur la branche, UNE seule fois. Corrige ses **bloquants** et ses « à corriger »
+   (règle « Ce que le chef tranche seul »), relance les barrières ; il ne repasse pas.
+9. Commit `Mission <numéro> — <titre>`, puis `git push -u origin <branche>` : Vercel fabrique la
+   prévisualisation de la branche. Son adresse se lit sur le commit
+   (`gh api "repos/{owner}/{repo}/deployments?sha=<commit>"`, puis `…/deployments/<id>/statuses`,
+   champ `environment_url`) ; elle répond aux tests avec le contournement de `.env.e2e.local`
+   (`/api/version` rend ton commit).
+   - **Les specs concernées, par le chef, au premier plan** :
+     `E2E_BASE_URL=<adresse de la prévisualisation> npx playwright test <specs>` (la base, la démo et
+     l'agence de test sont communes : une seule e2e à la fois). Un échec se rejoue UNE fois : vert au
+     second passage, c'est un **aléa**, à nommer ; rouge deux fois, un **défaut**, corrigé puis
+     rejoué. La suite complète ne se joue plus en journée : elle tourne la nuit.
+   - **Ton essai dans un vrai navigateur**, sur la même adresse : le parcours touché par la mission,
+     et deux ou trois captures rangées dans `missions/maquettes/` (nom qui commence par le numéro de
+     la mission), commitées sur la branche.
+   - **Petit et Moyen** : production, par les étapes 2 à 8 de `/valide`, que tu joues toi-même.
+   - **Sensible** : si Jean-Guy doit essayer lui-même, fusionne la branche dans `essai` et pousse
+     `essai` (`git fetch` puis `git merge --ff-only origin/essai` d'abord), dis-lui quoi essayer, et
+     attends son « valide » ; sinon, production sur son ordre.
+10. À la fin de la mission : **une ligne dans `missions/DUREES.md`** (date, mission, niveau, durée
+    totale, dont attente de Jean-Guy, dont tests), les décisions dans `docs/DECISIONS.md` à la
+    fusion, ce qui est remis à plus tard dans `missions/PLUS_TARD.md`. Pas de compte rendu par
+    mission : **un seul point par jour, le soir, en dix lignes** (ce qui est parti, ce qui reste, ce
+    que Jean-Guy a à faire, le total de la journée). En journée, tu n'écris à Jean-Guy que pour une
+    migration à appliquer, une mission Sensible à essayer, un défaut en production, ou tes questions
+    avec leurs réponses par défaut.
 11. **`--parallele`** (mission 98, mission 126) : `git worktree add ../acm-studio-<numéro> -b
 mission-<numéro>-<mot-clé> main`, puis dans ce dossier `npm ci` et la copie de `.env.local` et
     `.env.e2e.local` (ignorés par git, absents du worktree) ; l'équipe tourne là. Refuse si la branche
     en cours et celle-ci touchent les mêmes dossiers de `src/features` (`git diff --name-only
-main...`). L'essai reste à une mission à la fois, et l'e2e ne tourne que sur l'essai (la démo et
-    l'agence de test sont partagées) : la seconde mission s'arrête aux barrières, relecteur compris,
-    et attend l'essai libre pour l'e2e ; sauf migration, une seule à la fois, appliquée après le
-    `/valide` de l'autre.
+main...`). Une seule e2e à la fois, quelle que soit l'adresse (la base, la démo et l'agence de
+    test sont partagées) : la seconde mission attend que la première ait fini ses specs ; une seule
+    migration à la fois.
 
 **Ce que le chef tranche seul** (décision de Jean-Guy, 29/10) : les « à corriger », « à corriger avant
 le /valide » et « ça gêne » du relecteur sont appliqués sans
@@ -123,6 +136,6 @@ migration, qu'il applique lui-même, et toute suppression de données), **ce que
 **coût** (appel payant, budget). Le compte rendu dit ce qui a été corrigé, en une ligne, pas les
 listes.
 
-Ne fusionne **jamais** dans `main` une mission Moyen ou Sensible : c'est `/valide <numéro>` qui le
-fait, sur l'ordre de Jean-Guy. Une mission Petit part en production dès ses barrières, ses specs et sa
-CI vertes, par les étapes de `/valide` que tu joues toi-même.
+Une mission **Petit** ou **Moyen** part en production dès ses barrières, ses specs concernées, ton
+essai et sa CI vertes, par les étapes de `/valide` que tu joues toi-même. Une mission **Sensible** ne
+se fusionne dans `main` que sur l'ordre de Jean-Guy (`/valide <numéro>`, ou son ordre donné d'avance).
