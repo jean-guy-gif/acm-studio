@@ -12,6 +12,7 @@ import {
   type MarketStudyInput,
 } from '@/features/market-study/services/build-market-study';
 import {
+  PRINT_GAP_MM,
   PRINT_ROOM_MM,
   PRINT_SAFETY_MM,
   paginateUnits,
@@ -179,11 +180,14 @@ describe('l’Étude imprimée : des pages pleines', () => {
     for (let i = 1; i < pages.length; i += 1) {
       const page = pages[i]!;
       // Rien ne déborde d'une feuille, sauf un bloc plus haut qu'une page à lui seul.
-      if (page.units.length > 1) expect(page.mm).toBeLessThanOrEqual(PRINT_ROOM_MM);
+      // (le dernier bloc n'a pas d'espace après lui).
+      if (page.units.length > 1) expect(page.mm - PRINT_GAP_MM).toBeLessThanOrEqual(PRINT_ROOM_MM);
       // La page suivante commence par un bloc qui n'y tenait pas.
       const next = pages[i + 1];
       if (next)
-        expect(page.mm + firstGroup(next.units)).toBeGreaterThan(PRINT_ROOM_MM - PRINT_SAFETY_MM);
+        expect(page.mm + firstGroup(next.units) - PRINT_GAP_MM).toBeGreaterThan(
+          PRINT_ROOM_MM - PRINT_SAFETY_MM,
+        );
       // Un titre de chapitre n'est jamais seul en bas d'une page.
       expect(page.units.at(-1)!.keepWithNext ?? false).toBe(false);
     }
