@@ -1,7 +1,8 @@
 # Passer aux offres payantes
 
-Pour Laurent. À faire **juste avant d'inviter les premiers conseillers**, pas avant. Rien de ce qui
-suit n'est activé aujourd'hui (décision du 12/10/2026 : « gratuite d'abord »).
+Pour Laurent. À faire **juste avant d'inviter les premiers conseillers**, pas avant. Au 12/10/2026,
+rien de ce qui suit n'était activé (« gratuite d'abord ») ; **depuis le 23/11/2026 à 9 h 45,
+l'organisation Supabase est en offre Pro**.
 
 > **État au 23/11/2026** : **Supabase Pro est activé** (l'organisation y est passée le 23/11 à
 > 9 h 45, après la coupure ci-dessous). Les étapes 3 à 7 (la base d'essai séparée, Vercel Pro)
@@ -53,6 +54,10 @@ retélécharge :
 
 Le quota de l'offre gratuite se lit sur la page **Usage** de l'organisation (5 Go de trafic
 sortant par mois à la rédaction, à vérifier là).
+
+**Depuis le 23/11 à 9 h 45, l'organisation est en offre Pro** (Jean-Guy) : c'est ce passage qui a
+levé la coupure. Le quota de trafic sortant est désormais celui de l'offre Pro, à lire sur la même
+page, avec le plafond de dépense (point 4 ci-dessous).
 
 **Comment réduire** (propositions, rien n'est fait) :
 
