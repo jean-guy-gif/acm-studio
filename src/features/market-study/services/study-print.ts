@@ -11,6 +11,8 @@ import type {
 // pages : chaque page porte son numéro écrit dans la page (« 3 / 6 »), et le résumé cite les pages où
 // commencent les chapitres. Pur : des hauteurs estimées en millimètres, mesurées à l'impression sur
 // les dossiers de démonstration (23/11), un peu larges par prudence. L'écran ne change pas.
+// L'avis du conseiller reste avec le dernier bloc de son chapitre (Jean-Guy, 23/11) : s'il ne tient
+// pas sur la page, ce dernier bloc passe à la page suivante avec lui.
 
 // Une page A4 de 297 mm, imprimée sans marge : 10 mm en haut, 16 mm en bas pour le numéro.
 export const PRINT_PAGE_MM = 296;
@@ -52,8 +54,10 @@ export type PrintUnit = {
   kind: PrintUnitKind;
   // La hauteur estimée du bloc, l'espace qui le suit compris.
   mm: number;
-  // Un titre (ou une tête de tableau) qui ne reste jamais seul en bas d'une page.
-  keepWithNext?: boolean;
+  // `true` : un titre (ou une tête de tableau) qui ne reste jamais seul en bas d'une page.
+  // `'soft'` : le dernier bloc d'un chapitre, qui reste avec l'avis qui le suit ; ce lien ne cède que
+  // si les deux ne tiennent pas ensemble sur une page entière (un classement de 12 lignes).
+  keepWithNext?: boolean | 'soft';
   // Ce qu'un bloc coûte de plus quand il ouvre une suite de blocs du même genre sur une page : la
   // tête du tableau du classement, répétée sur chaque page.
   runStartMm?: number;
@@ -69,29 +73,36 @@ export type PrintPage = { units: PrintUnit[]; mm: number };
 const unitCost = (unit: PrintUnit, previous: PrintUnit | undefined): number =>
   unit.mm + (unit.runStartMm && previous?.kind !== unit.kind ? unit.runStartMm : 0);
 
-// Les blocs dans l'ordre : chaque groupe (un titre et ce qui le suit) va sur la page en cours s'il y
-// tient, sinon sur une page neuve. Un groupe plus haut qu'une page reste seul sur la sienne.
+// Les blocs dans l'ordre : chaque groupe (un titre et ce qui le suit, un dernier bloc et son avis) va
+// sur la page en cours s'il y tient, sinon sur une page neuve. Un groupe plus haut qu'une page
+// entière se défait à son lien souple (l'avis suit alors sur la page d'après) ; sinon il reste seul
+// sur la sienne.
 export function paginateUnits(
   units: PrintUnit[],
   room = PRINT_ROOM_MM - PRINT_SAFETY_MM,
 ): PrintPage[] {
   const pages: PrintPage[] = [];
   let page: PrintPage = { units: [], mm: 0 };
+  const cost = (group: PrintUnit[], previous: PrintUnit | undefined) =>
+    group.reduce((sum, unit, k) => sum + unitCost(unit, k === 0 ? previous : group[k - 1]), 0);
   let i = 0;
   while (i < units.length) {
     let end = i;
     while (end < units.length - 1 && units[end]!.keepWithNext) end += 1;
-    const group = units.slice(i, end + 1);
-    const cost = (previous: PrintUnit | undefined) =>
-      group.reduce((sum, unit, k) => sum + unitCost(unit, k === 0 ? previous : group[k - 1]), 0);
+    let group = units.slice(i, end + 1);
     // Le dernier bloc d'une page n'a pas d'espace après lui.
-    if (page.units.length > 0 && page.mm + cost(page.units.at(-1)) - PRINT_GAP_MM > room) {
+    while (cost(group, undefined) - PRINT_GAP_MM > room) {
+      const soft = group.slice(0, -1).findLastIndex((unit) => unit.keepWithNext === 'soft');
+      if (soft < 0) break;
+      group = group.slice(0, soft + 1);
+    }
+    if (page.units.length > 0 && page.mm + cost(group, page.units.at(-1)) - PRINT_GAP_MM > room) {
       pages.push(page);
       page = { units: [], mm: 0 };
     }
-    page.mm += cost(page.units.at(-1));
+    page.mm += cost(group, page.units.at(-1));
     page.units.push(...group);
-    i = end + 1;
+    i += group.length;
   }
   if (page.units.length > 0) pages.push(page);
   return pages;
@@ -128,7 +139,7 @@ const CPL = {
   source: 145,
   full: 100,
   fullSmall: 112,
-  talk: 100,
+  talk: 112,
   tileHead: 44,
   tileSmall: 56,
   third: 34,
@@ -402,6 +413,15 @@ export function studyPrintUnits(
       g,
   });
   units.push({ kind: 'next-mentions', mm: 8.4 + g });
+
+  // L'avis reste avec le dernier bloc de son chapitre (Jean-Guy, 23/11), pour tous les chapitres :
+  // la dernière fiche, « Comment lire ces chiffres », la légende du classement, la copropriété ou
+  // « Comment en parler à un acheteur ».
+  units.forEach((unit, index) => {
+    const previous = units[index - 1];
+    if (unit.kind === 'avis' && previous?.chapter === unit.chapter && !previous.keepWithNext)
+      previous.keepWithNext = 'soft';
+  });
   return units;
 }
 

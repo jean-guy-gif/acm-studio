@@ -965,3 +965,143 @@ export async function printedPdfTexts(page: Page): Promise<string[]> {
   }
   return texts;
 }
+
+// Correctifs 163 — les pages imprimées de l'Étude de marché, telles que le code les décide
+// (`study-print.ts`), mesurées en hauteurs réelles à l'impression (A4 à 96 points par pouce).
+const PRINT_PX_PER_MM = 96 / 25.4;
+// La tolérance du « n'y tenait pas » : les hauteurs du code sont estimées, un peu larges par prudence.
+const PRINT_SLACK_MM = 12;
+
+export type PrintedFrame = {
+  number: number;
+  room: number;
+  used: number;
+  firstGroup: number;
+  units: string[];
+  chapters: (string | null)[];
+};
+
+export async function printedStudyFrames(page: Page): Promise<PrintedFrame[]> {
+  const viewport = page.viewportSize();
+  await page.setViewportSize({ width: 794, height: 1123 });
+  await page.emulateMedia({ media: 'print' });
+  try {
+    return await page.locator('[data-print-page]').evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const body = node.querySelector('[data-print-body]');
+        const units = body ? [...body.querySelectorAll(':scope > [data-print-unit]')] : [];
+        const boxes = units.map((unit) => unit.getBoundingClientRect());
+        const used = boxes.length ? boxes.at(-1)!.bottom - boxes[0]!.top : 0;
+        let firstGroup = 0;
+        for (const unit of units) {
+          firstGroup = unit.getBoundingClientRect().bottom - (boxes[0]?.top ?? 0);
+          if (unit.getAttribute('data-keep-next') !== 'true') break;
+        }
+        return {
+          number: Number(node.getAttribute('data-print-page')),
+          room: body ? Number(body.getAttribute('data-room-px')) : 0,
+          used,
+          firstGroup,
+          units: units.map((unit) => unit.getAttribute('data-print-unit') ?? ''),
+          chapters: units.map((unit) => unit.getAttribute('data-chapter')),
+        };
+      }),
+    );
+  } finally {
+    await page.emulateMedia({ media: 'screen' });
+    if (viewport) await page.setViewportSize(viewport);
+  }
+}
+
+// Les règles de l'Étude imprimée, sur la page ouverte (retours de Jean-Guy du 23/11) :
+//  - des pages pleines : rien ne déborde d'une feuille, et une page ne passe à la suivante que si le
+//    bloc suivant (un titre et ce qui le suit, un dernier bloc et son avis) n'y tenait pas ;
+//  - le classement ne se coupe jamais jusqu'à 12 lignes ;
+//  - l'avis reste avec le dernier bloc de son chapitre, jamais seul en haut d'une page (seule
+//    exception, hors de la démo : un classement entier de 12 lignes, qui remplit sa page) ;
+//  - dans le vrai PDF, « N / T » écrit une fois sur la page N, et chaque renvoi du résumé tombe sur
+//    la page où commence le chapitre annoncé.
+export async function expectStudyPrintedWell(page: Page): Promise<PrintedFrame[]> {
+  const printed = await printedStudyFrames(page);
+  expect(printed.length, 'des pages imprimées, couverture comprise').toBeGreaterThan(2);
+  expect(printed.map((frame) => frame.number)).toEqual(printed.map((_, i) => i + 1));
+  for (const [index, frame] of printed.entries()) {
+    if (index === 0) continue;
+    expect(frame.room).toBeGreaterThan(0);
+    // Rien ne déborde : la page imprimée garde son numéro.
+    expect(frame.used, `page ${frame.number} : ${frame.units.join(', ')}`).toBeLessThanOrEqual(
+      frame.room + 1,
+    );
+    const next = printed[index + 1];
+    if (next) {
+      expect(
+        frame.used + next.firstGroup,
+        `page ${frame.number} : « ${next.units[0]} » y tenait (${frame.units.join(', ')})`,
+      ).toBeGreaterThan(frame.room - PRINT_SLACK_MM * PRINT_PX_PER_MM);
+    }
+    frame.units.forEach((unit, at) => {
+      if (unit !== 'avis') return;
+      expect(at, `page ${frame.number} : un avis seul en haut de la page`).toBeGreaterThan(0);
+      expect(
+        frame.chapters[at - 1],
+        `page ${frame.number} : l’avis de « ${frame.chapters[at]} » sans le dernier bloc de son chapitre`,
+      ).toBe(frame.chapters[at]);
+    });
+  }
+
+  const ranking = printed.filter((frame) =>
+    frame.units.some((unit) => unit.startsWith('ranking-')),
+  );
+  if (ranking.length > 0) {
+    const rows = await page.locator('[data-print-unit="ranking-row"] tbody tr').count();
+    if (rows <= 12) {
+      expect(ranking, 'le classement sur une seule page').toHaveLength(1);
+      expect(ranking[0]!.units).toEqual(
+        expect.arrayContaining(['band', 'ranking-head', 'ranking-row', 'ranking-legend']),
+      );
+    }
+  }
+
+  // Le vrai PDF : une page par page imprimée, son numéro écrit une fois, les renvois justes.
+  const pdf = await printedPdfTexts(page);
+  expect(pdf).toHaveLength(printed.length);
+  const total = pdf.length;
+  pdf.forEach((text, index) => {
+    const numbers = text.match(new RegExp(`\\b\\d+ / ${total}\\b`, 'g')) ?? [];
+    expect(numbers, `page ${index + 1}`).toEqual(index === 0 ? [] : [`${index + 1} / ${total}`]);
+  });
+  const items = await page
+    .locator('[data-print-unit="summary-items"] li[data-chapter]')
+    .evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        chapter: node.getAttribute('data-chapter') ?? '',
+        page: Number(
+          /(\d+)\s*$/.exec(node.querySelector('[data-page-ref]')?.textContent ?? '')?.[1],
+        ),
+      })),
+    );
+  expect(items.length).toBeGreaterThan(0);
+  for (const item of items) {
+    // Le renvoi est le numéro de la page imprimée où commence le chapitre (son titre)…
+    const at = await page
+      .locator(
+        `[data-print-page]:has(> [data-print-body] > [data-print-unit="band"][data-chapter="${item.chapter}"])`,
+      )
+      .getAttribute('data-print-page');
+    expect(Number(at), `« page ${item.page} » pour ${item.chapter}`).toBe(item.page);
+    // … et dans le vrai PDF, cette page porte bien le titre du chapitre.
+    const title = (
+      await page
+        .locator(`[data-print-unit="band"][data-chapter="${item.chapter}"] h2`)
+        .first()
+        .textContent()
+    )
+      ?.replace(/[\s\u00a0\u202f]+/g, ' ')
+      .trim();
+    expect(title, `le titre du chapitre ${item.chapter}`).toBeTruthy();
+    expect(pdf[item.page - 1], `« page ${item.page} » pour ${item.chapter}`).toContain(
+      title!.slice(0, 30),
+    );
+  }
+  return printed;
+}
