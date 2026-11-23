@@ -189,7 +189,7 @@ describe('l’Étude imprimée : des pages pleines', () => {
           PRINT_ROOM_MM - PRINT_SAFETY_MM,
         );
       // Un titre de chapitre n'est jamais seul en bas d'une page.
-      expect(page.units.at(-1)!.keepWithNext ?? false).toBe(false);
+      expect(page.units.at(-1)!.keepWithNext).not.toBe(true);
     }
   });
 
@@ -344,6 +344,14 @@ describe('les mots qui disent vrai', () => {
   });
 });
 
+// Un dossier à `n` concurrents (les cinq de M. Lefebvre, répétés), à des prix tous différents.
+const many = (n: number) =>
+  lefebvre({
+    competitors: Array.from({ length: n }, (_, i) => lefebvre().competitors[i % 5]!).map(
+      (row, i) => ({ ...row, id: `m${i}`, display_order: i, price: 1400000 + i * 10000 }),
+    ),
+  });
+
 describe('le classement ne se coupe jamais (Jean-Guy, 23/11)', () => {
   const rankingPages = (data: MarketStudyInput) =>
     buildMarketStudy(data)
@@ -369,15 +377,91 @@ describe('le classement ne se coupe jamais (Jean-Guy, 23/11)', () => {
   });
 
   it('12 biens tiennent ensemble ; au-delà, la suite sur la page suivante', () => {
-    const many = (n: number) =>
-      lefebvre({
-        competitors: Array.from({ length: n }, (_, i) => lefebvre().competitors[i % 5]!).map(
-          (row, i) => ({ ...row, id: `m${i}`, display_order: i, price: 1400000 + i * 10000 }),
-        ),
-      });
     // 11 concurrents et le bien : 12 lignes, une seule page.
     expect(rankingPages(many(11))).toHaveLength(1);
     // 13 concurrents et le bien : 14 lignes, le classement continue sur la page suivante.
     expect(rankingPages(many(13)).length).toBeGreaterThan(1);
+  });
+});
+
+describe('l’avis reste avec le dernier bloc de son chapitre (Jean-Guy, 23/11)', () => {
+  const avisOf = (data: MarketStudyInput) =>
+    buildMarketStudy(data).story.print.pages.flatMap((page, at) =>
+      page.units
+        .map((unit, index) => ({ unit, index, page, at }))
+        .filter(({ unit }) => unit.kind === 'avis'),
+    );
+
+  it.each(CASES)('%s : aucun avis seul en haut d’une page, pour aucun chapitre', (_, data) => {
+    const all = avisOf(data);
+    expect(all.length).toBeGreaterThan(0);
+    for (const { unit, index, page } of all) {
+      // Le bloc qui précède l'avis sur sa page est le dernier bloc de son chapitre.
+      expect(index).toBeGreaterThan(0);
+      expect(page.units[index - 1]!.chapter).toBe(unit.chapter);
+      expect(page.units[index - 1]!.kind).not.toBe('avis');
+    }
+  });
+
+  it('s’il ne tient pas, le dernier bloc passe à la page suivante avec lui', () => {
+    // Deux fiches : la seconde tient sur la page, pas son avis ; elle le suit sur la page neuve.
+    const units: PrintUnit[] = [
+      { kind: 'card', chapter: 'competitors', index: 0, mm: 130 },
+      { kind: 'card', chapter: 'competitors', index: 1, mm: 120, keepWithNext: 'soft' },
+      { kind: 'avis', chapter: 'competitors', mm: 40 },
+    ];
+    expect(paginateUnits(units, 268).map((page) => page.units.map((unit) => unit.kind))).toEqual([
+      ['card'],
+      ['card', 'avis'],
+    ]);
+    // Dans une Étude : cinq fiches égales ; la dernière et l'avis sont sur la même page.
+    const base = lefebvre();
+    const equal = lefebvre({
+      competitors: base.competitors.map((row) => ({
+        ...base.competitors[1]!,
+        id: row.id,
+        display_order: row.display_order,
+        price: row.price,
+      })),
+    });
+    const pages = buildMarketStudy(equal).story.print.pages;
+    const last = pages.findIndex((page) =>
+      page.units.some((unit) => unit.kind === 'card' && unit.index === 4),
+    );
+    const avis = pages.findIndex((page) =>
+      page.units.some((unit) => unit.kind === 'avis' && unit.chapter === 'competitors'),
+    );
+    expect(avis).toBe(last);
+  });
+
+  it('chaque chapitre marque son dernier bloc pour rester avec l’avis', () => {
+    for (const [, data] of CASES) {
+      const units = buildMarketStudy(data).story.print.pages.flatMap((page) => page.units);
+      units.forEach((unit, index) => {
+        if (unit.kind !== 'avis') return;
+        expect(units[index - 1]!.chapter).toBe(unit.chapter);
+        expect(units[index - 1]!.keepWithNext).toBeTruthy();
+      });
+    }
+  });
+
+  it('seule exception : un classement entier de 12 lignes ne laisse pas la place à son avis', () => {
+    // Le classement ne se coupe jamais : avec 12 lignes, il remplit sa page et l'avis ne peut pas le
+    // suivre ; il ouvre alors la page suivante. Rien ne déborde.
+    const pages = buildMarketStudy(many(11)).story.print.pages;
+    const ranking = pages.findIndex((page) =>
+      page.units.some((unit) => unit.kind === 'ranking-legend'),
+    );
+    const kinds = pages[ranking]!.units.map((unit) => unit.kind);
+    expect(kinds.filter((kind) => kind === 'ranking-row')).toHaveLength(12);
+    expect(kinds).toContain('band');
+    expect(pages[ranking]!.mm - PRINT_GAP_MM).toBeLessThanOrEqual(PRINT_ROOM_MM);
+    const avis = avisOf(many(11)).find(({ unit }) => unit.chapter === 'ranking')!;
+    expect(avis.at).toBe(ranking + 1);
+    expect(avis.index).toBe(0);
+    // Avec 11 lignes, le classement et son avis tiennent ensemble.
+    const eleven = avisOf(many(10)).find(({ unit }) => unit.chapter === 'ranking')!;
+    expect(eleven.index).toBeGreaterThan(0);
+    expect(eleven.page.units.some((unit) => unit.kind === 'ranking-legend')).toBe(true);
   });
 });
