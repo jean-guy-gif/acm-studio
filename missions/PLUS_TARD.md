@@ -22,3 +22,10 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   - le calcul compte parfois une ligne de trop (prudent : un peu de blanc, jamais un débordement) ;
   - devant un classement dont les lignes sont longues, le dernier bloc peut descendre avec l'avis
     dès 8 ou 9 lignes.
+- 23/11 · M164 · Le panneau de l'opérateur ne dit pas que le prix part avec les réponses (« Effacer
+  les réponses de ce Live ? », `reopen-live-panel.tsx`) : hors périmètre de la 164 (« changer ce
+  que voit le conseiller à la réouverture »).
+- 23/11 · M164 · Un onglet du Live resté ouvert peut réenregistrer un prix après la réouverture.
+- 23/11 · M164 · `reopen_live` et `conclude_meeting` prennent leurs verrous dans l'ordre inverse
+  (dossier puis conclusion, conclusion puis dossier) : lancés au même instant sur le même dossier,
+  Postgres en annule un ; rien n'est écrit à moitié.
