@@ -1019,6 +1019,7 @@ export async function printedStudyFrames(page: Page): Promise<PrintedFrame[]> {
 //  - le classement ne se coupe jamais jusqu'à 12 lignes ;
 //  - l'avis reste avec le dernier bloc de son chapitre, jamais seul en haut d'une page (seule
 //    exception, hors de la démo : un classement entier de 12 lignes, qui remplit sa page) ;
+//  - « La suite » ne se coupe pas ;
 //  - dans le vrai PDF, « N / T » écrit une fois sur la page N, et chaque renvoi du résumé tombe sur
 //    la page où commence le chapitre annoncé.
 export async function expectStudyPrintedWell(page: Page): Promise<PrintedFrame[]> {
@@ -1061,6 +1062,20 @@ export async function expectStudyPrintedWell(page: Page): Promise<PrintedFrame[]
       );
     }
   }
+
+  // « La suite » ne se coupe pas : ses étapes, les papiers, le conseiller, les sources et les
+  // mentions sur une même page imprimée.
+  const closing = printed.filter((frame) => frame.units.some((unit) => unit.startsWith('next-')));
+  expect(closing, '« La suite » sur une seule page').toHaveLength(1);
+  expect(closing[0]!.units).toEqual(
+    expect.arrayContaining([
+      'next-head',
+      'next-papers',
+      'next-contact',
+      'next-is',
+      'next-mentions',
+    ]),
+  );
 
   // Le vrai PDF : une page par page imprimée, son numéro écrit une fois, les renvois justes.
   const pdf = await printedPdfTexts(page);

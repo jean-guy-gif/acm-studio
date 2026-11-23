@@ -465,3 +465,37 @@ describe('l’avis reste avec le dernier bloc de son chapitre (Jean-Guy, 23/11)'
     expect(eleven.page.units.some((unit) => unit.kind === 'ranking-legend')).toBe(true);
   });
 });
+
+describe('« La suite » ne se coupe pas', () => {
+  // Les Bernard, tels qu'imprimés sur l'essai le 23/11 : cinq fiches égales, pas de prix, en anglais.
+  // La dernière fiche descendue avec son avis, « La suite » commençait sous eux et sa fin (« Ce que
+  // cette étude est… », les sources, les mentions) restait seule sur une dernière page presque vide.
+  const base = lefebvre();
+  const bernard: MarketStudyInput = {
+    ...lefebvre({
+      studyPrice: null,
+      competitors: base.competitors.map((row) => ({
+        ...base.competitors[1]!,
+        id: row.id,
+        display_order: row.display_order,
+        price: row.price,
+      })),
+    }),
+    sellerName: 'Mr and Mrs Bernard',
+    language: 'en',
+  };
+
+  it.each([...CASES, ['les Bernard', bernard] as [string, MarketStudyInput]])(
+    '%s : les étapes, les papiers, le conseiller, les sources et les mentions sur une même page',
+    (_, data) => {
+      const pages = buildMarketStudy(data).story.print.pages;
+      const next = pages.filter((page) => page.units.some((unit) => unit.kind.startsWith('next-')));
+      expect(next).toHaveLength(1);
+      const kinds = next[0]!.units.map((unit) => unit.kind);
+      for (const kind of ['next-head', 'next-papers', 'next-contact', 'next-is', 'next-mentions'])
+        expect(kinds).toContain(kind);
+      // Rien ne déborde de cette page.
+      expect(next[0]!.mm - PRINT_GAP_MM).toBeLessThanOrEqual(PRINT_ROOM_MM);
+    },
+  );
+});

@@ -140,6 +140,7 @@ const CPL = {
   full: 100,
   fullSmall: 112,
   talk: 112,
+  is: 116,
   tileHead: 44,
   tileSmall: 56,
   third: 34,
@@ -391,6 +392,9 @@ export function studyPrintUnits(
       g,
     keepWithNext: true,
   });
+  // « La suite » ne se coupe pas : ses étapes, les papiers, le conseiller, « Ce que cette étude
+  // est… », les sources et les mentions vont ensemble, sur une page neuve s'ils ne tiennent pas (sa
+  // fin restait seule sur une dernière page presque vide). Elle tient toujours sur une page.
   units.push({
     kind: 'next-papers',
     mm:
@@ -399,14 +403,17 @@ export function studyPrintUnits(
         // Les lignes pour ses questions, à l'impression.
         7.6 + 6 * 7.5,
       ) + g,
+    keepWithNext: true,
   });
-  if (!story.quartier && flags.vivreIci) units.push({ kind: 'next-vivre', mm: VIVRE_ICI_MM + g });
-  units.push({ kind: 'next-contact', mm: 21 + g });
+  if (!story.quartier && flags.vivreIci)
+    units.push({ kind: 'next-vivre', mm: VIVRE_ICI_MM + g, keepWithNext: true });
+  units.push({ kind: 'next-contact', mm: 21 + g, keepWithNext: true });
   units.push({
     kind: 'next-is',
+    keepWithNext: true,
     mm:
       7.6 +
-      4.7 * textLines(next.is, CPL.fullSmall) +
+      4.7 * textLines(next.is, CPL.is) +
       (next.sources.length
         ? 2 + next.sources.reduce((sum, row) => sum + 2.2 + 3.8 * textLines(row.value, 90), 0)
         : 0) +
