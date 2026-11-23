@@ -1020,9 +1020,11 @@ export async function printedStudyFrames(page: Page): Promise<PrintedFrame[]> {
 //  - l'avis reste avec son chapitre quand il y tient ; sinon il ouvre la page suivante, jamais
 //    seul : ce qui suit (le chapitre suivant ou « La suite ») commence sur la même page ;
 //  - « La suite » ne se coupe pas ;
-//    (les deux replis du paginateur, pour qu'un avis ne soit jamais seul — le dernier bloc qui
-//    descend avec lui, « La suite » coupée après les papiers —, ne jouent sur aucune Étude de la
-//    démo : cette aide passerait au rouge si l'une y tombait, et le dirait) ;
+//    (les deux règles rares du paginateur, pour qu'un avis ne soit jamais seul — « La suite »
+//    coupée après les papiers sous un avis qui ouvre sa page, le dernier bloc qui descend avec son
+//    avis devant un classement de 11 ou 12 lignes —, ne jouent sur aucune Étude de la démo : cette
+//    aide passerait au rouge si l'une y tombait, et le dirait ; le banc `npm run banc:etude` et
+//    les tests unitaires les prouvent) ;
 //  - dans le vrai PDF, « N / T » écrit une fois sur la page N, et chaque renvoi du résumé tombe sur
 //    la page où commence le chapitre annoncé.
 export async function expectStudyPrintedWell(page: Page): Promise<PrintedFrame[]> {

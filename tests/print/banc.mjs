@@ -9,7 +9,11 @@
 // le lien public (les titres seuls la prennent) et comme dans l'outil (tout le texte la prend).
 //
 // Il échoue si une page déborde de sa feuille, ou si un bloc est estimé trop court de plus de
-// 0,6 mm. L'e2e ne peut pas voir ces cas : il n'imprime que les dossiers de la démo.
+// 0,6 mm. Il relit aussi, sur les pages réellement imprimées, les règles de l'avis (Jean-Guy,
+// 23/11) : jamais un avis seul sur une page ; « La suite » d'un seul tenant, sauf sous un avis qui
+// ouvre sa page et sous lequel elle ne tient pas entière — elle se coupe alors après « Les papiers
+// à réunir », et nulle part ailleurs. L'e2e ne peut pas voir ces cas : il n'imprime que les
+// dossiers de la démo.
 import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
@@ -95,19 +99,43 @@ async function measure(browser, font, inApp) {
       if (unit.short > SHORT_MM && (!worst || unit.short > worst.short))
         short.set(unit.kind, { short: unit.short, file: page.file });
     }
+  // Les règles de l'avis, sur les pages imprimées.
+  const alone = pages.filter((page) => page.units.length === 1 && page.units[0].kind === 'avis');
+  const byFile = new Map();
+  for (const page of pages) byFile.set(page.file, [...(byFile.get(page.file) ?? []), page]);
+  let cut = 0;
+  const badCuts = [];
+  for (const [file, list] of byFile) {
+    const closing = list
+      .sort((a, b) => a.number - b.number)
+      .filter((page) => page.units.some((unit) => unit.kind.startsWith('next-')));
+    if (closing.length < 2) continue;
+    cut += 1;
+    if (
+      closing.length !== 2 ||
+      closing[0].units[0].kind !== 'avis' ||
+      closing[0].units.at(-1).kind !== 'next-papers'
+    )
+      badCuts.push(file);
+  }
+  const rules = alone.length === 0 && badCuts.length === 0;
   const label = font
     ? `${font}, ${inApp ? 'dans l’outil' : 'sur le lien public'}`
     : 'Montserrat et Rajdhani';
   console.log(
-    `${overflow.length === 0 && short.size === 0 ? '✔' : '✘'} ${label} : ${files.length} Études, ${pages.length} pages · ${overflow.length} page(s) qui débordent · ${short.size} bloc(s) estimés trop courts`,
+    `${overflow.length === 0 && short.size === 0 && rules ? '✔' : '✘'} ${label} : ${files.length} Études, ${pages.length} pages · ${overflow.length} page(s) qui débordent · ${short.size} bloc(s) estimés trop courts · ${alone.length} avis seul(s) sur sa page · « La suite » coupée sous un avis : ${cut} Étude(s), ${badCuts.length} coupée(s) ailleurs`,
   );
+  for (const page of alone.slice(0, 5))
+    console.log(`    un avis seul sur sa page : ${page.file}, page ${page.number}`);
+  for (const file of badCuts.slice(0, 5))
+    console.log(`    « La suite » coupée ailleurs que sous un avis, après les papiers : ${file}`);
   for (const page of overflow.sort((a, b) => b.over - a.over).slice(0, 5))
     console.log(
       `    déborde de ${page.over.toFixed(1)} mm : ${page.file}, page ${page.number} (${page.units.map((unit) => unit.kind).join(', ')})`,
     );
   for (const [kind, worst] of short)
     console.log(`    ${kind} : estimé ${worst.short.toFixed(1)} mm trop court (${worst.file})`);
-  return overflow.length === 0 && short.size === 0;
+  return overflow.length === 0 && short.size === 0 && rules;
 }
 
 const browser = await chromium.launch();
