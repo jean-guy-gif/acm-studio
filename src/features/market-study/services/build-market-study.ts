@@ -1,3 +1,4 @@
+import { printFontOf } from '@/features/market-study/services/study-print';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import { buildComparableFeatureComparison } from '@/features/live-seller/services/build-comparable-feature-comparison';
 import type { FeatureBundle } from '@/features/live-seller/types';
@@ -363,7 +364,8 @@ export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
       ranking,
       agency: input.agency,
       quartier,
-      vivreIci: input.neighbourhood != null,
+      neighbourhood: input.neighbourhood ?? null,
+      brandFont: printFontOf(input.brandDeclarations),
     }),
   };
 }

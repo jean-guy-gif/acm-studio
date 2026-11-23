@@ -12,6 +12,10 @@ import type {
 } from '@/features/market-study/types';
 import type { NeighbourhoodDocumentContent } from '@/features/neighbourhood-link/components/neighbourhood-document';
 import {
+  shortLinkAddress,
+  type NeighbourhoodDocumentLink,
+} from '@/features/neighbourhood-link/services/neighbourhood-link';
+import {
   isShowableBlock,
   PLANNING_CATEGORIES,
   SALES_COUNTED_SINCE,
@@ -57,7 +61,10 @@ export type StudyStoryInput = {
   agency: SellerSynthesis['agency'];
   quartier: NeighbourhoodDocumentContent | null;
   // Le lien « Vivre ici » du bien, montré sur la page du quartier.
-  vivreIci?: boolean;
+  neighbourhood?: NeighbourhoodDocumentLink | null;
+  // La police de la charte de l'agence (`printFontOf`) : elle décide des lignes de chaque texte
+  // imprimé, donc des pages.
+  brandFont?: string | null;
 };
 
 // Sans les ventes cochées une par une (M163 B) : les six plus proches du bien.
@@ -672,7 +679,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
         ),
         riskCells: cells.length,
         condominium: quartier.condominium != null,
-        vivreIci: input.vivreIci === true,
+        vivreIci: input.neighbourhood != null,
         avis: avis != null,
       }) > QUARTIER_ONE_PAGE_MM;
     const capital = (text: string) => `${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
@@ -848,14 +855,40 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       isTitle: s.next.isTitle,
       is: s.next.is(kind, day, salesBlock != null, priceKind),
       sources,
+      mentions: [
+        agency.name,
+        agency.postalAddress,
+        agency.professionalCard
+          ? `Carte professionnelle ${agency.professionalCard}${
+              agency.professionalCardIssuer ? ` délivrée par ${agency.professionalCardIssuer}` : ''
+            }`
+          : null,
+        agency.financialGuarantee?.trim() || 'Ne peut recevoir aucun fonds',
+      ]
+        .filter(Boolean)
+        .join(' · '),
     },
   };
 
   // Correctifs 163 — les pages imprimées, puis les renvois du résumé vers elles : la page où
   // commence chaque chapitre (là où s'imprime son titre).
+  const link = input.neighbourhood ?? null;
   const pages = studyPrintPages(story, {
-    vivreIci: input.vivreIci === true,
+    language,
+    font: input.brandFont ?? null,
+    vivreIci: link
+      ? {
+          heading: texts.neighbourhood.heading,
+          text: link.printAddress
+            ? texts.neighbourhood.scan(shortLinkAddress(link.url))
+            : texts.neighbourhood.scanOnly,
+          valid: link.validUntil
+            ? texts.neighbourhood.validUntil(formatDay(link.validUntil, language, 'long'))
+            : null,
+        }
+      : null,
     rankingRows: ranking.rows.map((row) => ({ subject: row.subject, detail: row.detail })),
+    advisorQr: agency.advisorQr != null,
   });
   for (const item of items) {
     const at = pages.findIndex((page) =>

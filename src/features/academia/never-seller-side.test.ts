@@ -100,6 +100,10 @@ describe('le lien « Vivre ici » montré au vendeur : une seule porte, le lien 
       'PLANNING_CATEGORIES',
       'SALES_COUNTED_SINCE',
       'NeighbourhoodSale',
+      // Correctifs 163 — l'Étude imprimée compte les lignes du bloc « Vivre ici » pour décider de ses
+      // pages : il lui faut le texte que le bloc imprime, donc l'adresse du lien sans « https:// »,
+      // tirée du lien client déjà relu par la porte (une mise en forme, aucune lecture de plus).
+      'shortLinkAddress',
     ]);
     const imported: string[] = [];
     for (const path of seller()) {

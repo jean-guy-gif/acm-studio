@@ -886,23 +886,8 @@ function NextIs({ story, printed }: { story: MarketStudyStory } & Printed) {
   );
 }
 
-function NextMentions({ agency }: { agency: MarketStudyDocumentData['agency'] }) {
-  return (
-    <p className="text-[0.68rem] leading-relaxed text-zinc-500">
-      {[
-        agency.name,
-        agency.postalAddress,
-        agency.professionalCard
-          ? `Carte professionnelle ${agency.professionalCard}${
-              agency.professionalCardIssuer ? ` délivrée par ${agency.professionalCardIssuer}` : ''
-            }`
-          : null,
-        agency.financialGuarantee?.trim() || 'Ne peut recevoir aucun fonds',
-      ]
-        .filter(Boolean)
-        .join(' · ')}
-    </p>
-  );
+function NextMentions({ story }: { story: MarketStudyStory }) {
+  return <p className="text-[0.68rem] leading-relaxed text-zinc-500">{story.next.mentions}</p>;
 }
 
 function RankingTable({
@@ -977,7 +962,7 @@ function RankingLegend({ language, printed }: { language: TextLanguage } & Print
 }
 
 export function MarketStudyDocument({ document }: DocumentProps) {
-  const { agency, ranking, language, story } = document;
+  const { ranking, language, story } = document;
   // À l'impression, le texte courant de la maquette (9,4 pt) : tout ce qui se mesure en rem suit
   // (une tabulation après @media : du CSS, pas du texte montré au vendeur). Correctifs 163 — les
   // pages imprimées n'ont plus de marge : chacune porte son numéro écrit dans la page.
@@ -1136,7 +1121,7 @@ export function MarketStudyDocument({ document }: DocumentProps) {
             {story.quartier ? null : vivreIci}
             <NextContact document={document} />
             <NextIs story={story} />
-            <NextMentions agency={agency} />
+            <NextMentions story={story} />
           </div>
         </Page>
       </div>
@@ -1158,7 +1143,7 @@ export function MarketStudyDocument({ document }: DocumentProps) {
 const PX_PER_MM = 96 / 25.4;
 
 function PrintedStudy({ document, vivreIci }: DocumentProps & { vivreIci: ReactNode }) {
-  const { story, ranking, language, agency } = document;
+  const { story, ranking, language } = document;
   const pages = story.print.pages;
   const cards = story.competitors?.pages.flat() ?? [];
   const body = 'px-[14mm]';
@@ -1293,7 +1278,8 @@ function PrintedStudy({ document, vivreIci }: DocumentProps & { vivreIci: ReactN
               {
                 ...u,
                 keepWithNext: run.at(-1)!.keepWithNext,
-                mm: run.reduce((sum, row) => sum + row.mm, 0),
+                // Les lignes, la tête du tableau et l'espace qui le suit.
+                mm: run.reduce((sum, row) => sum + row.mm, 0) + (u.runStartMm ?? 0),
               },
               <RankingTable rows={rows} language={language} printed />,
             ),
@@ -1341,7 +1327,7 @@ function PrintedStudy({ document, vivreIci }: DocumentProps & { vivreIci: ReactN
           out.push(unit(key, u, <NextIs story={story} printed />));
           break;
         case 'next-mentions':
-          out.push(unit(key, u, <NextMentions agency={agency} />));
+          out.push(unit(key, u, <NextMentions story={story} />));
           break;
         default:
           break;

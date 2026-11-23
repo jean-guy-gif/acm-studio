@@ -15,7 +15,9 @@ import {
   PRINT_GAP_MM,
   PRINT_ROOM_MM,
   PRINT_SAFETY_MM,
+  lineCount,
   paginateUnits,
+  printFontOf,
   type PrintUnit,
 } from '@/features/market-study/services/study-print';
 import {
@@ -472,48 +474,56 @@ describe('l’avis du conseiller : avec son chapitre s’il tient, sinon en têt
     ]);
   });
 
-  // Tous les dossiers qu'on peut imaginer : de 1 à 14 concurrents, avec ou sans prix, quartier,
-  // lien « Vivre ici », maison ou appartement, fiches égales ou non, en français et en anglais.
+  // Tous les dossiers qu'on peut imaginer : de 1 à 14 concurrents, avec ou sans prix, sans quartier,
+  // tous ses blocs ou les ventes seules, avec ou sans lien « Vivre ici », maison ou appartement,
+  // fiches égales ou non, en français et en anglais.
   const neighbourhood = {
     url: 'https://app.myacademia.ai/l/x',
-    validUntil: null,
+    validUntil: '2026-12-23T00:00:00.000Z',
     qr: { size: 21, path: '' },
     printAddress: true,
   };
   const sweep: [string, MarketStudyInput][] = [];
-  for (const n of [1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 14])
-    for (const priced of [true, false])
-      for (const withQuartier of [true, false])
-        for (const flat of [false, true])
-          for (const equal of [false, true]) {
-            const data = many(n);
-            const language = (n + (priced ? 1 : 0)) % 2 === 0 ? 'fr' : 'en';
-            sweep.push([
-              `${n} concurrents${priced ? ', un prix' : ''}${withQuartier ? ', le quartier' : ''}${
-                flat ? ', un appartement' : ''
-              }${equal ? ', des fiches égales' : ''}, ${language}`,
-              {
-                ...data,
-                language,
-                studyPrice: priced ? data.studyPrice : null,
-                quartier: withQuartier ? quartier : null,
-                neighbourhood: withQuartier === flat ? neighbourhood : null,
-                property: flat
-                  ? { ...data.property!, property_type: 'Appartement' }
-                  : data.property,
-                competitors: data.competitors.map((row) => ({
-                  ...(equal ? data.competitors[1]! : row),
-                  id: row.id,
-                  display_order: row.display_order,
-                  price: row.price,
-                  property_type: flat ? 'apartment' : 'house',
-                })),
-              },
-            ]);
-          }
+  for (const language of ['fr', 'en'] as const)
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+      for (const priced of [true, false])
+        for (const blocks of ['sans quartier', 'tout le quartier', 'les ventes seules'] as const)
+          for (const vivre of [false, true])
+            for (const flat of [false, true])
+              for (const equal of [false, true]) {
+                const data = many(n);
+                sweep.push([
+                  `${language}, ${n} concurrents${priced ? ', un prix' : ''}, ${blocks}${
+                    vivre ? ', « Vivre ici »' : ''
+                  }${flat ? ', un appartement' : ''}${equal ? ', des fiches égales' : ''}`,
+                  {
+                    ...data,
+                    language,
+                    studyPrice: priced ? data.studyPrice : null,
+                    quartier:
+                      blocks === 'tout le quartier'
+                        ? quartier
+                        : blocks === 'les ventes seules'
+                          ? { ...quartier, keys: ['ventes'] }
+                          : null,
+                    neighbourhood: vivre ? neighbourhood : null,
+                    property: flat
+                      ? { ...data.property!, property_type: 'Appartement' }
+                      : data.property,
+                    competitors: data.competitors.map((row) => ({
+                      ...(equal ? data.competitors[1]! : row),
+                      id: row.id,
+                      display_order: row.display_order,
+                      price: row.price,
+                      property_type: flat ? 'apartment' : 'house',
+                    })),
+                  },
+                ]);
+              }
 
   it('dans toute Étude : jamais seul sur une page, et toujours à l’une de ses deux places', () => {
-    expect(sweep.length).toBeGreaterThan(150);
+    expect(sweep.length).toBeGreaterThan(1000);
+    let cut = 0;
     for (const [name, data] of [...CASES, ...sweep]) {
       const pages = buildMarketStudy(data).story.print.pages;
       let seen = 0;
@@ -537,7 +547,53 @@ describe('l’avis du conseiller : avec son chapitre s’il tient, sinon en têt
         expect(page.mm - PRINT_GAP_MM, name).toBeLessThanOrEqual(PRINT_ROOM_MM);
       }
       expect(seen, name).toBeGreaterThan(0);
+
+      // « La suite » est entière. Un seul cas la coupe, après les papiers : derrière un avis qui
+      // ouvre la page et que rien d'autre ne peut suivre (le dernier repli, pour qu'il ne soit
+      // jamais seul).
+      const closing = pages.filter((page) =>
+        page.units.some((unit) => unit.kind.startsWith('next-')),
+      );
+      if (closing.length > 1) {
+        expect(closing, name).toHaveLength(2);
+        expect(closing[0]!.units[0]!.kind, name).toBe('avis');
+        expect(closing[0]!.units.at(-1)!.kind, name).toBe('next-papers');
+        expect(closing[1]!.units.at(-1)!.kind, name).toBe('next-mentions');
+        cut += 1;
+      }
     }
+    // Le dernier repli joue sur de vraies Études, rarement (moins d'une sur cent).
+    expect(cut).toBeGreaterThan(0);
+    expect(cut).toBeLessThan(sweep.length / 100);
+  });
+
+  it('les replis, sur de vraies Études', () => {
+    const flat = (data: MarketStudyInput): MarketStudyInput => ({
+      ...data,
+      property: { ...data.property!, property_type: 'Appartement' },
+      competitors: data.competitors.map((row) => ({ ...row, property_type: 'apartment' })),
+      neighbourhood,
+    });
+    // Un appartement, le lien « Vivre ici », les ventes seules, pas de prix : « La suite » remplit
+    // presque une page et ne tient pas sous l'avis des ventes. « Comment lire ces chiffres »
+    // descend avec lui, « La suite » reste entière.
+    const sales = buildMarketStudy(
+      flat({ ...many(5), studyPrice: null, quartier: { ...quartier, keys: ['ventes'] } }),
+    ).story.print.pages.map((page) => page.units.map((unit) => unit.kind));
+    const at = sales.findIndex((page) => page.includes('sales-read'));
+    expect(sales[at]).toEqual(['sales-read', 'avis']);
+    expect(sales[at - 1]!.at(-1)).toBe('sales-table');
+    expect(sales[at + 1]![0]).toBe('next-head');
+    expect(sales[at + 1]!.at(-1)).toBe('next-mentions');
+    // Le même, avec un prix et 12 lignes au classement : le classement remplit sa page, son avis
+    // ne peut ni rester ni l'emmener ; « La suite » commence sous lui et finit sur la page d'après.
+    const ranking = buildMarketStudy(
+      flat({ ...many(11), quartier: { ...quartier, keys: ['ventes'] } }),
+    ).story.print.pages.map((page) => page.units.map((unit) => unit.kind));
+    const legend = ranking.findIndex((page) => page.includes('ranking-legend'));
+    expect(ranking[legend]!.at(-1)).toBe('ranking-legend');
+    expect(ranking[legend + 1]).toEqual(['avis', 'next-head', 'next-papers']);
+    expect(ranking[legend + 2]![0]).toBe('next-vivre');
   });
 
   it('cinq fiches égales (les Lopez, les Bernard) : la dernière fiche reste avec les autres, l’avis ouvre la page du chapitre suivant', () => {
@@ -583,13 +639,11 @@ describe('l’avis du conseiller : avec son chapitre s’il tient, sinon en têt
     const next = pages[ranking + 1]!.units.map((unit) => unit.kind);
     expect(next[0]).toBe('avis');
     expect(next[1]).toBe('next-head');
-    // Avec 11 lignes, le classement et son avis tiennent ensemble.
-    const eleven = buildMarketStudy(many(10)).story.print.pages.find((page) =>
+    // Avec 10 lignes, le classement et son avis tiennent ensemble.
+    const ten = buildMarketStudy(many(9)).story.print.pages.find((page) =>
       page.units.some((unit) => unit.kind === 'ranking-legend'),
     )!;
-    expect(eleven.units.some((unit) => unit.kind === 'avis' && unit.chapter === 'ranking')).toBe(
-      true,
-    );
+    expect(ten.units.some((unit) => unit.kind === 'avis' && unit.chapter === 'ranking')).toBe(true);
   });
 });
 
@@ -612,7 +666,15 @@ describe('« La suite » ne se coupe pas', () => {
     language: 'en',
   };
 
-  it.each([...CASES, ['les Bernard', bernard] as [string, MarketStudyInput]])(
+  // Un concurrent, un prix, tout le quartier : sans ses liens, « La suite » commencerait sous l'avis
+  // du quartier et finirait sur la page suivante.
+  const short = lefebvre({ competitors: lefebvre().competitors.slice(0, 1), quartier });
+
+  it.each([
+    ...CASES,
+    ['les Bernard', bernard] as [string, MarketStudyInput],
+    ['un concurrent, un prix, tout le quartier', short] as [string, MarketStudyInput],
+  ])(
     '%s : les étapes, les papiers, le conseiller, les sources et les mentions sur une même page',
     (_, data) => {
       const pages = buildMarketStudy(data).story.print.pages;
@@ -625,4 +687,147 @@ describe('« La suite » ne se coupe pas', () => {
       expect(next[0]!.mm - PRINT_GAP_MM).toBeLessThanOrEqual(PRINT_ROOM_MM);
     },
   );
+});
+
+describe('les hauteurs : la géométrie imprimée et la largeur réelle des caractères', () => {
+  it('la police de la charte se lit dans ses déclarations', () => {
+    expect(
+      printFontOf(
+        '--brand: #123456; --font-sans: var(--font-poppins); --font-title: var(--font-poppins);',
+      ),
+    ).toBe('poppins');
+    expect(printFontOf('--brand: #123456;')).toBeNull();
+    expect(printFontOf('')).toBeNull();
+    // Une police inconnue (ou une valeur forgée) ne décide de rien.
+    expect(printFontOf('--font-title: var(--font-comic);')).toBeNull();
+  });
+
+  it('un texte se coupe aux espaces et après un trait d’union, selon la largeur de ses caractères', () => {
+    const body = { size: 12.6 };
+    expect(lineCount([{ text: '', style: body }], 300, null)).toBe(0);
+    expect(lineCount([{ text: 'Maison', style: body }], 300, null)).toBe(1);
+    // Des « i » et des « m » en même nombre ne prennent pas la même place.
+    const narrow = 'il lit ici, il fit titi '.repeat(4).trim();
+    const wide = 'mm mmm mmm, mm mmm mmmm '.repeat(4).trim();
+    expect(narrow.length).toBe(wide.length);
+    expect(lineCount([{ text: wide, style: body }], 300, null)).toBeGreaterThan(
+      lineCount([{ text: narrow, style: body }], 300, null),
+    );
+    // Un nom composé passe à la ligne après un trait d'union.
+    expect(lineCount([{ text: 'Saint-Paul-de-Vence', style: body }], 80, null)).toBe(2);
+    // Une police plus large compte plus de lignes ; Rajdhani, étroite, en compte moins en titre.
+    const sentence =
+      'Cinq maisons comme la vôtre sont en vente aujourd’hui, de 715 000 € à 760 000 €.';
+    expect(lineCount([{ text: sentence, style: body }], 420, 'poppins')).toBeGreaterThanOrEqual(
+      lineCount([{ text: sentence, style: body }], 420, 'source-sans'),
+    );
+    expect(
+      lineCount([{ text: sentence, style: { size: 12.6, weight: 700, title: true } }], 270, null),
+    ).toBeLessThan(lineCount([{ text: sentence, style: { size: 12.6, weight: 700 } }], 270, null));
+  });
+
+  // Le dossier de Mme Garcia tel qu'imprimé le 23/11 : des fiches simples, tout le quartier, le lien
+  // « Vivre ici » de la démonstration, pas de prix. « Comment en parler à un acheteur » était compté
+  // sur six lignes au lieu de quatre, et l'avis du quartier quittait sa page.
+  const base = lefebvre();
+  const simple = (
+    id: string,
+    order: number,
+    price: number,
+    extra: Partial<MarketStudyCompetitorRow>,
+  ) =>
+    competitor(id, order, price, {
+      rooms_count: 5,
+      bedrooms_count: 3,
+      surface_area: 135,
+      city: 'Vence',
+      energy_rating: 'C',
+      ges_rating: null,
+      general_condition: null,
+      outdoor_spaces: ['garden'],
+      parking_types: [],
+      ...extra,
+    });
+  const garciaPrinted: MarketStudyInput = {
+    ...base,
+    sellerName: 'Mme Garcia',
+    property: {
+      ...base.property!,
+      city: 'Vence',
+      surface_area: 135,
+      land_area: 900,
+      rooms_count: 5,
+      bedrooms_count: 3,
+      energy_rating: 'C',
+      ges_rating: null,
+      general_condition: null,
+      outdoor_spaces: ['garden'],
+      parking_types: [],
+    },
+    competitors: [
+      simple('g1', 0, 740000, {
+        exposure: 'south_east',
+        city: 'Saint-Paul-de-Vence',
+        district: null,
+      }),
+      simple('g2', 1, 729000, { surface_area: 142, exposure: 'south_west' }),
+      simple('g3', 2, 749000, { city: 'La Colle-sur-Loup', district: null }),
+      simple('g4', 3, 715000, { surface_area: 130 }),
+      simple('g5', 4, 760000, { surface_area: 150 }),
+    ],
+    studyPrice: null,
+    quartier,
+    neighbourhood: {
+      url: 'https://app.myacademia.ai/l/demonstration',
+      validUntil: '2026-12-23T00:00:00.000Z',
+      qr: { size: 21, path: '' },
+      printAddress: false,
+    },
+  };
+
+  it('Mme Garcia : « Comment en parler à un acheteur » fait quatre lignes, l’avis du quartier reste sur sa page', () => {
+    const pages = buildMarketStudy(garciaPrinted).story.print.pages;
+    expect(pages).toHaveLength(7);
+    const at = pages.findIndex((page) =>
+      page.units.some((unit) => unit.kind === 'band' && unit.chapter === 'quartier'),
+    );
+    expect(pages[at]!.units.map((unit) => unit.kind)).toEqual([
+      'band',
+      'quartier-tiles',
+      'quartier-risks',
+      'quartier-talk',
+      'quartier-extra',
+      'avis',
+    ]);
+    expect(pages[at + 1]!.units[0]!.kind).toBe('next-head');
+    // Mesuré à l'impression : 25,9 mm (le titre, puis quatre lignes de 17,5 px), plus 3 mm d'espace.
+    const talk = pages[at]!.units.find((unit) => unit.kind === 'quartier-talk')!;
+    expect(talk.mm).toBeGreaterThan(28.5);
+    expect(talk.mm).toBeLessThan(29.5);
+  });
+
+  it('les hauteurs mesurées sur les pages réelles de la démo, au demi-millimètre', () => {
+    const units = buildMarketStudy(garciaPrinted).story.print.pages.flatMap((page) => page.units);
+    const mm = (kind: string, chapter?: string) =>
+      units.find((unit) => unit.kind === kind && (!chapter || unit.chapter === chapter))!.mm -
+      PRINT_GAP_MM;
+    // Une fiche sans différence ou presque : 62 mm.
+    expect(mm('card')).toBeCloseTo(62, 0);
+    // Le bandeau des biens en vente : 51,2 mm ; les risques : 54,5 mm ; l'urbanisme et les permis :
+    // 41,6 mm (mesures du 23/11 sur l'essai).
+    expect(Math.abs(mm('band', 'competitors') - 51.2)).toBeLessThan(0.6);
+    expect(Math.abs(mm('quartier-risks') - 54.5)).toBeLessThan(0.6);
+    expect(Math.abs(mm('quartier-tiles') - 41.6)).toBeLessThan(0.6);
+    expect(Math.abs(mm('next-head') - 55.6)).toBeLessThan(0.8);
+  });
+
+  it('une case seule d’urbanisme ou de permis garde sa demi-largeur : elle est plus haute', () => {
+    const one = (keys: ('urbanisme' | 'permis')[]) =>
+      buildMarketStudy({ ...garciaPrinted, quartier: { ...quartier, keys } })
+        .story.print.pages.flatMap((page) => page.units)
+        .find((unit) => unit.kind === 'quartier-tiles')!.mm;
+    // Seule ou à côté de l'autre, la case des permis a la même largeur, donc la même hauteur.
+    expect(one(['permis'])).toBeCloseTo(one(['urbanisme', 'permis']), 5);
+    expect(one(['urbanisme'])).toBeLessThanOrEqual(one(['urbanisme', 'permis']));
+  });
 });
