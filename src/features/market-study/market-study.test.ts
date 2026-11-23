@@ -258,7 +258,15 @@ const CONCLUDED = {
   projects: [
     { id: PROJECT, seller_name: 'M. et Mme Garcia', advisor_id: null, status: 'meeting_completed' },
   ],
-  project_meeting_conclusions: [{ outcome: 'signed', commercialization_price: 615000 }],
+  // L'analyse figée à la conclusion, sur la ligne même que le chargeur lit : un second piège.
+  project_meeting_conclusions: [
+    {
+      outcome: 'signed',
+      commercialization_price: 615000,
+      frozen_advisor_analysis: ANALYSIS_TRAP,
+      frozen_advisor_price: ANALYSIS_TRAP,
+    },
+  ],
 };
 
 // Mission 140 — l'Étude d'un vendeur anglophone : tout en anglais, sauf les mentions légales.
@@ -403,7 +411,9 @@ describe('le document de l’Étude de marché', () => {
           status: 'ready_for_meeting',
         },
       ],
-      project_meeting_conclusions: [{ outcome: null, commercialization_price: 615000 }],
+      project_meeting_conclusions: [
+        { outcome: null, commercialization_price: 615000, frozen_advisor_analysis: ANALYSIS_TRAP },
+      ],
     });
     expect(document.ranking.subject?.price).toBe(615000);
     expect(document.story.summary.items[0]?.chapter).toBe('ranking');

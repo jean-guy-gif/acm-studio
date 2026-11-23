@@ -54,14 +54,17 @@ const digitsOf = (text: string): string[] =>
     .filter(Boolean);
 
 // L'analyse de valeur n'apparaît pas dans l'Étude. Un concurrent peut afficher le même montant
-// (740 000 € chez Mme Garcia, 1 690 000 € chez M. Lefebvre) : on ne la cherche que si aucune fiche
-// ne porte ce prix. Que la charge ne la reçoive jamais est prouvé par le test unitaire, avec un
-// montant piège.
+// (740 000 € chez Mme Garcia, 1 690 000 € chez M. Lefebvre) : on la cherche hors des pages qui
+// listent les prix des concurrents (leurs fiches, le classement). Que la charge ne la reçoive
+// jamais est prouvé par le test unitaire, avec un montant piège.
 async function expectNoAnalysis(page: Page, analysis: string): Promise<void> {
-  const competitors = await page.locator('[data-study-page="competitors"]').allInnerTexts();
-  if (digitsOf(competitors.join('\n')).includes(analysis)) return;
-  const text = await page.getByTestId('market-study').innerText();
-  expect(digitsOf(text)).not.toContain(analysis);
+  const texts = await page
+    .locator(
+      '[data-study-page]:not([data-study-page="competitors"]):not([data-study-page="ranking"])',
+    )
+    .allInnerTexts();
+  expect(texts.length).toBeGreaterThan(1);
+  expect(digitsOf(texts.join('\n'))).not.toContain(analysis);
 }
 
 async function studyPages(page: Page): Promise<string[]> {
