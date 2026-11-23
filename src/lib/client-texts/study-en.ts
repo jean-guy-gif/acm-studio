@@ -81,9 +81,13 @@ export const ENGLISH_STUDY: StudyTexts = {
       return `${first ? `${first} ` : ''}Every figure has its source and its date.`;
     },
     valueTitle: (kind) => `And the value of your ${NOUNS[kind].one}?`,
-    value: (agreed) =>
+    value: (price, proposed) =>
       `This study does not calculate it: it shows the market as your buyers see it. ${
-        agreed ? `The price, we set together: ${agreed}.` : 'We will set the price together.'
+        price
+          ? proposed
+            ? `The proposed price: ${price}.`
+            : `The price, we set together: ${price}.`
+          : 'We will set the price together.'
       }`,
   },
 
@@ -268,8 +272,8 @@ export const ENGLISH_STUDY: StudyTexts = {
         : `Your price, compared with the ${word(inSale)} ${NOUNS[kind].many} for sale, from cheapest to most expensive.`,
     itemBefore: 'Your price ranks ',
     itemAfter: (total, count, kind) => ` of ${total}: ${cheaperPhrase(count, kind)}.`,
-    itemSub: (price, count) =>
-      `At ${price}, the price we set together.${
+    itemSub: (price, proposed, count) =>
+      `At ${price}, ${proposed ? 'the proposed price' : 'the price we set together'}.${
         count === 0
           ? ''
           : count === 1
@@ -288,8 +292,10 @@ export const ENGLISH_STUDY: StudyTexts = {
           }`,
     verdictNote:
       'The first third is no problem, the second needs your attention, the last is a danger.',
-    source: (day, kind) =>
-      `Asking prices, as known on ${day}. Your ${NOUNS[kind].one} at the price we set together. At equal prices, your ${NOUNS[kind].one} takes the better rank.`,
+    source: (day, proposed, kind) =>
+      `Asking prices, as known on ${day}. Your ${NOUNS[kind].one} at ${
+        proposed ? 'the proposed price' : 'the price we set together'
+      }. At equal prices, your ${NOUNS[kind].one} takes the better rank.`,
   },
 
   quartier: {
@@ -383,14 +389,20 @@ export const ENGLISH_STUDY: StudyTexts = {
     questionsTitle: 'Your questions for our next conversation',
     contact: 'To reach me',
     isTitle: 'What this study is, and what it is not',
-    is: (kind, day, withSales, agreed) =>
+    is: (kind, day, withSales, price) =>
       `It compares your ${NOUNS[kind].one} with the ${NOUNS[kind].many} for sale on ${day}${
         withSales ? ' and with the sales published around your home' : ''
       }. The prices of the properties for sale are asking prices, not sale prices${
         withSales ? '; those of the actual sales were signed at the notary' : ''
       }; floor areas and features as advertised, to be checked. It does not give the value of your ${
         NOUNS[kind].one
-      }: ${agreed ? 'we have set the price together' : 'we will set the price together'}. No seller or buyer is named.`,
+      }: ${
+        price === 'agreed'
+          ? 'we have set the price together'
+          : price === 'proposed'
+            ? 'it places the proposed price'
+            : 'we will set the price together'
+      }. No seller or buyer is named.`,
     sourceRows: {
       competitors: 'Properties for sale',
       sales: 'Sales',

@@ -75,10 +75,10 @@ export type MarketStudyInput = {
   coverPhotoUrl: string | null;
   // Les concurrents RETENUS du dossier, hors Live compris (décision du 05/11).
   competitors: MarketStudyCompetitorRow[];
-  // Mission 163 C — le prix de commercialisation CONVENU (`agreedPrice`) : le seul qui classe le
+  // Mission 163 C — le prix de commercialisation enregistré (`studyPrice`) : le seul qui classe le
   // bien ; sans lui, pas de ligne vendeur, pas de verdict, pas de chapitre. L'analyse du conseiller
   // n'entre jamais dans l'Étude.
-  agreedPrice: number | null;
+  studyPrice: StudyPrice | null;
   agency: SellerSynthesis['agency'];
   brandDeclarations: string;
   // Mission 157 B — le lien « Vivre ici » du bien (absent : aucun).
@@ -203,7 +203,7 @@ function detailOf(item: MarketStudyCompetitor, language: TextLanguage): string |
 export function buildStudyRanking(
   competitors: MarketStudyCompetitor[],
   subjectLabel: string,
-  agreed: number | null,
+  price: StudyPrice | null,
   // Mission 140 — dans la langue du vendeur (le français par défaut).
   language: TextLanguage = 'fr',
 ): MarketStudyRanking {
@@ -211,8 +211,8 @@ export function buildStudyRanking(
   const listed = competitors
     .filter((item) => item.goneAt == null && item.price > 0)
     .sort((a, b) => a.price - b.price || a.position - b.position);
-  const reference = positive(agreed);
-  if (reference == null) {
+  const reference = positive(price?.amount);
+  if (price == null || reference == null) {
     const total = listed.length;
     return {
       subject: null,
@@ -239,7 +239,9 @@ export function buildStudyRanking(
     tier: tierOf(rank, total),
     label: subjectLabel,
     price: reference,
-    detail: texts.marketUpdate.ranking.agreedTogether,
+    detail: price.proposed
+      ? texts.marketStudy.proposedPrice
+      : texts.marketUpdate.ranking.agreedTogether,
   });
   const rows: MarketStudyRankingRow[] = [];
   let rank = 1;
@@ -264,6 +266,7 @@ export function buildStudyRanking(
   return {
     subject: {
       price: reference,
+      proposed: price.proposed,
       rank: subjectPosition,
       total,
       tier,
@@ -274,15 +277,21 @@ export function buildStudyRanking(
   };
 }
 
-// Mission 163 C — le prix de commercialisation CONVENU : un prix ENREGISTRÉ, au Live (« Sur quel
-// prix partons-nous ? », le remplir vaut accord, M85) ou à la conclusion ; le dossier n'a pas
-// besoin d'être conclu (décision de Jean-Guy, 20/11). Sans prix enregistré, aucun ; jamais
-// l'analyse du conseiller à sa place.
-export function agreedPrice(
-  conclusion: { commercialization_price: number | string | null } | null,
-): number | null {
+export type StudyPrice = { amount: number; proposed: boolean };
+
+// Mission 163 C — le prix qui classe le bien : un prix de commercialisation ENREGISTRÉ, au Live
+// (« Sur quel prix partons-nous ? », le remplir vaut accord, M85) ou à la conclusion ; le dossier
+// n'a pas besoin d'être conclu (décision de Jean-Guy, 20/11). Sans prix enregistré, aucun ; jamais
+// l'analyse du conseiller à sa place. Une conclusion qui n'est pas un mandat signé (à relancer,
+// vendu ailleurs, retiré) le dit « proposé », comme le Suivi ; un mandat signé, ou un prix du Live
+// sans issue encore, « retenu ensemble » (décision de Jean-Guy, 23/11).
+export function studyPrice(
+  conclusion: { outcome: string | null; commercialization_price: number | string | null } | null,
+): StudyPrice | null {
   if (conclusion?.commercialization_price == null) return null;
-  return positive(Number(conclusion.commercialization_price));
+  const amount = positive(Number(conclusion.commercialization_price));
+  if (amount == null) return null;
+  return { amount, proposed: conclusion.outcome != null && conclusion.outcome !== 'signed' };
 }
 
 export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
@@ -318,7 +327,7 @@ export function buildMarketStudy(input: MarketStudyInput): MarketStudyDocument {
     canonicalType != null && isPropertyType(canonicalType)
       ? texts.labels.propertyType[canonicalType]
       : null;
-  const ranking = buildStudyRanking(competitors, subjectLabel, input.agreedPrice, language);
+  const ranking = buildStudyRanking(competitors, subjectLabel, input.studyPrice, language);
   const sellerName = input.sellerName?.trim() ?? '';
   const quartier = input.quartier ?? null;
   return {

@@ -9,7 +9,7 @@ vi.mock('server-only', () => ({}));
 import { MarketStudyDocument } from '@/features/market-study/components/market-study-document';
 import { loadMarketStudy } from '@/features/market-study/queries/load-market-study';
 import {
-  agreedPrice,
+  studyPrice,
   buildMarketStudy,
   type MarketStudyCompetitorRow,
   type MarketStudyInput,
@@ -114,7 +114,7 @@ function input(extra: Partial<MarketStudyInput> = {}): MarketStudyInput {
       // Retenu mais hors Live : il est dans l'Étude comme les autres.
       { ...competitor('c2', 1, 610000, { synthesis_hide_photo: true }) },
     ] as MarketStudyCompetitorRow[],
-    agreedPrice: null,
+    studyPrice: null,
     agency: AGENCY_BLOCK,
     brandDeclarations: '',
     ...extra,
@@ -161,19 +161,25 @@ describe('le constructeur de l’Étude de marché', () => {
   // Mission 163 C — seul le prix de commercialisation CONVENU classe le bien : un prix enregistré,
   // au Live ou à la conclusion, dossier conclu ou non (Jean-Guy, 20/11) ; jamais l'analyse.
   it('le prix convenu : un prix de commercialisation enregistré, sinon rien', () => {
-    expect(agreedPrice({ commercialization_price: 615000 })).toBe(615000);
+    const signed = { outcome: 'signed', commercialization_price: 615000 };
+    expect(studyPrice(signed)).toEqual({ amount: 615000, proposed: false });
+    // Un prix du Live, dossier pas encore conclu : retenu ensemble (le remplir vaut accord, M85).
+    expect(studyPrice({ ...signed, outcome: null })).toEqual({ amount: 615000, proposed: false });
+    // Toute autre issue que le mandat signé : « le prix proposé », comme le Suivi (23/11).
+    for (const outcome of ['follow_up', 'sold_elsewhere', 'withdrawn'])
+      expect(studyPrice({ ...signed, outcome })).toEqual({ amount: 615000, proposed: true });
     // La base rend un `numeric` en texte.
-    expect(agreedPrice({ commercialization_price: '615000' })).toBe(615000);
-    expect(agreedPrice({ commercialization_price: null })).toBeNull();
-    expect(agreedPrice({ commercialization_price: 0 })).toBeNull();
-    expect(agreedPrice(null)).toBeNull();
+    expect(studyPrice({ ...signed, commercialization_price: '615000' })?.amount).toBe(615000);
+    expect(studyPrice({ ...signed, commercialization_price: null })).toBeNull();
+    expect(studyPrice({ ...signed, commercialization_price: 0 })).toBeNull();
+    expect(studyPrice(null)).toBeNull();
 
-    const agreed = buildMarketStudy(input({ agreedPrice: 615000 }));
+    const agreed = buildMarketStudy(input({ studyPrice: { amount: 615000, proposed: false } }));
     expect(agreed.ranking.subject).toMatchObject({ price: 615000, rank: 3 });
     expect(agreed.ranking.rows.map((row) => row.key)).toEqual(['c1', 'c2', 'subject', 'c3']);
     expect(agreed.ranking.rows.find((row) => row.subject)?.detail).toBe('prix retenu ensemble');
 
-    const low = buildMarketStudy(input({ agreedPrice: 580000 }));
+    const low = buildMarketStudy(input({ studyPrice: { amount: 580000, proposed: false } }));
     expect(low.ranking.subject).toMatchObject({ rank: 1, tier: 'green' });
     expect(low.ranking.subject?.word).toBe('Pas de problème');
 
@@ -186,7 +192,7 @@ describe('le constructeur de l’Étude de marché', () => {
   it('à égalité de prix, le vendeur prend le meilleur rang ; une annonce retirée sort du classement', () => {
     const study = buildMarketStudy(
       input({
-        agreedPrice: 610000,
+        studyPrice: { amount: 610000, proposed: false },
         competitors: [
           competitor('c1', 0, 590000),
           competitor('c2', 1, 610000),
@@ -202,7 +208,9 @@ describe('le constructeur de l’Étude de marché', () => {
   });
 
   it('aucun interdit dans la charge : ni titre, ni lien, ni adresse, ni « Vendu par », ni exclusivité', () => {
-    const serialized = JSON.stringify(buildMarketStudy(input({ agreedPrice: 615000 })));
+    const serialized = JSON.stringify(
+      buildMarketStudy(input({ studyPrice: { amount: 615000, proposed: false } })),
+    );
     for (const forbidden of [
       'Dupont',
       'rue des Lilas',
@@ -341,7 +349,7 @@ describe('le document de l’Étude de marché', () => {
     );
     // Mission 163 C — l'analyse du conseiller n'est jamais lue.
     expect(selected.project_price_positionings).toBeUndefined();
-    expect(selected.project_meeting_conclusions).toBe('commercialization_price');
+    expect(selected.project_meeting_conclusions).toBe('outcome, commercialization_price');
     expect(selected.subject_properties).not.toMatch(/advisor_|vigilance|weak/);
   });
 
@@ -418,6 +426,28 @@ describe('le document de l’Étude de marché', () => {
     expect(document.ranking.subject?.price).toBe(615000);
     expect(document.story.summary.items[0]?.chapter).toBe('ranking');
     expect(html).toContain('data-testid="market-study-verdict"');
+    for (const text of [JSON.stringify(document), html])
+      expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);
+  });
+
+  // Mission 163 C — une conclusion « À relancer » avec un prix : « le prix proposé », comme le
+  // Suivi ; « le prix retenu ensemble » reste pour un mandat signé (Jean-Guy, 23/11).
+  it('à relancer avec un prix : classé au « prix proposé », jamais « retenu ensemble »', async () => {
+    const { document, html } = await loadFixture({
+      ...CONCLUDED,
+      project_meeting_conclusions: [
+        {
+          outcome: 'follow_up',
+          commercialization_price: 615000,
+          frozen_advisor_analysis: ANALYSIS_TRAP,
+        },
+      ],
+    });
+    expect(document.ranking.subject).toMatchObject({ price: 615000, proposed: true });
+    expect(html).toContain('prix proposé');
+    expect(html).not.toContain('retenu ensemble');
+    expect(document.story.summary.value).toContain('Le prix proposé :');
+    expect(document.story.next.is).toContain('elle situe le prix proposé');
     for (const text of [JSON.stringify(document), html])
       expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);
   });
