@@ -46,12 +46,24 @@ test('l’Étude imprimée : pages pleines, numérotées, renvois justes', async
         name: (row.textContent ?? '').replace(/\s+/g, ' ').trim(),
       })),
     );
+  // Le dossier à relancer (M. et Mme Lambert-Duval) s'ouvre depuis le Suivi : « Ma démo » y mène.
+  await page.goto('/suivi');
+  const followUp = /\/builder\/([^/?#]+)/.exec(
+    (await page
+      .getByTestId('suivi-row')
+      .filter({ hasText: 'Lambert-Duval' })
+      .getByTestId('suivi-open-project')
+      .first()
+      .getAttribute('href', { timeout: 60_000 })) ?? '',
+  )?.[1];
+  expect(followUp, 'Le dossier de M. et Mme Lambert-Duval est introuvable au Suivi').toBeTruthy();
+  dossiers.push({ id: followUp as string, name: 'M. et Mme Lambert-Duval' });
   const ids = [...new Set(dossiers.map((dossier) => dossier.id).filter(Boolean))];
-  expect(ids.length).toBeGreaterThanOrEqual(10);
+  expect(ids.length).toBeGreaterThanOrEqual(11);
   const counted: string[] = [];
 
   for (const id of ids) {
-    const name = dossiers.find((dossier) => dossier.id === id)?.name ?? '';
+    const name = dossiers.findLast((dossier) => dossier.id === id)?.name ?? '';
     await test.step(`l’Étude ${id}`, async () => {
       await page.goto(`/builder/${id}/etude-de-marche`);
       await expect(page.getByTestId('market-study')).toBeVisible({ timeout: 60_000 });
