@@ -173,13 +173,32 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
 - **Jean-Guy Ourmières crée et décide le produit** : il écrit les missions, valide et tranche.
   Une décision datée et signée Jean-Guy, ici, dans `docs/DECISIONS.md` ou dans une mission, fait
   autorité sur toute décision antérieure, y compris celles qui citent Laurent.
+- **Trois niveaux de mission** (Jean-Guy, 23/11), annoncé au début de chaque mission :
+  - **Petit** (texte, affichage, impression, sans base ni Live) : le test avant le code, barrières
+    vertes, les specs e2e concernées seulement, puis production directe ; Jean-Guy apprend après ce
+    qui est parti. Pas de relecteur, pas de suite complète, pas de maquette sauf écran nouveau.
+  - **Moyen** (écran ou fonction nouvelle) : une maquette, une seule fois, puis le code, le
+    relecteur une fois, la suite e2e complète une fois, la production après le feu vert de Jean-Guy.
+  - **Sensible** (base et migrations, Live, ce que voit le vendeur, confidentialité, coûts) : le
+    processus complet, décrit ci-dessous.
+- **Une mission, un objectif** (Jean-Guy, 23/11) : ce qui se découvre en route va dans
+  `missions/PLUS_TARD.md`, pas dans la mission en cours, sauf si cela la bloque.
+- **Pas de chasse aux cas rares** (Jean-Guy, 23/11) : on corrige ce qui se voit sur de vrais
+  dossiers ; un cas imaginé par un balayage est noté dans `missions/PLUS_TARD.md`, pas corrigé.
+- **Le chef tranche seul les détails** et le dit après (Jean-Guy, 23/11) ; il ne pose une question
+  à Jean-Guy que pour sa méthode, ce que voit le vendeur, ou un coût.
+- **Comptes rendus en dix lignes** (Jean-Guy, 23/11) : ce qui est parti, ce qui reste, ce que
+  Jean-Guy a à faire.
 - `/mission NN` : branche `mission-NN-…`, périmètre de la mission et rien d'autre, barrières vertes,
   push, e2e sur l'essai. Puis `/valide NN` fusionne dans `main` et complète `docs/DECISIONS.md`.
-  **Jamais de fusion dans `main` sans « valide ».**
+  **Jamais de fusion dans `main` sans « valide »**, sauf une mission de niveau Petit, qui part en
+  production dès ses barrières et ses specs vertes (23/11).
 - **Maquette d'abord** (Jean-Guy, 07/11) : toute mission qui change la disposition ou le parcours
   d'un écran commence par une maquette des écrans touchés, sur tablette, téléphone et ordinateur,
   avec des notes avant / après, rangée dans `missions/maquettes/`. Aucun code avant l'accord sur la
-  maquette. Une mission qui corrige sans rien changer à la disposition en est dispensée.
+  maquette. Une mission qui corrige sans rien changer à la disposition en est dispensée. Selon le
+  niveau (23/11) : pas de maquette pour une mission Petit, sauf écran nouveau ; une seule, une seule
+  fois, pour une mission Moyen.
 - **Jean-Guy ne teste plus jamais sur l'essai** (Jean-Guy, 06/11) : aucun rapport ne lui donne de
   scénario sur l'essai ; après le `/valide`, un seul test court, sur la production
   (acm-studio-henna.vercel.app). L'essai reste l'étape interne : l'e2e et le parcours du relecteur.
@@ -191,7 +210,8 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
 - **Équipe allégée** (Jean-Guy, 05/11) : l'architecte seulement avec une migration ou une nouvelle
   table ; le gardien-sql seulement avec une migration ; le relecteur une passe, puis les seuls
   bloquants ; l'e2e joué par le chef, au premier plan ; le designer et le parcoureur ne sont plus
-  lancés (`.claude/commands/mission.md`).
+  lancés (`.claude/commands/mission.md`). Selon le niveau (23/11) : pas de relecteur ni de suite e2e
+  complète pour une mission Petit.
 - Repères : `docs/ETAT_DU_PRODUIT.md` (ce que fait le code), `docs/01_Method/Storyboard.md` et
   `ACM_Protocol.md` (la méthode), `missions/` (l'historique). `docs/archive/` n'est plus à jour.
 - Les décisions produit, qui font autorité comme ce fichier :
