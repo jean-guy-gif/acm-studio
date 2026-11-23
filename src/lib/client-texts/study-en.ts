@@ -62,9 +62,9 @@ export const ENGLISH_STUDY: StudyTexts = {
     kpiCompetitors: (count, kind) => `${noun(kind, count)} like yours for sale today`,
     kpiSales: (count, kind, since) => `${noun(kind, count)} sold near you since ${since}`,
     kpiPlace: 'where your price stands, from cheapest to most expensive',
-    kpiDays: (days) => (days > 1 ? 'days' : 'day'),
+    kpiDays: (days, approximate) => `${days > 1 ? 'days' : 'day'}${approximate ? ' or so' : ''}`,
     kpiDaysLabel: (kind) =>
-      `half the ${NOUNS[kind].many} for sale have been waiting for a buyer at least this long`,
+      `half of these ${NOUNS[kind].many} have been waiting for a buyer at least this long`,
     page: (page) => `page ${page}`,
     howTitle: 'How this study is made',
     how: (competitors, sales, quartier, kind) => {

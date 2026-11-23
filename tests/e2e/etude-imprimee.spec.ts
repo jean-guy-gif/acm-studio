@@ -48,6 +48,9 @@ async function frames(page: Page): Promise<Frame[]> {
   }
 }
 
+// Les polices de charte au choix d'une agence (M57, M95) : la pagination ne dépend pas d'elles.
+const FONTS = ['montserrat', 'inter', 'poppins', 'source-sans', 'work-sans', 'nunito-sans'];
+
 test('l’Étude imprimée : pages pleines, numérotées, renvois justes', async ({ page }) => {
   test.setTimeout(9 * 60_000);
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -87,6 +90,38 @@ test('l’Étude imprimée : pages pleines, numérotées, renvois justes', async
         }
       }
 
+      // Le classement ne se coupe jamais jusqu'à 12 biens (Jean-Guy, 23/11) : titre, verdict,
+      // réglette, toutes les lignes et la légende sur la même page imprimée.
+      const ranking = printed.filter((frame) =>
+        frame.units.some((unit) => unit.startsWith('ranking-')),
+      );
+      if (ranking.length > 0) {
+        const rows = await page.locator('[data-print-unit="ranking-row"] tbody tr').count();
+        if (rows <= 12) {
+          expect(ranking, 'le classement sur une seule page').toHaveLength(1);
+          expect(ranking[0]!.units).toEqual(
+            expect.arrayContaining(['band', 'ranking-head', 'ranking-row', 'ranking-legend']),
+          );
+        }
+      }
+
+      // Les pages sont décidées pour toutes les polices de charte : aucune ne fait déborder une
+      // page (sinon le numéro et les renvois seraient faux).
+      for (const font of FONTS) {
+        const style = await page.addStyleTag({
+          content: `[data-synthesis]{--font-sans:var(--font-${font})!important;--font-title:var(--font-${font})!important}`,
+        });
+        await page.evaluate(() => document.fonts.ready);
+        const withFont = await frames(page);
+        for (const frame of withFont.slice(1)) {
+          expect(
+            frame.used,
+            `${font}, page ${frame.number} : ${frame.units.join(', ')}`,
+          ).toBeLessThanOrEqual(frame.room + 1);
+        }
+        await style.evaluate((node) => (node as HTMLElement).remove());
+      }
+
       // Le vrai PDF : une page par page imprimée, son numéro écrit une fois, les renvois justes.
       const pdf = await printedPdfTexts(page);
       expect(pdf).toHaveLength(printed.length);
@@ -109,6 +144,14 @@ test('l’Étude imprimée : pages pleines, numérotées, renvois justes', async
         );
       expect(items.length).toBeGreaterThan(0);
       for (const item of items) {
+        // Le renvoi est le numéro de la page imprimée où commence le chapitre (son titre)…
+        const at = await page
+          .locator(
+            `[data-print-page]:has(> [data-print-body] > [data-print-unit="band"][data-chapter="${item.chapter}"])`,
+          )
+          .getAttribute('data-print-page');
+        expect(Number(at), `« page ${item.page} » pour ${item.chapter}`).toBe(item.page);
+        // … et dans le vrai PDF, cette page porte bien le titre du chapitre.
         const title = (
           await page
             .locator(`[data-print-unit="band"][data-chapter="${item.chapter}"] h2`)

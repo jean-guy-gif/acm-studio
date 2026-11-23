@@ -79,9 +79,10 @@ export const FRENCH_STUDY: StudyTexts = {
       return `${count > 1 ? n.many : n.one} vendu${e(n, count > 1)} autour de chez vous depuis ${since}`;
     },
     kpiPlace: 'la place de votre prix, du moins cher au plus cher',
-    kpiDays: (days) => (days > 1 ? 'jours' : 'jour'),
+    kpiDays: (days, approximate) =>
+      `${days > 1 ? 'jours' : 'jour'}${approximate ? ' environ' : ''}`,
     kpiDaysLabel: (kind) =>
-      `la moitié des ${NOUNS[kind].many} en vente attendent un acheteur depuis au moins ce temps`,
+      `la moitié de ces ${NOUNS[kind].many} attendent un acheteur depuis au moins ce temps`,
     page: (page) => `page ${page}`,
     howTitle: 'Comment cette étude est faite',
     how: (competitors, sales, quartier, kind) => {
