@@ -27,3 +27,14 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   Supabase la servent sans retourner au stockage (proposition 2 de `docs/PASSAGE_PAYANT.md`).
 - 23/11 · E2E, photos du stockage · Des vignettes pour les petites images (cartes, vignettes du
   Live) au lieu de la photo entière (proposition 3 de `docs/PASSAGE_PAYANT.md`).
+- 23/11 · M164 · Le panneau de l'opérateur ne dit pas que le prix part avec les réponses (« Effacer
+  les réponses de ce Live ? », `reopen-live-panel.tsx`) : hors périmètre de la 164 (« changer ce
+  que voit le conseiller à la réouverture »).
+- 23/11 · M164 · Un onglet du Live resté ouvert peut réenregistrer un prix après la réouverture.
+- 23/11 · M164 · `reopen_live` et `conclude_meeting` prennent leurs verrous dans l'ordre inverse
+  (dossier puis conclusion, conclusion puis dossier) : lancés au même instant sur le même dossier,
+  Postgres en annule un ; rien n'est écrit à moitié.
+- 23/11 · M164 · Gardien-sql : `supabase/tests/live_closed_after_conclusion.sql` (l. 213-218) a le
+  même défaut que celui corrigé dans `live_reopening.sql` (un échec levé dans le bloc qui attend le
+  refus est avalé) ; et aucun test ne joue le refus de rouvrir un dossier archivé, que
+  `docs/GESTES_SENSIBLES.md` annonce.

@@ -5,6 +5,12 @@
 --   §3 hors de reopen_live, le début du Live ne se remet toujours pas à zéro (M95) ;
 --   §4 refusé sans motif, sur un dossier conclu ou archivé, ou quand il n'y a rien à rouvrir ;
 --   §5 la trace part avec son dossier.
+-- Mission 164 — un Live rouvert oublie le prix qu'il avait enregistré :
+--   §6 la réouverture supprime la ligne de conclusion sans issue (née de « Sur quel prix
+--      partons-nous ? »), la trace dit que le prix a été retiré, sans aucun montant ; un nouveau
+--      prix refait une ligne neuve ; la conclusion d'un autre dossier, conclu ou non, ne bouge
+--      pas ; un refus ne touche à rien ; sans prix, la trace dit qu'aucun n'a été retiré ; une
+--      ligne qui porte une issue n'est jamais supprimée.
 --
 --   docker exec -i supabase_db_acm-studio psql -U postgres -d postgres \
 --     -v ON_ERROR_STOP=1 < supabase/tests/live_reopening.sql
@@ -28,7 +34,18 @@ insert into public.projects (id, agency_id, advisor_id, seller_name, status, liv
   ('104ccccc-0000-0000-0000-000000000002', '104aaaaa-0000-0000-0000-000000000000',
    '10411111-1111-1111-1111-111111111111', 'conclu', 'meeting_completed', null, null),
   ('104ccccc-0000-0000-0000-000000000003', '104aaaaa-0000-0000-0000-000000000000',
-   '10411111-1111-1111-1111-111111111111', 'jamais lancé', 'ready_for_meeting', null, null);
+   '10411111-1111-1111-1111-111111111111', 'jamais lancé', 'ready_for_meeting', null, null),
+  -- Mission 164 — un autre Live avec son prix, jamais rouvert ; un Live commencé sans prix ; un
+  -- Live commencé dont la ligne porte une issue (inatteignable par le code, gardé par la base).
+  ('104ccccc-0000-0000-0000-000000000004', '104aaaaa-0000-0000-0000-000000000000',
+   '10411111-1111-1111-1111-111111111111', 'autre Live', 'ready_for_meeting',
+   '2026-10-14 11:00:00+00', null),
+  ('104ccccc-0000-0000-0000-000000000005', '104aaaaa-0000-0000-0000-000000000000',
+   '10411111-1111-1111-1111-111111111111', 'Live sans prix', 'ready_for_meeting',
+   '2026-10-14 12:00:00+00', null),
+  ('104ccccc-0000-0000-0000-000000000006', '104aaaaa-0000-0000-0000-000000000000',
+   '10411111-1111-1111-1111-111111111111', 'ligne avec issue', 'ready_for_meeting',
+   '2026-10-14 13:00:00+00', null);
 insert into public.comparables (id, agency_id, project_id, title, price, surface_area, is_selected, display_order) values
   ('104dddd0-0000-0000-0000-000000000001', '104aaaaa-0000-0000-0000-000000000000',
    '104ccccc-0000-0000-0000-000000000001', 'c1', 300000, 60, true, 0);
@@ -42,6 +59,27 @@ insert into public.live_seller_responses (agency_id, project_id, comparable_id, 
           '104dddd0-0000-0000-0000-000000000001', 'yes', 280000);
 insert into public.live_seller_summary (agency_id, project_id, seller_perceived_property_price)
   values ('104aaaaa-0000-0000-0000-000000000000', '104ccccc-0000-0000-0000-000000000001', 350000);
+
+-- Mission 164 — les prix enregistrés au Live, par la fonction du Live elle-même : le dossier à
+-- rouvrir et le témoin ; puis la conclusion signée du dossier conclu, et la ligne avec issue.
+select public.save_commercialization_price('104ccccc-0000-0000-0000-000000000001',
+  '104aaaaa-0000-0000-0000-000000000000', 357913, 359715, 375391, 395713);
+select public.save_commercialization_price('104ccccc-0000-0000-0000-000000000004',
+  '104aaaaa-0000-0000-0000-000000000000', 537951, 539157, 573519, 593715);
+insert into public.project_meeting_conclusions
+  (project_id, agency_id, commercialization_price, outcome, first_outcome, mandate_type,
+   concluded_at, signed_at)
+values
+  ('104ccccc-0000-0000-0000-000000000002', '104aaaaa-0000-0000-0000-000000000000', 735917,
+   'signed', 'signed', 'exclusive', '2026-10-13 10:00:00+00', '2026-10-13 10:00:00+00'),
+  ('104ccccc-0000-0000-0000-000000000006', '104aaaaa-0000-0000-0000-000000000000', 835919,
+   'follow_up', 'follow_up', null, '2026-10-13 11:00:00+00', null);
+create temp table witnesses_164 on commit drop as
+  select c.project_id, to_jsonb(c) as line
+  from public.project_meeting_conclusions c
+  where c.project_id in ('104ccccc-0000-0000-0000-000000000002',
+                         '104ccccc-0000-0000-0000-000000000004',
+                         '104ccccc-0000-0000-0000-000000000006');
 
 -- §1 — le navigateur, conseiller comme manager.
 -- Mission 113 — le droit d'appeler reopen_live se lit (has_function_privilege), comme dans
@@ -94,23 +132,53 @@ begin
 end $$;
 
 -- §4 — refus.
+-- Mission 164 (gardien-sql) — chaque refus est prouvé : l'échec se lève HORS du bloc qui attend le
+-- refus (levé dedans, `when raise_exception` l'avalait, et le test passait que la fonction refuse
+-- ou non), et le message est celui du refus attendu.
 do $$
+declare
+  v_refused boolean;
 begin
+  v_refused := false;
   begin
     perform public.reopen_live('104ccccc-0000-0000-0000-000000000001', null, 'op@t.l', '  ');
-    raise exception 'FAIL 4: réouverture sans motif';
-  exception when invalid_parameter_value then null;
+  exception when invalid_parameter_value then
+    v_refused := sqlerrm like 'reopen_live: motif requis%';
   end;
+  if not v_refused then
+    raise exception 'FAIL 4: réouverture sans motif';
+  end if;
+
+  v_refused := false;
   begin
     perform public.reopen_live('104ccccc-0000-0000-0000-000000000002', null, 'op@t.l', 'motif suffisant');
-    raise exception 'FAIL 4: réouverture d''un dossier conclu';
-  exception when raise_exception then null;
+  exception when raise_exception then
+    v_refused := sqlerrm like 'reopen_live: dossier %';
   end;
+  if not v_refused then
+    raise exception 'FAIL 4: réouverture d''un dossier conclu';
+  end if;
+
+  v_refused := false;
   begin
     perform public.reopen_live('104ccccc-0000-0000-0000-000000000003', null, 'op@t.l', 'motif suffisant');
-    raise exception 'FAIL 4: réouverture d''un Live jamais commencé';
-  exception when raise_exception then null;
+  exception when raise_exception then
+    v_refused := sqlerrm = 'reopen_live: rien à rouvrir';
   end;
+  if not v_refused then
+    raise exception 'FAIL 4: réouverture d''un Live jamais commencé';
+  end if;
+
+  -- Mission 164 — un refus ne trace rien et ne touche à aucune conclusion.
+  if exists (select 1 from public.live_reopenings) then
+    raise exception 'FAIL 4: un refus a laissé une trace';
+  end if;
+  if (select commercialization_price from public.project_meeting_conclusions
+        where project_id = '104ccccc-0000-0000-0000-000000000001') is distinct from 357913
+     or (select count(*) from public.project_meeting_conclusions c
+           where c.agency_id = '104aaaaa-0000-0000-0000-000000000000') <> 4 then
+    raise exception 'FAIL 4: un refus a touché à une conclusion';
+  end if;
 end $$;
 
 -- §2 — le serveur rouvre, et trace.
@@ -158,6 +226,80 @@ begin
   end if;
 end $$;
 reset role;
+
+-- §6 — Mission 164 : le prix du Live annulé.
+do $$
+declare
+  v_result jsonb;
+  v_trace public.live_reopenings%rowtype;
+  v_line public.project_meeting_conclusions%rowtype;
+begin
+  -- La réouverture de §2 a supprimé la ligne sans issue, et la trace le dit, sans montant.
+  if exists (select 1 from public.project_meeting_conclusions
+               where project_id = '104ccccc-0000-0000-0000-000000000001') then
+    raise exception 'FAIL 6: le prix du Live rouvert est resté';
+  end if;
+  select * into v_trace from public.live_reopenings
+    where project_id = '104ccccc-0000-0000-0000-000000000001';
+  if v_trace.erased -> 'commercialization_price_removed' is distinct from 'true'::jsonb then
+    raise exception 'FAIL 6: la trace ne dit pas que le prix a été retiré (%)', v_trace.erased;
+  end if;
+  if v_trace.erased::text ~ '357913|359715|375391|395713' then
+    raise exception 'FAIL 6: la trace garde un montant de la conclusion (%)', v_trace.erased;
+  end if;
+
+  -- Les autres conclusions n'ont pas bougé : le dossier conclu, l'autre Live, la ligne avec issue.
+  if exists (
+    select 1 from witnesses_164 w
+    where (select to_jsonb(c) from public.project_meeting_conclusions c
+             where c.project_id = w.project_id) is distinct from w.line
+  ) then
+    raise exception 'FAIL 6: la réouverture a touché à la conclusion d''un autre dossier';
+  end if;
+
+  -- Un nouveau prix au Live refait une ligne neuve : son prix et ses repères, aucune issue.
+  perform public.save_commercialization_price('104ccccc-0000-0000-0000-000000000001',
+    '104aaaaa-0000-0000-0000-000000000000', 637953, 639159, 673593, 693717);
+  select * into v_line from public.project_meeting_conclusions
+    where project_id = '104ccccc-0000-0000-0000-000000000001';
+  if not found
+     or v_line.commercialization_price is distinct from 637953
+     or v_line.frozen_market_computed is distinct from 639159
+     or v_line.frozen_advisor_analysis is distinct from 673593
+     or v_line.frozen_advisor_price is distinct from 693717
+     or v_line.outcome is not null or v_line.first_outcome is not null
+     or v_line.concluded_at is not null then
+    raise exception 'FAIL 6: le nouveau prix ne refait pas une ligne neuve (%)', to_jsonb(v_line);
+  end if;
+
+  -- Un Live sans prix : rien à retirer, la trace le dit.
+  v_result := public.reopen_live('104ccccc-0000-0000-0000-000000000005',
+    '10411111-1111-1111-1111-111111111111', 'op@t.l', 'Live lancé par erreur');
+  if v_result <> '{"responses": 0, "summary": false}'::jsonb then
+    raise exception 'FAIL 6: résultat % pour un Live sans prix', v_result;
+  end if;
+  if (select erased -> 'commercialization_price_removed' from public.live_reopenings
+        where project_id = '104ccccc-0000-0000-0000-000000000005')
+     is distinct from 'false'::jsonb then
+    raise exception 'FAIL 6: la trace d''un Live sans prix ne dit pas « aucun prix retiré »';
+  end if;
+
+  -- Une ligne qui porte une issue n'est jamais supprimée, et son prix ne bouge pas.
+  perform public.reopen_live('104ccccc-0000-0000-0000-000000000006',
+    '10411111-1111-1111-1111-111111111111', 'op@t.l', 'Live lancé par erreur');
+  if (select erased -> 'commercialization_price_removed' from public.live_reopenings
+        where project_id = '104ccccc-0000-0000-0000-000000000006')
+     is distinct from 'false'::jsonb then
+    raise exception 'FAIL 6: une ligne avec issue a été comptée comme un prix retiré';
+  end if;
+  if exists (
+    select 1 from witnesses_164 w
+    where (select to_jsonb(c) from public.project_meeting_conclusions c
+             where c.project_id = w.project_id) is distinct from w.line
+  ) then
+    raise exception 'FAIL 6: une conclusion qui porte une issue a été touchée';
+  end if;
+end $$;
 
 -- §5 — la trace part avec son dossier.
 delete from public.comparables where project_id = '104ccccc-0000-0000-0000-000000000001';
