@@ -18,3 +18,7 @@ supabase/.temp
 
 # Mission 155 — la liste des jeux de photos de la démo, écrite par scripts/demo-photo-sets.mjs
 src/features/demo/data/photo-sets.generated.json
+
+# Correctifs 163 — la largeur des caractères des polices, écrite par scripts/print-font-metrics.mjs
+src/features/market-study/services/print-font-metrics.generated.json
+tests/print/.banc
