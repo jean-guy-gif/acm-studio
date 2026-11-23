@@ -19,7 +19,7 @@ export const PRINT_BOTTOM_MM = 16;
 export const PRINT_ROOM_MM = PRINT_PAGE_MM - PRINT_TOP_MM - PRINT_BOTTOM_MM;
 // Le paginateur garde quelques millimètres de côté : une hauteur estimée un peu courte ne fait jamais
 // déborder une page.
-export const PRINT_SAFETY_MM = 4;
+export const PRINT_SAFETY_MM = 2;
 // L'espace entre deux blocs, à l'impression (print:gap-[3mm]).
 export const PRINT_GAP_MM = 3;
 
@@ -84,7 +84,8 @@ export function paginateUnits(
     const group = units.slice(i, end + 1);
     const cost = (previous: PrintUnit | undefined) =>
       group.reduce((sum, unit, k) => sum + unitCost(unit, k === 0 ? previous : group[k - 1]), 0);
-    if (page.units.length > 0 && page.mm + cost(page.units.at(-1)) > room) {
+    // Le dernier bloc d'une page n'a pas d'espace après lui.
+    if (page.units.length > 0 && page.mm + cost(page.units.at(-1)) - PRINT_GAP_MM > room) {
       pages.push(page);
       page = { units: [], mm: 0 };
     }
@@ -127,7 +128,7 @@ const CPL = {
   source: 145,
   full: 100,
   fullSmall: 112,
-  talk: 125,
+  talk: 100,
   tileHead: 44,
   tileSmall: 56,
   third: 34,
@@ -139,7 +140,6 @@ const bandMm = (title: string, lead: string, numbered = true) =>
   (numbered ? 24.2 : 18.2) +
   8.2 * textLines(title, CPL.bandTitle) +
   5.3 * textLines(lead, CPL.bandLead) +
-  2 +
   PRINT_GAP_MM;
 
 const avisMm = (avis: string | null, source: string) =>
@@ -191,14 +191,11 @@ export function studyPrintUnits(
   units.push({
     kind: 'summary-head',
     mm:
-      bandMm(summary.title, summary.lead, false) -
-      2 +
-      (summary.kpis.length ? 13 + 3.7 * kpiLabel : 0),
+      bandMm(summary.title, summary.lead, false) + (summary.kpis.length ? 13 + 3.7 * kpiLabel : 0),
   });
   units.push({
     kind: 'summary-items',
     mm:
-      5 +
       summary.items.reduce(
         (sum, item) =>
           sum +
@@ -207,8 +204,7 @@ export function studyPrintUnits(
           (item.sub ? 0.5 + 4.65 * textLines(item.sub, CPL.summarySub) : 0) +
           (item.tier ? 2.7 : 0),
         0,
-      ) +
-      g,
+      ) + g,
   });
   units.push({
     kind: 'summary-how',
@@ -366,7 +362,7 @@ export function studyPrintUnits(
   units.push({
     kind: 'next-head',
     mm:
-      9 +
+      5 +
       8.8 * textLines(next.title, CPL.bandTitle) +
       4.9 +
       7.2 +
