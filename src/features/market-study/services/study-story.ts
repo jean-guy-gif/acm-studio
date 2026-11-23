@@ -1,3 +1,4 @@
+import { studyPrintPages } from '@/features/market-study/services/study-print';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
 import type { ComparisonCriterion } from '@/features/live-seller/constants';
 import { daysLabel } from '@/features/market-update/services/meeting-days';
@@ -358,11 +359,28 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
   const sources = [
     shown > 0 ? { label: s.next.sourceRows.competitors, value: s.next.competitorsSource } : null,
     salesBlock ? { label: s.next.sourceRows.sales, value: q.sources.ventes } : null,
-    names(['urbanisme', 'permis']).length
-      ? { label: s.next.sourceRows.planning, value: names(['urbanisme', 'permis']).join(' · ') }
+    // Correctifs 163 — le libellé suit les blocs réellement montrés : « Habitants » sans risques.
+    planningView || permitsView
+      ? {
+          label:
+            planningView && permitsView
+              ? s.next.sourceRows.planning
+              : planningView
+                ? s.next.sourceRows.planningOnly
+                : s.next.sourceRows.permitsOnly,
+          value: names(['urbanisme', 'permis']).join(' · '),
+        }
       : null,
-    names(['risques', 'population']).length
-      ? { label: s.next.sourceRows.risks, value: names(['risques', 'population']).join(' · ') }
+    risksView || populationView
+      ? {
+          label:
+            risksView && populationView
+              ? s.next.sourceRows.risks
+              : risksView
+                ? s.next.sourceRows.risksOnly
+                : s.next.sourceRows.peopleOnly,
+          value: names(['risques', 'population']).join(' · '),
+        }
       : null,
     condominiumView ? { label: s.next.sourceRows.condominium, value: q.sources.copropriete } : null,
   ].filter((row): row is { label: string; value: string } => row != null);
@@ -414,6 +432,27 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       .map((entry) => entry.sale.rooms)
       .filter((value): value is number => value != null);
     const radius = salesBlock.listRadius != null ? meters(salesBlock.listRadius) : null;
+    // Ce qui rapproche les ventes retenues du bien : le nombre de pièces, puis la surface (l'ordre de
+    // `closestSales`) ; sans l'un ni l'autre pour le bien, ce sont les plus récentes.
+    const keptFacts = [
+      s.sales.rooms(keptRooms),
+      keptSurfaces.length > 0
+        ? s.sales.surface({
+            from: formatNumber(Math.min(...keptSurfaces), { language }),
+            to: formatSquareMeters(Math.max(...keptSurfaces), { language }),
+          })
+        : null,
+    ].filter((fact): fact is string => fact != null);
+    const ownRooms = positive(input.subject?.rooms) != null;
+    const ownSurface = positive(input.subject?.surface) != null;
+    const likeness =
+      ownRooms || ownSurface
+        ? {
+            rooms: ownRooms,
+            surface: ownSurface,
+            facts: keptFacts.length > 0 ? keptFacts.join(', ') : null,
+          }
+        : null;
     const low = Math.min(...prices);
     const high = Math.max(...prices);
     const short = (value: number) =>
@@ -437,7 +476,8 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       legendKept: s.sales.legendKept(kept.length),
       legendOthers:
         list.length > kept.length ? s.sales.legendOthers(list.length - kept.length) : null,
-      tableTitle: s.sales.tableTitle(list.length, kept.length, kind),
+      tableTitle: s.sales.tableTitle(list.length, kept.length, kind, likeness != null),
+      tableNote: likeness && kept.length < list.length ? s.sales.tableNote(likeness) : null,
       columns: q.sales.columns,
       rows: kept.map((entry, i) => ({
         mark: i + 1,
@@ -470,7 +510,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
     };
     salesItem = {
       title: s.sales.item(list.length, kind, surfaceRange, since),
-      sub: s.sales.itemSub(list.length, kept.length, kind),
+      sub: s.sales.itemSub(list.length, kept.length, kind, likeness),
     };
   }
 
@@ -647,24 +687,9 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
     };
   }
 
-  // ─── Les pages de chaque chapitre ──────────────────────────────────────────────────────────────
-  const pageCount: Record<StudyChapter, number> = {
-    competitors: competitorPages.length,
-    sales: 1,
-    ranking: rankingPages(ranking.rows.length),
-    quartier: quartier?.split ? 2 : 1,
-  };
-  const pageOf = {} as Record<StudyChapter, number>;
-  let page = 3;
-  for (const chapter of chapters) {
-    pageOf[chapter] = page;
-    page += pageCount[chapter];
-  }
-  const nextPage = page;
-
   // ─── Le résumé, page 2 : la place du prix en tête ─────────────────────────────────────────────
   const items: MarketStudyStory['summary']['items'] = [];
-  const pageLabel = (chapter: StudyChapter) => s.summary.page(pageOf[chapter]);
+  // La page de chaque chapitre est posée une fois les pages imprimées décidées (plus bas).
   if (rankingChapter && subject) {
     items.push({
       chapter: 'ranking',
@@ -675,7 +700,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
         { text: s.ranking.itemAfter(subject.total, cheaper, kind) },
       ],
       sub: s.ranking.itemSub(euro(subject.price), subject.proposed, cheaper, kind),
-      page: pageLabel('ranking'),
+      page: '',
       tier: subject.tier,
     });
   }
@@ -688,7 +713,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
         inSale.length > 0
           ? s.competitors.itemSub(inSale.length, advantaged, against, weaker, strong, kind)
           : '',
-      page: pageLabel('competitors'),
+      page: '',
       tier: null,
     });
   }
@@ -698,7 +723,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       number: 0,
       title: [{ text: salesItem.title }],
       sub: salesItem.sub,
-      page: pageLabel('sales'),
+      page: '',
       tier: null,
     });
   }
@@ -708,7 +733,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       number: 0,
       title: [{ text: quartierItem.title }],
       sub: quartierItem.sub,
-      page: pageLabel('quartier'),
+      page: '',
       tier: null,
     });
   }
@@ -742,15 +767,23 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       rest: r.of(subject.total),
       label: s.summary.kpiPlace,
     });
-  // Chaque source nommée compte une fois (une ligne du tableau peut en citer deux).
-  const sourceCount = sources.reduce((sum, row) => sum + row.value.split(' · ').length, 0);
-  if (sourceCount > 0)
+  // Correctifs 163 — à la place des sources (« 1 source, citée page 7 », qui n'apprenait rien) :
+  // depuis combien de temps la moitié des biens en vente attendent un acheteur, lu sur leurs fiches
+  // (la médiane basse : au moins la moitié le sont depuis ce temps ou plus). Sans deux durées
+  // connues, pas de chiffre.
+  const waits = inSale
+    .map((item) => item.daysOnMarket?.days)
+    .filter((days): days is number => days != null && days >= 0)
+    .sort((a, b) => a - b);
+  if (waits.length >= 2) {
+    const half = waits[Math.floor((waits.length - 1) / 2)]!;
     kpis.push({
-      value: String(sourceCount),
+      value: String(half),
       sup: null,
-      rest: null,
-      label: s.summary.kpiSources(sourceCount, nextPage),
+      rest: s.summary.kpiDays(half),
+      label: s.summary.kpiDaysLabel(kind),
     });
+  }
 
   // ─── La couverture ────────────────────────────────────────────────────────────────────────────
   const property = input.subject;
@@ -772,7 +805,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
   const agreed = subject ? euro(subject.price) : null;
   const priceKind = subject ? (subject.proposed ? 'proposed' : 'agreed') : null;
 
-  return {
+  const story: Omit<MarketStudyStory, 'print'> = {
     footer: s.footer(kind, commune, day),
     advisor: {
       name: advisorName,
@@ -814,4 +847,18 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       sources,
     },
   };
+
+  // Correctifs 163 — les pages imprimées, puis les renvois du résumé vers elles : la page où
+  // commence chaque chapitre (là où s'imprime son titre).
+  const pages = studyPrintPages(story, {
+    vivreIci: input.vivreIci === true,
+    rankingRows: ranking.rows.map((row) => ({ subject: row.subject, detail: row.detail })),
+  });
+  for (const item of items) {
+    const at = pages.findIndex((page) =>
+      page.units.some((unit) => unit.kind === 'band' && unit.chapter === item.chapter),
+    );
+    item.page = s.summary.page(at + 1);
+  }
+  return { ...story, print: { pages } };
 }

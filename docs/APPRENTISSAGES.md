@@ -701,6 +701,17 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   (`study-chapter-title`) porté aussi par le résumé, et un `data-testid` posé sur le corps de la
   page alors que le titre est dans le bandeau. Viser une page par `[data-study-page="…"]` puis son
   titre.
+- 23/11 · M163 C · Chercher un montant interdit (l'analyse du conseiller) dans une page par ses
+  chiffres donne de faux rouges : dans la démo, l'analyse de Mme Garcia (740 000 €) et celle de
+  M. Lefebvre (1 690 000 €) sont aussi des prix de concurrents. Le chercher hors des pages qui
+  listent les concurrents, et prouver la charge par un test unitaire avec un montant piège
+  (987 654), posé aussi sur la colonne figée de la ligne que le chargeur lit
+  (`frozen_advisor_analysis`).
+- 23/11 · M163 C · Un dossier e2e dans le scratchpad peut être vidé par un nettoyage du système
+  (le 23/11, `.git` et `supabase/.temp` partis) : `git worktree prune`, en recréer un, `npm ci`,
+  copier `.env.e2e.local` ET les fichiers de `supabase/.temp` du dépôt (`project-ref`,
+  `linked-project.json`…), sans quoi le nettoyage de fin de passage échoue (« dépôt non lié »)
+  alors que les specs passent.
 
 ## La base
 
@@ -806,6 +817,12 @@ null` doit laisser passer la seule mise à nul de cette clé, sinon la suppressi
   (gardien-sql, le défaut de la M135 refait) ; et le refus de clés interdites dans un `jsonb` se fait
   à tous les niveaux (`jsonb_path_exists(blocks, '$.**.cle', '{}', true)`, silencieux), pas
   seulement au premier.
+- 23/11 · Coupure Supabase · Un 402 (Payment Required) partout, projet marqué « sain » : le
+  quota gratuit de trafic sortant est dépassé, pas une panne. Le diagnostic se fait dans les
+  journaux (`edge_logs`, `response.headers.content_length` par chemin et par navigateur) : les
+  photos signées du stockage téléchargées par l'e2e faisaient deux tiers du trafic (≈ 3 Go en
+  11 jours). Les tâches `pg_cron` tournent quand même, seules les requêtes venues de l'extérieur
+  sont refusées (`docs/PASSAGE_PAYANT.md`).
 
 ## Les rendus
 

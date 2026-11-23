@@ -10,6 +10,9 @@ import type { ComparisonCriterion } from '@/features/live-seller/constants';
 export type StudyKind = 'maison' | 'appartement' | 'bien';
 export type StudyCivility = 'madame' | 'monsieur' | 'both';
 export type StudyRange = { from: string; to: string };
+// Ce qui rapproche les ventes retenues du bien : les critères du choix (le nombre de pièces, puis la
+// surface) et leurs valeurs (« 5 pièces », « de 128 à 142 m² »).
+export type StudyLikeness = { rooms: boolean; surface: boolean; facts: string | null };
 export type StudyQuartierPart = 'planning' | 'permits' | 'risks' | 'population' | 'condominium';
 
 export type StudyTexts = {
@@ -30,7 +33,10 @@ export type StudyTexts = {
     kpiCompetitors: (count: number, kind: StudyKind) => string;
     kpiSales: (count: number, kind: StudyKind, since: number) => string;
     kpiPlace: string;
-    kpiSources: (count: number, page: number) => string;
+    // Correctifs 163 — à la place de « 1 source, citée page 7 » : depuis combien de temps la moitié
+    // des biens en vente attendent un acheteur, lu sur leurs fiches (proposition, Jean-Guy 23/11).
+    kpiDays: (days: number) => string;
+    kpiDaysLabel: (kind: StudyKind) => string;
     page: (page: number) => string;
     howTitle: string;
     how: (competitors: boolean, sales: boolean, quartier: boolean, kind: StudyKind) => string;
@@ -79,8 +85,18 @@ export type StudyTexts = {
       prices: StudyRange | null,
     ) => string;
     item: (count: number, kind: StudyKind, surface: StudyRange | null, since: number) => string;
-    itemSub: (count: number, kept: number, kind: StudyKind) => string;
-    tableTitle: (count: number, kept: number, kind: StudyKind) => string;
+    // Correctifs 163 — le vrai critère des ventes retenues : celles qui ressemblent le plus au bien
+    // (le nombre de pièces, puis la surface), jamais « les plus proches », qui se lit « les plus près ».
+    // `likeness` : ce qui les rapproche (« 5 pièces, de 128 à 142 m² »), null sans pièces ni surface
+    // du bien (alors les plus récentes).
+    itemSub: (
+      count: number,
+      kept: number,
+      kind: StudyKind,
+      likeness: StudyLikeness | null,
+    ) => string;
+    tableTitle: (count: number, kept: number, kind: StudyKind, likeness: boolean) => string;
+    tableNote: (likeness: StudyLikeness) => string;
     legendKept: (kept: number) => string;
     legendOthers: (others: number) => string;
     readTitle: string;
@@ -142,6 +158,11 @@ export type StudyTexts = {
       planning: string;
       risks: string;
       condominium: string;
+      // Correctifs 163 — le libellé suit les blocs réellement présents.
+      planningOnly: string;
+      permitsOnly: string;
+      risksOnly: string;
+      peopleOnly: string;
     };
     competitorsSource: string;
   };
