@@ -93,3 +93,11 @@ vérifier : « Dear Mr and Mrs Bernard, here is what the listings… », « Your
 market », « … are for sale today », « At €745,000, three houses for sale are cheaper than yours »,
 « What your buyer will ask: nothing recorded on your plot », les avis (« Claire Dumas’s view ») et
 « What comes next, in three steps ».
+
+## Correctifs 163 — l'Étude imprimée
+
+`src/lib/client-texts/study-en.ts`, phrases nouvelles, **à faire relire par un locuteur natif** :
+« The six sales most like your house », « Chosen first on the number of rooms, then on floor area:
+5 rooms, from 123 to 136 m² », « I selected six, the ones most like your house: … », « The six most
+recent sales », « half the houses for sale have been waiting for a buyer at least this long », et les
+sources « Planning », « Building permits », « Risks », « Residents ».

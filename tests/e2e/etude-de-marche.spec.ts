@@ -127,9 +127,10 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     await expectNoAnalysis(page, analysis);
   });
 
+  // Correctifs 163 — une page de PDF par page imprimée décidée par le code (`etude-imprimee`
+  // vérifie qu'elles sont pleines, numérotées, et que les renvois du résumé tombent juste).
   await test.step('Mme Garcia : imprimée, une page A4 par page, aucune fiche coupée', async () => {
-    const pages = await studyPages(page);
-    expect(await studyPrintedPages(page)).toBe(pages.length);
+    expect(await studyPrintedPages(page)).toBe(await page.locator('[data-print-page]').count());
   });
 
   await test.step('Mme Garcia : le lien public, sur téléphone', async () => {
@@ -164,7 +165,7 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     if (analysis !== agreed) {
       await expectNoAnalysis(page, analysis);
     }
-    expect(await studyPrintedPages(page)).toBe(pages.length);
+    expect(await studyPrintedPages(page)).toBe(await page.locator('[data-print-page]').count());
   });
 
   // Jean-Guy, 23/11 — une conclusion « À relancer » avec un prix : l'Étude le classe au « prix
@@ -207,8 +208,7 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     const text = await study.innerText();
     expect(text).not.toMatch(FORBIDDEN);
     expect(text).not.toMatch(/Quatre choses|comme la vôtre|L’avis de/);
-    const pages = await studyPages(page);
-    expect(await studyPrintedPages(page)).toBe(pages.length);
+    expect(await studyPrintedPages(page)).toBe(await page.locator('[data-print-page]').count());
     await openStudyLinkOnPhone(page);
   });
 });

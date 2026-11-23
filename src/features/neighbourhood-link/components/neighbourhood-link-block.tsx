@@ -12,16 +12,19 @@ import { formatDay } from '@/lib/format';
 export function NeighbourhoodLinkBlock({
   link,
   language,
+  printed = false,
 }: {
   link: NeighbourhoodDocumentLink;
   language: TextLanguage;
+  // Correctifs 163 — la copie des pages imprimées de l'Étude, sans repère de test.
+  printed?: boolean;
 }) {
   const texts = clientTexts(language).neighbourhood;
   const day = link.validUntil ? formatDay(link.validUntil, language, 'long') : null;
   return (
     <div
       className="flex items-center gap-4 border border-l-4 border-zinc-200 border-l-brand-deep bg-white px-5 py-3.5 break-inside-avoid"
-      data-testid="neighbourhood-link"
+      data-testid={printed ? undefined : 'neighbourhood-link'}
     >
       <svg
         viewBox={`0 0 ${link.qr.size} ${link.qr.size}`}

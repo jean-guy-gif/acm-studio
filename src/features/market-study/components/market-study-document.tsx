@@ -13,7 +13,8 @@ import type {
 } from '@/features/market-study/types';
 import { NeighbourhoodLinkBlock } from '@/features/neighbourhood-link/components/neighbourhood-link-block';
 import { rankingChunks } from '@/features/market-study/services/study-story';
-import { cssString, Photo } from '@/features/seller-synthesis/components/seller-synthesis-document';
+import { PRINT_ROOM_MM, type PrintUnit } from '@/features/market-study/services/study-print';
+import { Photo } from '@/features/seller-synthesis/components/seller-synthesis-document';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
@@ -51,7 +52,12 @@ function Page({
   );
 }
 
-function Band({ band, children }: { band: StudyBand; children?: ReactNode }) {
+// Correctifs 163 — `printed` : la même chose dans les pages imprimées, sans les repères de test
+// (ils restent uniques, à l'écran).
+type Printed = { printed?: boolean };
+const tid = (printed: boolean | undefined, id: string) => (printed ? undefined : id);
+
+function Band({ band, children, printed }: { band: StudyBand; children?: ReactNode } & Printed) {
   return (
     <header className="flex flex-col bg-zinc-100 px-5 pt-7 pb-5 sm:px-8 print:px-[14mm] print:pt-[9mm] print:pb-[6mm]">
       {band.number ? (
@@ -61,7 +67,7 @@ function Band({ band, children }: { band: StudyBand; children?: ReactNode }) {
       ) : null}
       <h2
         className="max-w-[175mm] font-title text-3xl leading-[1.05] font-bold text-brand-deep sm:text-[2.1rem]"
-        data-testid="study-chapter-title"
+        data-testid={tid(printed, 'study-chapter-title')}
       >
         {band.title}
       </h2>
@@ -91,11 +97,11 @@ function Initials({ story, large = false }: { story: MarketStudyStory; large?: b
   );
 }
 
-function Avis({ story, text }: { story: MarketStudyStory; text: string }) {
+function Avis({ story, text, printed }: { story: MarketStudyStory; text: string } & Printed) {
   return (
     <div
       className="mt-2 flex gap-4 border-t-[1.5px] border-zinc-800 pt-4 break-inside-avoid"
-      data-testid="study-avis"
+      data-testid={tid(printed, 'study-avis')}
     >
       <Initials story={story} />
       <div className="flex min-w-0 flex-col">
@@ -131,16 +137,17 @@ function CompetitorCard({
   card,
   faceTo,
   language,
+  printed,
 }: {
   card: StudyCard;
   faceTo: string;
   language: TextLanguage;
-}) {
+} & Printed) {
   const texts = clientTexts(language);
   return (
     <article
       className="flex flex-col border border-t-[2.5px] border-zinc-200 border-t-brand-deep bg-white break-inside-avoid sm:flex-row print:min-h-[62mm]"
-      data-testid="market-study-competitor"
+      data-testid={tid(printed, 'market-study-competitor')}
     >
       {card.photoUrl ? (
         <Photo
@@ -211,15 +218,16 @@ function CompetitorCard({
 // le tableau ; seuls le prix le plus bas et le plus haut s'écrivent. Aucune moyenne (M159).
 // Deux largeurs de dessin : 640 pour l'écran large et l'A4, 360 pour le téléphone, où les textes
 // gardent leur taille lisible.
-function SalesFrise({
+export function SalesFrise({
   sales,
   width,
   className,
+  printed,
 }: {
   sales: NonNullable<MarketStudyStory['sales']>;
   width: number;
   className: string;
-}) {
+} & Printed) {
   const height = width < 500 ? 210 : 190;
   const left = 30;
   const right = 20;
@@ -236,11 +244,12 @@ function SalesFrise({
   const lo = Math.min(...prices);
   const hi = Math.max(...prices);
   const x = (value: number) => left + ((value - first) / (last - first)) * (width - left - right);
-  const y = (price: number) =>
-    hi === lo
-      ? (top + height - bottom) / 2
-      : top + (1 - (price - lo) / (hi - lo)) * (height - top - bottom);
   const base = height - bottom;
+  // Correctifs 163 — le point le plus bas reste au-dessus de l'axe des années, son prix aussi :
+  // jamais un prix écrit sur l'axe (retour de Jean-Guy, 23/11).
+  const floor = base - 18;
+  const y = (price: number) =>
+    hi === lo ? (top + floor) / 2 : top + (1 - (price - lo) / (hi - lo)) * (floor - top);
   const years = Array.from({ length: last - first + 1 }, (_, i) => first + i);
   const lowest = sales.points.findIndex((point) => point.price === lo);
   const highest = sales.points.findIndex((point) => point.price === hi);
@@ -249,7 +258,7 @@ function SalesFrise({
       viewBox={`0 0 ${width} ${height}`}
       className={`h-auto w-full text-brand-deep ${className}`}
       role="img"
-      data-testid="study-sales-frise"
+      data-testid={tid(printed, 'study-sales-frise')}
     >
       <line x1={left} x2={width - right} y1={base} y2={base} stroke="#9aa7b1" />
       {years.map((year) => (
@@ -344,18 +353,19 @@ function StudyVerdict({
   subject,
   note,
   language,
+  printed,
 }: {
   subject: NonNullable<MarketStudyRanking['subject']>;
   note: string;
   language: TextLanguage;
-}) {
+} & Printed) {
   const r = clientTexts(language).documents.marketUpdate.ranking;
   const tier = TIER_CLASSES[subject.tier];
   return (
     <div
       className={`flex items-center gap-4 rounded-xl border-[1.5px] p-4 break-inside-avoid ${tier.border} ${tier.soft}`}
-      data-testid="market-study-verdict"
-      data-tier={subject.tier}
+      data-testid={tid(printed, 'market-study-verdict')}
+      data-tier={printed ? undefined : subject.tier}
     >
       <span
         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-title text-2xl font-bold text-white ${tier.bar}`}
@@ -378,16 +388,21 @@ function StudyVerdict({
 function RankingRow({
   row: item,
   language,
+  printed,
 }: {
   row: MarketStudyRankingRow;
   language: TextLanguage;
-}) {
+} & Printed) {
   const r = clientTexts(language).documents.marketUpdate.ranking;
   const euro = (value: number) => formatEuro(value, { language });
   const tier = TIER_CLASSES[item.tier];
   if (item.subject) {
     return (
-      <tr className="break-inside-avoid" data-testid="market-study-ranking-row" data-subject="true">
+      <tr
+        className="break-inside-avoid"
+        data-testid={tid(printed, 'market-study-ranking-row')}
+        data-subject={printed ? undefined : 'true'}
+      >
         <td colSpan={3} className="py-1">
           <div
             className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-3 py-2.5 max-sm:flex-col max-sm:items-start ${tier.fill}`}
@@ -408,7 +423,7 @@ function RankingRow({
   return (
     <tr
       className="break-inside-avoid border-b border-zinc-200"
-      data-testid="market-study-ranking-row"
+      data-testid={tid(printed, 'market-study-ranking-row')}
     >
       <td className="w-1 py-1.5 pr-0 align-top">
         <span className={`mt-1 block h-8 w-1.5 rounded ${tier.bar} ${tier.barMark}`} />
@@ -449,62 +464,13 @@ function StudyRanking({
   note: string;
   language: TextLanguage;
 }) {
-  const documents = clientTexts(language).documents;
-  const r = documents.marketUpdate.ranking;
   const subject = ranking.subject!;
   return (
     <div className="flex flex-col gap-3" data-testid="market-study-price-ranking">
       {first ? <StudyVerdict subject={subject} note={note} language={language} /> : null}
-      {first ? (
-        <div className="flex items-center gap-1" aria-hidden>
-          {subject.cells.map((cell, index) => (
-            <span
-              key={index}
-              className={`h-3 flex-1 rounded ${
-                index === subject.rank - 1
-                  ? `${TIER_CLASSES[cell].bar} ${TIER_CLASSES[cell].barMark} h-4 ring-2 ring-zinc-800 ring-offset-1`
-                  : `${TIER_CLASSES[cell].cell} ${TIER_CLASSES[cell].cellMark}`
-              }`}
-            />
-          ))}
-        </div>
-      ) : null}
-      <table className="w-full border-collapse text-left text-zinc-800">
-        <thead className="[display:table-header-group]">
-          <tr className="text-[0.62rem] font-semibold tracking-[0.12em] text-zinc-500 uppercase">
-            <th className="w-1" />
-            <th className="py-1.5 pl-9 font-semibold">{r.tableTitle}</th>
-            <th className="py-1.5 pr-3 text-right font-semibold whitespace-nowrap max-sm:hidden">
-              {documents.synthesis.listed}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((item) => (
-            <RankingRow key={item.key} row={item} language={language} />
-          ))}
-        </tbody>
-      </table>
-      {last ? (
-        <p
-          className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500"
-          data-testid="market-study-ranking-legend"
-        >
-          {(['green', 'orange', 'red'] as const).map((tier, index) => (
-            <span key={tier} className="flex items-center gap-1.5">
-              <span
-                className={`inline-block h-3 w-3 rounded ${TIER_CLASSES[tier].bar} ${TIER_CLASSES[tier].barMark}`}
-              />
-              <span>
-                {r.legendTiers[index].number}
-                {r.legendTiers[index].sup ? <sup>{r.legendTiers[index].sup}</sup> : null}
-                {r.legendTiers[index].rest}
-                {r.legend[tier]}
-              </span>
-            </span>
-          ))}
-        </p>
-      ) : null}
+      {first ? <RankingReglette subject={subject} /> : null}
+      <RankingTable rows={rows} language={language} />
+      {last ? <RankingLegend language={language} /> : null}
     </div>
   );
 }
@@ -526,32 +492,501 @@ function Tile({ tile }: { tile: StudyTile }) {
   );
 }
 
-export function MarketStudyDocument({ document }: { document: MarketStudyDocumentData }) {
-  const { agency, ranking, language, story } = document;
-  const texts = clientTexts(language);
-  // À l'impression, le texte courant de la maquette (9,4 pt) : tout ce qui se mesure en rem suit
-  // (une tabulation après @media : du CSS, pas du texte montré au vendeur).
-  const pageRules = `@media\tprint{html{font-size:14px}}@page{size:A4;margin:10mm 0 16mm 0;@bottom-left{content:${cssString(story.footer)};padding-left:14mm;font-size:7pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page) " / " counter(pages);padding-right:14mm;font-size:7pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
-  const vivreIci = document.neighbourhood ? (
-    <NeighbourhoodLinkBlock link={document.neighbourhood} language={language} />
-  ) : null;
-  const talk = story.quartier ? (
+type DocumentProps = { document: MarketStudyDocumentData };
+
+// La couverture : la photo du bien, pour qui, par qui ; plus de verdict (décision du 20/11).
+function Cover({ document, printed }: DocumentProps & Printed) {
+  const { agency, story } = document;
+  return (
+    <div className="flex flex-col print:h-[296mm]">
+      <div className="relative h-64 bg-brand-deep sm:h-96 print:h-[200mm]">
+        {document.coverPhotoUrl ? (
+          <img
+            src={displayPhotoUrl(document.coverPhotoUrl)}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+        <div className="absolute top-6 left-5 rounded bg-white px-3 py-2 sm:left-8 print:top-[12mm] print:left-[14mm]">
+          {agency.logoUrl ? (
+            <img
+              src={agency.logoUrl}
+              alt={agency.name}
+              className="max-h-10 max-w-40 object-contain"
+            />
+          ) : (
+            <span className="font-title text-lg font-bold text-brand-deep">{agency.name}</span>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-col px-5 py-7 sm:px-8 print:px-[14mm] print:py-[9mm]">
+        <span className="font-semibold text-brand-deep">{story.cover.kicker}</span>
+        <h1
+          className="mt-1 font-title text-4xl leading-none font-bold text-brand-deep sm:text-5xl"
+          data-testid={tid(printed, 'study-cover-title')}
+        >
+          {story.cover.title}
+        </h1>
+        {story.cover.line ? <p className="mt-3 text-zinc-600">{story.cover.line}</p> : null}
+        <div className="mt-7 flex flex-col gap-4 border-t-[1.5px] border-zinc-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          {document.sellerName ? (
+            <div>
+              <div className="text-xs text-zinc-500">{story.cover.preparedFor}</div>
+              <div className="font-title text-xl font-bold">{document.sellerName}</div>
+            </div>
+          ) : (
+            <span />
+          )}
+          <div className="flex items-center gap-3 sm:text-right">
+            <Initials story={story} large />
+            <div className="flex flex-col text-sm">
+              <span>{story.cover.by}</span>
+              {story.cover.contact ? (
+                <span className="text-zinc-600">{story.cover.contact}</span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryHead({ story, printed }: { story: MarketStudyStory } & Printed) {
+  return (
+    <Band
+      band={{ number: null, title: story.summary.title, lead: story.summary.lead }}
+      printed={printed}
+    >
+      {story.summary.kpis.length > 0 ? (
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {story.summary.kpis.map((kpi) => (
+            <div key={kpi.label}>
+              <div className="font-title text-4xl leading-none font-bold text-zinc-900">
+                {kpi.value}
+                {kpi.sup ? <sup className="text-[0.5em]">{kpi.sup}</sup> : null}
+                {kpi.rest ? ` ${kpi.rest}` : null}
+              </div>
+              <div className="mt-1 text-xs text-zinc-600">{kpi.label}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </Band>
+  );
+}
+
+function SummaryItems({ story, printed }: { story: MarketStudyStory } & Printed) {
+  return (
+    <ol className="flex flex-col" data-testid={tid(printed, 'study-summary')}>
+      {story.summary.items.map((item) => {
+        const tier = item.tier ? TIER_CLASSES[item.tier] : null;
+        return (
+          <li
+            key={item.chapter}
+            className={`flex items-center gap-4 border-b border-zinc-200 py-3 ${
+              tier ? `my-1 rounded-lg border-[1.5px] px-3 ${tier.border} ${tier.soft}` : ''
+            }`}
+            data-chapter={item.chapter}
+            data-tier={printed ? undefined : (item.tier ?? undefined)}
+          >
+            <span
+              className={`w-8 shrink-0 font-title text-3xl font-bold ${tier ? tier.text : 'text-brand-deep'}`}
+            >
+              {item.number}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <p className="leading-snug font-bold">
+                {item.title.map((part, index) =>
+                  part.sup ? <sup key={index}>{part.text}</sup> : part.text,
+                )}
+              </p>
+              {item.sub ? <p className="mt-0.5 text-sm text-zinc-600">{item.sub}</p> : null}
+            </div>
+            {/* Le renvoi vise la page imprimée : à l'écran, qui n'a pas de numéros, il ne se dit pas. */}
+            <span
+              className="hidden text-xs whitespace-nowrap text-zinc-500 print:inline"
+              data-page-ref=""
+            >
+              {item.page}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function SummaryHow({ story }: { story: MarketStudyStory }) {
+  return (
+    <div className="grid gap-6 sm:grid-cols-2">
+      <div>
+        <h3 className={h3}>{story.summary.howTitle}</h3>
+        <p className="mt-1">{story.summary.how}</p>
+      </div>
+      <div>
+        <h3 className={h3}>{story.summary.valueTitle}</h3>
+        <p className="mt-1">{story.summary.value}</p>
+      </div>
+    </div>
+  );
+}
+
+function Source({ text }: { text: string }) {
+  return <p className={source}>{text}</p>;
+}
+
+type Sales = NonNullable<MarketStudyStory['sales']>;
+
+function SalesLegend({ sales }: { sales: Sales }) {
+  return (
+    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
+      <span className="flex items-center gap-1.5">
+        <span className="inline-block h-3 w-3 rounded-full bg-brand-deep" />
+        {sales.legendKept}
+      </span>
+      {sales.legendOthers ? (
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-full border-[1.5px] border-zinc-400 bg-white" />
+          {sales.legendOthers}
+        </span>
+      ) : null}
+    </p>
+  );
+}
+
+function SalesTable({ sales }: { sales: Sales }) {
+  return (
     <div className="break-inside-avoid">
-      <h3 className={h3}>{story.quartier.talkTitle}</h3>
+      <h3 className={h3}>{sales.tableTitle}</h3>
+      {sales.tableNote ? <p className="text-sm text-zinc-600">{sales.tableNote}</p> : null}
+      <table className="mt-1 w-full border-collapse text-sm">
+        <thead className="[display:table-header-group]">
+          <tr className="border-b-[1.5px] border-zinc-800 text-left text-[0.66rem] text-zinc-500">
+            <th className="py-1 pr-2" />
+            <th className="py-1 pr-2 font-semibold">{sales.columns.month}</th>
+            <th className="py-1 pr-2 font-semibold max-sm:hidden">{sales.columns.street}</th>
+            <th className="py-1 pr-2 text-right font-semibold">{sales.columns.rooms}</th>
+            <th className="py-1 pr-2 text-right font-semibold">{sales.columns.surface}</th>
+            <th className="py-1 pr-2 text-right font-semibold max-sm:hidden">
+              {sales.columns.distance}
+            </th>
+            <th className="py-1 text-right font-semibold">{sales.columns.price}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sales.rows.map((sale) => (
+            <tr key={sale.mark} className="border-b border-zinc-200 break-inside-avoid">
+              <td className="py-1.5 pr-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-deep text-[0.65rem] font-bold text-white">
+                  {sale.mark}
+                </span>
+              </td>
+              <td className="py-1.5 pr-2">{sale.month}</td>
+              <td className="py-1.5 pr-2 max-sm:hidden">{sale.street ?? ''}</td>
+              <td className="py-1.5 pr-2 text-right">{sale.rooms ?? ''}</td>
+              <td className="py-1.5 pr-2 text-right whitespace-nowrap">{sale.surface ?? ''}</td>
+              <td className="py-1.5 pr-2 text-right whitespace-nowrap max-sm:hidden">
+                {sale.distance ?? ''}
+              </td>
+              <td className="py-1.5 text-right font-bold whitespace-nowrap">{sale.price}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SalesRead({ sales }: { sales: Sales }) {
+  return (
+    <div className="break-inside-avoid">
+      <h3 className={h3}>{sales.readTitle}</h3>
+      <ol className="mt-1 list-decimal pl-5">
+        {sales.read.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+type Quartier = NonNullable<MarketStudyStory['quartier']>;
+
+function QuartierTiles({ quartier }: { quartier: Quartier }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {quartier.planning ? <Tile tile={quartier.planning} /> : null}
+      {quartier.permits ? <Tile tile={quartier.permits} /> : null}
+    </div>
+  );
+}
+
+function QuartierRisks({ risks }: { risks: NonNullable<Quartier['risks']> }) {
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 px-4 py-3 break-inside-avoid print:gap-1 print:py-2">
+      <span className="text-[0.66rem] font-bold tracking-[0.1em] text-brand-deep uppercase">
+        {risks.title}
+      </span>
+      <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 print:gap-y-1">
+        {risks.cells.map((cell) => (
+          <div key={cell.title} className="border-b border-zinc-200 pb-1.5 print:pb-1">
+            <div className="font-bold print:text-sm">{cell.title}</div>
+            <div className="text-sm text-zinc-600 print:text-xs">{cell.text}</div>
+          </div>
+        ))}
+      </div>
+      <p className={source}>{risks.source}</p>
+    </div>
+  );
+}
+
+function QuartierTalk({ quartier }: { quartier: Quartier }) {
+  return (
+    <div className="break-inside-avoid">
+      <h3 className={h3}>{quartier.talkTitle}</h3>
       <ol className="mt-1 list-decimal pl-5 print:text-sm">
-        {story.quartier.talk.map((line) => (
+        {quartier.talk.map((line) => (
           <li key={line.lead}>
             <strong>{line.lead}</strong> {line.text}
           </li>
         ))}
       </ol>
     </div>
+  );
+}
+
+// La copropriété et Vivre ici côte à côte : la page tient sur une feuille.
+function QuartierExtra({ quartier, vivreIci }: { quartier: Quartier; vivreIci: ReactNode }) {
+  return quartier.condominium && vivreIci ? (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <Tile tile={quartier.condominium} />
+      {vivreIci}
+    </div>
+  ) : (
+    <>
+      {quartier.condominium ? <Tile tile={quartier.condominium} /> : null}
+      {vivreIci}
+    </>
+  );
+}
+
+function QuartierEnd({
+  story,
+  quartier,
+  printed,
+}: { story: MarketStudyStory; quartier: Quartier } & Printed) {
+  return (
+    <>
+      {quartier.avis ? <Avis story={story} text={quartier.avis} printed={printed} /> : null}
+      <p className={source}>{quartier.frozen}</p>
+    </>
+  );
+}
+
+function NextHead({ story, printed }: { story: MarketStudyStory } & Printed) {
+  return (
+    <header className="flex flex-col bg-zinc-100 px-5 pt-7 pb-5 sm:px-8 print:px-[14mm] print:pt-[9mm] print:pb-[6mm]">
+      <h2
+        className="font-title text-3xl leading-tight font-bold text-brand-deep"
+        data-testid={tid(printed, 'study-chapter-title')}
+      >
+        {story.next.title}
+      </h2>
+      <ol className="mt-4 grid gap-5 sm:grid-cols-3">
+        {story.next.steps.map((step, index) => (
+          <li key={step.title}>
+            <span className="font-title text-3xl leading-none font-bold text-brand-deep">
+              {index + 1}
+            </span>
+            <h3 className="mt-1 font-title text-lg font-bold text-zinc-900">{step.title}</h3>
+            <p className="text-sm text-zinc-700">{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </header>
+  );
+}
+
+function NextPapers({ story }: { story: MarketStudyStory }) {
+  return (
+    <div className="grid gap-6 sm:grid-cols-2">
+      <div>
+        <h3 className={h3}>{story.next.papersTitle}</h3>
+        <ul className="mt-1">
+          {story.next.papers.map((paper) => (
+            <li
+              key={paper}
+              className="flex items-center gap-2 border-b border-zinc-200 py-1 text-sm"
+            >
+              <span className="inline-block h-3 w-3 shrink-0 rounded-sm border border-zinc-800" />
+              {paper}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="hidden print:block">
+        <h3 className={h3}>{story.next.questionsTitle}</h3>
+        {Array.from({ length: 6 }, (_, index) => (
+          <span key={index} className="block h-[7.5mm] border-b border-zinc-300" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NextContact({ document }: DocumentProps) {
+  const { agency, story, language } = document;
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-zinc-200 px-4 py-3 break-inside-avoid">
+      <Initials story={story} large />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className={kicker}>{story.next.contact}</span>
+        <span className="font-title text-lg font-bold">{story.advisor.name ?? agency.name}</span>
+        <span className="text-sm text-zinc-600">
+          {[agency.advisorPhone, agency.advisorEmail].filter(Boolean).join(' · ')}
+        </span>
+      </div>
+      {agency.advisorQr ? (
+        <svg
+          viewBox={`0 0 ${agency.advisorQr.size} ${agency.advisorQr.size}`}
+          className="h-16 w-16 shrink-0"
+          role="img"
+          aria-label={clientTexts(language).documents.common.contactCard}
+          shapeRendering="crispEdges"
+        >
+          <path d={agency.advisorQr.path} fill="currentColor" />
+        </svg>
+      ) : null}
+    </div>
+  );
+}
+
+function NextIs({ story, printed }: { story: MarketStudyStory } & Printed) {
+  return (
+    <div className="break-inside-avoid">
+      <h3 className={h3}>{story.next.isTitle}</h3>
+      <p className="mt-1 text-sm text-zinc-700">{story.next.is}</p>
+      {story.next.sources.length > 0 ? (
+        <table
+          className="mt-2 w-full border-collapse text-xs"
+          data-testid={tid(printed, 'study-sources')}
+        >
+          <tbody>
+            {story.next.sources.map((row) => (
+              <tr key={row.label} className="border-b border-zinc-200 align-top">
+                <td className="w-40 py-1 pr-3 font-bold">{row.label}</td>
+                <td className="py-1">{row.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
+    </div>
+  );
+}
+
+function NextMentions({ agency }: { agency: MarketStudyDocumentData['agency'] }) {
+  return (
+    <p className="text-[0.68rem] leading-relaxed text-zinc-500">
+      {[
+        agency.name,
+        agency.postalAddress,
+        agency.professionalCard
+          ? `Carte professionnelle ${agency.professionalCard}${
+              agency.professionalCardIssuer ? ` délivrée par ${agency.professionalCardIssuer}` : ''
+            }`
+          : null,
+        agency.financialGuarantee?.trim() || 'Ne peut recevoir aucun fonds',
+      ]
+        .filter(Boolean)
+        .join(' · ')}
+    </p>
+  );
+}
+
+function RankingTable({
+  rows,
+  language,
+  printed,
+}: {
+  rows: MarketStudyRankingRow[];
+  language: TextLanguage;
+} & Printed) {
+  const documents = clientTexts(language).documents;
+  const r = documents.marketUpdate.ranking;
+  return (
+    <table className="w-full border-collapse text-left text-zinc-800">
+      <thead className="[display:table-header-group]">
+        <tr className="text-[0.62rem] font-semibold tracking-[0.12em] text-zinc-500 uppercase">
+          <th className="w-1" />
+          <th className="py-1.5 pl-9 font-semibold">{r.tableTitle}</th>
+          <th className="py-1.5 pr-3 text-right font-semibold whitespace-nowrap max-sm:hidden">
+            {documents.synthesis.listed}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((item) => (
+          <RankingRow key={item.key} row={item} language={language} printed={printed} />
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function RankingReglette({ subject }: { subject: NonNullable<MarketStudyRanking['subject']> }) {
+  return (
+    <div className="flex items-center gap-1" aria-hidden>
+      {subject.cells.map((cell, index) => (
+        <span
+          key={index}
+          className={`h-3 flex-1 rounded ${
+            index === subject.rank - 1
+              ? `${TIER_CLASSES[cell].bar} ${TIER_CLASSES[cell].barMark} h-4 ring-2 ring-zinc-800 ring-offset-1`
+              : `${TIER_CLASSES[cell].cell} ${TIER_CLASSES[cell].cellMark}`
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RankingLegend({ language, printed }: { language: TextLanguage } & Printed) {
+  const r = clientTexts(language).documents.marketUpdate.ranking;
+  return (
+    <p
+      className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500"
+      data-testid={tid(printed, 'market-study-ranking-legend')}
+    >
+      {(['green', 'orange', 'red'] as const).map((tier, index) => (
+        <span key={tier} className="flex items-center gap-1.5">
+          <span
+            className={`inline-block h-3 w-3 rounded ${TIER_CLASSES[tier].bar} ${TIER_CLASSES[tier].barMark}`}
+          />
+          <span>
+            {r.legendTiers[index].number}
+            {r.legendTiers[index].sup ? <sup>{r.legendTiers[index].sup}</sup> : null}
+            {r.legendTiers[index].rest}
+            {r.legend[tier]}
+          </span>
+        </span>
+      ))}
+    </p>
+  );
+}
+
+export function MarketStudyDocument({ document }: DocumentProps) {
+  const { agency, ranking, language, story } = document;
+  // À l'impression, le texte courant de la maquette (9,4 pt) : tout ce qui se mesure en rem suit
+  // (une tabulation après @media : du CSS, pas du texte montré au vendeur). Correctifs 163 — les
+  // pages imprimées n'ont plus de marge : chacune porte son numéro écrit dans la page.
+  const pageRules = `@media\tprint{html{font-size:14px}}@page{size:A4;margin:0}`;
+  const vivreIci = document.neighbourhood ? (
+    <NeighbourhoodLinkBlock link={document.neighbourhood} language={language} />
   ) : null;
   const quartierEnd = story.quartier ? (
-    <>
-      {story.quartier.avis ? <Avis story={story} text={story.quartier.avis} /> : null}
-      <p className={source}>{story.quartier.frozen}</p>
-    </>
+    <QuartierEnd story={story} quartier={story.quartier} />
   ) : null;
 
   return (
@@ -567,429 +1002,383 @@ export function MarketStudyDocument({ document }: { document: MarketStudyDocumen
         }}
       />
 
-      {/* Couverture : la photo du bien, pour qui, par qui ; plus de verdict (décision du 20/11). */}
-      <Page name="cover" first>
-        <div className="flex flex-col print:h-[297mm]">
-          <div className="relative h-64 bg-brand-deep sm:h-96 print:h-[200mm]">
-            {document.coverPhotoUrl ? (
-              <img
-                src={displayPhotoUrl(document.coverPhotoUrl)}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            ) : null}
-            <div className="absolute top-6 left-5 rounded bg-white px-3 py-2 sm:left-8 print:top-[12mm] print:left-[14mm]">
-              {agency.logoUrl ? (
-                <img
-                  src={agency.logoUrl}
-                  alt={agency.name}
-                  className="max-h-10 max-w-40 object-contain"
-                />
-              ) : (
-                <span className="font-title text-lg font-bold text-brand-deep">{agency.name}</span>
-              )}
-            </div>
+      {/* À l'écran (et sur le lien public) : les pages telles qu'avant ; jamais imprimées. */}
+      <div className="contents print:hidden">
+        <Page name="cover" first>
+          <Cover document={document} />
+        </Page>
+
+        {/* Ce que cette étude vous apprend : les chiffres, les conclusions et leur page. */}
+        <Page name="summary">
+          <SummaryHead story={story} />
+          <div className={pageBody}>
+            <SummaryItems story={story} />
+            <SummaryHow story={story} />
           </div>
-          <div className="flex flex-col px-5 py-7 sm:px-8 print:px-[14mm] print:py-[9mm]">
-            <span className="font-semibold text-brand-deep">{story.cover.kicker}</span>
-            <h1
-              className="mt-1 font-title text-4xl leading-none font-bold text-brand-deep sm:text-5xl"
-              data-testid="study-cover-title"
-            >
-              {story.cover.title}
-            </h1>
-            {story.cover.line ? <p className="mt-3 text-zinc-600">{story.cover.line}</p> : null}
-            <div className="mt-7 flex flex-col gap-4 border-t-[1.5px] border-zinc-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              {document.sellerName ? (
-                <div>
-                  <div className="text-xs text-zinc-500">{story.cover.preparedFor}</div>
-                  <div className="font-title text-xl font-bold">{document.sellerName}</div>
-                </div>
-              ) : (
-                <span />
-              )}
-              <div className="flex items-center gap-3 sm:text-right">
-                <Initials story={story} large />
-                <div className="flex flex-col text-sm">
-                  <span>{story.cover.by}</span>
-                  {story.cover.contact ? (
-                    <span className="text-zinc-600">{story.cover.contact}</span>
+        </Page>
+
+        {/* 01 · Les biens en vente : trois fiches par page au plus, jamais coupées. */}
+        {story.competitors
+          ? story.competitors.pages.map((cards, index, pages) => (
+              <Page key={`competitors-${index}`} name="competitors">
+                {index === 0 ? <Band band={story.competitors!.band} /> : null}
+                <div
+                  className={pageBody}
+                  data-testid={index === 0 ? 'market-study-competitors' : undefined}
+                >
+                  {cards.map((card) => (
+                    <CompetitorCard
+                      key={card.id}
+                      card={card}
+                      faceTo={story.competitors!.faceTo}
+                      language={language}
+                    />
+                  ))}
+                  {index === pages.length - 1 ? (
+                    <>
+                      {story.competitors!.avis ? (
+                        <Avis story={story} text={story.competitors!.avis} />
+                      ) : null}
+                      <Source text={story.competitors!.source} />
+                    </>
                   ) : null}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Page>
+              </Page>
+            ))
+          : null}
 
-      {/* Ce que cette étude vous apprend : les chiffres, les conclusions et leur page. */}
-      <Page name="summary">
-        <Band band={{ number: null, title: story.summary.title, lead: story.summary.lead }}>
-          {story.summary.kpis.length > 0 ? (
-            <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {story.summary.kpis.map((kpi) => (
-                <div key={kpi.label}>
-                  <div className="font-title text-4xl leading-none font-bold text-zinc-900">
-                    {kpi.value}
-                    {kpi.sup ? <sup className="text-[0.5em]">{kpi.sup}</sup> : null}
-                    {kpi.rest ? ` ${kpi.rest}` : null}
-                  </div>
-                  <div className="mt-1 text-xs text-zinc-600">{kpi.label}</div>
-                </div>
-              ))}
+        {/* 02 · Les ventes réelles : toutes sur la frise, les ventes retenues numérotées et listées. */}
+        {story.sales ? (
+          <Page name="sales">
+            <Band band={story.sales.band} />
+            <div className={pageBody} data-testid="study-sales">
+              <SalesFrise sales={story.sales} width={640} className="block max-sm:hidden" />
+              <SalesFrise sales={story.sales} width={360} className="hidden max-sm:block" />
+              <SalesLegend sales={story.sales} />
+              <SalesTable sales={story.sales} />
+              <SalesRead sales={story.sales} />
+              <Avis story={story} text={story.sales.avis} />
+              <Source text={story.sales.source} />
             </div>
-          ) : null}
-        </Band>
-        <div className={pageBody}>
-          <ol className="flex flex-col" data-testid="study-summary">
-            {story.summary.items.map((item) => {
-              const tier = item.tier ? TIER_CLASSES[item.tier] : null;
-              return (
-                <li
-                  key={item.chapter}
-                  className={`flex items-center gap-4 border-b border-zinc-200 py-3 ${
-                    tier ? `my-1 rounded-lg border-[1.5px] px-3 ${tier.border} ${tier.soft}` : ''
-                  }`}
-                  data-chapter={item.chapter}
-                  data-tier={item.tier ?? undefined}
+          </Page>
+        ) : null}
+
+        {/* 03 · Où se place votre prix : le classement de la M129, sous son titre-conclusion. */}
+        {story.ranking
+          ? rankingChunks(ranking.rows).map((rows, index, chunks) => (
+              <Page key={`ranking-${index}`} name="ranking">
+                {index === 0 ? <Band band={story.ranking!.band} /> : null}
+                <div
+                  className={pageBody}
+                  data-testid={index === 0 ? 'market-study-ranking' : undefined}
                 >
-                  <span
-                    className={`w-8 shrink-0 font-title text-3xl font-bold ${tier ? tier.text : 'text-brand-deep'}`}
-                  >
-                    {item.number}
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <p className="leading-snug font-bold">
-                      {item.title.map((part, index) =>
-                        part.sup ? <sup key={index}>{part.text}</sup> : part.text,
-                      )}
-                    </p>
-                    {item.sub ? <p className="mt-0.5 text-sm text-zinc-600">{item.sub}</p> : null}
-                  </div>
-                  <span className="text-xs whitespace-nowrap text-zinc-500">{item.page}</span>
-                </li>
-              );
-            })}
-          </ol>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div>
-              <h3 className={h3}>{story.summary.howTitle}</h3>
-              <p className="mt-1">{story.summary.how}</p>
-            </div>
-            <div>
-              <h3 className={h3}>{story.summary.valueTitle}</h3>
-              <p className="mt-1">{story.summary.value}</p>
-            </div>
-          </div>
-        </div>
-      </Page>
-
-      {/* 01 · Les biens en vente : trois fiches par page au plus, jamais coupées. */}
-      {story.competitors
-        ? story.competitors.pages.map((cards, index, pages) => (
-            <Page key={`competitors-${index}`} name="competitors">
-              {index === 0 ? <Band band={story.competitors!.band} /> : null}
-              <div
-                className={pageBody}
-                data-testid={index === 0 ? 'market-study-competitors' : undefined}
-              >
-                {cards.map((card) => (
-                  <CompetitorCard
-                    key={card.id}
-                    card={card}
-                    faceTo={story.competitors!.faceTo}
+                  <StudyRanking
+                    ranking={ranking}
+                    rows={rows}
+                    first={index === 0}
+                    last={index === chunks.length - 1}
+                    note={story.ranking!.verdictNote}
                     language={language}
                   />
-                ))}
-                {index === pages.length - 1 ? (
-                  <>
-                    {story.competitors!.avis ? (
-                      <Avis story={story} text={story.competitors!.avis} />
-                    ) : null}
-                    <p className={source}>{story.competitors!.source}</p>
-                  </>
-                ) : null}
-              </div>
-            </Page>
-          ))
-        : null}
-
-      {/* 02 · Les ventes réelles : toutes sur la frise, les plus proches numérotées et listées. */}
-      {story.sales ? (
-        <Page name="sales">
-          <Band band={story.sales.band} />
-          <div className={pageBody} data-testid="study-sales">
-            <SalesFrise sales={story.sales} width={640} className="block max-sm:hidden" />
-            <SalesFrise sales={story.sales} width={360} className="hidden max-sm:block" />
-            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-600">
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block h-3 w-3 rounded-full bg-brand-deep" />
-                {story.sales.legendKept}
-              </span>
-              {story.sales.legendOthers ? (
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded-full border-[1.5px] border-zinc-400 bg-white" />
-                  {story.sales.legendOthers}
-                </span>
-              ) : null}
-            </p>
-            <div className="break-inside-avoid">
-              <h3 className={h3}>{story.sales.tableTitle}</h3>
-              <table className="mt-1 w-full border-collapse text-sm">
-                <thead className="[display:table-header-group]">
-                  <tr className="border-b-[1.5px] border-zinc-800 text-left text-[0.66rem] text-zinc-500">
-                    <th className="py-1 pr-2" />
-                    <th className="py-1 pr-2 font-semibold">{story.sales.columns.month}</th>
-                    <th className="py-1 pr-2 font-semibold max-sm:hidden">
-                      {story.sales.columns.street}
-                    </th>
-                    <th className="py-1 pr-2 text-right font-semibold">
-                      {story.sales.columns.rooms}
-                    </th>
-                    <th className="py-1 pr-2 text-right font-semibold">
-                      {story.sales.columns.surface}
-                    </th>
-                    <th className="py-1 pr-2 text-right font-semibold max-sm:hidden">
-                      {story.sales.columns.distance}
-                    </th>
-                    <th className="py-1 text-right font-semibold">{story.sales.columns.price}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {story.sales.rows.map((sale) => (
-                    <tr key={sale.mark} className="border-b border-zinc-200 break-inside-avoid">
-                      <td className="py-1.5 pr-2">
-                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-deep text-[0.65rem] font-bold text-white">
-                          {sale.mark}
-                        </span>
-                      </td>
-                      <td className="py-1.5 pr-2">{sale.month}</td>
-                      <td className="py-1.5 pr-2 max-sm:hidden">{sale.street ?? ''}</td>
-                      <td className="py-1.5 pr-2 text-right">{sale.rooms ?? ''}</td>
-                      <td className="py-1.5 pr-2 text-right whitespace-nowrap">
-                        {sale.surface ?? ''}
-                      </td>
-                      <td className="py-1.5 pr-2 text-right whitespace-nowrap max-sm:hidden">
-                        {sale.distance ?? ''}
-                      </td>
-                      <td className="py-1.5 text-right font-bold whitespace-nowrap">
-                        {sale.price}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="break-inside-avoid">
-              <h3 className={h3}>{story.sales.readTitle}</h3>
-              <ol className="mt-1 list-decimal pl-5">
-                {story.sales.read.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ol>
-            </div>
-            <Avis story={story} text={story.sales.avis} />
-            <p className={source}>{story.sales.source}</p>
-          </div>
-        </Page>
-      ) : null}
-
-      {/* 03 · Où se place votre prix : le classement de la M129, sous son titre-conclusion. */}
-      {story.ranking
-        ? rankingChunks(ranking.rows).map((rows, index, chunks) => (
-            <Page key={`ranking-${index}`} name="ranking">
-              {index === 0 ? <Band band={story.ranking!.band} /> : null}
-              <div
-                className={pageBody}
-                data-testid={index === 0 ? 'market-study-ranking' : undefined}
-              >
-                <StudyRanking
-                  ranking={ranking}
-                  rows={rows}
-                  first={index === 0}
-                  last={index === chunks.length - 1}
-                  note={story.ranking!.verdictNote}
-                  language={language}
-                />
-                {index === chunks.length - 1 ? (
-                  <>
-                    <Avis story={story} text={story.ranking!.avis} />
-                    <p className={source}>{story.ranking!.source}</p>
-                  </>
-                ) : null}
-              </div>
-            </Page>
-          ))
-        : null}
-
-      {/* 04 · Ce que votre acheteur demandera : le quartier sur une page, à la fin. */}
-      {story.quartier ? (
-        <Page name="quartier">
-          <Band band={story.quartier.band} />
-          <div
-            className={pageBody.replace('print:gap-3', 'print:gap-2')}
-            data-testid="study-quartier"
-          >
-            {story.quartier.planning || story.quartier.permits ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {story.quartier.planning ? <Tile tile={story.quartier.planning} /> : null}
-                {story.quartier.permits ? <Tile tile={story.quartier.permits} /> : null}
-              </div>
-            ) : null}
-            {story.quartier.risks ? (
-              <div className="flex flex-col gap-2 rounded-lg border border-zinc-200 px-4 py-3 break-inside-avoid print:gap-1 print:py-2">
-                <span className="text-[0.66rem] font-bold tracking-[0.1em] text-brand-deep uppercase">
-                  {story.quartier.risks.title}
-                </span>
-                <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 print:gap-y-1">
-                  {story.quartier.risks.cells.map((cell) => (
-                    <div key={cell.title} className="border-b border-zinc-200 pb-1.5 print:pb-1">
-                      <div className="font-bold print:text-sm">{cell.title}</div>
-                      <div className="text-sm text-zinc-600 print:text-xs">{cell.text}</div>
-                    </div>
-                  ))}
+                  {index === chunks.length - 1 ? (
+                    <>
+                      <Avis story={story} text={story.ranking!.avis} />
+                      <Source text={story.ranking!.source} />
+                    </>
+                  ) : null}
                 </div>
-                <p className={source}>{story.quartier.risks.source}</p>
-              </div>
-            ) : null}
-            {story.quartier.split ? (
-              story.quartier.condominium ? (
-                <Tile tile={story.quartier.condominium} />
-              ) : null
-            ) : (
-              <>
-                {talk}
-                {/* La copropriété et Vivre ici côte à côte : la page tient sur une feuille. */}
-                {story.quartier.condominium && vivreIci ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Tile tile={story.quartier.condominium} />
-                    {vivreIci}
-                  </div>
-                ) : (
-                  <>
-                    {story.quartier.condominium ? <Tile tile={story.quartier.condominium} /> : null}
-                    {vivreIci}
-                  </>
-                )}
-                {quartierEnd}
-              </>
-            )}
-          </div>
-        </Page>
-      ) : null}
-      {/* Trop long pour une feuille : la suite du quartier sur une seconde page, explicitement. */}
-      {story.quartier?.split ? (
-        <Page name="quartier">
-          <div className={pageBody}>
-            {talk}
-            {vivreIci}
-            {quartierEnd}
-          </div>
-        </Page>
-      ) : null}
+              </Page>
+            ))
+          : null}
 
-      {/* La suite : trois étapes, les papiers, ses questions, le conseiller, les sources. */}
-      <Page name="next">
-        <header className="flex flex-col bg-zinc-100 px-5 pt-7 pb-5 sm:px-8 print:px-[14mm] print:pt-[9mm] print:pb-[6mm]">
-          <h2
-            className="font-title text-3xl leading-tight font-bold text-brand-deep"
-            data-testid="study-chapter-title"
-          >
-            {story.next.title}
-          </h2>
-          <ol className="mt-4 grid gap-5 sm:grid-cols-3">
-            {story.next.steps.map((step, index) => (
-              <li key={step.title}>
-                <span className="font-title text-3xl leading-none font-bold text-brand-deep">
-                  {index + 1}
-                </span>
-                <h3 className="mt-1 font-title text-lg font-bold text-zinc-900">{step.title}</h3>
-                <p className="text-sm text-zinc-700">{step.text}</p>
-              </li>
-            ))}
-          </ol>
-        </header>
-        <div className={pageBody}>
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div>
-              <h3 className={h3}>{story.next.papersTitle}</h3>
-              <ul className="mt-1">
-                {story.next.papers.map((paper) => (
-                  <li
-                    key={paper}
-                    className="flex items-center gap-2 border-b border-zinc-200 py-1 text-sm"
-                  >
-                    <span className="inline-block h-3 w-3 shrink-0 rounded-sm border border-zinc-800" />
-                    {paper}
-                  </li>
-                ))}
-              </ul>
+        {/* 04 · Ce que votre acheteur demandera : le quartier, à la fin. */}
+        {story.quartier ? (
+          <Page name="quartier">
+            <Band band={story.quartier.band} />
+            <div
+              className={pageBody.replace('print:gap-3', 'print:gap-2')}
+              data-testid="study-quartier"
+            >
+              {story.quartier.planning || story.quartier.permits ? (
+                <QuartierTiles quartier={story.quartier} />
+              ) : null}
+              {story.quartier.risks ? <QuartierRisks risks={story.quartier.risks} /> : null}
+              {story.quartier.split ? (
+                story.quartier.condominium ? (
+                  <Tile tile={story.quartier.condominium} />
+                ) : null
+              ) : (
+                <>
+                  <QuartierTalk quartier={story.quartier} />
+                  <QuartierExtra quartier={story.quartier} vivreIci={vivreIci} />
+                  {quartierEnd}
+                </>
+              )}
             </div>
-            <div className="hidden print:block">
-              <h3 className={h3}>{story.next.questionsTitle}</h3>
-              {Array.from({ length: 6 }, (_, index) => (
-                <span key={index} className="block h-[7.5mm] border-b border-zinc-300" />
-              ))}
+          </Page>
+        ) : null}
+        {/* Trop long pour une feuille : la suite du quartier sur une seconde page. */}
+        {story.quartier?.split ? (
+          <Page name="quartier">
+            <div className={pageBody}>
+              <QuartierTalk quartier={story.quartier} />
+              {vivreIci}
+              {quartierEnd}
             </div>
+          </Page>
+        ) : null}
+
+        {/* La suite : trois étapes, les papiers, ses questions, le conseiller, les sources. */}
+        <Page name="next">
+          <NextHead story={story} />
+          <div className={pageBody}>
+            <NextPapers story={story} />
+            {story.quartier ? null : vivreIci}
+            <NextContact document={document} />
+            <NextIs story={story} />
+            <NextMentions agency={agency} />
           </div>
-          {story.quartier ? null : vivreIci}
-          <div className="flex items-center gap-4 rounded-lg border border-zinc-200 px-4 py-3 break-inside-avoid">
-            <Initials story={story} large />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span className={kicker}>{story.next.contact}</span>
-              <span className="font-title text-lg font-bold">
-                {story.advisor.name ?? agency.name}
-              </span>
-              <span className="text-sm text-zinc-600">
-                {[agency.advisorPhone, agency.advisorEmail].filter(Boolean).join(' · ')}
-              </span>
-            </div>
-            {agency.advisorQr ? (
-              <svg
-                viewBox={`0 0 ${agency.advisorQr.size} ${agency.advisorQr.size}`}
-                className="h-16 w-16 shrink-0"
-                role="img"
-                aria-label={texts.documents.common.contactCard}
-                shapeRendering="crispEdges"
-              >
-                <path d={agency.advisorQr.path} fill="currentColor" />
-              </svg>
-            ) : null}
-          </div>
-          <div className="break-inside-avoid">
-            <h3 className={h3}>{story.next.isTitle}</h3>
-            <p className="mt-1 text-sm text-zinc-700">{story.next.is}</p>
-            {story.next.sources.length > 0 ? (
-              <table className="mt-2 w-full border-collapse text-xs" data-testid="study-sources">
-                <tbody>
-                  {story.next.sources.map((row) => (
-                    <tr key={row.label} className="border-b border-zinc-200 align-top">
-                      <td className="w-40 py-1 pr-3 font-bold">{row.label}</td>
-                      <td className="py-1">{row.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : null}
-          </div>
-          <p className="text-[0.68rem] leading-relaxed text-zinc-500">
-            {[
-              agency.name,
-              agency.postalAddress,
-              agency.professionalCard
-                ? `Carte professionnelle ${agency.professionalCard}${
-                    agency.professionalCardIssuer
-                      ? ` délivrée par ${agency.professionalCardIssuer}`
-                      : ''
-                  }`
-                : null,
-              agency.financialGuarantee?.trim() || 'Ne peut recevoir aucun fonds',
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-        </div>
-      </Page>
+        </Page>
+      </div>
+
+      {/* Correctifs 163 — à l'impression : les pages A4 décidées par le code (`story.print`), les
+          blocs à la suite, chaque page avec son numéro écrit dans la page. */}
+      <PrintedStudy
+        document={document}
+        vivreIci={
+          document.neighbourhood ? (
+            <NeighbourhoodLinkBlock link={document.neighbourhood} language={language} printed />
+          ) : null
+        }
+      />
     </article>
+  );
+}
+
+const PX_PER_MM = 96 / 25.4;
+
+function PrintedStudy({ document, vivreIci }: DocumentProps & { vivreIci: ReactNode }) {
+  const { story, ranking, language, agency } = document;
+  const pages = story.print.pages;
+  const cards = story.competitors?.pages.flat() ?? [];
+  const body = 'px-[14mm]';
+  const unit = (key: string, attrs: PrintUnit, content: ReactNode, padded = true) => (
+    <div
+      key={key}
+      className={padded ? body : undefined}
+      data-print-unit={attrs.kind}
+      data-chapter={attrs.chapter}
+      data-keep-next={attrs.keepWithNext ? 'true' : undefined}
+      data-mm={Math.round(attrs.mm * 10) / 10}
+    >
+      {content}
+    </div>
+  );
+  const render = (units: PrintUnit[]) => {
+    const out: ReactNode[] = [];
+    for (let i = 0; i < units.length; i += 1) {
+      const u = units[i]!;
+      const key = `${u.kind}-${u.chapter ?? ''}-${u.index ?? i}`;
+      switch (u.kind) {
+        case 'summary-head':
+          out.push(unit(key, u, <SummaryHead story={story} printed />, false));
+          break;
+        case 'summary-items':
+          out.push(unit(key, u, <SummaryItems story={story} printed />));
+          break;
+        case 'summary-how':
+          out.push(unit(key, u, <SummaryHow story={story} />));
+          break;
+        case 'band': {
+          const band =
+            u.chapter === 'competitors'
+              ? story.competitors?.band
+              : u.chapter === 'sales'
+                ? story.sales?.band
+                : u.chapter === 'ranking'
+                  ? story.ranking?.band
+                  : story.quartier?.band;
+          if (band) out.push(unit(key, u, <Band band={band} printed />, false));
+          break;
+        }
+        case 'card': {
+          const card = cards[u.index ?? 0];
+          if (card)
+            out.push(
+              unit(
+                key,
+                u,
+                <CompetitorCard
+                  card={card}
+                  faceTo={story.competitors!.faceTo}
+                  language={language}
+                  printed
+                />,
+              ),
+            );
+          break;
+        }
+        case 'avis': {
+          const content =
+            u.chapter === 'competitors' && story.competitors ? (
+              <>
+                {story.competitors.avis ? (
+                  <Avis story={story} text={story.competitors.avis} printed />
+                ) : null}
+                <Source text={story.competitors.source} />
+              </>
+            ) : u.chapter === 'sales' && story.sales ? (
+              <>
+                <Avis story={story} text={story.sales.avis} printed />
+                <Source text={story.sales.source} />
+              </>
+            ) : u.chapter === 'ranking' && story.ranking ? (
+              <>
+                <Avis story={story} text={story.ranking.avis} printed />
+                <Source text={story.ranking.source} />
+              </>
+            ) : story.quartier ? (
+              <QuartierEnd story={story} quartier={story.quartier} printed />
+            ) : null;
+          out.push(unit(key, u, <div className="flex flex-col gap-[3mm]">{content}</div>));
+          break;
+        }
+        case 'sales-frise':
+          if (story.sales)
+            out.push(
+              unit(
+                key,
+                u,
+                <div className="flex flex-col gap-[3mm]">
+                  <SalesFrise sales={story.sales} width={640} className="block" printed />
+                  <SalesLegend sales={story.sales} />
+                </div>,
+              ),
+            );
+          break;
+        case 'sales-table':
+          if (story.sales) out.push(unit(key, u, <SalesTable sales={story.sales} />));
+          break;
+        case 'sales-read':
+          if (story.sales) out.push(unit(key, u, <SalesRead sales={story.sales} />));
+          break;
+        case 'ranking-head':
+          if (story.ranking && ranking.subject)
+            out.push(
+              unit(
+                key,
+                u,
+                <div className="flex flex-col gap-[3mm]">
+                  <StudyVerdict
+                    subject={ranking.subject}
+                    note={story.ranking.verdictNote}
+                    language={language}
+                    printed
+                  />
+                  <RankingReglette subject={ranking.subject} />
+                </div>,
+              ),
+            );
+          break;
+        case 'ranking-row': {
+          // Les lignes qui se suivent sur la page forment un tableau, avec sa tête.
+          const run: PrintUnit[] = [u];
+          while (units[i + 1]?.kind === 'ranking-row') run.push(units[(i += 1)]!);
+          const rows = run
+            .map((row) => ranking.rows[row.index ?? 0])
+            .filter((row): row is MarketStudyRankingRow => row != null);
+          out.push(
+            unit(
+              key,
+              {
+                ...u,
+                keepWithNext: run.at(-1)!.keepWithNext,
+                mm: run.reduce((sum, row) => sum + row.mm, 0),
+              },
+              <RankingTable rows={rows} language={language} printed />,
+            ),
+          );
+          break;
+        }
+        case 'ranking-legend':
+          out.push(unit(key, u, <RankingLegend language={language} printed />));
+          break;
+        case 'quartier-tiles':
+          if (story.quartier) out.push(unit(key, u, <QuartierTiles quartier={story.quartier} />));
+          break;
+        case 'quartier-risks':
+          if (story.quartier?.risks)
+            out.push(unit(key, u, <QuartierRisks risks={story.quartier.risks} />));
+          break;
+        case 'quartier-talk':
+          if (story.quartier) out.push(unit(key, u, <QuartierTalk quartier={story.quartier} />));
+          break;
+        case 'quartier-extra':
+          if (story.quartier)
+            out.push(
+              unit(
+                key,
+                u,
+                <div className="flex flex-col gap-[3mm]">
+                  <QuartierExtra quartier={story.quartier} vivreIci={vivreIci} />
+                </div>,
+              ),
+            );
+          break;
+        case 'next-head':
+          out.push(unit(key, u, <NextHead story={story} printed />, false));
+          break;
+        case 'next-papers':
+          out.push(unit(key, u, <NextPapers story={story} />));
+          break;
+        case 'next-vivre':
+          out.push(unit(key, u, vivreIci));
+          break;
+        case 'next-contact':
+          out.push(unit(key, u, <NextContact document={document} />));
+          break;
+        case 'next-is':
+          out.push(unit(key, u, <NextIs story={story} printed />));
+          break;
+        case 'next-mentions':
+          out.push(unit(key, u, <NextMentions agency={agency} />));
+          break;
+        default:
+          break;
+      }
+    }
+    return out;
+  };
+  return (
+    <div className="hidden print:block" data-testid="market-study-print">
+      {pages.map((page, index) =>
+        index === 0 ? (
+          <section key="cover" className="flex flex-col" data-print-page="1">
+            <Cover document={document} printed />
+          </section>
+        ) : (
+          <section
+            key={index}
+            className="relative flex min-h-[296mm] break-before-page flex-col pt-[10mm] pb-[16mm]"
+            data-print-page={index + 1}
+          >
+            <div
+              className="flex flex-col gap-[3mm]"
+              data-print-body=""
+              data-room-px={Math.floor(PRINT_ROOM_MM * PX_PER_MM)}
+            >
+              {render(page.units)}
+            </div>
+            <footer
+              className="absolute inset-x-0 bottom-[7mm] flex items-baseline justify-between px-[14mm] text-[7pt] tracking-[0.08em] text-slate-500"
+              data-print-footer=""
+            >
+              <span className="uppercase">{story.footer}</span>
+              <span data-print-number="">{`${index + 1} / ${pages.length}`}</span>
+            </footer>
+          </section>
+        ),
+      )}
+    </div>
   );
 }

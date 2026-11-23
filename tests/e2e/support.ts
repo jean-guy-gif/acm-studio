@@ -925,3 +925,43 @@ export async function openStudyLinkOnPhone(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Retirer le lien' }).first().click();
   await expect(page.getByText('Lien retiré : il ne s’ouvre plus.')).toBeVisible();
 }
+
+// Correctifs 163 — le vrai PDF A4 d'une page imprimable, comme `studyPrintedPages`, rendu en texte
+// page par page (pdf.js, en Node : aucun outil du poste) : pour lire sur la page N son numéro et le
+// chapitre que le résumé y annonce.
+export async function printedPdfTexts(page: Page): Promise<string[]> {
+  await page.emulateMedia({ media: 'print' });
+  let pdf: Buffer;
+  try {
+    await page.evaluate(async () => {
+      for (const img of document.images) img.loading = 'eager';
+      await Promise.all(
+        [...document.images].map((img) =>
+          img.complete
+            ? null
+            : new Promise((resolve) => {
+                img.addEventListener('load', resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true });
+              }),
+        ),
+      );
+      await document.fonts.ready;
+    });
+    pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+  } finally {
+    await page.emulateMedia({ media: 'screen' });
+  }
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(pdf), useSystemFonts: false }).promise;
+  const texts: string[] = [];
+  for (let n = 1; n <= doc.numPages; n += 1) {
+    const content = await (await doc.getPage(n)).getTextContent();
+    texts.push(
+      content.items
+        .map((item) => ('str' in item ? item.str : ''))
+        .join(' ')
+        .replace(/[\s  ]+/g, ' '),
+    );
+  }
+  return texts;
+}

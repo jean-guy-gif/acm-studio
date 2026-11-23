@@ -79,8 +79,10 @@ export const FRENCH_STUDY: StudyTexts = {
       return `${count > 1 ? n.many : n.one} vendu${e(n, count > 1)} autour de chez vous depuis ${since}`;
     },
     kpiPlace: 'la place de votre prix, du moins cher au plus cher',
-    kpiSources: (count, page) =>
-      `${count > 1 ? 'sources, toutes citées' : 'source, citée'} page ${page}`,
+    kpiDays: (days, approximate) =>
+      `${days > 1 ? 'jours' : 'jour'}${approximate ? ' environ' : ''}`,
+    kpiDaysLabel: (kind) =>
+      `la moitié de ces ${NOUNS[kind].many} attendent un acheteur depuis au moins ce temps`,
     page: (page) => `page ${page}`,
     howTitle: 'Comment cette étude est faite',
     how: (competitors, sales, quartier, kind) => {
@@ -270,20 +272,34 @@ export const FRENCH_STUDY: StudyTexts = {
         ? `${cap(word(1, n.feminine))} ${n.one}${size} s’est vendu${e(n)} autour de chez vous depuis ${since}.`
         : `${cap(word(count, n.feminine))} ${n.many}${size} se sont vendu${e(n, true)} autour de chez vous depuis ${since}.`;
     },
-    itemSub: (count, kept, kind) =>
+    itemSub: (count, kept, kind, likeness) =>
       count === 1
         ? 'Un prix signé chez le notaire.'
         : `Des prix signés chez le notaire. ${
-            kept < count
-              ? `J’en ai retenu ${word(kept, true)}, les plus proches de votre ${NOUNS[kind].one}.`
-              : 'Je les ai toutes retenues.'
+            kept >= count
+              ? 'Je les ai toutes retenues.'
+              : likeness
+                ? `J’en ai retenu ${word(kept, true)}, celles qui ressemblent le plus à votre ${
+                    NOUNS[kind].one
+                  }${likeness.facts ? ` : ${likeness.facts}` : ''}.`
+                : `J’en ai retenu ${word(kept, true)}, les plus récentes.`
           }`,
-    tableTitle: (count, kept, kind) =>
+    tableTitle: (count, kept, kind, likeness) =>
       kept < count
-        ? `Les ${word(kept, true)} ventes les plus proches de votre ${NOUNS[kind].one}`
+        ? likeness
+          ? `Les ${word(kept, true)} ventes qui ressemblent le plus à votre ${NOUNS[kind].one}`
+          : `Les ${word(kept, true)} ventes les plus récentes`
         : count === 1
           ? 'La vente'
           : `Les ${word(count, true)} ventes`,
+    tableNote: (likeness) =>
+      `${
+        likeness.rooms && likeness.surface
+          ? 'Choisies d’abord sur le nombre de pièces, puis sur la surface'
+          : likeness.rooms
+            ? 'Choisies sur le nombre de pièces'
+            : 'Choisies sur la surface'
+      }${likeness.facts ? ` : ${likeness.facts}` : ''}.`,
     legendKept: (kept) =>
       kept === 1
         ? 'la vente retenue, numérotée comme le tableau'
@@ -490,6 +506,10 @@ export const FRENCH_STUDY: StudyTexts = {
       planning: 'Urbanisme et permis',
       risks: 'Risques et habitants',
       condominium: 'Copropriété',
+      planningOnly: 'Urbanisme',
+      permitsOnly: 'Permis de construire',
+      risksOnly: 'Risques',
+      peopleOnly: 'Habitants',
     },
     competitorsSource: 'Annonces des portails immobiliers',
   },

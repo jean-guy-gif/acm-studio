@@ -216,11 +216,26 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
         });
         expect(sales.overlaps).toBe(false);
         expect(sales.labels).toBeGreaterThan(0);
+        // Correctifs 163 — jamais un prix sur l'axe des années : chaque prix écrit finit au-dessus.
+        const onAxis = await block.evaluate((node) => {
+          const axis = node.querySelector('svg line')!.getBoundingClientRect().top;
+          return [...node.querySelectorAll('svg text[data-price-label]')].some(
+            (label) => label.getBoundingClientRect().bottom > axis,
+          );
+        });
+        expect(onAxis).toBe(false);
+        // Imprimées, les pages où sont les ventes ne débordent pas de leur feuille A4.
         await page.emulateMedia({ media: 'print' });
         await page.setViewportSize({ width: 794, height: 1123 });
-        // Une page A4 à 96 points par pouce, moins les marges de 10 et 16 mm : 1 025 px au plus.
-        const height = await block.evaluate((node) => node.getBoundingClientRect().height);
-        expect(height).toBeLessThan(1025);
+        const overflow = await page
+          .locator('[data-print-body]:has([data-chapter="sales"])')
+          .evaluateAll((bodies) =>
+            bodies.some(
+              (body) =>
+                body.getBoundingClientRect().height > Number(body.getAttribute('data-room-px')) + 1,
+            ),
+          );
+        expect(overflow).toBe(false);
         await page.emulateMedia({ media: 'screen' });
         await page.setViewportSize({ width: 1280, height: 900 });
       });
@@ -246,7 +261,8 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
           'next',
         ]);
       }
-      expect(await studyPrintedPages(page)).toBe(pages.length);
+      // Correctifs 163 — imprimée, une page de PDF par page décidée par le code.
+      expect(await studyPrintedPages(page)).toBe(await page.locator('[data-print-page]').count());
       // Le lien public, ventes et quartier compris, sur téléphone.
       await openStudyLinkOnPhone(page);
     });

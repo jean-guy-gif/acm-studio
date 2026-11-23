@@ -713,6 +713,17 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   `linked-project.json`…), sans quoi le nettoyage de fin de passage échoue (« dépôt non lié »)
   alors que les specs passent.
 
+- 23/11 · Correctifs 163 · Chaque passage de l'e2e de l'Étude remet la démo à zéro : les dossiers
+  changent d'identifiant. Un générateur de PDF qui garde des identifiants d'avant tombe sur « Page
+  introuvable » : relire les identifiants en base juste avant d'imprimer.
+- 23/11 · Correctifs 163 · Le compte de démo des tests n'est pas dans l'agence de démo de Jean-Guy
+  (deux agences `is_demo`) : ses dossiers ne s'ouvrent pas avec lui, on imprime ceux du compte des
+  tests, dans le même état (le quartier coché par l'écran).
+- 23/11 · Correctifs 163 · Une coupure d'Internet du poste pendant la suite complète (1 h 24) a fait
+  20 rouges sur 32 (`ERR_INTERNET_DISCONNECTED`, `ERR_NAME_NOT_RESOLVED`) ; au rejeu, 18 verts, puis
+  `demo` et `live-sans-trou` (4G rapide) verts au troisième passage, seuls, chacun rouge deux fois
+  pour deux causes différentes. Lire la cause de chaque échec avant de parler de défaut.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -872,6 +883,12 @@ null` doit laisser passer la seule mise à nul de cette clé, sinon la suppressi
   seule : la coupe doit être faite par le code (classement coupé à 9 lignes, quartier sur deux
   pages au-delà d'une hauteur estimée) ; l'e2e compare le nombre de pages du PDF de Chromium
   (`/Type /Page`) au nombre de pages du document (`studyPrintedPages`).
+
+- 23/11 · Correctifs 163 · Les pages imprimées se mesurent en émulant l'impression à 794 px de
+  large (A4 à 96 points par pouce) : les hauteurs du code (`study-print.ts`) ont été réglées bloc par
+  bloc contre ces mesures (attribut `data-mm` de chaque bloc imprimé), à quelques millimètres près ;
+  l'espace après le dernier bloc d'une page ne compte pas. Chromium imprime les marges `@page` (« 2 /
+  7 »), le navigateur de Jean-Guy non : un numéro de page s'écrit dans la page.
 
 ## L'atelier et les hooks
 

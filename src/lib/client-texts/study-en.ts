@@ -62,8 +62,9 @@ export const ENGLISH_STUDY: StudyTexts = {
     kpiCompetitors: (count, kind) => `${noun(kind, count)} like yours for sale today`,
     kpiSales: (count, kind, since) => `${noun(kind, count)} sold near you since ${since}`,
     kpiPlace: 'where your price stands, from cheapest to most expensive',
-    kpiSources: (count, page) =>
-      `${count > 1 ? 'sources, all cited' : 'source, cited'} on page ${page}`,
+    kpiDays: (days, approximate) => `${days > 1 ? 'days' : 'day'}${approximate ? ' or so' : ''}`,
+    kpiDaysLabel: (kind) =>
+      `half of these ${NOUNS[kind].many} have been waiting for a buyer at least this long`,
     page: (page) => `page ${page}`,
     howTitle: 'How this study is made',
     how: (competitors, sales, quartier, kind) => {
@@ -220,20 +221,34 @@ export const ENGLISH_STUDY: StudyTexts = {
       `${cap(word(count))} ${noun(kind, count)}${
         surface ? ` from ${surface.from} to ${surface.to}` : ''
       } ${count === 1 ? 'has' : 'have'} sold near you since ${since}.`,
-    itemSub: (count, kept, kind) =>
+    itemSub: (count, kept, kind, likeness) =>
       count === 1
         ? 'A price signed at the notary.'
         : `Prices signed at the notary. ${
-            kept < count
-              ? `I selected ${word(kept)}, the closest to your ${NOUNS[kind].one}.`
-              : 'I kept them all.'
+            kept >= count
+              ? 'I kept them all.'
+              : likeness
+                ? `I selected ${word(kept)}, the ones most like your ${NOUNS[kind].one}${
+                    likeness.facts ? `: ${likeness.facts}` : ''
+                  }.`
+                : `I selected ${word(kept)}, the most recent.`
           }`,
-    tableTitle: (count, kept, kind) =>
+    tableTitle: (count, kept, kind, likeness) =>
       kept < count
-        ? `The ${word(kept)} sales closest to your ${NOUNS[kind].one}`
+        ? likeness
+          ? `The ${word(kept)} sales most like your ${NOUNS[kind].one}`
+          : `The ${word(kept)} most recent sales`
         : count === 1
           ? 'The sale'
           : `The ${word(count)} sales`,
+    tableNote: (likeness) =>
+      `${
+        likeness.rooms && likeness.surface
+          ? 'Chosen first on the number of rooms, then on floor area'
+          : likeness.rooms
+            ? 'Chosen on the number of rooms'
+            : 'Chosen on floor area'
+      }${likeness.facts ? `: ${likeness.facts}` : ''}.`,
     legendKept: (kept) =>
       kept === 1
         ? 'the selected sale, numbered as in the table'
@@ -409,6 +424,10 @@ export const ENGLISH_STUDY: StudyTexts = {
       planning: 'Planning and permits',
       risks: 'Risks and residents',
       condominium: 'Building',
+      planningOnly: 'Planning',
+      permitsOnly: 'Building permits',
+      risksOnly: 'Risks',
+      peopleOnly: 'Residents',
     },
     competitorsSource: 'Listings on property portals',
   },
