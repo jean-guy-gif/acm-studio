@@ -771,16 +771,19 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
   // depuis combien de temps la moitié des biens en vente attendent un acheteur, lu sur leurs fiches
   // (la médiane basse : au moins la moitié le sont depuis ce temps ou plus). Sans deux durées
   // connues, pas de chiffre.
+  // Une durée reconstituée (sans date de publication) est dite « environ », comme sur sa fiche.
   const waits = inSale
-    .map((item) => item.daysOnMarket?.days)
-    .filter((days): days is number => days != null && days >= 0)
-    .sort((a, b) => a - b);
+    .map((item) => item.daysOnMarket)
+    .filter(
+      (wait): wait is { days: number; approximate: boolean } => wait != null && wait.days >= 0,
+    )
+    .sort((a, b) => a.days - b.days);
   if (waits.length >= 2) {
     const half = waits[Math.floor((waits.length - 1) / 2)]!;
     kpis.push({
-      value: String(half),
+      value: String(half.days),
       sup: null,
-      rest: s.summary.kpiDays(half),
+      rest: s.summary.kpiDays(half.days, half.approximate),
       label: s.summary.kpiDaysLabel(kind),
     });
   }

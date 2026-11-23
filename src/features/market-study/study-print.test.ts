@@ -156,7 +156,7 @@ function garcia(extra: Partial<MarketStudyInput> = {}): MarketStudyInput {
   };
 }
 
-export const CASES: [string, MarketStudyInput][] = [
+const CASES: [string, MarketStudyInput][] = [
   ['M. Lefebvre', lefebvre()],
   ['Mme Garcia', garcia()],
   ['Mme Garcia, en anglais', { ...garcia(), language: 'en' }],
@@ -328,7 +328,56 @@ describe('les mots qui disent vrai', () => {
     // Les cinq annonces publiées le 15/09, l'étude du 19/11 : 65 jours.
     expect(days.value).toBe('65');
     expect(days.label).toBe(
-      'la moitié des maisons en vente attendent un acheteur depuis au moins ce temps',
+      'la moitié de ces maisons attendent un acheteur depuis au moins ce temps',
     );
+    // Sans date de publication, la durée est reconstituée : « environ », comme sur la fiche.
+    const approx = buildMarketStudy(
+      lefebvre({
+        competitors: lefebvre().competitors.map((row) => ({
+          ...row,
+          listing_published_at: null,
+          days_on_market: 40,
+        })),
+      }),
+    ).story.summary.kpis.find((kpi) => kpi.rest?.startsWith('jours'))!;
+    expect(approx.rest).toBe('jours environ');
+  });
+});
+
+describe('le classement ne se coupe jamais (Jean-Guy, 23/11)', () => {
+  const rankingPages = (data: MarketStudyInput) =>
+    buildMarketStudy(data)
+      .story.print.pages.map((page, index) => ({ page, index }))
+      .filter(({ page }) =>
+        page.units.some((unit) => unit.chapter === 'ranking' && unit.kind !== 'avis'),
+      );
+
+  it('titre, verdict, réglette, toutes les lignes et la légende sur une même page', () => {
+    for (const data of [
+      lefebvre(),
+      lefebvre({ quartier }),
+      garcia({ studyPrice: lefebvre().studyPrice }),
+    ]) {
+      const pages = rankingPages(data);
+      expect(pages).toHaveLength(1);
+      const kinds = pages[0]!.page.units.map((unit) => unit.kind);
+      expect(kinds).toContain('band');
+      expect(kinds).toContain('ranking-head');
+      expect(kinds).toContain('ranking-legend');
+      expect(kinds.filter((kind) => kind === 'ranking-row')).toHaveLength(6);
+    }
+  });
+
+  it('12 biens tiennent ensemble ; au-delà, la suite sur la page suivante', () => {
+    const many = (n: number) =>
+      lefebvre({
+        competitors: Array.from({ length: n }, (_, i) => lefebvre().competitors[i % 5]!).map(
+          (row, i) => ({ ...row, id: `m${i}`, display_order: i, price: 1400000 + i * 10000 }),
+        ),
+      });
+    // 11 concurrents et le bien : 12 lignes, une seule page.
+    expect(rankingPages(many(11))).toHaveLength(1);
+    // 13 concurrents et le bien : 14 lignes, le classement continue sur la page suivante.
+    expect(rankingPages(many(13)).length).toBeGreaterThan(1);
   });
 });

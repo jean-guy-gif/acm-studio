@@ -408,7 +408,7 @@ describe('les variantes des phrases', () => {
           out.push(t.sales.tableTitle(Math.max(n, 1), 6, kind, likeness != null));
         }
         out.push(t.sales.tableNote({ rooms: true, surface: false, facts: null }));
-        out.push(t.summary.kpiDays(n), t.summary.kpiDaysLabel(kind));
+        out.push(t.summary.kpiDays(n, n % 2 === 0), t.summary.kpiDaysLabel(kind));
         out.push(t.sales.avis(Math.max(n, 1), kind, '5 pièces', '135 m²'));
         out.push(t.ranking.title('1 €', n, kind), t.ranking.lead(Math.max(n, 1), kind));
         out.push(t.ranking.itemAfter(n + 1, n, kind), t.ranking.itemSub('1 €', false, n, kind));

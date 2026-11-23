@@ -603,7 +603,11 @@ function SummaryItems({ story, printed }: { story: MarketStudyStory } & Printed)
               </p>
               {item.sub ? <p className="mt-0.5 text-sm text-zinc-600">{item.sub}</p> : null}
             </div>
-            <span className="text-xs whitespace-nowrap text-zinc-500" data-page-ref="">
+            {/* Le renvoi vise la page imprimée : à l'écran, qui n'a pas de numéros, il ne se dit pas. */}
+            <span
+              className="hidden text-xs whitespace-nowrap text-zinc-500 print:inline"
+              data-page-ref=""
+            >
               {item.page}
             </span>
           </li>
@@ -1165,7 +1169,7 @@ function PrintedStudy({ document, vivreIci }: DocumentProps & { vivreIci: ReactN
       data-print-unit={attrs.kind}
       data-chapter={attrs.chapter}
       data-keep-next={attrs.keepWithNext ? 'true' : undefined}
-      data-mm={attrs.mm.toFixed(1)}
+      data-mm={Math.round(attrs.mm * 10) / 10}
     >
       {content}
     </div>

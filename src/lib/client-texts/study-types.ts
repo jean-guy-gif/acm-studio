@@ -35,7 +35,8 @@ export type StudyTexts = {
     kpiPlace: string;
     // Correctifs 163 — à la place de « 1 source, citée page 7 » : depuis combien de temps la moitié
     // des biens en vente attendent un acheteur, lu sur leurs fiches (proposition, Jean-Guy 23/11).
-    kpiDays: (days: number) => string;
+    // `approximate` : une durée reconstituée (sans date de publication), dite « environ » (M127).
+    kpiDays: (days: number, approximate: boolean) => string;
     kpiDaysLabel: (kind: StudyKind) => string;
     page: (page: number) => string;
     howTitle: string;

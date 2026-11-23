@@ -172,6 +172,9 @@ const tileMm = (tile: StudyTile, wide: boolean) =>
   (tile.source ? 1 + 3.6 * textLines(tile.source, wide ? CPL.source : CPL.tileSmall) : 0) +
   1.5;
 
+// Le classement se lit entier jusqu'à ce nombre de lignes, le bien du vendeur compris.
+export const RANKING_WHOLE_ROWS = 12;
+
 export type PrintFlags = {
   // Le lien « Vivre ici » du bien : imprimé avec le quartier, sinon sur la dernière page.
   vivreIci: boolean;
@@ -287,8 +290,11 @@ export function studyPrintUnits(
         index,
         mm: row.subject ? 16.4 : row.detail ? 12.6 : 8,
         runStartMm: 5.6,
-        // La dernière ligne reste avec la légende.
-        keepWithNext: index === rows.length - 1,
+        // Le classement ne se coupe jamais (Jean-Guy, 23/11) : jusqu'à 12 lignes, le titre, le
+        // verdict, la réglette, toutes les lignes et la légende vont ensemble, sur une page neuve
+        // s'ils ne tiennent pas ; au-delà, il continue sur la page suivante, sa tête répétée, la
+        // dernière ligne toujours avec la légende.
+        keepWithNext: rows.length <= RANKING_WHOLE_ROWS || index === rows.length - 1,
       });
     });
     units.push({ kind: 'ranking-legend', chapter: 'ranking', mm: 4 + g });
