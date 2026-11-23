@@ -35,7 +35,8 @@ export type StudyTexts = {
     howTitle: string;
     how: (competitors: boolean, sales: boolean, quartier: boolean, kind: StudyKind) => string;
     valueTitle: (kind: StudyKind) => string;
-    value: (agreed: string | null) => string;
+    // Mission 163 C — `proposed` : le prix d'une conclusion qui n'est pas un mandat signé.
+    value: (price: string | null, proposed: boolean) => string;
   };
 
   competitors: {
@@ -95,10 +96,10 @@ export type StudyTexts = {
     lead: (inSale: number, kind: StudyKind) => string;
     itemBefore: string;
     itemAfter: (total: number, cheaper: number, kind: StudyKind) => string;
-    itemSub: (price: string, agreed: boolean, cheaper: number, kind: StudyKind) => string;
+    itemSub: (price: string, proposed: boolean, cheaper: number, kind: StudyKind) => string;
     avis: (cheaper: number, kind: StudyKind, strengths: string | null) => string;
     verdictNote: string;
-    source: (day: string, agreed: boolean, kind: StudyKind) => string;
+    source: (day: string, proposed: boolean, kind: StudyKind) => string;
   };
 
   quartier: {
@@ -129,7 +130,12 @@ export type StudyTexts = {
     questionsTitle: string;
     contact: string;
     isTitle: string;
-    is: (kind: StudyKind, day: string, withSales: boolean, agreed: boolean) => string;
+    is: (
+      kind: StudyKind,
+      day: string,
+      withSales: boolean,
+      price: 'agreed' | 'proposed' | null,
+    ) => string;
     sourceRows: {
       competitors: string;
       sales: string;

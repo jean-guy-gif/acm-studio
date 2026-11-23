@@ -42,12 +42,14 @@ export type MarketStudyRankingRow = {
 };
 
 // « Où en est votre prix » au jour J : le classement de la M129, en une seule étape. `subject` est
-// null sans prix de référence : alors ni ligne VOTRE BIEN, ni verdict (décision du 05/11).
+// null sans prix de commercialisation convenu : alors ni ligne VOTRE BIEN, ni verdict, ni chapitre
+// (mission 163 C : jamais l'analyse du conseiller à sa place).
 export type MarketStudyRanking = {
   subject: {
     price: number;
-    // D'où vient le prix : convenu à la conclusion, ou l'analyse du conseiller.
-    source: 'agreed' | 'advisor';
+    // Mission 163 C — le prix d'une conclusion qui n'est pas un mandat signé : « le prix proposé »,
+    // comme sur le Suivi ; sinon « le prix retenu ensemble ».
+    proposed: boolean;
     rank: number;
     total: number;
     tier: RankingTier;

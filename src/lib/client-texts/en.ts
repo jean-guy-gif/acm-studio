@@ -986,10 +986,10 @@ export const ENGLISH_TEXTS: ClientTexts = {
       removedOn: (day) => `Withdrawn on ${day}`,
       notRanked: 'it does not count in the ranking',
       alreadyDropped: 'has already reduced its price',
-      advisorProposed: 'the price I suggest',
       surface: 'Floor area',
       rooms: 'Rooms',
       studied: 'Competing properties studied',
+      proposedPrice: 'proposed price',
       cheapest:
         'your property would be the least expensive of the properties on the market that we studied.',
       priciest:

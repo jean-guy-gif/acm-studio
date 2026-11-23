@@ -99,11 +99,13 @@ export const FRENCH_STUDY: StudyTexts = {
       return `${first ? `${first} ` : ''}Chaque chiffre a sa source et sa date.`;
     },
     valueTitle: (kind) => `Et la valeur de votre ${NOUNS[kind].one} ?`,
-    value: (agreed) =>
+    value: (price, proposed) =>
       `Cette étude ne la calcule pas : elle montre le marché tel que vos acheteurs le voient. ${
-        agreed
-          ? `Le prix, nous l’avons retenu ensemble : ${agreed}.`
-          : 'Le prix, nous le fixons ensemble.'
+        price
+          ? proposed
+            ? `Le prix proposé : ${price}.`
+            : `Le prix, nous l’avons retenu ensemble : ${price}.`
+          : 'Le prix, nous le fixerons ensemble.'
       }`,
   },
 
@@ -333,7 +335,7 @@ export const FRENCH_STUDY: StudyTexts = {
     },
     itemBefore: 'Votre prix est ',
     itemAfter: (total, count, kind) => ` sur ${total} : ${cheaperPhrase(count, NOUNS[kind])}.`,
-    itemSub: (price, agreed, count, kind) => {
+    itemSub: (price, proposed, count, kind) => {
       const n = NOUNS[kind];
       const who =
         count === 0
@@ -341,7 +343,7 @@ export const FRENCH_STUDY: StudyTexts = {
           : count === 1
             ? ` C’est ${n.feminine ? 'elle' : 'lui'} que vos acheteurs visiteront d’abord.`
             : ` Ce sont ${n.feminine ? 'elles' : 'eux'} que vos acheteurs visiteront d’abord.`;
-      return `À ${price}, ${agreed ? 'le prix retenu ensemble' : 'le prix que je vous propose'}.${who}`;
+      return `À ${price}, ${proposed ? 'le prix proposé' : 'le prix retenu ensemble'}.${who}`;
     },
     avis: (count, kind, strengths) => {
       const n = NOUNS[kind];
@@ -361,10 +363,10 @@ export const FRENCH_STUDY: StudyTexts = {
     },
     verdictNote:
       'Le premier tiers ne pose pas de problème, le deuxième demande votre attention, le dernier est un danger.',
-    source: (day, agreed, kind) => {
+    source: (day, proposed, kind) => {
       const n = NOUNS[kind];
       return `Prix affichés, tels que connus le ${day}. Votre ${n.one} au ${
-        agreed ? 'prix retenu ensemble' : 'prix que je vous propose'
+        proposed ? 'prix proposé' : 'prix retenu ensemble'
       }. À égalité de prix, votre ${n.one} prend le meilleur rang.`;
     },
   },
@@ -468,14 +470,18 @@ export const FRENCH_STUDY: StudyTexts = {
     questionsTitle: 'Vos questions pour notre prochain échange',
     contact: 'Pour me joindre',
     isTitle: 'Ce que cette étude est, et ce qu’elle n’est pas',
-    is: (kind, day, withSales, agreed) => {
+    is: (kind, day, withSales, price) => {
       const n = NOUNS[kind];
       return `Elle compare votre ${n.one} aux ${n.many} en vente le ${day}${
         withSales ? ' et aux ventes publiées autour de chez vous' : ''
       }. Les prix des biens en vente sont ceux des annonces, pas des prix de vente${
         withSales ? ' ; ceux des ventes réelles ont été signés chez le notaire' : ''
-      } ; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one} : le prix, ${
-        agreed ? 'nous l’avons retenu ensemble' : 'nous le fixons ensemble'
+      } ; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one} : ${
+        price === 'agreed'
+          ? 'le prix, nous l’avons retenu ensemble'
+          : price === 'proposed'
+            ? 'elle situe le prix proposé'
+            : 'le prix, nous le fixerons ensemble'
       }. Aucun nom de vendeur ni d’acheteur n’est cité.`;
     },
     sourceRows: {

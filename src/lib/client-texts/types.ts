@@ -676,10 +676,11 @@ export type DocumentTexts = {
     removedOn: (day: string) => string;
     notRanked: string;
     alreadyDropped: string;
-    advisorProposed: string;
     surface: string;
     rooms: string;
     studied: string;
+    // Mission 163 C — la ligne VOTRE BIEN au prix d'une conclusion qui n'est pas un mandat signé.
+    proposedPrice: string;
     cheapest: string;
     priciest: string;
     cheaperCount: (count: number) => string;

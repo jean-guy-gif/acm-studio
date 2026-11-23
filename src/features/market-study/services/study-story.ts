@@ -486,7 +486,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
           },
           verdictNote: s.ranking.verdictNote,
           avis: s.ranking.avis(cheaper, kind, strengths),
-          source: s.ranking.source(day, subject.source === 'agreed', kind),
+          source: s.ranking.source(day, subject.proposed, kind),
         }
       : null;
 
@@ -674,7 +674,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
         { text: r.ordinal(subject.rank), sup: true },
         { text: s.ranking.itemAfter(subject.total, cheaper, kind) },
       ],
-      sub: s.ranking.itemSub(euro(subject.price), subject.source === 'agreed', cheaper, kind),
+      sub: s.ranking.itemSub(euro(subject.price), subject.proposed, cheaper, kind),
       page: pageLabel('ranking'),
       tier: subject.tier,
     });
@@ -769,7 +769,8 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
   ].filter(Boolean);
   const civility = studyCivility(input.sellerName);
   const salutation = civility ? s.salutation(civility, input.sellerName) : null;
-  const agreed = subject?.source === 'agreed' ? euro(subject.price) : null;
+  const agreed = subject ? euro(subject.price) : null;
+  const priceKind = subject ? (subject.proposed ? 'proposed' : 'agreed') : null;
 
   return {
     footer: s.footer(kind, commune, day),
@@ -795,7 +796,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       howTitle: s.summary.howTitle,
       how: s.summary.how(shown > 0, salesBlock != null, hasQuartier, kind),
       valueTitle: s.summary.valueTitle(kind),
-      value: s.summary.value(agreed),
+      value: s.summary.value(agreed, subject?.proposed ?? false),
     },
     competitors,
     sales,
@@ -809,7 +810,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
       questionsTitle: s.next.questionsTitle,
       contact: s.next.contact,
       isTitle: s.next.isTitle,
-      is: s.next.is(kind, day, salesBlock != null, agreed != null),
+      is: s.next.is(kind, day, salesBlock != null, priceKind),
       sources,
     },
   };

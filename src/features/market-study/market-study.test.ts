@@ -9,8 +9,8 @@ vi.mock('server-only', () => ({}));
 import { MarketStudyDocument } from '@/features/market-study/components/market-study-document';
 import { loadMarketStudy } from '@/features/market-study/queries/load-market-study';
 import {
+  studyPrice,
   buildMarketStudy,
-  referencePrice,
   type MarketStudyCompetitorRow,
   type MarketStudyInput,
 } from '@/features/market-study/services/build-market-study';
@@ -114,8 +114,7 @@ function input(extra: Partial<MarketStudyInput> = {}): MarketStudyInput {
       // Retenu mais hors Live : il est dans l'Étude comme les autres.
       { ...competitor('c2', 1, 610000, { synthesis_hide_photo: true }) },
     ] as MarketStudyCompetitorRow[],
-    commercializationPrice: null,
-    advisorAnalysis: null,
+    studyPrice: null,
     agency: AGENCY_BLOCK,
     brandDeclarations: '',
     ...extra,
@@ -159,19 +158,30 @@ describe('le constructeur de l’Étude de marché', () => {
     expect(study.competitors[0].features.every((feature) => feature.value !== '—')).toBe(true);
   });
 
-  it('le prix de référence : convenu, sinon l’analyse du conseiller, sinon ni ligne ni verdict', () => {
-    expect(referencePrice(615000, 600000)).toEqual({ price: 615000, source: 'agreed' });
-    expect(referencePrice(null, 600000)).toEqual({ price: 600000, source: 'advisor' });
-    expect(referencePrice(null, null)).toBeNull();
+  // Mission 163 C — seul le prix de commercialisation CONVENU classe le bien : un prix enregistré,
+  // au Live ou à la conclusion, dossier conclu ou non (Jean-Guy, 20/11) ; jamais l'analyse.
+  it('le prix convenu : un prix de commercialisation enregistré, sinon rien', () => {
+    const signed = { outcome: 'signed', commercialization_price: 615000 };
+    expect(studyPrice(signed)).toEqual({ amount: 615000, proposed: false });
+    // Un prix du Live, dossier pas encore conclu : retenu ensemble (le remplir vaut accord, M85).
+    expect(studyPrice({ ...signed, outcome: null })).toEqual({ amount: 615000, proposed: false });
+    // Toute autre issue que le mandat signé : « le prix proposé », comme le Suivi (23/11).
+    for (const outcome of ['follow_up', 'sold_elsewhere', 'withdrawn'])
+      expect(studyPrice({ ...signed, outcome })).toEqual({ amount: 615000, proposed: true });
+    // La base rend un `numeric` en texte.
+    expect(studyPrice({ ...signed, commercialization_price: '615000' })?.amount).toBe(615000);
+    expect(studyPrice({ ...signed, commercialization_price: null })).toBeNull();
+    expect(studyPrice({ ...signed, commercialization_price: 0 })).toBeNull();
+    expect(studyPrice(null)).toBeNull();
 
-    const agreed = buildMarketStudy(input({ commercializationPrice: 615000, advisorAnalysis: 1 }));
-    expect(agreed.ranking.subject).toMatchObject({ price: 615000, source: 'agreed', rank: 3 });
+    const agreed = buildMarketStudy(input({ studyPrice: { amount: 615000, proposed: false } }));
+    expect(agreed.ranking.subject).toMatchObject({ price: 615000, rank: 3 });
     expect(agreed.ranking.rows.map((row) => row.key)).toEqual(['c1', 'c2', 'subject', 'c3']);
     expect(agreed.ranking.rows.find((row) => row.subject)?.detail).toBe('prix retenu ensemble');
 
-    const advisor = buildMarketStudy(input({ advisorAnalysis: 580000 }));
-    expect(advisor.ranking.subject).toMatchObject({ source: 'advisor', rank: 1, tier: 'green' });
-    expect(advisor.ranking.subject?.word).toBe('Pas de problème');
+    const low = buildMarketStudy(input({ studyPrice: { amount: 580000, proposed: false } }));
+    expect(low.ranking.subject).toMatchObject({ rank: 1, tier: 'green' });
+    expect(low.ranking.subject?.word).toBe('Pas de problème');
 
     const none = buildMarketStudy(input());
     expect(none.ranking.subject).toBeNull();
@@ -182,7 +192,7 @@ describe('le constructeur de l’Étude de marché', () => {
   it('à égalité de prix, le vendeur prend le meilleur rang ; une annonce retirée sort du classement', () => {
     const study = buildMarketStudy(
       input({
-        commercializationPrice: 610000,
+        studyPrice: { amount: 610000, proposed: false },
         competitors: [
           competitor('c1', 0, 590000),
           competitor('c2', 1, 610000),
@@ -198,7 +208,9 @@ describe('le constructeur de l’Étude de marché', () => {
   });
 
   it('aucun interdit dans la charge : ni titre, ni lien, ni adresse, ni « Vendu par », ni exclusivité', () => {
-    const serialized = JSON.stringify(buildMarketStudy(input({ commercializationPrice: 615000 })));
+    const serialized = JSON.stringify(
+      buildMarketStudy(input({ studyPrice: { amount: 615000, proposed: false } })),
+    );
     for (const forbidden of [
       'Dupont',
       'rue des Lilas',
@@ -247,6 +259,23 @@ function fakeClient(tables: Record<string, unknown[]>) {
 
 const AGENCY = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PROJECT = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+// Mission 163 C — un montant d'analyse reconnaissable, cherché sous toutes ses écritures.
+const ANALYSIS_TRAP = 987654;
+const ANALYSIS_TRAP_PATTERN = /987\D?654/;
+const CONCLUDED = {
+  projects: [
+    { id: PROJECT, seller_name: 'M. et Mme Garcia', advisor_id: null, status: 'meeting_completed' },
+  ],
+  // L'analyse figée à la conclusion, sur la ligne même que le chargeur lit : un second piège.
+  project_meeting_conclusions: [
+    {
+      outcome: 'signed',
+      commercialization_price: 615000,
+      frozen_advisor_analysis: ANALYSIS_TRAP,
+      frozen_advisor_price: ANALYSIS_TRAP,
+    },
+  ],
+};
 
 // Mission 140 — l'Étude d'un vendeur anglophone : tout en anglais, sauf les mentions légales.
 describe('l’Étude de marché dans la langue du vendeur', () => {
@@ -299,7 +328,8 @@ describe('le document de l’Étude de marché', () => {
       ],
       subject_properties: [{ ...input().property, photo_urls: [] }],
       comparables: input().competitors,
-      project_price_positionings: [{ advisor_comparative_market_price: 600000 }],
+      // Mission 163 C — le piège : une analyse du conseiller en base, qu'aucune lecture ne prend.
+      project_price_positionings: [{ advisor_comparative_market_price: ANALYSIS_TRAP }],
       project_meeting_conclusions: [],
       agencies: [{ name: 'Agence Test' }],
       agency_branding: [],
@@ -317,7 +347,9 @@ describe('le document de l’Étude de marché', () => {
     expect(selected.comparables).not.toMatch(
       /title|listing_url|address|sold_by|exclusivity|locator|advisor_notes|listing_description/,
     );
-    expect(selected.project_price_positionings).toBe('advisor_comparative_market_price');
+    // Mission 163 C — l'analyse du conseiller n'est jamais lue.
+    expect(selected.project_price_positionings).toBeUndefined();
+    expect(selected.project_meeting_conclusions).toBe('outcome, commercialization_price');
     expect(selected.subject_properties).not.toMatch(/advisor_|vigilance|weak/);
   });
 
@@ -339,26 +371,93 @@ describe('le document de l’Étude de marché', () => {
     );
   });
 
-  it('une fiche par retenu, la ligne VOTRE BIEN à l’analyse du conseiller et son verdict', async () => {
-    const { html } = await loadFixture();
+  it('une fiche par retenu, la ligne VOTRE BIEN au prix convenu et son verdict', async () => {
+    const { html } = await loadFixture(CONCLUDED);
     expect(html.split('data-testid="market-study-competitor"').length - 1).toBe(3);
     expect(html).toContain('data-subject="true"');
-    expect(html).toContain('le prix que je vous propose');
+    expect(html).toContain('le prix retenu ensemble');
+    expect(html).not.toContain('le prix que je vous propose');
     expect(html).toContain('data-testid="market-study-verdict"');
     // Mission 163 A — la couverture n'a plus de verdict (le Point marché garde le sien).
     expect(html).not.toContain('market-study-cover-verdict');
     expect(html).toContain('Baisse de prix connue');
   });
 
-  // Mission 163 A — sans prix pour le classer, le chapitre « Où se place votre prix » disparaît du
-  // résumé et de la numérotation (remplace M131, le classement des biens seuls).
-  it('sans prix de référence : ni classement, ni ligne vendeur, ni verdict', async () => {
-    const { document, html } = await loadFixture({ project_price_positionings: [] });
-    expect(html).not.toContain('data-subject="true"');
-    expect(html).not.toContain('market-study-verdict');
-    expect(html).not.toContain('data-testid="market-study-ranking"');
-    expect(document.story.summary.items.map((item) => item.chapter)).toEqual(['competitors']);
-    expect(document.story.summary.value).toContain('nous le fixons ensemble');
+  // Mission 163 C — sans prix convenu, le chapitre « Où se place votre prix » disparaît du résumé
+  // et de la numérotation, même avec une analyse du conseiller en base, et son montant n'est nulle
+  // part : ni dans la page, ni dans ce que reçoit le navigateur (remplace M131, « sinon à
+  // l'analyse du conseiller », pour l'Étude).
+  it('sans prix convenu : ni classement, ni ligne vendeur, ni verdict, ni l’analyse', async () => {
+    for (const extra of <Record<string, unknown[]>[]>[
+      {},
+      // Un Live mené sans prix enregistré : la ligne de conclusion existe, sans prix.
+      { project_meeting_conclusions: [{ commercialization_price: null }] },
+    ]) {
+      const { document, html } = await loadFixture(extra);
+      expect(html).not.toContain('data-subject="true"');
+      expect(html).not.toContain('market-study-verdict');
+      expect(html).not.toContain('data-testid="market-study-ranking"');
+      expect(document.ranking.subject).toBeNull();
+      expect(document.story.summary.items.map((item) => item.chapter)).toEqual(['competitors']);
+      expect(document.story.summary.value).toContain('Le prix, nous le fixerons ensemble.');
+      for (const text of [JSON.stringify(document), html]) {
+        expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);
+        expect(text).not.toContain('que je vous propose');
+      }
+    }
+  });
+
+  // Mission 163 C — « Sur quel prix partons-nous ? » rempli au Live vaut accord (M85) : le bien est
+  // classé, le dossier n'étant pas encore conclu (la ligne de conclusion sans issue, M111).
+  it('un prix saisi au Live, dossier pas encore conclu : le bien est classé', async () => {
+    const { document, html } = await loadFixture({
+      projects: [
+        {
+          id: PROJECT,
+          seller_name: 'M. et Mme Garcia',
+          advisor_id: null,
+          status: 'ready_for_meeting',
+        },
+      ],
+      project_meeting_conclusions: [
+        { outcome: null, commercialization_price: 615000, frozen_advisor_analysis: ANALYSIS_TRAP },
+      ],
+    });
+    expect(document.ranking.subject?.price).toBe(615000);
+    expect(document.story.summary.items[0]?.chapter).toBe('ranking');
+    expect(html).toContain('data-testid="market-study-verdict"');
+    for (const text of [JSON.stringify(document), html])
+      expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);
+  });
+
+  // Mission 163 C — une conclusion « À relancer » avec un prix : « le prix proposé », comme le
+  // Suivi ; « le prix retenu ensemble » reste pour un mandat signé (Jean-Guy, 23/11).
+  it('à relancer avec un prix : classé au « prix proposé », jamais « retenu ensemble »', async () => {
+    const { document, html } = await loadFixture({
+      ...CONCLUDED,
+      project_meeting_conclusions: [
+        {
+          outcome: 'follow_up',
+          commercialization_price: 615000,
+          frozen_advisor_analysis: ANALYSIS_TRAP,
+        },
+      ],
+    });
+    expect(document.ranking.subject).toMatchObject({ price: 615000, proposed: true });
+    expect(html).toContain('prix proposé');
+    expect(html).not.toContain('retenu ensemble');
+    expect(document.story.summary.value).toContain('Le prix proposé :');
+    expect(document.story.next.is).toContain('elle situe le prix proposé');
+    for (const text of [JSON.stringify(document), html])
+      expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);
+  });
+
+  it('au prix convenu, l’analyse du conseiller n’apparaît pas non plus', async () => {
+    const { document, html } = await loadFixture(CONCLUDED);
+    expect(document.ranking.subject?.price).toBe(615000);
+    expect(document.story.summary.value).toContain('nous l’avons retenu ensemble');
+    for (const text of [JSON.stringify(document), html])
+      expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);
   });
 
   it('un dossier archivé ou d’une autre agence n’a pas d’Étude', async () => {
@@ -367,7 +466,7 @@ describe('le document de l’Étude de marché', () => {
   });
 
   it('chaque section commence une page neuve, une fiche ne se coupe jamais', async () => {
-    const { html } = await loadFixture();
+    const { html } = await loadFixture(CONCLUDED);
     const pages = [...html.matchAll(/<section class="([^"]*)" data-study-page="([a-z]+)"/g)];
     expect(pages.map((page) => page[2])).toEqual([
       'cover',
