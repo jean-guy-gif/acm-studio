@@ -11,8 +11,9 @@ import type {
 // pages : chaque page porte son numéro écrit dans la page (« 3 / 6 »), et le résumé cite les pages où
 // commencent les chapitres. Pur : des hauteurs estimées en millimètres, mesurées à l'impression sur
 // les dossiers de démonstration (23/11), un peu larges par prudence. L'écran ne change pas.
-// L'avis du conseiller reste avec le dernier bloc de son chapitre (Jean-Guy, 23/11) : s'il ne tient
-// pas sur la page, ce dernier bloc passe à la page suivante avec lui.
+// L'avis du conseiller (Jean-Guy, 23/11) : quand il tient avec son chapitre, il y reste ; sinon il
+// ouvre la page suivante, et le dernier bloc ne descend pas avec lui. Un avis n'est jamais seul sur
+// une page : ce qui suit (le chapitre suivant ou « La suite ») commence sur la même page.
 
 // Une page A4 de 297 mm, imprimée sans marge : 10 mm en haut, 16 mm en bas pour le numéro.
 export const PRINT_PAGE_MM = 296;
@@ -55,8 +56,8 @@ export type PrintUnit = {
   // La hauteur estimée du bloc, l'espace qui le suit compris.
   mm: number;
   // `true` : un titre (ou une tête de tableau) qui ne reste jamais seul en bas d'une page.
-  // `'soft'` : le dernier bloc d'un chapitre, qui reste avec l'avis qui le suit ; ce lien ne cède que
-  // si les deux ne tiennent pas ensemble sur une page entière (un classement de 12 lignes).
+  // `'soft'` : le même lien, qui cède seulement quand le groupe ne tient pas sur une page entière
+  // (« La suite » derrière un avis qui, sans elle, serait seul sur sa page).
   keepWithNext?: boolean | 'soft';
   // Ce qu'un bloc coûte de plus quand il ouvre une suite de blocs du même genre sur une page : la
   // tête du tableau du classement, répétée sur chaque page.
@@ -73,10 +74,15 @@ export type PrintPage = { units: PrintUnit[]; mm: number };
 const unitCost = (unit: PrintUnit, previous: PrintUnit | undefined): number =>
   unit.mm + (unit.runStartMm && previous?.kind !== unit.kind ? unit.runStartMm : 0);
 
-// Les blocs dans l'ordre : chaque groupe (un titre et ce qui le suit, un dernier bloc et son avis) va
-// sur la page en cours s'il y tient, sinon sur une page neuve. Un groupe plus haut qu'une page
-// entière se défait à son lien souple (l'avis suit alors sur la page d'après) ; sinon il reste seul
-// sur la sienne.
+// Les blocs dans l'ordre : chaque groupe (un titre et ce qui le suit) va sur la page en cours s'il y
+// tient, sinon sur une page neuve. Un groupe plus haut qu'une page entière se défait à son lien
+// souple ; sinon il reste seul sur la sienne.
+// L'avis du conseiller a ses règles (Jean-Guy, 23/11) :
+//  1. il reste avec son chapitre quand il tient derrière son dernier bloc ;
+//  2. sinon il ouvre la page suivante, et ce qui suit commence sur la même page (jamais seul) ;
+//  3. si ce qui suit ne tient pas sous lui, le dernier bloc de son chapitre descend avec lui ;
+//  4. et si même cela est impossible (un classement entier de 12 lignes), « La suite » commence
+//     sous lui et finit sur la page d'après.
 export function paginateUnits(
   units: PrintUnit[],
   room = PRINT_ROOM_MM - PRINT_SAFETY_MM,
@@ -85,18 +91,48 @@ export function paginateUnits(
   let page: PrintPage = { units: [], mm: 0 };
   const cost = (group: PrintUnit[], previous: PrintUnit | undefined) =>
     group.reduce((sum, unit, k) => sum + unitCost(unit, k === 0 ? previous : group[k - 1]), 0);
+  // Le dernier bloc d'une page n'a pas d'espace après lui.
+  const fitsAlone = (group: PrintUnit[]) => cost(group, undefined) - PRINT_GAP_MM <= room;
+  const fitsHere = (group: PrintUnit[]) =>
+    page.units.length === 0 || page.mm + cost(group, page.units.at(-1)) - PRINT_GAP_MM <= room;
+  // Un titre et ce qui le suit : les blocs liés à partir de `start`.
+  const chain = (start: number) => {
+    let end = start;
+    while (end < units.length - 1 && units[end]!.keepWithNext) end += 1;
+    return units.slice(start, end + 1);
+  };
+  const shrink = (group: PrintUnit[]) => {
+    let kept = group;
+    while (!fitsAlone(kept)) {
+      const soft = kept.slice(0, -1).findLastIndex((unit) => unit.keepWithNext === 'soft');
+      if (soft < 0) break;
+      kept = kept.slice(0, soft + 1);
+    }
+    return kept;
+  };
+
   let i = 0;
   while (i < units.length) {
-    let end = i;
-    while (end < units.length - 1 && units[end]!.keepWithNext) end += 1;
-    let group = units.slice(i, end + 1);
-    // Le dernier bloc d'une page n'a pas d'espace après lui.
-    while (cost(group, undefined) - PRINT_GAP_MM > room) {
-      const soft = group.slice(0, -1).findLastIndex((unit) => unit.keepWithNext === 'soft');
-      if (soft < 0) break;
-      group = group.slice(0, soft + 1);
+    let group = shrink(chain(i));
+    const first = group[0]!;
+    const after = units[i + group.length];
+    if (first.kind === 'avis') {
+      // Règle 2 (et 4) : l'avis qui ne tient pas avec son chapitre emmène ce qui suit.
+      if (!fitsHere(group) && after) {
+        const led = shrink([first, ...chain(i + 1)]);
+        if (led.length > 1 && fitsAlone(led)) group = led;
+      }
+    } else if (after?.kind === 'avis') {
+      // `group` finit un chapitre, son avis le suit. Règle 3 : quand l'avis ne tiendra pas
+      // derrière lui et que ce qui suit ne tient pas sous l'avis, ils descendent ensemble.
+      const here = fitsHere(group);
+      const used = (here ? page.mm : 0) + cost(group, here ? page.units.at(-1) : undefined);
+      const stays = used + after.mm - PRINT_GAP_MM <= room;
+      const following = chain(i + group.length + 1);
+      if (!stays && !fitsAlone([after, ...following]) && fitsAlone([...group, after]))
+        group = [...group, after];
     }
-    if (page.units.length > 0 && page.mm + cost(group, page.units.at(-1)) - PRINT_GAP_MM > room) {
+    if (!fitsHere(group)) {
       pages.push(page);
       page = { units: [], mm: 0 };
     }
@@ -392,9 +428,10 @@ export function studyPrintUnits(
       g,
     keepWithNext: true,
   });
-  // « La suite » ne se coupe pas : ses étapes, les papiers, le conseiller, « Ce que cette étude
-  // est… », les sources et les mentions vont ensemble, sur une page neuve s'ils ne tiennent pas (sa
-  // fin restait seule sur une dernière page presque vide). Elle tient toujours sur une page.
+  // « La suite » ne se coupe pas (Jean-Guy, 23/11) : ses étapes, les papiers, le conseiller, « Ce que
+  // cette étude est… », les sources et les mentions vont ensemble, sur une page neuve s'ils ne
+  // tiennent pas (sa fin restait seule sur une dernière page presque vide). Elle tient toujours sur
+  // une page.
   units.push({
     kind: 'next-papers',
     mm:
@@ -403,7 +440,8 @@ export function studyPrintUnits(
         // Les lignes pour ses questions, à l'impression.
         7.6 + 6 * 7.5,
       ) + g,
-    keepWithNext: true,
+    // Le seul lien qui peut céder : derrière un avis qui, sans elle, serait seul sur sa page.
+    keepWithNext: 'soft',
   });
   if (!story.quartier && flags.vivreIci)
     units.push({ kind: 'next-vivre', mm: VIVRE_ICI_MM + g, keepWithNext: true });
@@ -421,14 +459,6 @@ export function studyPrintUnits(
   });
   units.push({ kind: 'next-mentions', mm: 8.4 + g });
 
-  // L'avis reste avec le dernier bloc de son chapitre (Jean-Guy, 23/11), pour tous les chapitres :
-  // la dernière fiche, « Comment lire ces chiffres », la légende du classement, la copropriété ou
-  // « Comment en parler à un acheteur ».
-  units.forEach((unit, index) => {
-    const previous = units[index - 1];
-    if (unit.kind === 'avis' && previous?.chapter === unit.chapter && !previous.keepWithNext)
-      previous.keepWithNext = 'soft';
-  });
   return units;
 }
 

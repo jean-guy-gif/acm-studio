@@ -1015,10 +1015,10 @@ export async function printedStudyFrames(page: Page): Promise<PrintedFrame[]> {
 
 // Les règles de l'Étude imprimée, sur la page ouverte (retours de Jean-Guy du 23/11) :
 //  - des pages pleines : rien ne déborde d'une feuille, et une page ne passe à la suivante que si le
-//    bloc suivant (un titre et ce qui le suit, un dernier bloc et son avis) n'y tenait pas ;
+//    bloc suivant (un titre et ce qui le suit, ou l'avis d'un chapitre) n'y tenait pas ;
 //  - le classement ne se coupe jamais jusqu'à 12 lignes ;
-//  - l'avis reste avec le dernier bloc de son chapitre, jamais seul en haut d'une page (seule
-//    exception, hors de la démo : un classement entier de 12 lignes, qui remplit sa page) ;
+//  - l'avis reste avec son chapitre quand il y tient ; sinon il ouvre la page suivante, jamais
+//    seul : ce qui suit (le chapitre suivant ou « La suite ») commence sur la même page ;
 //  - « La suite » ne se coupe pas ;
 //  - dans le vrai PDF, « N / T » écrit une fois sur la page N, et chaque renvoi du résumé tombe sur
 //    la page où commence le chapitre annoncé.
@@ -1042,11 +1042,21 @@ export async function expectStudyPrintedWell(page: Page): Promise<PrintedFrame[]
     }
     frame.units.forEach((unit, at) => {
       if (unit !== 'avis') return;
-      expect(at, `page ${frame.number} : un avis seul en haut de la page`).toBeGreaterThan(0);
-      expect(
-        frame.chapters[at - 1],
-        `page ${frame.number} : l’avis de « ${frame.chapters[at]} » sans le dernier bloc de son chapitre`,
-      ).toBe(frame.chapters[at]);
+      if (at === 0) {
+        // En tête de page (il ne tenait pas avec son chapitre : la page d'avant est pleine, vérifié
+        // plus haut) : jamais seul, ce qui suit commence sur la même page.
+        expect(
+          frame.units.length,
+          `page ${frame.number} : l’avis de « ${frame.chapters[0]} » seul sur sa page`,
+        ).toBeGreaterThan(1);
+        expect(frame.chapters[1]).not.toBe(frame.chapters[0]);
+      } else {
+        // Sinon, derrière le dernier bloc de son chapitre.
+        expect(
+          frame.chapters[at - 1],
+          `page ${frame.number} : l’avis de « ${frame.chapters[at]} » loin de son chapitre`,
+        ).toBe(frame.chapters[at]);
+      }
     });
   }
 
