@@ -679,6 +679,8 @@ export type DocumentTexts = {
     surface: string;
     rooms: string;
     studied: string;
+    // Mission 163 C — la ligne VOTRE BIEN au prix d'une conclusion qui n'est pas un mandat signé.
+    proposedPrice: string;
     cheapest: string;
     priciest: string;
     cheaperCount: (count: number) => string;

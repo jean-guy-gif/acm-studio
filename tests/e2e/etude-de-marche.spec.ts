@@ -167,6 +167,30 @@ test('l’Étude de marché en fil conducteur, en français et en anglais', asyn
     expect(await studyPrintedPages(page)).toBe(pages.length);
   });
 
+  // Jean-Guy, 23/11 — une conclusion « À relancer » avec un prix : l'Étude le classe au « prix
+  // proposé », comme le Suivi ; « le prix retenu ensemble » reste pour un mandat signé.
+  await test.step('M. et Mme Lambert-Duval, à relancer : classés au prix proposé', async () => {
+    await page.goto('/suivi');
+    const href = await page
+      .getByTestId('suivi-row')
+      .filter({ hasText: 'Lambert-Duval' })
+      .getByTestId('suivi-open-project')
+      .first()
+      .getAttribute('href', { timeout: 60_000 });
+    const followUp = /\/builder\/([^/?#]+)/.exec(href ?? '')?.[1];
+    expect(followUp, 'Le dossier de M. et Mme Lambert-Duval est introuvable au Suivi').toBeTruthy();
+    await page.goto(`/builder/${followUp}/etude-de-marche`);
+    const study = page.getByTestId('market-study');
+    await expect(study).toBeVisible({ timeout: 60_000 });
+    const summary = study.getByTestId('study-summary');
+    await expect(summary.locator('li').first()).toHaveAttribute('data-chapter', 'ranking');
+    await expect(study.locator('[data-study-page="summary"]')).toContainText('Le prix proposé :');
+    await expect(study.locator('[data-subject="true"]')).toContainText('prix proposé');
+    const text = await study.innerText();
+    expect(text).not.toContain('retenu ensemble');
+    expect(text).not.toMatch(FORBIDDEN);
+  });
+
   await test.step('Les Bernard, en anglais : les mêmes pages, ses mots', async () => {
     await page.goto(`/builder/${bernard}/etude-de-marche`);
     const study = page.getByTestId('market-study');

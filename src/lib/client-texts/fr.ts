@@ -933,6 +933,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       surface: 'Surface',
       rooms: 'Pièces',
       studied: 'Concurrents étudiés',
+      proposedPrice: 'prix proposé',
       cheapest: 'votre bien serait le moins cher des biens en vente que nous avons étudiés.',
       priciest: 'votre bien serait le plus cher des biens en vente que nous avons étudiés.',
       cheaperCount: (count) =>

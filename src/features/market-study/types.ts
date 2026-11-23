@@ -47,6 +47,9 @@ export type MarketStudyRankingRow = {
 export type MarketStudyRanking = {
   subject: {
     price: number;
+    // Mission 163 C — le prix d'une conclusion qui n'est pas un mandat signé : « le prix proposé »,
+    // comme sur le Suivi ; sinon « le prix retenu ensemble ».
+    proposed: boolean;
     rank: number;
     total: number;
     tier: RankingTier;

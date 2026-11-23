@@ -7,7 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { readNeighbourhoodDocumentLink } from '@/features/neighbourhood-link/queries/read-neighbourhood-document-link';
 import { readNeighbourhoodSnapshot } from '@/features/neighbourhood-link/queries/read-neighbourhood-snapshot';
-import { agreedPrice, buildMarketStudy } from '@/features/market-study/services/build-market-study';
+import { buildMarketStudy, studyPrice } from '@/features/market-study/services/build-market-study';
 import type { MarketStudyDocument } from '@/features/market-study/types';
 import {
   DOCUMENT_PHOTO_URL_TTL_SECONDS,
@@ -64,7 +64,7 @@ export async function loadMarketStudy(
       .eq('is_selected', true),
     supabase
       .from('project_meeting_conclusions')
-      .select('commercialization_price')
+      .select('outcome, commercialization_price')
       .eq('project_id', projectId)
       .eq('agency_id', agencyId)
       .maybeSingle(),
@@ -90,7 +90,7 @@ export async function loadMarketStudy(
     property: property.data ?? null,
     coverPhotoUrl: cover[0]?.url ?? null,
     competitors: competitors.data ?? [],
-    agreedPrice: agreedPrice(conclusion.data ?? null),
+    studyPrice: studyPrice(conclusion.data ?? null),
     agency: document.agency,
     neighbourhood,
     quartier: quartier.snapshot,

@@ -989,6 +989,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       surface: 'Floor area',
       rooms: 'Rooms',
       studied: 'Competing properties studied',
+      proposedPrice: 'proposed price',
       cheapest:
         'your property would be the least expensive of the properties on the market that we studied.',
       priciest:
