@@ -133,21 +133,23 @@ describe('le fil de l’Étude : les pages dans l’ordre', () => {
     expect(story.ranking?.band.number).toBe('03');
     expect(story.quartier?.band.number).toBe('04');
     // La place du prix en tête du résumé, encadrée à la couleur de son tiers.
-    expect(story.summary.items.map((item) => [item.chapter, item.page, item.tier])).toEqual([
-      ['ranking', 'page 6', 'orange'],
-      ['competitors', 'page 3', null],
-      ['sales', 'page 5', null],
-      ['quartier', 'page 7', null],
+    // Les renvois du résumé suivent les pages imprimées (`study-print.test.ts`).
+    expect(story.summary.items.map((item) => [item.chapter, item.tier])).toEqual([
+      ['ranking', 'orange'],
+      ['competitors', null],
+      ['sales', null],
+      ['quartier', null],
     ]);
+    expect(story.summary.items.every((item) => /^page \d+$/.test(item.page))).toBe(true);
     expect(story.summary.title).toBe('Quatre choses que cette étude vous apprend sur votre maison');
     expect(story.summary.kpis.map((kpi) => [kpi.value, kpi.sup, kpi.rest])).toEqual([
       ['5', null, null],
       ['11', null, null],
       ['4', 'e', 'sur 6'],
-      // Les annonces, DVF, l'urbanisme, les permis, Géorisques, l'Insee, la copropriété.
-      ['7', null, null],
+      // Correctifs 163 — plus le nombre de sources : la moitié des maisons en vente attendent un
+      // acheteur depuis au moins 35 jours (annonces du 15/10, étude du 19/11).
+      ['35', null, 'jours'],
     ]);
-    expect(story.summary.kpis[3]!.label).toBe('sources, toutes citées page 8');
 
     const html = renderToStaticMarkup(createElement(MarketStudyDocument, { document: study }));
     const pages = [...html.matchAll(/data-study-page="([a-z]+)"/g)].map((match) => match[1]);
@@ -401,7 +403,12 @@ describe('les variantes des phrases', () => {
         out.push(t.competitors.title(n, kind), t.competitors.lead(n, kind, range));
         out.push(t.competitors.item(n, kind, null), t.sales.title(Math.max(n, 1), kind));
         out.push(t.sales.item(Math.max(n, 1), kind, range, 2021));
-        out.push(t.sales.itemSub(Math.max(n, 1), Math.min(Math.max(n, 1), 6), kind));
+        for (const likeness of [null, { rooms: true, surface: true, facts: '5 pièces' }]) {
+          out.push(t.sales.itemSub(Math.max(n, 1), Math.min(Math.max(n, 1), 6), kind, likeness));
+          out.push(t.sales.tableTitle(Math.max(n, 1), 6, kind, likeness != null));
+        }
+        out.push(t.sales.tableNote({ rooms: true, surface: false, facts: null }));
+        out.push(t.summary.kpiDays(n), t.summary.kpiDaysLabel(kind));
         out.push(t.sales.avis(Math.max(n, 1), kind, '5 pièces', '135 m²'));
         out.push(t.ranking.title('1 €', n, kind), t.ranking.lead(Math.max(n, 1), kind));
         out.push(t.ranking.itemAfter(n + 1, n, kind), t.ranking.itemSub('1 €', false, n, kind));

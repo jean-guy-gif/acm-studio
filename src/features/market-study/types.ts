@@ -3,6 +3,7 @@ import type { RankingTier } from '@/features/market-update/services/ranking-tier
 import type { SellerSynthesis, SynthesisFeature } from '@/features/seller-synthesis/types';
 import type { NeighbourhoodDocumentLink } from '@/features/neighbourhood-link/services/neighbourhood-link';
 import type { NeighbourhoodDocumentContent } from '@/features/neighbourhood-link/components/neighbourhood-document';
+import type { PrintPage } from '@/features/market-study/services/study-print';
 
 // Mission 131 — l'« Étude de marché », remise au vendeur qui ne veut pas jouer, ou sans Live : le
 // marché du jour, concurrent par concurrent, puis où en est son prix. LISTE D'AUTORISATION, comme
@@ -168,6 +169,9 @@ export type MarketStudyStory = {
     legendKept: string;
     legendOthers: string | null;
     tableTitle: string;
+    // Correctifs 163 — ce qui rapproche les ventes retenues du bien (« Choisies d’abord sur le nombre
+    // de pièces, puis sur la surface : 5 pièces, de 128 à 142 m². »).
+    tableNote: string | null;
     columns: {
       month: string;
       street: string;
@@ -209,4 +213,7 @@ export type MarketStudyStory = {
     is: string;
     sources: { label: string; value: string }[];
   };
+  // Correctifs 163 — les pages imprimées, décidées par le code : la couverture, puis le fil où un
+  // bloc ne passe à la page suivante que s'il n'y tient pas. Le résumé cite ces pages.
+  print: { pages: PrintPage[] };
 };
