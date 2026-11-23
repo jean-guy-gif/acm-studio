@@ -27,7 +27,7 @@ describe('l’Étude de marché ne lit jamais l’analyse du conseiller', () => 
     const all = ROOTS.flatMap(files);
     expect(all.length).toBeGreaterThan(5);
     const offenders = all.filter((path) =>
-      /project_price_positionings|advisor_comparative_market_price|advisorAnalysis|advisor_price/.test(
+      /project_price_positionings|advisor_comparative_market_price|advisorAnalysis|advisor_price|advisor_analysis/.test(
         readFileSync(path, 'utf8'),
       ),
     );
