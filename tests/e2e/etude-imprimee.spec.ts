@@ -111,9 +111,7 @@ test('l’Étude imprimée : pages pleines, numérotées, renvois justes', async
       for (const item of items) {
         const title = (
           await page
-            .locator(
-              `[data-print-unit="band"][data-chapter="${item.chapter}"] [data-testid="study-chapter-title"]`,
-            )
+            .locator(`[data-print-unit="band"][data-chapter="${item.chapter}"] h2`)
             .first()
             .textContent()
         )

@@ -1165,7 +1165,7 @@ function PrintedStudy({ document, vivreIci }: DocumentProps & { vivreIci: ReactN
       data-print-unit={attrs.kind}
       data-chapter={attrs.chapter}
       data-keep-next={attrs.keepWithNext ? 'true' : undefined}
-      data-mm={attrs.mm.toFixed(1)}
+      data-mm={Math.round(attrs.mm * 10) / 10}
     >
       {content}
     </div>

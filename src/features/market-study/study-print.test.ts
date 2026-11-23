@@ -156,7 +156,7 @@ function garcia(extra: Partial<MarketStudyInput> = {}): MarketStudyInput {
   };
 }
 
-export const CASES: [string, MarketStudyInput][] = [
+const CASES: [string, MarketStudyInput][] = [
   ['M. Lefebvre', lefebvre()],
   ['Mme Garcia', garcia()],
   ['Mme Garcia, en anglais', { ...garcia(), language: 'en' }],
