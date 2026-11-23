@@ -264,8 +264,8 @@ test('le quartier coché bloc par bloc, au Live et dans l’Étude de marché', 
       }
       // Correctifs 163 — imprimée, une page de PDF par page décidée par le code ; et, quartier et
       // ventes compris, les règles des pages imprimées : pleines, numérotées, les renvois justes,
-      // l'avis de chaque chapitre avec son dernier bloc (celui du quartier s'était retrouvé seul en
-      // haut de la page suivante, Jean-Guy, 23/11).
+      // l'avis de chaque chapitre avec lui quand il y tient (celui du quartier avait quitté sa page
+      // sur une hauteur mal comptée, Jean-Guy, 23/11).
       expect(await studyPrintedPages(page)).toBe(await page.locator('[data-print-page]').count());
       await expectStudyPrintedWell(page);
       // Le lien public, ventes et quartier compris, sur téléphone.

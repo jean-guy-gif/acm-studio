@@ -384,85 +384,212 @@ describe('le classement ne se coupe jamais (Jean-Guy, 23/11)', () => {
   });
 });
 
-describe('l’avis reste avec le dernier bloc de son chapitre (Jean-Guy, 23/11)', () => {
-  const avisOf = (data: MarketStudyInput) =>
-    buildMarketStudy(data).story.print.pages.flatMap((page, at) =>
-      page.units
-        .map((unit, index) => ({ unit, index, page, at }))
-        .filter(({ unit }) => unit.kind === 'avis'),
-    );
-
-  it.each(CASES)('%s : aucun avis seul en haut d’une page, pour aucun chapitre', (_, data) => {
-    const all = avisOf(data);
-    expect(all.length).toBeGreaterThan(0);
-    for (const { unit, index, page } of all) {
-      // Le bloc qui précède l'avis sur sa page est le dernier bloc de son chapitre.
-      expect(index).toBeGreaterThan(0);
-      expect(page.units[index - 1]!.chapter).toBe(unit.chapter);
-      expect(page.units[index - 1]!.kind).not.toBe('avis');
-    }
+// La règle de Jean-Guy (23/11, après les planches de l'essai) : quand l'avis tient avec son chapitre,
+// il y reste ; quand il ne tient pas, il ouvre la page suivante et le dernier bloc ne descend pas
+// avec lui (faire descendre la dernière fiche ajoutait une page aux deux tiers blanche sur cinq
+// dossiers de démo). Une seule exigence : un avis n'est jamais seul sur une page ; ce qui suit (le
+// chapitre suivant ou « La suite ») commence sur la même page.
+describe('l’avis du conseiller : avec son chapitre s’il tient, sinon en tête de la page suivante', () => {
+  const kinds = (pages: { units: PrintUnit[] }[]) =>
+    pages.map((page) => page.units.map((unit) => unit.kind));
+  const card = (index: number, mm: number): PrintUnit => ({
+    kind: 'card',
+    chapter: 'competitors',
+    index,
+    mm,
   });
+  const avis: PrintUnit = { kind: 'avis', chapter: 'competitors', mm: 40 };
+  const band: PrintUnit = { kind: 'band', chapter: 'ranking', mm: 50, keepWithNext: true };
 
-  it('s’il ne tient pas, le dernier bloc passe à la page suivante avec lui', () => {
-    // Deux fiches : la seconde tient sur la page, pas son avis ; elle le suit sur la page neuve.
-    const units: PrintUnit[] = [
-      { kind: 'card', chapter: 'competitors', index: 0, mm: 130 },
-      { kind: 'card', chapter: 'competitors', index: 1, mm: 120, keepWithNext: 'soft' },
-      { kind: 'avis', chapter: 'competitors', mm: 40 },
-    ];
-    expect(paginateUnits(units, 268).map((page) => page.units.map((unit) => unit.kind))).toEqual([
-      ['card'],
-      ['card', 'avis'],
+  it('quand il tient avec son chapitre, il y reste', () => {
+    expect(kinds(paginateUnits([card(0, 100), card(1, 100), avis], 268))).toEqual([
+      ['card', 'card', 'avis'],
     ]);
-    // Dans une Étude : cinq fiches égales ; la dernière et l'avis sont sur la même page.
-    const base = lefebvre();
-    const equal = lefebvre({
-      competitors: base.competitors.map((row) => ({
-        ...base.competitors[1]!,
-        id: row.id,
-        display_order: row.display_order,
-        price: row.price,
-      })),
-    });
-    const pages = buildMarketStudy(equal).story.print.pages;
-    const last = pages.findIndex((page) =>
-      page.units.some((unit) => unit.kind === 'card' && unit.index === 4),
-    );
-    const avis = pages.findIndex((page) =>
-      page.units.some((unit) => unit.kind === 'avis' && unit.chapter === 'competitors'),
-    );
-    expect(avis).toBe(last);
+    // Même si le chapitre suivant, lui, ne tient pas : l'avis ne le suit pas sur la page d'après.
+    expect(
+      kinds(
+        paginateUnits(
+          [card(0, 100), card(1, 100), avis, band, { kind: 'ranking-head', mm: 150 }],
+          268,
+        ),
+      ),
+    ).toEqual([
+      ['card', 'card', 'avis'],
+      ['band', 'ranking-head'],
+    ]);
   });
 
-  it('chaque chapitre marque son dernier bloc pour rester avec l’avis', () => {
-    for (const [, data] of CASES) {
-      const units = buildMarketStudy(data).story.print.pages.flatMap((page) => page.units);
-      units.forEach((unit, index) => {
-        if (unit.kind !== 'avis') return;
-        expect(units[index - 1]!.chapter).toBe(unit.chapter);
-        expect(units[index - 1]!.keepWithNext).toBeTruthy();
-      });
+  it('quand il ne tient pas, il ouvre la page suivante : la dernière fiche ne descend pas, la suite commence sous lui', () => {
+    expect(
+      kinds(
+        paginateUnits(
+          [card(0, 130), card(1, 120), avis, band, { kind: 'ranking-head', mm: 150 }],
+          268,
+        ),
+      ),
+    ).toEqual([
+      ['card', 'card'],
+      ['avis', 'band', 'ranking-head'],
+    ]);
+  });
+
+  it('jamais seul : si ce qui suit ne tient pas sous lui, le dernier bloc descend avec lui', () => {
+    // Un classement entier trop haut pour suivre l'avis sur une page : la dernière fiche le suit.
+    expect(
+      kinds(
+        paginateUnits(
+          [card(0, 130), card(1, 120), avis, band, { kind: 'ranking-head', mm: 200 }],
+          268,
+        ),
+      ),
+    ).toEqual([['card'], ['card', 'avis'], ['band', 'ranking-head']]);
+  });
+
+  it('jamais seul : derrière un classement qui remplit sa page, « La suite » commence sous l’avis, quitte à finir sur la page d’après', () => {
+    const whole: PrintUnit[] = [
+      { kind: 'band', chapter: 'ranking', mm: 50, keepWithNext: true },
+      { kind: 'ranking-head', chapter: 'ranking', mm: 200 },
+    ];
+    const closing: PrintUnit[] = [
+      { kind: 'next-head', mm: 60, keepWithNext: true },
+      { kind: 'next-papers', mm: 72, keepWithNext: 'soft' },
+      { kind: 'next-contact', mm: 24, keepWithNext: true },
+      { kind: 'next-is', mm: 70, keepWithNext: true },
+      { kind: 'next-mentions', mm: 12 },
+    ];
+    const rankingAvis: PrintUnit = { kind: 'avis', chapter: 'ranking', mm: 40 };
+    // L'avis ne tient pas derrière le classement ; « La suite » tient sous lui : entière.
+    expect(kinds(paginateUnits([...whole, rankingAvis, ...closing], 280))).toEqual([
+      ['band', 'ranking-head'],
+      ['avis', 'next-head', 'next-papers', 'next-contact', 'next-is', 'next-mentions'],
+    ]);
+    // Elle n'y tient pas, et le classement ne peut pas descendre avec son avis : elle commence
+    // quand même sous lui.
+    expect(kinds(paginateUnits([...whole, rankingAvis, ...closing], 268))).toEqual([
+      ['band', 'ranking-head'],
+      ['avis', 'next-head', 'next-papers'],
+      ['next-contact', 'next-is', 'next-mentions'],
+    ]);
+  });
+
+  // Tous les dossiers qu'on peut imaginer : de 1 à 14 concurrents, avec ou sans prix, quartier,
+  // lien « Vivre ici », maison ou appartement, fiches égales ou non, en français et en anglais.
+  const neighbourhood = {
+    url: 'https://app.myacademia.ai/l/x',
+    validUntil: null,
+    qr: { size: 21, path: '' },
+    printAddress: true,
+  };
+  const sweep: [string, MarketStudyInput][] = [];
+  for (const n of [1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 14])
+    for (const priced of [true, false])
+      for (const withQuartier of [true, false])
+        for (const flat of [false, true])
+          for (const equal of [false, true]) {
+            const data = many(n);
+            const language = (n + (priced ? 1 : 0)) % 2 === 0 ? 'fr' : 'en';
+            sweep.push([
+              `${n} concurrents${priced ? ', un prix' : ''}${withQuartier ? ', le quartier' : ''}${
+                flat ? ', un appartement' : ''
+              }${equal ? ', des fiches égales' : ''}, ${language}`,
+              {
+                ...data,
+                language,
+                studyPrice: priced ? data.studyPrice : null,
+                quartier: withQuartier ? quartier : null,
+                neighbourhood: withQuartier === flat ? neighbourhood : null,
+                property: flat
+                  ? { ...data.property!, property_type: 'Appartement' }
+                  : data.property,
+                competitors: data.competitors.map((row) => ({
+                  ...(equal ? data.competitors[1]! : row),
+                  id: row.id,
+                  display_order: row.display_order,
+                  price: row.price,
+                  property_type: flat ? 'apartment' : 'house',
+                })),
+              },
+            ]);
+          }
+
+  it('dans toute Étude : jamais seul sur une page, et toujours à l’une de ses deux places', () => {
+    expect(sweep.length).toBeGreaterThan(150);
+    for (const [name, data] of [...CASES, ...sweep]) {
+      const pages = buildMarketStudy(data).story.print.pages;
+      let seen = 0;
+      for (const page of pages) {
+        page.units.forEach((unit, index) => {
+          if (unit.kind !== 'avis') return;
+          seen += 1;
+          const previous = page.units[index - 1];
+          const following = page.units[index + 1];
+          if (index === 0) {
+            // En tête de page : ce qui suit commence sur la même page.
+            expect(following, `${name} : un avis seul sur sa page`).toBeDefined();
+            expect(following!.chapter, name).not.toBe(unit.chapter);
+          } else {
+            // Sinon, derrière le dernier bloc de son chapitre.
+            expect(previous!.chapter, name).toBe(unit.chapter);
+            expect(previous!.kind, name).not.toBe('avis');
+          }
+        });
+        // Rien ne déborde d'une feuille.
+        expect(page.mm - PRINT_GAP_MM, name).toBeLessThanOrEqual(PRINT_ROOM_MM);
+      }
+      expect(seen, name).toBeGreaterThan(0);
     }
   });
 
-  it('seule exception : un classement entier de 12 lignes ne laisse pas la place à son avis', () => {
-    // Le classement ne se coupe jamais : avec 12 lignes, il remplit sa page et l'avis ne peut pas le
-    // suivre ; il ouvre alors la page suivante. Rien ne déborde.
+  it('cinq fiches égales (les Lopez, les Bernard) : la dernière fiche reste avec les autres, l’avis ouvre la page du chapitre suivant', () => {
+    const base = lefebvre();
+    const equal = (extra: Partial<MarketStudyInput>) =>
+      lefebvre({
+        competitors: base.competitors.map((row) => ({
+          ...base.competitors[1]!,
+          id: row.id,
+          display_order: row.display_order,
+          price: row.price,
+        })),
+        ...extra,
+      });
+    for (const [data, follows] of [
+      [equal({}), 'band'],
+      [equal({ studyPrice: null }), 'next-head'],
+    ] as [MarketStudyInput, string][]) {
+      const pages = buildMarketStudy(data).story.print.pages;
+      const at = pages.findIndex((page) =>
+        page.units.some((unit) => unit.kind === 'avis' && unit.chapter === 'competitors'),
+      );
+      const last = pages.findIndex((page) =>
+        page.units.some((unit) => unit.kind === 'card' && unit.index === 4),
+      );
+      // Quatre fiches remplissent leur page : l'avis n'y tient pas, la cinquième ne descend pas.
+      expect(pages[last]!.units.filter((unit) => unit.kind === 'card')).toHaveLength(4);
+      expect(at).toBe(last + 1);
+      expect(pages[at]!.units[0]!.kind).toBe('avis');
+      expect(pages[at]!.units[1]!.kind).toBe(follows);
+    }
+  });
+
+  it('un classement de 12 lignes remplit sa page : son avis ouvre la suivante, devant « La suite »', () => {
     const pages = buildMarketStudy(many(11)).story.print.pages;
     const ranking = pages.findIndex((page) =>
       page.units.some((unit) => unit.kind === 'ranking-legend'),
     );
-    const kinds = pages[ranking]!.units.map((unit) => unit.kind);
-    expect(kinds.filter((kind) => kind === 'ranking-row')).toHaveLength(12);
-    expect(kinds).toContain('band');
-    expect(pages[ranking]!.mm - PRINT_GAP_MM).toBeLessThanOrEqual(PRINT_ROOM_MM);
-    const avis = avisOf(many(11)).find(({ unit }) => unit.chapter === 'ranking')!;
-    expect(avis.at).toBe(ranking + 1);
-    expect(avis.index).toBe(0);
+    expect(pages[ranking]!.units.filter((unit) => unit.kind === 'ranking-row')).toHaveLength(12);
+    expect(
+      pages[ranking]!.units.some((unit) => unit.kind === 'avis' && unit.chapter === 'ranking'),
+    ).toBe(false);
+    const next = pages[ranking + 1]!.units.map((unit) => unit.kind);
+    expect(next[0]).toBe('avis');
+    expect(next[1]).toBe('next-head');
     // Avec 11 lignes, le classement et son avis tiennent ensemble.
-    const eleven = avisOf(many(10)).find(({ unit }) => unit.chapter === 'ranking')!;
-    expect(eleven.index).toBeGreaterThan(0);
-    expect(eleven.page.units.some((unit) => unit.kind === 'ranking-legend')).toBe(true);
+    const eleven = buildMarketStudy(many(10)).story.print.pages.find((page) =>
+      page.units.some((unit) => unit.kind === 'ranking-legend'),
+    )!;
+    expect(eleven.units.some((unit) => unit.kind === 'avis' && unit.chapter === 'ranking')).toBe(
+      true,
+    );
   });
 });
 
