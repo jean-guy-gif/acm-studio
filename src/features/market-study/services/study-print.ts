@@ -82,15 +82,14 @@ const unitCost = (unit: PrintUnit, previous: PrintUnit | undefined): number =>
 // L'avis du conseiller a ses règles (Jean-Guy, 23/11) :
 //  1. il reste avec son chapitre quand il tient derrière son dernier bloc ;
 //  2. sinon il ouvre la page suivante, et ce qui suit commence sur la même page (jamais seul) ;
-//  3. si ce qui suit ne tient pas sous lui sur une page entière (un classement de 11 ou 12 lignes,
-//     ou « La suite » d'un appartement avec son lien « Vivre ici », qui remplit presque une page),
-//     le dernier bloc de son chapitre descend avec lui ;
-//  4. et si même cela est impossible (ce dernier bloc est un classement entier, qui ne tient pas
-//     sur une page avec son avis), « La suite » commence sous lui et finit sur la page d'après,
-//     coupée à son seul lien souple, après les papiers.
-// Les replis 3 et 4 sont rares (moins de 2 % des Études balayées par les tests) : ils cèdent, l'un
-// sur « le dernier bloc ne descend pas », l'autre sur « « La suite » ne se coupe pas », pour tenir
-// « un avis n'est jamais seul sur une page ».
+//  3. quand rien d'entier ne peut commencer sous lui et que ce qui suit est « La suite » (celle d'un
+//     appartement avec son lien « Vivre ici » remplit presque une page), elle commence sous lui et
+//     se coupe à son seul lien souple, après « Les papiers à réunir » : plutôt cela qu'une page aux
+//     trois quarts blanche au milieu du document. Partout ailleurs, « La suite » est d'un tenant ;
+//  4. quand ce qui suit ne se coupe pas (un classement de 11 ou 12 lignes, entier), le dernier
+//     bloc de son chapitre descend avec lui, pour qu'il ne soit pas seul sur sa page.
+// Les règles 3 et 4 sont rares : chacune joue sur une Étude sur cent, environ, de celles que
+// balaient les tests.
 export function paginateUnits(
   units: PrintUnit[],
   room = PRINT_ROOM_MM - PRINT_SAFETY_MM,
@@ -119,25 +118,33 @@ export function paginateUnits(
     return kept;
   };
 
+  // L'avis et ce qui commence sous lui sur une page neuve : la suite entière, sinon jusqu'à son lien
+  // souple. `null` quand rien ne peut l'y suivre.
+  const lead = (avis: PrintUnit, next: number) => {
+    if (next >= units.length) return null;
+    const led = shrink([avis, ...chain(next)]);
+    return led.length > 1 && fitsAlone(led) ? led : null;
+  };
+
   let i = 0;
   while (i < units.length) {
     let group = shrink(chain(i));
     const first = group[0]!;
     const after = units[i + group.length];
     if (first.kind === 'avis') {
-      // Règle 2 (et 4) : l'avis qui ne tient pas avec son chapitre emmène ce qui suit.
+      // Règles 2 et 3 : l'avis qui ne tient pas avec son chapitre emmène ce qui suit, entier, ou
+      // jusqu'à son lien souple (« La suite », après les papiers).
       if (!fitsHere(group) && after) {
-        const led = shrink([first, ...chain(i + 1)]);
-        if (led.length > 1 && fitsAlone(led)) group = led;
+        const led = lead(first, i + 1);
+        if (led) group = led;
       }
     } else if (after?.kind === 'avis') {
-      // `group` finit un chapitre, son avis le suit. Règle 3 : quand l'avis ne tiendra pas
-      // derrière lui et que ce qui suit ne tient pas sous l'avis, ils descendent ensemble.
+      // `group` finit un chapitre, son avis le suit. Règle 4 : quand l'avis ne tiendra pas
+      // derrière lui et que rien de ce qui suit ne peut commencer sous lui, ils descendent ensemble.
       const here = fitsHere(group);
       const used = (here ? page.mm : 0) + cost(group, here ? page.units.at(-1) : undefined);
       const stays = used + after.mm - PRINT_GAP_MM <= room;
-      const following = chain(i + group.length + 1);
-      if (!stays && !fitsAlone([after, ...following]) && fitsAlone([...group, after]))
+      if (!stays && !lead(after, i + group.length + 1) && fitsAlone([...group, after]))
         group = [...group, after];
     }
     if (!fitsHere(group)) {
