@@ -78,7 +78,7 @@ export default async function MarketStudyPage({
           adresse, ni titre, ni lien d’annonce, ni l’agence qui vend.
           {document.ranking.subject
             ? document.ranking.subject.proposed
-              ? ' Puis où se situe son prix : son bien y est classé au prix proposé à la conclusion.'
+              ? ' Puis où se situe son prix : son bien y est classé au prix proposé (le dossier est conclu sans mandat signé).'
               : ' Puis où se situe son prix : son bien y est classé au prix de commercialisation convenu ensemble.'
             : ' Tant qu’aucun prix de commercialisation n’est enregistré, au Live ou à la conclusion, son bien n’est pas classé : ni « Où se place votre prix », ni verdict. Votre analyse de valeur n’y figure jamais.'}
         </p>

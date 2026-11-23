@@ -400,7 +400,7 @@ export const ENGLISH_STUDY: StudyTexts = {
         price === 'agreed'
           ? 'we have set the price together'
           : price === 'proposed'
-            ? 'it places the proposed price'
+            ? 'it shows where the proposed price stands'
             : 'we will set the price together'
       }. No seller or buyer is named.`,
     sourceRows: {
