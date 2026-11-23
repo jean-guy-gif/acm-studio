@@ -724,6 +724,19 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   `demo` et `live-sans-trou` (4G rapide) verts au troisième passage, seuls, chacun rouge deux fois
   pour deux causes différentes. Lire la cause de chaque échec avant de parler de défaut.
 
+- 23/11 · E2E, photos du stockage · Dès qu'une route Playwright existe (`page.route`,
+  `context.route`), le cache du navigateur est coupé pour tout le contexte : chaque page
+  retéléchargerait ses scripts et les photos de la démo. Pour remplacer quelques adresses sans
+  toucher au cache, l'interception passe par le protocole de Chromium (`Fetch.enable` avec un
+  motif d'adresse, une session par page, `tests/e2e/test.ts`). Toutes les specs importent `test`
+  de `./test` ; une spec qui vérifie les photos elles-mêmes écrit `test.use({ realPhotos: true })`.
+- 23/11 · E2E, photos du stockage · Le trafic d'un passage se lit dans les journaux de Supabase
+  (`edge_logs`, `response.headers.content_length`, chemin `/storage/v1/object/sign/project-photos/`),
+  filtrés sur la fenêtre du passage et sur le navigateur des tests (« Windows NT 10.0 … Chrome/153 »,
+  celui de Playwright) ; les réponses de la base n'ont pas de taille dans ces journaux. Un passage
+  complet dure 43 minutes : il se lance en tâche de fond depuis une copie de travail à part, pour ne
+  pas bloquer le dépôt.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

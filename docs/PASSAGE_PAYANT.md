@@ -59,11 +59,14 @@ sortant par mois à la rédaction, à vérifier là).
 levé la coupure. Le quota de trafic sortant est désormais celui de l'offre Pro, à lire sur la même
 page, avec le plafond de dépense (point 4 ci-dessous).
 
-**Comment réduire** (propositions, rien n'est fait) :
+**Comment réduire** (la première proposition est faite depuis le 23/11, les trois autres non) :
 
 1. **L'e2e ne télécharge plus les photos du stockage** sauf là où il les vérifie (`demo-photos`,
-   `live-sans-trou`) : une image minuscule à leur place, servie par le navigateur de test. Gain
-   attendu : les deux tiers du trafic.
+   `live-sans-trou`) : une image minuscule à leur place, servie par le navigateur de test
+   (`tests/e2e/test.ts`). **Fait le 23/11.** Mesuré dans les journaux de Supabase, sur un passage
+   complet de la suite : 125 Mo et 642 photos avant (le 23/11 au matin), 27 Mo et 125 photos après
+   (le 23/11 au soir, presque tout dans `demo-photos`), soit 78 % de moins, pour la même durée
+   (43 minutes).
 2. **Des liens signés stables** : le même lien pour une photo pendant sa durée de validité (signé
    une fois, gardé côté serveur jusqu'à peu avant son expiration). Le navigateur et le cache de
    Supabase la servent alors sans retourner au stockage.

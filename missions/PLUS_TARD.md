@@ -22,3 +22,8 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   - le calcul compte parfois une ligne de trop (prudent : un peu de blanc, jamais un débordement) ;
   - devant un classement dont les lignes sont longues, le dernier bloc peut descendre avec l'avis
     dès 8 ou 9 lignes.
+- 23/11 · E2E, photos du stockage · Des liens signés stables : le même lien pour une photo pendant
+  sa durée de validité (signé une fois, gardé côté serveur), pour que le navigateur et le cache de
+  Supabase la servent sans retourner au stockage (proposition 2 de `docs/PASSAGE_PAYANT.md`).
+- 23/11 · E2E, photos du stockage · Des vignettes pour les petites images (cartes, vignettes du
+  Live) au lieu de la photo entière (proposition 3 de `docs/PASSAGE_PAYANT.md`).

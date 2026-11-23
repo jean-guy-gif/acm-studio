@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 
 import {
   demoCredentials,
@@ -7,6 +7,9 @@ import {
   login,
   resetDemoByScreen,
 } from './support';
+
+// Cette spec vérifie les photos elles-mêmes : elle garde les vraies photos du stockage (`test.ts`).
+test.use({ realPhotos: true });
 
 // Mission 147 (partie B) — chaque concurrent semé par la démo a une photo qui se charge : sur la
 // page Concurrents de chaque dossier, dans chaque courrier de Prospection (les photos de l'annonce,
