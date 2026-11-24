@@ -89,14 +89,19 @@ export async function readListingPhotos(input: {
 
   await Promise.all(
     covered.map(async (pick) => {
-      if (input.deadline - Date.now() < MIN_CALL_MS) return;
-      const loaded = (
-        await Promise.all(
+      const loadTime = input.deadline - Date.now() - MIN_CALL_MS;
+      if (loadTime <= 0) return;
+      // Le chargement ne déborde jamais du délai du classement : au-delà, ce bien n'a pas de
+      // photos lues, et le texte reste jugé.
+      const all = await Promise.race([
+        Promise.all(
           pick.urls
             .slice(0, PHOTOS_PER_LISTING)
             .map((url, index) => loadPhoto(url, index + 1, fetchImage)),
-        )
-      ).filter((photo): photo is Loaded => photo != null);
+        ),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), loadTime)),
+      ]);
+      const loaded = (all ?? []).filter((photo): photo is Loaded => photo != null);
       const left = input.deadline - Date.now();
       if (loaded.length === 0 || left < MIN_CALL_MS) return;
       const answer = await callStructured({

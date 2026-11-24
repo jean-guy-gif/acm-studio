@@ -80,6 +80,8 @@ commerces à pied ne se voient pas sur une photo : ils restent au texte.
   seul est lu), la raison pour le conseiller seul. Les photos lues sont celles que donne le
   fournisseur de la recherche (Stream Estate), jamais celles d'un portail : le serveur ne lit pas
   les portails.
+- **Éteint, cela veut dire** : aucune photo d'une vraie annonce n'est chargée ni envoyée, nulle
+  part, essai compris. Seule l'agence de démonstration montre la lecture, simulée, sur l'essai.
 - **Pourquoi éteint** : la page de confidentialité validée dit que ce qui compte pour l'acquéreur
   « est comparé aux descriptions publiques des annonces ». Elle ne parle pas des photos, et elle
   doit dire ce que le code fait. Pour allumer : une ligne de code (`PHOTOS_DES_ANNONCES_LUES`) et,

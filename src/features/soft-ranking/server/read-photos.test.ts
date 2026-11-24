@@ -130,6 +130,19 @@ describe('readListingPhotos', () => {
     expect(fetched).toHaveLength(0);
   });
 
+  it('un hébergeur qui traîne au-delà du délai : aucun appel, le classement n’attend pas', async () => {
+    const slow = () => new Promise<never>(() => undefined);
+    const started = Date.now();
+    const read = await readListingPhotos({
+      ...base(),
+      deadline: Date.now() + 4_050,
+      fetchImage: slow,
+    });
+    expect(Date.now() - started).toBeLessThan(1_000);
+    expect(state.calls).toHaveLength(0);
+    expect(read.spent).toBe(0);
+  });
+
   it('le fournisseur échoue : compté au pire, rien n’est lu, rien n’est inventé', async () => {
     state.fail = true;
     const read = await readListingPhotos(base());

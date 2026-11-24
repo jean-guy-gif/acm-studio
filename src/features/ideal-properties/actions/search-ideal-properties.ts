@@ -265,8 +265,8 @@ export async function searchIdealProperties(
       }),
       now,
       // Lancement, mission 9 — les photos des biens du marché les mieux classés, une fois le texte
-      // jugé ; éteint en production tant que Jean-Guy ne l'allume pas (`photo-switch.ts`).
-      photos: listingPhotosRead()
+      // jugé ; éteint tant que Jean-Guy ne l'allume pas (`photo-switch.ts`).
+      photos: listingPhotosRead(demo)
         ? {
             max: PHOTO_TOP_LISTINGS,
             pick: (byKey) =>
