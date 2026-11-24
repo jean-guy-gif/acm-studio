@@ -125,6 +125,7 @@ export function BuyerFollowUp({
   summary,
   visitRows,
   unread,
+  links = null,
   budgetMax = null,
   now = new Date(),
 }: {
@@ -134,6 +135,9 @@ export function BuyerFollowUp({
   visitRows: Record<string, ReactNode>;
   // Une lecture a échoué : l'écran le dit, jamais « rien d'envoyé » (M98).
   unread: boolean;
+  // Lancement, mission 10 — une fois sa sélection envoyée, ses liens (« Changer la sélection »,
+  // « Dossier acquéreur et lien ») se rangent ici : ses biens ne sont plus écrits ailleurs.
+  links?: ReactNode;
   budgetMax?: number | null;
   now?: Date;
 }) {
@@ -144,17 +148,24 @@ export function BuyerFollowUp({
       className={`${card} flex scroll-mt-6 flex-col gap-4 p-5`}
       data-testid="buyer-follow-up"
     >
-      <div className="flex flex-col gap-0.5">
-        <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
-          Son suivi
-        </h2>
-        {summary ? (
-          <p
-            className="text-sm text-zinc-600 stage:text-white/70"
-            data-testid="buyer-follow-up-summary"
-          >
-            {summary}
-          </p>
+      <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-2">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+            Son suivi
+          </h2>
+          {summary ? (
+            <p
+              className="text-sm text-zinc-600 stage:text-white/70"
+              data-testid="buyer-follow-up-summary"
+            >
+              {summary}
+            </p>
+          ) : null}
+        </div>
+        {links ? (
+          <div className="flex flex-wrap gap-x-5 gap-y-1" data-testid="buyer-follow-up-links">
+            {links}
+          </div>
         ) : null}
       </div>
       {unread ? (

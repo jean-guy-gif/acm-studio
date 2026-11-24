@@ -1016,11 +1016,13 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // « Rapprocher » : le rapprochement, pré-rempli, trouve le mandat signé d'Antibes…
     // ici celui de ce passage, à Nice (3 pièces, 65 m², 315 000 € convenus : sous le plafond + 5 %).
     await page.goto(buyerUrl);
-    // Mission 130 B — « Rapprocher » est un bloc de la fiche : « Voir les correspondances · n ».
-    await expect(page.getByTestId('buyer-matching')).toContainText(
-      /Voir les correspondances · [1-9]/,
+    // Lancement, mission 10 — « Rapprocher » est un lien d'« Autres actions », sous la prochaine
+    // étape : « Rapprocher · n correspondances ».
+    await expect(page.getByTestId('buyer-other-actions')).toContainText('Autres actions :');
+    await expect(page.getByTestId('buyer-matches-link')).toHaveText(
+      /^Rapprocher · [1-9]\d* correspondances?$/,
     );
-    await page.getByRole('link', { name: /^Voir les correspondances/ }).click();
+    await page.getByTestId('buyer-matches-link').click();
     await expect(page).toHaveURL(
       new RegExp(`/acquereurs/rapprochement\\?acquereur=${buyerUrl.split('/').pop()}`),
     );
