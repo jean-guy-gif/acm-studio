@@ -79,3 +79,7 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 24/11 · Lancement 3 · La règle lit sept tables à chaque page qui s'en sert, en une vague, pour
   toute l'agence ; elle part deux fois sur « Aujourd'hui », sa pastille et le Suivi, une fois à
   l'ouverture du Live : à mesurer, et à lire une seule fois par page si cela ralentit.
+- 24/11 · Méthode · Pour que la prévisualisation d'une branche suffise à toutes les specs : déduire
+  l'adresse du site de celle que Vercel donne à la branche quand `NEXT_PUBLIC_SITE_URL` manque, et
+  poser la clé de recherche sur les prévisualisations (geste de Jean-Guy dans Vercel) ; d'ici là,
+  quatre specs se jouent sur l'essai (`docs/APPRENTISSAGES.md`, 24/11).
