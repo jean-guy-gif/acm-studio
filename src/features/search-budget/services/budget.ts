@@ -1,5 +1,3 @@
-import { formatEuro } from '@/lib/format';
-
 // Mission 100 — ne jamais dépenser sans limite : chaque annonce facturée par Stream Estate est
 // comptée par agence et par mois (heure de Paris), et un plafond mensuel arrête les recherches.
 // Tout se compte en centimes : une annonce coûte un centime (0,01 €, stream-estate-tiers.ts).
@@ -11,11 +9,13 @@ export const DEFAULT_MONTHLY_CAP_CENTS = 3000;
 export const MAX_MONTHLY_CAP_EUR = 1000;
 export const BUDGET_WARNING_RATIO = 0.8;
 
-export const BUDGET_REACHED_LABEL = 'Budget de recherche du mois atteint';
+// Lancement, mission 5 (Jean-Guy, 23/11) — plus aucun coût en euros devant le conseiller : le
+// plafond atteint se dit sans montant ; les montants restent pour l'opérateur seul (`/erreurs`).
+export const BUDGET_REACHED_LABEL = 'Votre forfait du mois est atteint : contactez votre agence';
 export const BUDGET_REACHED_HINT =
   '« Ouvrir mes recherches » et l’import par l’extension restent possibles.';
 export const BUDGET_UNREADABLE_MESSAGE =
-  'Le budget de recherche du mois n’a pas pu être vérifié : aucune recherche lancée. Réessayez.';
+  'Le forfait du mois n’a pas pu être vérifié : aucune recherche lancée. Réessayez.';
 
 export type SearchBudget = {
   spentCents: number;
@@ -49,13 +49,15 @@ export function advertsAllowed(searchCap: number, budget: SearchBudget): number 
 }
 
 export function budgetWarningLabel(budget: SearchBudget): string | null {
-  return budget.warning ? `${budget.percent} % du budget de recherche du mois utilisé` : null;
+  return budget.warning ? `${budget.percent} % du forfait du mois utilisé` : null;
 }
 
-// « 4,20 € sur 30 € »
-export function budgetUsageLabel(budget: SearchBudget): string {
-  const spent = formatEuro(budget.spentCents / 100, { minDecimals: 2, maxDecimals: 2 });
-  return `${spent} sur ${formatEuro(budget.capCents / 100)}`;
+// Pour le manager, sur Administration : la part du forfait utilisée, jamais un montant.
+// « 14 % du forfait du mois utilisé », « Forfait du mois atteint ».
+export function forfaitUsageLabel(usage: { percent: number; reached: boolean }): string {
+  return usage.reached
+    ? 'Forfait du mois atteint'
+    : `${Math.min(usage.percent, 100)} % du forfait du mois utilisé`;
 }
 
 // Le plafond saisi par un compte autorisé : des euros entiers, de 0 à 1 000.

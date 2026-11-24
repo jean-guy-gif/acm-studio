@@ -4,13 +4,14 @@ import { STREAM_ESTATE_PRICE_PER_ADVERT_EUR } from '@/features/competitor-search
 import {
   advertsAllowed,
   BUDGET_REACHED_LABEL,
-  budgetUsageLabel,
   budgetWarningLabel,
   CENTS_PER_ADVERT,
   DEFAULT_MONTHLY_CAP_CENTS,
+  forfaitUsageLabel,
   parseMonthlyCapEuros,
   searchBudget,
 } from '@/features/search-budget/services/budget';
+import { budgetUsageLabel } from '@/features/operations/services/usage-costs';
 
 const plain = (text: string | null) => (text ?? '').replace(/[  ]/g, ' ');
 
@@ -31,7 +32,9 @@ describe('searchBudget', () => {
       warning: false,
       percent: 14,
     });
+    // Le montant : pour l'opérateur seul ; le manager lit une part du forfait (Lancement 5).
     expect(plain(budgetUsageLabel(budget))).toBe('4,20 € sur 30 €');
+    expect(plain(forfaitUsageLabel(budget))).toBe('14 % du forfait du mois utilisé');
     expect(budgetWarningLabel(budget)).toBeNull();
   });
 
@@ -40,9 +43,9 @@ describe('searchBudget', () => {
     const budget = searchBudget(2400, null);
     expect(budget.warning).toBe(true);
     expect(budget.reached).toBe(false);
-    expect(plain(budgetWarningLabel(budget))).toBe('80 % du budget de recherche du mois utilisé');
+    expect(plain(budgetWarningLabel(budget))).toBe('80 % du forfait du mois utilisé');
     expect(plain(budgetWarningLabel(searchBudget(2790, null)))).toBe(
-      '93 % du budget de recherche du mois utilisé',
+      '93 % du forfait du mois utilisé',
     );
   });
 
@@ -53,7 +56,9 @@ describe('searchBudget', () => {
       expect(budget.warning).toBe(false);
       expect(budget.remainingAdverts).toBe(0);
     }
-    expect(BUDGET_REACHED_LABEL).toBe('Budget de recherche du mois atteint');
+    // Lancement, mission 5 — le plafond atteint se dit sans montant.
+    expect(BUDGET_REACHED_LABEL).toBe('Votre forfait du mois est atteint : contactez votre agence');
+    expect(forfaitUsageLabel(searchBudget(3045, null))).toBe('Forfait du mois atteint');
   });
 
   it('un plafond à 0 € coupe la recherche avant la première annonce', () => {

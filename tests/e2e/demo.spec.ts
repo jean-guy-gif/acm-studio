@@ -4,6 +4,7 @@ import {
   fillLiveComment,
   demoCredentials,
   expectNoHorizontalScroll,
+  expectNoUsageCost,
   expectReadableBands,
   chooseInCardMenu,
   expectOneFilled,
@@ -281,7 +282,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(anyRetain, 'La recherche simulée ne propose rien à retenir').toBeVisible({
         timeout: 90_000,
       });
-      await expect(page.getByText(/0 annonce facturée/)).toBeVisible();
+      await expect(page.getByText(/0 annonce comptée/)).toBeVisible();
+      await expectNoUsageCost(page, 'Chercher les concurrents');
       expect(await page.getByTestId('match-percent').count()).toBeGreaterThanOrEqual(RETAINED);
       // Seuls les premiers de la liste principale sont cochés d'office (un prix hors fourchette ne
       // l'est pas) : le closer en coche jusqu'à cinq, comme un conseiller le ferait.
@@ -754,13 +756,14 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // biens vus sur le marché après le rendez-vous ; un retenu. Mission 129 — de −5 % du prix
       // (1 557 000 €), mou-07 seul : la recherche s'élargit à −10 % et trouve mou-03.
       await expect(row.getByTestId('newcomers-proposal')).toContainText(
-        'jusqu’à 0,60 €, 1,20 € si la recherche s’élargit',
+        'Recherche comptée dans le forfait du mois',
       );
       await row.getByTestId('newcomers-search').click();
       const results = row.getByTestId('newcomers-results');
       await expect(results).toBeVisible({ timeout: 60_000 });
       await expect(results).toContainText(/2 trouvés/);
-      await expect(results).toContainText('0 annonce facturée');
+      await expect(results).toContainText('0 annonce comptée');
+      await expectNoUsageCost(page, 'Les nouveaux venus du Point marché');
       await expect(results).toContainText(/cherchés de 1\s?475\s?000\s?€ à 1\s?639\s?500\s?€/);
       await expect(results).toContainText(
         'recherche élargie à 10 % sous le prix de commercialisation',
@@ -1493,10 +1496,11 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
   await page
     .getByTestId('ideal-paid-confirm')
-    .getByRole('button', { name: 'Lancer et payer' })
+    .getByRole('button', { name: 'Lancer la recherche' })
     .click();
   await expect(page.getByTestId('ideal-market-summary')).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByTestId('ideal-market-summary')).toContainText('0 annonce facturée');
+  await expect(page.getByTestId('ideal-market-summary')).toContainText('0 annonce comptée');
+  await expectNoUsageCost(page, 'Biens idéaux, le marché');
   for (const category of ['strong', 'compromise', 'explore']) {
     await expect(page.getByTestId(`ideal-category-${category}`)).toBeVisible();
   }

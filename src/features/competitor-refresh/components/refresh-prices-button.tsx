@@ -130,7 +130,9 @@ export function RefreshPricesButton({
         </button>
         {busy ? (
           <span className="text-xs text-zinc-500 stage:text-white/60">
-            {demo ? 'Gratuit.' : 'Gratuit. Gardez cet onglet ouvert pendant la relecture.'}
+            {demo
+              ? 'Ne compte pas dans le forfait.'
+              : 'Ne compte pas dans le forfait. Gardez cet onglet ouvert pendant la relecture.'}
           </span>
         ) : null}
       </div>

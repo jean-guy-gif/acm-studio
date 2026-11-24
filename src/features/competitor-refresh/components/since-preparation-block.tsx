@@ -132,7 +132,9 @@ export function SincePreparationBlock({
         </button>
         <span className={hintText}>
           {[
-            demo ? 'Gratuit' : 'Gratuit, par l’extension ACM',
+            demo
+              ? 'Ne compte pas dans le forfait'
+              : 'Par l’extension ACM, sans compter dans le forfait',
             checked && since.unchanged > 0
               ? `${since.unchanged} annonce${since.unchanged > 1 ? 's' : ''} inchangée${since.unchanged > 1 ? 's' : ''}`
               : null,

@@ -113,7 +113,7 @@ export function softBanner(
         text: ' : la lecture des annonces n’a pas abouti à temps. Les biens sont rangés par ressemblance, puis par prix ; aucun n’est écarté.',
       };
     case 'budget':
-      return { strong: 'Classement simplifié', text: ' : budget de lecture du mois atteint.' };
+      return { strong: 'Classement simplifié', text: ' : forfait du mois atteint.' };
     default:
       return { strong: 'Classement simplifié', text: '' };
   }

@@ -3,6 +3,7 @@ import { expect, test, type Page } from './test';
 import { DEMO_BUYERS } from '../../src/features/demo/services/demo-buyers';
 import {
   demoCredentials,
+  expectNoUsageCost,
   expectOneFilled,
   goViaAccountMenu,
   login,
@@ -591,51 +592,53 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     );
   });
 
-  await test.step('Le manager règle le plafond de la veille', async () => {
-    await page.goto('/admin');
-    const admin = page.getByTestId('buyer-watch-admin');
-    await expect(admin).toContainText('Veille des acquéreurs');
-    await expect(admin.getByTestId('buyer-watch-journal')).toContainText('Famille Keller');
-    const cap = admin.getByTestId('buyer-watch-cap');
+  // Lancement, mission 5 — le manager ne voit plus de montant : il coupe ou reprend la veille.
+  await test.step('Le manager coupe et reprend la veille, sans aucun montant', async () => {
     // Mission 155 — le plafond de départ, relu en base, est TOUJOURS remis à la fin, même en cas
-    // d'échec (décision de Jean-Guy, 13/11) ; un 0 € laissé par un passage interrompu revient au
-    // plafond par défaut, 10 €.
+    // d'échec (décision de Jean-Guy, 13/11) ; une veille laissée coupée par un passage interrompu
+    // repart du plafond par défaut, 10 €.
     const startCap = readDemoWatchCap();
     const restoreCap = startCap > 0 ? startCap : 1000;
+    if (startCap !== 1000) restoreDemoWatchCap(1000);
     try {
-      await cap.fill('16');
-      await admin.getByRole('button', { name: 'Enregistrer' }).click();
-      await expect(admin.getByRole('alert')).toContainText('moitié');
+      await page.goto('/admin');
+      const admin = page.getByTestId('buyer-watch-admin');
+      await expect(admin).toContainText('Veille des acquéreurs');
+      await expect(admin.getByTestId('buyer-watch-journal')).toContainText('Famille Keller');
+      await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille active');
+      await expect(admin.getByTestId('buyer-watch-cap')).toHaveCount(0);
+      await expectNoUsageCost(page, 'Administration');
+      await expect(page.locator('main')).not.toContainText('€');
+      const toggle = admin.getByTestId('buyer-watch-toggle');
       // L'écran ne suffit pas : le message de l'action, puis le plafond relu en base, puis l'état
       // à l'écran sans recharger (le 13/11, la base tenait 0 € et l'écran disait encore « Veille
       // active »).
-      await cap.fill('0');
-      await admin.getByRole('button', { name: 'Enregistrer' }).click();
-      await expect(admin.getByText('Plafond de la veille enregistré.')).toBeVisible();
+      await expect(toggle).toHaveText('Couper la veille');
+      await toggle.click();
+      await expect(admin.getByText('Veille coupée.', { exact: true })).toBeVisible();
       await expect.poll(() => readDemoWatchCap(), { timeout: 20_000 }).toBe(0);
       await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille coupée');
-      // Le plafond de départ, remis par l'écran : le message, la base, puis l'état.
-      await cap.fill(String(restoreCap / 100));
-      await admin.getByRole('button', { name: 'Enregistrer' }).click();
-      await expect(admin.getByText('Plafond de la veille enregistré.')).toBeVisible();
-      await expect.poll(() => readDemoWatchCap(), { timeout: 20_000 }).toBe(restoreCap);
+      // Reprise : le plafond par défaut, écrit par le serveur.
+      await expect(toggle).toHaveText('Reprendre la veille');
+      await toggle.click();
+      await expect(admin.getByText('Veille reprise.', { exact: true })).toBeVisible();
+      await expect.poll(() => readDemoWatchCap(), { timeout: 20_000 }).toBe(1000);
       await expect(admin.getByTestId('buyer-watch-state')).toHaveText('Veille active');
       // Une réponse perdue (connexion coupée pendant l'action) : l'écran le dit et propose de
-      // recharger ; rien n'est écrit, et la page rechargée relit le plafond en base.
+      // recharger ; rien n'est écrit, et la page rechargée relit l'état en base.
       await page.route('**/admin', (route) =>
         route.request().method() === 'POST' && route.request().headers()['next-action']
           ? route.abort('internetdisconnected')
           : route.continue(),
       );
-      await cap.fill('0');
-      await admin.getByRole('button', { name: 'Enregistrer' }).click();
+      await toggle.click();
       await expect(admin.getByRole('alert')).toContainText(
-        'L’enregistrement n’a pas abouti : rechargez la page pour voir le plafond enregistré.',
+        'L’enregistrement n’a pas abouti : rechargez la page pour voir l’état enregistré de la veille.',
       );
       await page.unroute('**/admin');
       await admin.getByRole('button', { name: 'Recharger la page' }).click();
       await expect(page.getByTestId('buyer-watch-state')).toHaveText('Veille active');
-      expect(readDemoWatchCap()).toBe(restoreCap);
+      expect(readDemoWatchCap()).toBe(1000);
     } finally {
       if (readDemoWatchCap() !== restoreCap) restoreDemoWatchCap(restoreCap);
     }
@@ -1011,7 +1014,7 @@ test('après la visite : le compte rendu, le point de la semaine, écarter pour 
   });
 
   await test.step('« Écarter pour lui » : le bien sort, « Annuler » le rend', async () => {
-    // Les biens idéaux des Keller, le marché simulé de la démo (aucun appel, « 0 annonce facturée »).
+    // Les biens idéaux des Keller, le marché simulé de la démo (aucun appel, « 0 annonce comptée »).
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
@@ -1022,9 +1025,9 @@ test('après la visite : le compte rendu, le point de la semaine, écarter pour 
     await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     await page
       .getByTestId('ideal-paid-confirm')
-      .getByRole('button', { name: 'Lancer et payer' })
+      .getByRole('button', { name: 'Lancer la recherche' })
       .click();
-    await expect(page.getByTestId('ideal-market-summary')).toContainText('0 annonce facturée', {
+    await expect(page.getByTestId('ideal-market-summary')).toContainText('0 annonce comptée', {
       timeout: 60_000,
     });
     const hits = page.getByTestId('ideal-market-hit');
