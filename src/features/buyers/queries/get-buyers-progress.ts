@@ -30,7 +30,7 @@ export async function getBuyersProgress(
     await Promise.all([
       supabase
         .from('buyer_visit_requests')
-        .select('buyer_id, visited_at, requested_at')
+        .select('buyer_id, visited_at, requested_at, next_step')
         .eq('agency_id', agencyId)
         .in('buyer_id', buyerIds)
         .is('cancelled_at', null),
@@ -50,6 +50,8 @@ export async function getBuyersProgress(
       facts.visitsDone = (facts.visitsDone ?? 0) + 1;
       if (!facts.lastVisitDoneAt || row.visited_at > facts.lastVisitDoneAt)
         facts.lastVisitDoneAt = row.visited_at;
+      // Lancement, mission 2 — « Offre envisagée » : une offre formulée après cette visite.
+      if (row.next_step === 'offer') facts.offerConsidered = true;
     } else facts.visitsToOrganize += 1;
     // Mission 132 — la visite demandée ou faite est un échange daté.
     const at =
