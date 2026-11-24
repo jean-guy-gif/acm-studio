@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RankingListing } from '@/features/soft-ranking/types';
+import { costMillicents } from '@/lib/ai/models';
 
 // Mission 151 (partie B) — le classement côté serveur, avec le budget et Bedrock SIMULÉS : aucun
 // test n'appelle le vrai modèle (décision de Jean-Guy, 12/11).
@@ -310,7 +311,14 @@ describe('les photos des biens les mieux classés', () => {
     expect(Object.keys(picked[0]!)).toEqual(['https://x.fr/1', 'https://x.fr/2']);
     expect(state.photoReads).toHaveLength(1);
     expect(state.photoReads[0]!.criteria).toEqual(['vue']);
-    expect(state.photoReads[0]!.room).toBeGreaterThan(0);
+    // Un appel de texte (deux annonces, un lot) : ce qu'il a coûté sort de la réservation, et les
+    // photos n'ont que le reste (M105 : jamais plus que la réservation).
+    const textCost = costMillicents('eu.anthropic.claude-sonnet-4-6', {
+      input_tokens: 2000,
+      output_tokens: 300,
+    })!;
+    const reserved = state.reserved[0]!.wantedMillicents as number;
+    expect(state.photoReads[0]!.room).toBe(reserved - textCost);
     if (ranking?.mode !== 'full') throw new Error('classement complet attendu');
     expect(ranking.byKey['https://x.fr/2']!.find((j) => j.key === 'vue')!.photos).toEqual({
       verdict: 'shown',
@@ -320,7 +328,8 @@ describe('les photos des biens les mieux classés', () => {
     // Un seul règlement, le texte et les photos ; la trace dit les noms, jamais une adresse.
     expect(state.settled).toHaveLength(1);
     expect(state.settled[0]!.fieldsProposed).toEqual(['soft:calme', 'soft:vue', 'photo:vue']);
-    expect(state.settled[0]!.costMillicents as number).toBeGreaterThan(3_000);
+    expect(state.settled[0]!.costMillicents).toBe(textCost + 3_000);
+    expect(state.settled[0]!.costMillicents as number).toBeLessThanOrEqual(reserved);
     expect(JSON.stringify(state.settled)).not.toMatch(/p\/1\.jpg|x\.fr/);
   });
 
@@ -371,16 +380,67 @@ describe('les photos des biens les mieux classés', () => {
   });
 
   it('démo : des photos simulées, relues comme les vraies, sans appel ni chargement (M114)', async () => {
-    const ranking = await rankListings({ ...withView, demo: true });
+    // La première annonce dit la vue : elle se voit sur la première photo. La deuxième n'en dit
+    // rien, et son texte (un nombre pair de caractères) la montre sur les deux premières ; la
+    // troisième (un nombre impair) ne montre rien.
+    const demoListings: RankingListing[] = [
+      { key: 'https://x.fr/1', text: 'Belle vue mer depuis la terrasse.', tags: [] },
+      { key: 'https://x.fr/2', text: 'Maison de ville, au calme.', tags: [] },
+      { key: 'https://x.fr/3', text: 'Maison de village, au calme', tags: [] },
+    ];
+    expect(demoListings[1]!.text.length % 2).toBe(0);
+    expect(demoListings[2]!.text.length % 2).toBe(1);
+    const ranking = await rankListings({
+      ...withView,
+      demo: true,
+      listings: demoListings,
+      photos: {
+        max: 5,
+        pick: () =>
+          demoListings.map((listing) => ({
+            key: listing.key,
+            urls: ['/demo/photos/a.jpg', '/demo/photos/b.jpg', '/demo/photos/c.jpg'],
+          })),
+      },
+    });
     expect(state.calls).toHaveLength(0);
     expect(state.photoReads).toHaveLength(0);
     expect(state.reserved).toHaveLength(0);
     if (ranking?.mode !== 'full') throw new Error('classement complet attendu');
-    for (const judgments of Object.values(ranking.byKey))
-      for (const judgment of judgments)
-        if (judgment.photos) {
-          expect(judgment.key).toBe('vue');
-          expect(judgment.photos.numbers.every((n) => n === 1)).toBe(true);
-        }
+    const view = (key: string) => ranking.byKey[key]!.find((j) => j.key === 'vue')!;
+    expect(view('https://x.fr/1').photos).toEqual({ verdict: 'shown', numbers: [1] });
+    expect(view('https://x.fr/2').photos).toEqual({ verdict: 'shown', numbers: [1, 2] });
+    expect(view('https://x.fr/3').photos).toBeUndefined();
+    // Le calme ne se voit pas sur une photo : jamais de photos sur ce critère.
+    expect(
+      Object.values(ranking.byKey).some((judgments) =>
+        judgments.some((j) => j.key === 'calme' && j.photos),
+      ),
+    ).toBe(false);
+  });
+
+  it('un bien sans texte, hors du classement : ses photos ne sont ni lues ni payées, et il ne prend aucune place', async () => {
+    state.photoRead = {
+      byKey: new Map([
+        ['https://x.fr/sans-texte', new Map([['vue', { verdict: 'shown', numbers: [1] }]])],
+      ]),
+      spent: 0,
+    };
+    const ranking = await rankListings({
+      ...withView,
+      photos: {
+        max: 1,
+        pick: () => [
+          { key: 'https://x.fr/sans-texte', urls: ['https://p/0.jpg'] },
+          { key: 'https://x.fr/2', urls: ['https://p/2.jpg'] },
+        ],
+      },
+    });
+    expect(state.photoReads[0]!.picks).toEqual([
+      { key: 'https://x.fr/2', urls: ['https://p/2.jpg'] },
+    ]);
+    if (ranking?.mode !== 'full') throw new Error('classement complet attendu');
+    // Rien n'est écrit pour un bien que le texte n'a pas classé (« Aucun texte d'annonce à lire »).
+    expect(ranking.byKey['https://x.fr/sans-texte']).toBeUndefined();
   });
 });

@@ -195,16 +195,31 @@ const photosLabel = (numbers: readonly number[]): string =>
     : `les photos ${numbers.slice(0, -1).join(', ')} et ${numbers[numbers.length - 1]}`;
 
 // Ce que les photos ajoutent à la raison d'un critère, pour le conseiller : toujours les numéros
-// des photos de la fiche complète, jamais un commentaire du modèle.
+// des photos de la fiche complète, jamais un commentaire du modèle, et toujours « à vérifier » — la
+// justesse des photos n'a pas été mesurée contre un corrigé. La note parle du CRITÈRE, quoi que
+// dise l'annonce : « le montre » veut dire que les photos montrent le critère, jamais son contraire.
 function photoNote(judgment: SoftJudgment): string | null {
   const seen = judgment.photos;
   if (!seen) return null;
   const which = photosLabel(seen.numbers);
-  if (seen.verdict === 'contrary')
-    return `à regarder : ${which} ${seen.numbers.length === 1 ? 'montre' : 'montrent'} peut-être le contraire`;
-  return judgment.verdict === 'nothing' || judgment.verdict === 'unread'
-    ? `${which} ${seen.numbers.length === 1 ? 'le montre' : 'le montrent'}, à vérifier`
-    : `se voit sur ${which}`;
+  const one = seen.numbers.length === 1;
+  if (seen.verdict === 'contrary') {
+    // L'annonce dit déjà le contraire : les photos vont dans le même sens.
+    return judgment.verdict === 'contrary'
+      ? `comme sur ${which}, à vérifier`
+      : `à regarder : ${which} ${one ? 'montre' : 'montrent'} peut-être le contraire`;
+  }
+  const shows = `${which} ${one ? 'le montre' : 'le montrent'}`;
+  switch (judgment.verdict) {
+    case 'nothing':
+    case 'unread':
+      return `${shows}, à vérifier`;
+    // L'annonce dit le contraire, les photos montrent le critère : au conseiller de regarder.
+    case 'contrary':
+      return `pourtant ${shows}, à vérifier`;
+    default:
+      return `${shows} aussi, à vérifier`;
+  }
 }
 
 // L'ordre à l'intérieur d'une catégorie : le score d'abord, puis l'ordre d'avant (le %, puis le

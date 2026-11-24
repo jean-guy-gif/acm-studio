@@ -9,7 +9,8 @@ agence. Le dollar est compté pour un euro, comme dans le code.
 ## Ce que l'IA lit aujourd'hui, en cinq lignes
 
 1. Elle lit **la description** de l'annonce et **les étiquettes du portail** (« Calme »,
-   « Terrasse »…), rien d'autre.
+   « Terrasse »…) ; pour un mandat de l'agence, la description et les points forts de sa fiche.
+   Rien d'autre.
 2. Elle n'y cherche que **« ce qui compte pour eux »** sur la fiche (dix critères possibles : au
    calme, sans vis-à-vis, du cachet, lumineux, une vue, de plain-pied, traversant, commerces et
    écoles à pied, jardin sans gros entretien, prêt à vivre). Une fiche sans aucun de ces critères
@@ -84,10 +85,18 @@ commerces à pied ne se voient pas sur une photo : ils restent au texte.
   part, essai compris. Seule l'agence de démonstration montre la lecture, simulée, sur l'essai.
 - **Pourquoi éteint** : la page de confidentialité validée dit que ce qui compte pour l'acquéreur
   « est comparé aux descriptions publiques des annonces ». Elle ne parle pas des photos, et elle
-  doit dire ce que le code fait. Pour allumer : une ligne de code (`PHOTOS_DES_ANNONCES_LUES`) et,
-  dans la page, « … aux descriptions publiques des annonces et, pour les biens les mieux classés,
-  à leurs photos publiques … », puis « la lecture des notes d'un conseiller, des descriptions et des
-  photos d'annonces ». C'est à Jean-Guy de le décider, et de le dire à la juriste.
+  doit dire ce que le code fait.
+- **Pour allumer**, trois choses, dans cet ordre :
+  1. la phrase de la page, décidée par Jean-Guy et dite à la juriste : « … aux descriptions
+     publiques des annonces et, pour les biens les mieux classés, à leurs photos publiques … »,
+     puis « la lecture des notes d'un conseiller, des descriptions et des photos d'annonces » ;
+  2. vérifier sur une vraie recherche que les photos du fournisseur sont dans le même ordre que
+     celles de la fiche complète du bien, sinon « la photo 3 » ne serait pas la troisième ;
+  3. une ligne de code (`PHOTOS_DES_ANNONCES_LUES`).
+- **Ce qui n'est pas mesuré** : la justesse des photos. Le texte l'a été contre un corrigé écrit
+  avant (M151) ; les photos, non. C'est pourquoi chaque ligne dit « à vérifier ».
+- **« Chercher encore »** ne relit aucune photo : le chiffre reste 0,17 € par recherche. Une
+  recherche relancée relit tout, texte et photos.
 
 ## Questions, avec la réponse par défaut
 

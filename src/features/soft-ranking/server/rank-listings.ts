@@ -140,12 +140,15 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
     // Les photos simulées, sans rien charger : la même relecture que la vraie (M114).
     if (input.photos && seen.length > 0) {
       const byListing = new Map(listings.map((listing) => [listing.key, listing]));
-      for (const pick of input.photos.pick(ranked.byKey).slice(0, input.photos.max)) {
+      for (const pick of classed(input.photos.pick(ranked.byKey), ranked).slice(
+        0,
+        input.photos.max,
+      )) {
         const listing = byListing.get(pick.key);
         const sent = new Set(pick.urls.map((_, index) => index + 1));
         if (!listing || sent.size === 0) continue;
         ranked.byKey[pick.key] = withPhotoJudgments(
-          ranked.byKey[pick.key] ?? [],
+          ranked.byKey[pick.key]!,
           guardPhotoJudgments(demoPhotoAnswer(listing, seen, sent.size), seen, sent),
         );
       }
@@ -228,7 +231,7 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
   let photosRead = false;
   if (answered && input.photos && photosCovered) {
     const read = await readListingPhotos({
-      picks: input.photos.pick(ranked.byKey).slice(0, input.photos.max),
+      picks: classed(input.photos.pick(ranked.byKey), ranked).slice(0, input.photos.max),
       criteria: seen,
       model,
       deadline,
@@ -236,8 +239,10 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
     });
     spent += read.spent;
     photosRead = read.spent > 0;
-    for (const [key, photos] of read.byKey)
-      ranked.byKey[key] = withPhotoJudgments(ranked.byKey[key] ?? [], photos);
+    for (const [key, photos] of read.byKey) {
+      const judgments = ranked.byKey[key];
+      if (judgments) ranked.byKey[key] = withPhotoJudgments(judgments, photos);
+    }
   }
   await settleAiBudget({
     usageId: reservation.usageId,
@@ -253,6 +258,14 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
   if (!answered) return simple('failed', listings, criteria);
   return ranked;
 }
+
+// Les biens dont les photos sont lues sont ceux que le texte a classés : un bien sans texte ni
+// étiquette n'est pas dans le classement (« Aucun texte d'annonce à lire », M98) ; ses photos ne
+// sont ni chargées ni payées, et il ne prend la place d'aucun autre.
+const classed = (
+  picks: readonly PhotoPick[],
+  ranked: Extract<SoftRanking, { mode: 'full' }>,
+): PhotoPick[] => picks.filter((pick) => ranked.byKey[pick.key] != null);
 
 // Huit appels à la fois au plus : une recherche entière (60 annonces, 8 lots) part d'un coup, pour
 // que le texte de TOUTES les annonces soit lu dans le délai. Mesuré le 24/11 sur vingt annonces
