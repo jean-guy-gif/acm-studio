@@ -50,7 +50,9 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
    jour de la visite
 8. **IA, la lecture des notes de découverte de l'acquéreur** : ouverte et vérifiée sur le compte
    normal de Jean-Guy, avec un plafond par agence. Lui dire en une ligne ce qu'il doit faire
-   lui-même pour l'ouvrir à une agence. — à faire
+   lui-même pour l'ouvrir à une agence. — **vérifiée le 24/11** sur le compte de Jean-Guy (12 champs
+   proposés, 0,02 €, aucune fiche créée). Pour l'ouvrir à une agence : en bas de `/erreurs`, sur la
+   ligne de l'agence, taper un plafond « IA » supérieur à 0 € et « Enregistrer »
 9. **IA, l'analyse des annonces pour classer les biens face aux critères de l'acquéreur** : les mots
    du texte, puis les photos. D'abord, en cinq lignes, ce que l'IA lit aujourd'hui dans une annonce
    et ce qu'elle ne lit pas. Le texte de toutes les annonces est lu. Pour les photos : mesurer le
