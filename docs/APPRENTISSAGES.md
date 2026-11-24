@@ -63,6 +63,19 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   coupé par le réseau, la bannière « Réponse non enregistrée » masque « Réglages ») et le parcours
   à la Prospection (geo.api.gouv.fr au-delà de son délai, deux fois au journal).
 
+- 24/11 · Lancement · Un seul Playwright à la fois sur le poste, captures comprises : un script de
+  captures lancé pendant `parcours` a fait échouer deux fois cette spec, sur deux actions sans
+  rapport (un statut d'acquéreur « vérifiez la connexion », un « Réintégrer » sans effet), rien au
+  journal d'erreurs ; seule, elle passe. Le même jour, le réseau du poste est tombé pendant un
+  `git push origin main` enchaîné à `npm run verifier:production` : la poussée a échoué en silence
+  (sa sortie passait par `tail`) et la vérification a attendu dix minutes pour rien. Après une
+  poussée, lire `git log -1 origin/main` avant d'attendre la production.
+- 24/11 · Lancement · Trois missions à la suite sur l'essai : chaque fusion bute sur
+  `missions/PLUS_TARD.md`, où chaque branche ajoute ses lignes à la fin. Sur `essai`, prendre la
+  version entrante quand elle part de `main` (`git checkout --theirs`), sinon garder les deux
+  côtés. Et vérifier `git status` après le retour sur sa branche : une fusion interrompue avait
+  laissé une copie de travail de `docs/DECISIONS.md` qui n'était celle d'aucune branche.
+
 ## La démo et les tests
 
 - 05/11 · M129 · Une recherche des nouveaux venus par point : des rendus faits À LA MAIN sur le
@@ -737,6 +750,14 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   complet dure 43 minutes : il se lance en tâche de fond depuis une copie de travail à part, pour ne
   pas bloquer le dépôt.
 
+- 24/11 · Lancement 9 · Mesurer avant de coder a trouvé un défaut que personne ne voyait : trois
+  appels à la fois, 14 à 16 s par appel de huit annonces et dix critères, donc trois vagues et plus
+  que le délai de 30 s pour une recherche de 60 annonces — les dernières restaient « non lues ».
+  Huit appels ensemble : 15,9 s, aucun refus. La mesure tourne par la configuration de Vitest de
+  `missions/L9-essais/`, qui importe la vraie consigne de `src/` : ce qui est mesuré est ce qui
+  part en production. Durées : relecteur 7 à 12 min par mission (trois missions), une spec e2e de
+  la fiche 45 s à 8 min.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -871,6 +892,15 @@ null; end;` passe toujours, que la fonction refuse ou non (l'échec, lui aussi P
   (base locale). Ces quatre specs se jouent sur l'essai, où le chef fusionne sa branche ; les autres
   sur la prévisualisation. Une attente de l'essai par `curl` demande le contournement de
   `.env.e2e.local` : sans lui, la boucle tourne à vide (sept minutes perdues).
+
+- 24/11 · Correctif du règlement de l'IA · Un argument `undefined` disparaît de l'appel d'une
+  fonction de la base : PostgREST cherche alors une fonction à un argument de moins et répond
+  « Could not find the function … in the schema cache ». `settle_ai_budget` était appelée sans le
+  nombre de mentions personnelles pour le classement : depuis le 12/11, aucun classement n'était
+  réglé, chaque réservation restait comptée au pire. Les types générés disaient l'argument
+  obligatoire, un `as number` l'avait fait taire, et le client factice des tests accepte tout : le
+  défaut ne s'est vu que dans le journal d'erreurs de la production. Un argument facultatif part
+  toujours, `null` s'il le faut ; et le test compare ce qui part vraiment (`JSON.stringify`).
 
 ## Les rendus
 
