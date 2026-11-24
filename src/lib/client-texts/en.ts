@@ -379,6 +379,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       hint: 'Your instinct first, before looking at the market: that is what we note here.',
       label: 'Your sense of value',
       confirmHint: 'Is this your price? Once confirmed, it can no longer be changed.',
+      seePricesFirst: 'See the competing properties and their asking prices first',
     },
     competition: {
       question: 'Is this a serious competing property for yours?',

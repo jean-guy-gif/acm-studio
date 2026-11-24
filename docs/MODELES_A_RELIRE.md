@@ -101,3 +101,9 @@ market », « … are for sale today », « At €745,000, three houses for sale
 5 rooms, from 123 to 136 m² », « I selected six, the ones most like your house: … », « The six most
 recent sales », « half the houses for sale have been waiting for a buyer at least this long », et les
 sources « Planning », « Building permits », « Risks », « Residents ».
+
+## Lancement, mission 1 — « Voir d'abord les biens et leurs prix »
+
+- Sur « Votre valeur perçue » du Live, le bouton en anglais : « See the competing properties and
+  their asking prices first » (`src/lib/client-texts/en.ts`, `live.perceived.seePricesFirst`). À
+  faire relire par un locuteur natif, avec le reste de l'anglais du Live.

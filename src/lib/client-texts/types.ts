@@ -746,6 +746,7 @@ export type LiveTexts = {
     hint: string;
     label: string;
     confirmHint: string;
+    seePricesFirst: string;
   };
   competition: {
     question: string;

@@ -179,6 +179,20 @@ describe('les écrans de la présentation directe', () => {
     expect(after[index]).toMatchObject({ comparableId: 'c', type: 'comparable_direct' });
   });
 
+  // Lancement, mission 1 (24/11) — depuis « Votre valeur perçue », le bouton « Voir d'abord les
+  // biens et leurs prix » passe en présentation directe : le conseiller arrive sur le premier
+  // concurrent, montré avec son prix ; la valeur perçue n'est plus un écran.
+  it('depuis « Votre valeur perçue », passer en directe mène au premier concurrent, avec son prix', () => {
+    const live = { comparables: [competitor('a'), competitor('b'), competitor('c')] };
+    const before = buildLivePages(live, true, 'complete', 'interactive');
+    const at = before.findIndex((page) => page.type === 'seller_perceived_price');
+    expect(at).toBeGreaterThan(0);
+    const after = buildLivePages(live, true, 'complete', 'direct');
+    expect(after.some((page) => page.type === 'seller_perceived_price')).toBe(false);
+    const index = indexAfterModeChange(before[at], at, after);
+    expect(after[index]).toMatchObject({ comparableId: 'a', type: 'comparable_direct' });
+  });
+
   it('on ne quitte l’écran d’un concurrent qu’une fois le fait « montré » enregistré', () => {
     expect(canAdvanceLivePage('comparable_direct', competitor('a'), null)).toBe(false);
     expect(

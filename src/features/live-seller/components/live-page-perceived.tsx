@@ -5,6 +5,7 @@ import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-
 import {
   bigInput,
   bigInputUnit,
+  navBtn,
   panel,
   question,
   questionHint,
@@ -25,13 +26,23 @@ import { PriceInput } from '@/features/live-seller/components/price-input';
 // MISSION 92 — ce prix ne se donne qu'une fois. Avant de l'enregistrer, l'écran le redit en
 // grand (« 350 000 € ? ») : une faute de frappe se voit, une seule confirmation suffit.
 // Enregistré, il se relit ici sans champ de saisie.
+//
+// Lancement, mission 1 (24/11) — le vendeur n'a aucune idée des prix : « Voir d'abord les biens et
+// leurs prix », en contour sous le champ, passe le Live en présentation directe (M131) — chaque
+// bien avec son prix, « Voir l'annonce » en un toucher. Le choix reste au conseiller, qui touche
+// le bouton ; rien ne dit au vendeur qu'il n'a pas répondu. Le champ reste : il peut dire son prix.
 export function LivePagePerceived({
   summary,
   confirming = null,
+  onSeePricesFirst,
+  switching = false,
 }: {
   summary: LiveSellerSummary | null;
   // Le montant tapé, en attente de confirmation ; null tant que rien n'est à confirmer.
   confirming?: number | null;
+  // Passe en présentation directe ; absent, le bouton ne s'affiche pas.
+  onSeePricesFirst?: () => void;
+  switching?: boolean;
 }) {
   const saved = summary?.seller_perceived_property_price ?? null;
   const { language, texts } = useLiveTexts();
@@ -67,6 +78,20 @@ export function LivePagePerceived({
                 {texts.common.questionMark}
               </span>
               <span className={questionHint}>{t.confirmHint}</span>
+            </div>
+          ) : null}
+          {onSeePricesFirst ? (
+            <div className="flex justify-start border-t border-zinc-200 pt-3 stage:border-white/15">
+              <button
+                type="button"
+                onClick={onSeePricesFirst}
+                disabled={switching}
+                aria-busy={switching || undefined}
+                data-testid="live-see-prices-first"
+                className={`${navBtn} px-4 py-2 disabled:opacity-60`}
+              >
+                {t.seePricesFirst}
+              </button>
             </div>
           ) : null}
         </form>
