@@ -62,3 +62,7 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   au-dessus d'un champ vide ; « Précédent » et « Valider » restent actifs pendant les 20 secondes
   au plus de l'enregistrement du changement ; l'échec du changement n'a pas de test (le chemin
   heureux est joué par l'e2e).
+- 24/11 · Lancement 2 · Sur la fiche acquéreur, le bouton « Offre d'achat » reste dans « Ses bons de
+  visite » dès qu'une visite existe, et depuis « En visite » le statut suivant proposé est « A
+  acheté » : deux signaux laissés tels quels (ils ne bloquent rien) ; à revoir avec la fiche
+  simplifiée (mission 10).

@@ -22,7 +22,8 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
    « Présentation directe » fait déjà. — **fait le 24/11** : sur « Votre valeur perçue », « Voir les
    biens et leurs prix » (captures `maquettes/L1-live-*.png`)
 2. **Acquéreur : après trois visites, l'outil ne suppose plus une offre.** Sans offre formulée,
-   l'acquéreur reste en recherche et le conseiller continue à lui envoyer des biens. — à faire
+   l'acquéreur reste en recherche et le conseiller continue à lui envoyer des biens. — **fait le
+   24/11** (capture `maquettes/L2-fiche-acquereur-sans-offre.png`)
 3. **Acquéreur : un bien déjà envoyé, visité ou refusé n'est jamais reproposé.** — à faire
 4. **Portails : la preuve, site par site, que l'annonce s'aspire comme prévu**, et la correction de
    ceux qui échouent. — **fait le 24/11** : les cinq sites se lisent ; Figaro réparé, la ville de

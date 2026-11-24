@@ -10,6 +10,9 @@ import { demoCredentials, login, resetDemoByScreen } from './support';
 
 const HIDE_PREVIEW_TOOLBAR = 'vercel-live-feedback { display: none !important; }';
 
+// Pour la capture, les vraies photos (sinon l'image minuscule des tests, `test.ts`).
+test.use({ realPhotos: process.env.E2E_CAPTURES === '1' });
+
 test('une visite faite ne suppose pas une offre', async ({ page }) => {
   test.setTimeout(6 * 60_000);
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -43,6 +46,10 @@ test('une visite faite ne suppose pas une offre', async ({ page }) => {
 
   if (process.env.E2E_CAPTURES === '1') {
     await page.addStyleTag({ content: HIDE_PREVIEW_TOOLBAR });
-    await page.screenshot({ path: 'missions/maquettes/L2-fiche-acquereur-sans-offre.png' });
+    // La fiche seule, sans le menu.
+    await page.screenshot({
+      path: 'missions/maquettes/L2-fiche-acquereur-sans-offre.png',
+      clip: { x: 256, y: 0, width: 1024, height: 900 },
+    });
   }
 });
