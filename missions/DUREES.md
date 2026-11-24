@@ -12,6 +12,11 @@ commits et des messages, à quelques minutes près.
 | 23/11 | 164 : un Live rouvert oublie son prix      | Sensible | 1 h 25       | 15 min                   | 15 min     |
 | 23/11 | **Total de ces quatre missions (le soir)** |          | **2 h 10**   | 15 min                   | 1 h 05     |
 
+| Date  | Mission                                              | Niveau | Durée totale | Dont attente de Jean-Guy | Dont tests |
+| ----- | ---------------------------------------------------- | ------ | ------------ | ------------------------ | ---------- |
+| 24/11 | Lancement : la liste et l'état des lieux acquéreur/IA | Petit  | 35 min       | 0                        | 0          |
+| 24/11 | Lancement 4 : les portails, prouvés et corrigés       | Petit  | 1 h 30       | 0                        | 25 min     |
+
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,
 de 20 h 15 à 22 h : les deux dernières missions ont tourné en même temps.
