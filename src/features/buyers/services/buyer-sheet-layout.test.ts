@@ -34,10 +34,30 @@ describe('« Sa sélection » : tant qu’elle est à présenter', () => {
 });
 
 describe('« Prêt à visiter ? », replié', () => {
-  it('s’ouvre seul quand il manque quelque chose', () => {
-    expect(readinessOpen('ready')).toBe(false);
-    expect(readinessOpen('recontact')).toBe(true);
-    expect(readinessOpen(null)).toBe(true);
+  it('s’ouvre seul quand il manque quelque chose à un acquéreur qui cherche', () => {
+    expect(readinessOpen('ready', true)).toBe(false);
+    expect(readinessOpen('recontact', true)).toBe(true);
+    expect(readinessOpen(null, true)).toBe(true);
+  });
+
+  it('reste replié pour un acquéreur qui a acheté ou abandonné : rien ne lui manque', () => {
+    expect(readinessOpen(null, false)).toBe(false);
+    expect(readinessOpen('recontact', false)).toBe(false);
+  });
+
+  it('sa ligne dit la veille, lisible sans ouvrir le bloc (M136)', () => {
+    expect(
+      readinessLine({
+        financing: 'validated',
+        lastExchange: 'dernier échange il y a 3 j',
+        watch: 'Veille : dernière recherche le 21/11, prochaine le 28/11',
+      }),
+    ).toBe(
+      'financement validé · dernier échange il y a 3 j · veille : dernière recherche le 21/11, prochaine le 28/11',
+    );
+    expect(readinessLine({ financing: 'validated', lastExchange: null, watch: null })).toBe(
+      'financement validé',
+    );
   });
 
   it('sa ligne dit l’essentiel : le financement, puis le dernier échange', () => {
@@ -54,7 +74,8 @@ describe('« Prêt à visiter ? », replié', () => {
 });
 
 describe('« Ce qui s’est passé », replié', () => {
-  it('dit combien d’événements', () => {
+  it('dit combien d’événements, et de quand date le dernier', () => {
+    expect(timelineLine(8, 'aujourd’hui')).toBe('8 événements, le dernier aujourd’hui');
     expect(timelineLine(8)).toBe('8 événements');
     expect(timelineLine(1)).toBe('1 événement');
     expect(timelineLine(0)).toBe('rien pour l’instant');

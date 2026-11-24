@@ -1,6 +1,6 @@
 import { expect, test } from './test';
 
-import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './support';
+import { demoCredentials, expectOneFilled, login, openFold, resetDemoByScreen } from './support';
 
 // Lancement, mission 6 (24/11) — « un seul endroit par acquéreur avec les biens envoyés, refusés et
 // pourquoi, visités avec leur compte rendu, pour faire le point avec lui ». Joué sur la démo remise
@@ -63,6 +63,68 @@ test('son suivi : un bien par ligne, ce qu’il en a dit, ses visites', async ({
     await page.addStyleTag({ content: HIDE_PREVIEW_TOOLBAR });
     await suivi.scrollIntoViewIfNeeded();
     await suivi.screenshot({ path: 'missions/maquettes/L6-son-suivi-rossi.png' });
+  }
+
+  // Lancement, mission 10 — la fiche simplifiée : leur sélection est présentée, ses biens ne se
+  // lisent plus que dans « Son suivi », qui porte ses liens ; le reste est replié ou en liens.
+  await expect(page.getByTestId('ideal-selection')).toHaveCount(0);
+  const selectionLinks = page.getByTestId('buyer-follow-up-links');
+  await expect(selectionLinks.getByRole('link', { name: 'Changer la sélection' })).toBeVisible();
+  await expect(selectionLinks.getByTestId('present-selection')).toHaveText(
+    'Revoir la présentation',
+  );
+  await expect(selectionLinks.getByTestId('buyer-dossier')).toBeVisible();
+  // Prêts à visiter : « Prêt à visiter ? » est replié, sa ligne dit l'essentiel, veille comprise.
+  const readinessFold = page.getByTestId('buyer-readiness');
+  await expect(readinessFold).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('buyer-readiness-line')).toContainText('financement validé');
+  await expect(page.getByTestId('buyer-readiness-line')).toContainText('veille :');
+  // Un toucher l'ouvre : le financement et « J'ai eu l'acquéreur aujourd'hui » sont dedans.
+  await openFold(page, 'buyer-readiness');
+  await expect(readinessFold.getByRole('button', { name: 'Validé' })).toBeVisible();
+  // « Ce qui s'est passé » : replié, il dit combien d'événements et de quand date le dernier.
+  await expect(page.getByTestId('buyer-timeline')).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('buyer-timeline-line')).toHaveText(
+    /· \d+ événements?, le dernier /,
+  );
+  // « Autres actions » : des liens, sous la prochaine étape — jamais un second bouton plein.
+  const others = page.getByTestId('buyer-other-actions');
+  await expect(others).toContainText('Autres actions :');
+  await expect(others.getByTestId('buyer-matches-link')).toHaveText(/^Rapprocher · /);
+  await expect(others.getByTestId('buyer-voucher-new')).toHaveText('Bon de visite');
+  await expect(others.getByTestId('buyer-offer-new')).toHaveText('Offre d’achat');
+  await expect(others.getByTestId('buyer-edit-search')).toHaveText('Modifier sa recherche');
+  await expectOneFilled(page, 'Fiche acquéreur simplifiée');
+  // La prochaine étape juste sous les étapes, à toutes les largeurs : à droite sur ordinateur,
+  // au-dessus de « Son suivi » sur tablette et téléphone (elle était tout en bas de la fiche).
+  const top = async (testId: string) => (await page.getByTestId(testId).boundingBox())!.y;
+  const left = async (testId: string) => (await page.getByTestId(testId).boundingBox())!.x;
+  expect(await left('buyer-next-step')).toBeGreaterThan(await left('buyer-follow-up'));
+  expect(await top('buyer-other-actions')).toBeLessThan((await top('buyer-next-step')) + 400);
+  for (const width of [820, 390]) {
+    await page.setViewportSize({ width, height: 1100 });
+    expect(await top('buyer-steps'), `étapes, ${width} px`).toBeLessThan(
+      await top('buyer-next-step'),
+    );
+    expect(await top('buyer-next-step'), `prochaine étape, ${width} px`).toBeLessThan(
+      await top('buyer-follow-up'),
+    );
+    expect(await top('buyer-follow-up'), `autres actions, ${width} px`).toBeLessThan(
+      await top('buyer-other-actions'),
+    );
+    if (process.env.E2E_CAPTURES === '1') {
+      await page.screenshot({
+        path: `missions/maquettes/L10-fiche-simplifiee-${width}.png`,
+        fullPage: true,
+      });
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 1100 });
+  if (process.env.E2E_CAPTURES === '1') {
+    await page.screenshot({
+      path: 'missions/maquettes/L10-fiche-simplifiee-1280.png',
+      fullPage: true,
+    });
   }
 
   // Un toucher sur un bien ouvre sa fiche complète ; rien n'est écrit.

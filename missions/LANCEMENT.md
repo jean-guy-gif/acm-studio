@@ -66,7 +66,8 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
 ## Jeudi 26/11
 
 10. **Fiche acquéreur simplifiée** : une seule « prochaine étape », comme côté vendeur. C'est la
-    mission à sacrifier si le temps manque. — à faire
+    mission à sacrifier si le temps manque. — **fait le 24/11** : la prochaine étape juste sous les
+    étapes à toutes les largeurs, la sélection fondue dans « Son suivi », le reste replié ou en liens
 11. **Parcours complet sur le compte de Jean-Guy**, vendeur puis acquéreur, avec captures, et
     correction des défauts vus. — à faire
 12. **Sauvegardes quotidiennes vérifiées sur l'offre Pro, journal d'erreurs vide, suite de nuit

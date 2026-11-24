@@ -20,8 +20,10 @@ export function selectionShown(input: {
 }
 
 // « Prêt à visiter ? » est replié quand il l'est ; il s'ouvre seul quand il manque quelque chose
-// (financement à confirmer, acquéreur à recontacter).
-export const readinessOpen = (state: 'ready' | 'recontact' | null): boolean => state !== 'ready';
+// (financement à confirmer, acquéreur à recontacter) à un acquéreur qui cherche encore : pour un
+// acquéreur qui a acheté ou abandonné, rien ne manque, il reste replié.
+export const readinessOpen = (state: 'ready' | 'recontact' | null, searching: boolean): boolean =>
+  searching && state !== 'ready';
 
 const FINANCING_WORDS: Record<BuyerFinancing, string> = {
   validated: 'financement validé',
@@ -29,16 +31,24 @@ const FINANCING_WORDS: Record<BuyerFinancing, string> = {
   unknown: 'financement à confirmer',
 };
 
-// La ligne du bloc replié : l'essentiel, sans l'ouvrir.
+// La ligne du bloc replié : l'essentiel, sans l'ouvrir — son financement, le dernier échange, et
+// la veille (M136 : « sur la fiche », donc lisible sans ouvrir le bloc).
 export function readinessLine(input: {
   financing: BuyerFinancing;
   lastExchange: string | null;
+  // « Veille : dernière recherche le 21/11, prochaine le 28/11 », telle que le bloc la dit.
+  watch?: string | null;
 }): string {
-  return [FINANCING_WORDS[input.financing], input.lastExchange].filter(Boolean).join(' · ');
+  const watch = input.watch ? input.watch.charAt(0).toLowerCase() + input.watch.slice(1) : null;
+  return [FINANCING_WORDS[input.financing], input.lastExchange, watch].filter(Boolean).join(' · ');
 }
 
-export const timelineLine = (events: number): string =>
-  events === 0 ? 'rien pour l’instant' : `${events} événement${events > 1 ? 's' : ''}`;
+// « 8 événements, le dernier aujourd'hui » ; `last` : la date du plus récent, déjà dite en mots.
+export function timelineLine(events: number, last: string | null = null): string {
+  if (events === 0) return 'rien pour l’instant';
+  const count = `${events} événement${events > 1 ? 's' : ''}`;
+  return last ? `${count}, le dernier ${last}` : count;
+}
 
 export type OtherAction = {
   key: 'matches' | 'voucher' | 'offer' | 'search';
