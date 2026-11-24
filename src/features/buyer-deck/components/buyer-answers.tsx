@@ -39,7 +39,7 @@ export function BuyerAnswers({
   return (
     <section className={`${card} flex flex-col gap-4 p-5`} data-testid="buyer-answers">
       <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-        Ce qu’il a répondu
+        {answers.length > 0 ? 'Ce qu’il a répondu' : 'Ce que ses refus suggèrent'}
       </h2>
       {suggestions.length > 0 ? (
         <ul className="flex flex-col gap-2">
