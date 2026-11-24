@@ -1008,8 +1008,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 Rapprocher
               </h2>
               <p className="text-sm text-zinc-600 stage:text-white/70">
-                Vos mandats, vendeurs à relancer et concurrents qui correspondent à sa recherche.
-                Gratuit.
+                Vos mandats, vendeurs à relancer et concurrents qui correspondent à sa recherche. Ne
+                compte pas dans le forfait.
               </p>
               {matches == null ? (
                 <p role="alert" className="text-sm font-semibold text-zinc-600 stage:text-white/70">

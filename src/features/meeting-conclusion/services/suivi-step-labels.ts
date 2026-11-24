@@ -508,7 +508,7 @@ export function cardStep(
         title: context.latestPoint ? 'Faire son Point marché' : 'Faire son premier Point marché',
         phrase:
           examplePhrase ??
-          'ACM relit les annonces des concurrents (gratuit), puis vous envoyez le document au vendeur.',
+          'ACM relit les annonces des concurrents (sans compter dans le forfait), puis vous envoyez le document au vendeur.',
         button: { label: 'Faire le point marché', action: { kind: 'market_update' }, primary },
       };
     }

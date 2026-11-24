@@ -14,12 +14,18 @@ const SRC = join(process.cwd(), 'src');
 
 // Un coût d'usage : un montant à centimes (« 0,60 € » — un prix de bien n'en a pas), un montant
 // « par recherche » ou « par mois », et les mots qui annoncent une dépense.
+// « facturé », « payé » : sans borne de mot après « é », que les expressions régulières ne tiennent
+// pas pour une lettre. « Gratuit » est le miroir de « payant » : ce qui ne compte pas dans le
+// forfait se dit ainsi.
 const USAGE_COST =
-  /\d,\d{2}\s*€|€\s+par\s+(recherche|mois)|payant|\bpayer\b|\bpayée?s?\b|\bfacturée?s?\b|\bcoûts?\b|\bcoûté|budget de (recherche|lecture)|budget du mois|plafond du mois/i;
-// Ce qui affiche un coût par un calcul : ces fonctions ne servent qu'à l'opérateur ; et un écran
-// (`.tsx`) ne lit jamais un montant d'usage en centimes (`spentCents`, `capCents`…).
+  /\d,\d{2}\s*€|€\s+par\s+(recherche|mois)|payant|\bpayer\b|\bpayé|\bfacturé|\bcoûts?\b|\bcoûté|\bgratuit|budget de (recherche|lecture)|budget du mois|plafond du mois/i;
+// Ce qui affiche un coût par un calcul : ces fonctions ne servent qu'à l'opérateur ; un écran
+// (`.tsx`) ne lit jamais un montant d'usage en centimes (`spentCents`, `capCents`…) ; et nulle
+// part un montant d'usage n'est mis en euros (`formatEuro(budget.spentCents / 100)`,
+// `formatEuro(found.billed * 0.01)`).
 const COST_HELPERS = /^(euroCost|budgetUsageLabel|watchUsageLabel)$/;
 const CENTS = /Cents$/;
+const USAGE_AMOUNT = /Cents\b|\bbilled\b|\badverts\b|PER_ADVERT|millicents/i;
 const NOT_SHOWN = new Set(['className', 'd', 'href', 'viewBox', 'data-testid']);
 
 // Réservé à l'opérateur : il voit les coûts et règle les plafonds.
@@ -68,6 +74,15 @@ function usageCosts(name: string, source: string): string[] {
     ) {
       found.push(`${name}:${at(node)} ${node.text}`);
     }
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'formatEuro' &&
+      node.arguments.length > 0 &&
+      USAGE_AMOUNT.test(node.arguments[0]!.getText(file))
+    ) {
+      found.push(`${name}:${at(node)} formatEuro(${node.arguments[0]!.getText(file)})`);
+    }
     const text =
       ts.isJsxText(node) ||
       ts.isStringLiteral(node) ||
@@ -99,6 +114,16 @@ describe('aucun coût en euros devant le conseiller', () => {
     expect(
       usageCosts('sample.tsx', 'export const ok = "Prix affiché : 779 000 € · 5 564 €/m²";'),
     ).toEqual([]);
+    // Le masculin singulier, et un montant d'usage mis en euros dans un service.
+    expect(
+      usageCosts('sample.ts', 'export const a = "Rien n’est facturé."; const b = "Déjà payé";'),
+    ).toHaveLength(2);
+    expect(
+      usageCosts('sample.ts', 'export const c = (n: number) => formatEuro(found.billed * 0.01);'),
+    ).toEqual(['sample.ts:1 formatEuro(found.billed * 0.01)']);
+    expect(
+      usageCosts('sample.ts', 'export const d = formatEuro(budget.capCents / 100);'),
+    ).toHaveLength(1);
     expect(
       usageCosts('sample.ts', 'export const m = "Votre forfait du mois est atteint";'),
     ).toEqual([]);

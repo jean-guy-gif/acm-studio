@@ -239,7 +239,7 @@ describe('la prochaine étape d’une carte', () => {
     const due = cardStep(task({ kind: 'market_update' }), signed, TODAY);
     expect(due.title).toBe('Faire son premier Point marché');
     expect(due.phrase).toBe(
-      'ACM relit les annonces des concurrents (gratuit), puis vous envoyez le document au vendeur.',
+      'ACM relit les annonces des concurrents (sans compter dans le forfait), puis vous envoyez le document au vendeur.',
     );
     expect(due.button).toMatchObject({
       label: 'Faire le point marché',

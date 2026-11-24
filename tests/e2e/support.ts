@@ -259,7 +259,7 @@ async function measureOverflow(page: Page): Promise<OverflowMeasure> {
 // mois », ni un mot de dépense. Le test `no-usage-cost.test.ts` lit les textes du code ; celui-ci
 // lit l'écran tel qu'il s'affiche.
 const USAGE_COST =
-  /\d,\d{2}\s*€|€\s+par\s+(recherche|mois)|payant|\bpayer\b|\bfacturée?s?\b|\bcoûts?\b/i;
+  /\d,\d{2}\s*€|€\s+par\s+(recherche|mois)|payant|\bpayer\b|\bpayé|\bfacturé|\bcoûts?\b|\bcoûté|\bgratuit|budget de (recherche|lecture)|budget du mois|plafond du mois/i;
 export async function expectNoUsageCost(page: Page, where: string): Promise<void> {
   const text = await page.locator('body').innerText();
   const found = USAGE_COST.exec(text);

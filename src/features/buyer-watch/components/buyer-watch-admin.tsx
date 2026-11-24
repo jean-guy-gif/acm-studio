@@ -28,7 +28,7 @@ const STATUS_LABELS: Record<WatchAdmin['journal'][number]['status'], string> = {
 // passages (acquéreur, biens trouvés). Lancement, mission 5 (Jean-Guy, 23/11) — plus aucun
 // montant : le manager coupe ou reprend la veille ; son plafond se règle par l'opérateur. Le
 // conseiller ne voit rien de tout cela.
-export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
+export function BuyerWatchAdmin({ watch }: { watch: Pick<WatchAdmin, 'state' | 'journal'> }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{
@@ -59,7 +59,15 @@ export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
           setMessage({ ok: false, text: result.error });
           return;
         }
-        setMessage({ ok: true, text: result.active ? 'Veille reprise.' : 'Veille coupée.' });
+        // Reprise demandée, mais la recherche de l'agence est coupée : la veille ne repart pas.
+        setMessage(
+          off && !result.active
+            ? {
+                ok: false,
+                text: 'La veille ne peut pas reprendre : la recherche de l’agence est coupée. Contactez l’équipe ACM Studio.',
+              }
+            : { ok: true, text: result.active ? 'Veille reprise.' : 'Veille coupée.' },
+        );
         router.refresh();
       })
       .catch(() => {

@@ -823,7 +823,7 @@ export function IdealPropertiesPanel({
           <h2 className={sectionTitle}>Ce que l’agence a déjà</h2>
           <p className={hintText}>
             Vos mandats signés sans offre acceptée, et les concurrents à prospecter qui
-            correspondent à sa recherche. Gratuit.
+            correspondent à sa recherche. Ne compte pas dans le forfait.
           </p>
         </div>
         {mandatesUnread ? (

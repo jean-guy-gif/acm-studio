@@ -30,6 +30,7 @@ import { ERRORS_WINDOW_DAYS, errorSourceLabel } from '@/features/operations/serv
 import { requireOperator } from '@/features/operations/services/require-operator';
 import {
   OPERATOR_BUDGET_REACHED,
+  WATCH_OPERATOR_STATE,
   budgetUsageLabel,
 } from '@/features/operations/services/usage-costs';
 import { budgetWarningLabel } from '@/features/search-budget/services/budget';
@@ -203,70 +204,89 @@ export default async function ErrorsPage() {
           </p>
         </div>
         <ul className="flex flex-col gap-3">
-          {budgets.map(({ agencyId, agencyName, budget, isDemo, watchCapCents }) => (
-            <li
-              key={agencyId}
-              className={`${card} flex flex-wrap items-center justify-between gap-3 p-4`}
-            >
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="font-title font-semibold break-words text-zinc-900 stage:text-white">
-                  {agencyName}
-                  {isDemo ? (
-                    <span className={`${badgeNeutral} ml-2 align-middle`}>Démonstration</span>
-                  ) : null}
-                </span>
-                <span className="text-sm text-zinc-600 stage:text-white/65">
-                  Ce mois-ci : {budgetUsageLabel(budget)}
-                  {budget.reached ? ` · ${OPERATOR_BUDGET_REACHED}` : ''}
-                  {budget.warning ? ` · ${budgetWarningLabel(budget)}` : ''}
-                </span>
-                {/* Mission 151 — la lecture par l'IA : ce qui a été dépensé ce mois-ci et le plafond.
+          {budgets.map((agency) => {
+            const { agencyId, agencyName, budget, isDemo, watchCapCents } = agency;
+            return (
+              <li
+                key={agencyId}
+                className={`${card} flex flex-wrap items-center justify-between gap-3 p-4`}
+              >
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="font-title font-semibold break-words text-zinc-900 stage:text-white">
+                    {agencyName}
+                    {isDemo ? (
+                      <span className={`${badgeNeutral} ml-2 align-middle`}>Démonstration</span>
+                    ) : null}
+                  </span>
+                  <span className="text-sm text-zinc-600 stage:text-white/65">
+                    Ce mois-ci : {budgetUsageLabel(budget)}
+                    {budget.reached ? ` · ${OPERATOR_BUDGET_REACHED}` : ''}
+                    {budget.warning ? ` · ${budgetWarningLabel(budget)}` : ''}
+                  </span>
+                  {/* Lancement, mission 5 — la veille des acquéreurs : ce qu'elle a dépensé ce mois-ci,
+                    le plafond qui s'applique et son état. Le manager ne voit plus ces montants. */}
+                  <span
+                    className="text-sm text-zinc-600 stage:text-white/65"
+                    data-testid="watch-budget"
+                  >
+                    Veille ce mois-ci :{' '}
+                    {budgetUsageLabel({
+                      spentCents: agency.watchSpentCents,
+                      capCents: agency.watchEffectiveCapCents,
+                    })}{' '}
+                    · {WATCH_OPERATOR_STATE[agency.watchState]}
+                  </span>
+                  {/* Mission 151 — la lecture par l'IA : ce qui a été dépensé ce mois-ci et le plafond.
                     Une lecture en échec le dit, jamais « rien dépensé » (M98). */}
-                <span className="text-sm text-zinc-600 stage:text-white/65" data-testid="ai-budget">
-                  {!aiBudgets
-                    ? 'Lecture par l’IA : le budget n’a pas pu être lu.'
-                    : aiBudgetOpen(aiBudgetOf(aiBudgets, agencyId), isDemo)
-                      ? `Lecture par l’IA ce mois-ci : ${formatEuro(aiBudgetOf(aiBudgets, agencyId).spentCents / 100)} sur ${formatEuro(aiBudgetOf(aiBudgets, agencyId).capCents / 100)}`
-                      : 'Lecture par l’IA : fermée — posez un plafond pour l’ouvrir.'}
-                </span>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <AgencyCapForm
-                  label="Recherche"
-                  agencyName={agencyName}
-                  initialEuros={budget.capCents / 100}
-                  saveAction={setAgencySearchCap.bind(null, agencyId)}
-                />
-                {/* Lancement, mission 5 — le plafond de la veille des acquéreurs se règle ici,
+                  <span
+                    className="text-sm text-zinc-600 stage:text-white/65"
+                    data-testid="ai-budget"
+                  >
+                    {!aiBudgets
+                      ? 'Lecture par l’IA : le budget n’a pas pu être lu.'
+                      : aiBudgetOpen(aiBudgetOf(aiBudgets, agencyId), isDemo)
+                        ? `Lecture par l’IA ce mois-ci : ${formatEuro(aiBudgetOf(aiBudgets, agencyId).spentCents / 100)} sur ${formatEuro(aiBudgetOf(aiBudgets, agencyId).capCents / 100)}`
+                        : 'Lecture par l’IA : fermée — posez un plafond pour l’ouvrir.'}
+                  </span>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <AgencyCapForm
+                    label="Recherche"
+                    agencyName={agencyName}
+                    initialEuros={budget.capCents / 100}
+                    saveAction={setAgencySearchCap.bind(null, agencyId)}
+                  />
+                  {/* Lancement, mission 5 — le plafond de la veille des acquéreurs se règle ici,
                     plus par le manager : une part du plafond de recherche, la moitié au plus ;
                     0 € la coupe. */}
-                <AgencyCapForm
-                  label="Veille"
-                  agencyName={`${agencyName}, veille des acquéreurs`}
-                  initialEuros={watchCapCents / 100}
-                  saveAction={setAgencyWatchCap.bind(null, agencyId)}
-                />
-                {aiBudgets ? (
                   <AgencyCapForm
-                    label="IA"
-                    agencyName={`${agencyName}, lecture par l’IA`}
-                    initialEuros={
-                      aiBudgetOf(aiBudgets, agencyId).posed
-                        ? aiBudgetOf(aiBudgets, agencyId).capCents / 100
-                        : 0
-                    }
-                    saveAction={setAgencyAiCap.bind(null, agencyId)}
+                    label="Veille"
+                    agencyName={`${agencyName}, veille des acquéreurs`}
+                    initialEuros={watchCapCents / 100}
+                    saveAction={setAgencyWatchCap.bind(null, agencyId)}
                   />
-                ) : null}
-                {/* Mission 114 — le repère de l'agence de démonstration, réservé aux opérateurs. */}
-                <AgencyDemoToggle
-                  agencyName={agencyName}
-                  initialIsDemo={isDemo}
-                  saveAction={setAgencyDemo.bind(null, agencyId)}
-                />
-              </div>
-            </li>
-          ))}
+                  {aiBudgets ? (
+                    <AgencyCapForm
+                      label="IA"
+                      agencyName={`${agencyName}, lecture par l’IA`}
+                      initialEuros={
+                        aiBudgetOf(aiBudgets, agencyId).posed
+                          ? aiBudgetOf(aiBudgets, agencyId).capCents / 100
+                          : 0
+                      }
+                      saveAction={setAgencyAiCap.bind(null, agencyId)}
+                    />
+                  ) : null}
+                  {/* Mission 114 — le repère de l'agence de démonstration, réservé aux opérateurs. */}
+                  <AgencyDemoToggle
+                    agencyName={agencyName}
+                    initialIsDemo={isDemo}
+                    saveAction={setAgencyDemo.bind(null, agencyId)}
+                  />
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>

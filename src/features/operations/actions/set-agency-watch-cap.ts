@@ -28,7 +28,10 @@ export async function setAgencyWatchCap(
   }
   const admin = createServiceRoleClient();
   const agency = await admin.from('agencies').select('id').eq('id', agencyId).maybeSingle();
-  if (agency.error || !agency.data) {
+  if (agency.error) {
+    return { ok: false, error: 'Le plafond n’a pas été enregistré. Réessayez.' };
+  }
+  if (!agency.data) {
     return { ok: false, error: 'Agence introuvable.' };
   }
   const budget = await admin

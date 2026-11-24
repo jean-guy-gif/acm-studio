@@ -130,7 +130,9 @@ export default async function AdminPage() {
         </div>
       ) : null}
 
-      {watch ? <BuyerWatchAdmin watch={watch} /> : null}
+      {/* Lancement, mission 5 — seuls l'état et le journal partent vers le navigateur du manager :
+          aucun montant (une garde de donnée, pas de rendu, M51). */}
+      {watch ? <BuyerWatchAdmin watch={{ state: watch.state, journal: watch.journal }} /> : null}
       {profile && isManager && watch == null ? (
         <p className="text-sm text-zinc-500 stage:text-white/55">
           La veille des acquéreurs n’a pas pu être lue. Rechargez la page.

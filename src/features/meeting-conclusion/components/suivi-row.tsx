@@ -688,8 +688,8 @@ export function SuiviRow({
               <span className={metaLabel}>Point marché</span>
               {outcome === 'signed' ? null : (
                 <span className="text-xs text-zinc-500 stage:text-white/60">
-                  ACM relit les annonces des concurrents (gratuit) : vous voyez ce qui a bougé
-                  depuis le rendez-vous, et le message de relance le dit.
+                  ACM relit les annonces des concurrents (sans compter dans le forfait) : vous voyez
+                  ce qui a bougé depuis le rendez-vous, et le message de relance le dit.
                 </span>
               )}
               <RefreshPricesButton

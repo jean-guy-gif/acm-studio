@@ -1,3 +1,4 @@
+import type { WatchBudgetState } from '@/features/buyer-watch/services/watch-schedule';
 import type { SearchBudget } from '@/features/search-budget/services/budget';
 import { formatEuro } from '@/lib/format';
 
@@ -12,3 +13,10 @@ export function budgetUsageLabel(budget: Pick<SearchBudget, 'spentCents' | 'capC
 
 // Pour l'opérateur, le plafond atteint se dit en clair.
 export const OPERATOR_BUDGET_REACHED = 'plafond du mois atteint';
+
+// L'état de la veille des acquéreurs, pour l'opérateur.
+export const WATCH_OPERATOR_STATE: Record<WatchBudgetState, string> = {
+  off: 'coupée',
+  paused: 'en pause, plafond du mois atteint',
+  active: 'active',
+};

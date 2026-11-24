@@ -72,3 +72,11 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   elle retrouve le plafond par défaut (10 €), pas celui que l'opérateur avait réglé (aucune colonne
   pour le retenir). Sur la recherche, le message du plafond atteint dit « contactez votre agence »
   même au manager ; Administration lui dit de contacter l'équipe ACM Studio.
+- 24/11 · Lancement 5 · La veille : un interrupteur à part pour le manager (une colonne, donc une
+  migration), pour que « Reprendre la veille » rende le plafond réglé par l'opérateur au lieu du
+  plafond par défaut, et ne lève pas un 0 € posé par lui. Relecteur, cas imaginés : « forfait du
+  mois » nomme trois plafonds (recherche, veille, IA), le bandeau du classement peut dire « forfait
+  du mois atteint » sous une recherche qui vient de réussir ; le test des coûts pourra refuser à
+  tort « stationnement payant », « coût des travaux » ou « charges … € par mois » dans un futur
+  texte ; l'e2e ne relit pas à l'écran « Depuis mes notes », la fiche acquéreur ni « Aujourd'hui »
+  (le test unitaire lit leurs textes).
