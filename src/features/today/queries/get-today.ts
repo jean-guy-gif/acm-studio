@@ -229,6 +229,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
     visits: visitRead.lines,
     pointsUnknown: pointsRes.error != null,
     alerted,
+    now,
   });
 
   // Les vendeurs à relancer que veulent des acquéreurs prêts.

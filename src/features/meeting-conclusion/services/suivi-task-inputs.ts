@@ -22,6 +22,8 @@ export type TaskVisit = {
   visitedAt: string | null;
   buyerArchived: boolean;
   buyerName: string;
+  // Le jour et l'heure confirmés de la visite (« Confirmer la visite », M142), s'il y en a.
+  scheduledAt?: string | null;
   // Mission 139 — le compte rendu de la visite faite : ce qui a déplu (« prix » compte un retour).
   report?: { disliked: readonly string[] } | null;
 };
@@ -79,11 +81,14 @@ export function competitorCounts(cards: TaskCard[]): Map<string, number> {
 }
 
 // Les visites à organiser sur un mandat de l'agence : vivantes, d'un acquéreur non archivé.
-export function pendingVisitsByProject(visits: TaskVisit[]): Map<string, TaskVisit[]> {
+// Lancement, mission 7 — une visite confirmée dont l'heure est passée n'est plus à organiser : elle
+// a eu lieu, c'est son compte rendu qui est à saisir (`visitReportTasks`) ; sans `now`, comme avant.
+export function pendingVisitsByProject(visits: TaskVisit[], now?: Date): Map<string, TaskVisit[]> {
   const byProject = new Map<string, TaskVisit[]>();
   for (const visit of visits) {
     if (visit.itemSource !== 'project' || visit.cancelledAt || visit.visitedAt) continue;
     if (visit.buyerArchived) continue;
+    if (now && visit.scheduledAt && Date.parse(visit.scheduledAt) <= now.getTime()) continue;
     byProject.set(visit.itemReference, [...(byProject.get(visit.itemReference) ?? []), visit]);
   }
   return byProject;
@@ -118,12 +123,14 @@ export function suiviTaskInputs(input: {
   // Mission 145 — les cartes déjà dans « Démarcher : N acquéreurs prêts correspondent » : la ligne
   // « Démarcher les concurrents » ne les compte plus.
   alerted?: ReadonlySet<TaskCard['row']>;
+  // Lancement, mission 7 — l'instant : une visite confirmée déjà passée n'est plus à organiser.
+  now?: Date;
 }): SuiviTaskInput[] {
   const prospecting = prospectingCounts(
     input.alerted ? input.cards.filter((card) => !input.alerted!.has(card.row)) : input.cards,
   );
   const competitors = competitorCounts(input.cards);
-  const visits = pendingVisitsByProject(input.visits);
+  const visits = pendingVisitsByProject(input.visits, input.now);
   return input.dossiers.map(({ project, conclusion }) => ({
     projectId: project.id,
     sellerName: project.seller_name ?? 'Dossier vendeur',

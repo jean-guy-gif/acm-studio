@@ -1,6 +1,6 @@
 import { expect, test } from './test';
 
-import { demoCredentials, login, resetDemoByScreen } from './support';
+import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './support';
 
 // Lancement, mission 6 (24/11) — « un seul endroit par acquéreur avec les biens envoyés, refusés et
 // pourquoi, visités avec leur compte rendu, pour faire le point avec lui ». Joué sur la démo remise
@@ -80,6 +80,9 @@ test('son suivi : un bien par ligne, ce qu’il en a dit, ses visites', async ({
   await expect(doneForm.getByTestId('visit-done-save')).toBeDisabled();
   await doneForm.getByTestId('visit-opinion-interested').click();
   await doneForm.getByTestId('visit-next-keep_searching').click();
+  // Sur la fiche, la prochaine étape reste le seul bouton plein : « Enregistrer » est en contour.
+  await expect(doneForm.getByTestId('visit-done-save')).toBeEnabled();
+  await expectOneFilled(page, 'Fiche acquéreur, compte rendu ouvert');
   if (process.env.E2E_CAPTURES === '1') {
     // Le fondu des couleurs fini, pour une capture nette.
     await page.waitForTimeout(400);

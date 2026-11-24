@@ -116,3 +116,11 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   demande une écriture en base, sur l'ordre de Jean-Guy. Aucun test ne joue la vraie base pour un
   appel de fonction : un argument oublié ne se voit qu'en production — un test SQL qui appelle
   chaque fonction avec les arguments que le code envoie le verrait.
+- 24/11 · Lancement 7 · Relecteur : dans « Aujourd'hui », la relance d'une sélection et la reprise
+  de contact d'un acquéreur en retard s'écrivent avec deux « · » devant « en retard »
+  (`suivi-step-labels.ts`, le détail finit par un « · » que l'écran pose déjà). Une visite confirmée
+  qui n'a pas eu lieu reste « en retard » sans geste pour la lever, hors « Changer la date ». Une
+  visite confirmée À VENIR reste « à organiser » dans « Aujourd'hui » alors qu'elle l'est déjà : à
+  trancher par Jean-Guy. Sur la fiche acquéreur, « Confirmer la visite » ouvert porte un second
+  bouton plein (depuis le Lancement 6). À la mise en production, une seule visite confirmée et
+  passée attendait son compte rendu, dans l'agence de démonstration.

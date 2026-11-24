@@ -58,7 +58,7 @@ export function VisitDoneForm({
   const [disliked, setDisliked] = useState<VisitTag[]>([]);
   const [note, setNote] = useState('');
   const [nextStep, setNextStep] = useState<VisitNextStep | null>(null);
-  // Ce qui a plu, ce qui a gêné, la note : facultatifs, ouverts d'un toucher.
+  // Ce qui a plu, ce qui a déplu, la note : facultatifs, ouverts d'un toucher.
   const [more, setMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -67,6 +67,9 @@ export function VisitDoneForm({
     list.includes(tag) ? list.filter((entry) => entry !== tag) : [...list, tag];
   const steps = VISIT_NEXT_STEPS.filter((step) => !(opinion === 'not_for_me' && step === 'offer'));
   const details = liked.length + disliked.length + (note.trim() ? 1 : 0);
+  // Sur la fiche acquéreur, la prochaine étape porte déjà le seul bouton plein de l'écran (M146) :
+  // « Enregistrer » y est en contour. Sur Visites, le formulaire ouvert porte le plein (M147 A).
+  const onBuyerPage = /^\/acquereurs\/[^/]+$/.test(pathname);
 
   return (
     <form
@@ -137,7 +140,7 @@ export function VisitDoneForm({
         data-testid="visit-more-open"
         onClick={() => setMore((open) => !open)}
       >
-        {more ? '− ' : '+ '}Ce qui a plu, ce qui a gêné, une note (facultatif)
+        {more ? '− ' : '+ '}Ce qui a plu, ce qui a déplu, une note (facultatif)
         {!more && details > 0 ? ` · ${details} noté${details > 1 ? 's' : ''}` : ''}
       </button>
       {more ? (
@@ -191,7 +194,7 @@ export function VisitDoneForm({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="submit"
-          className={`${btnPrimary} min-h-12 px-5 text-base`}
+          className={`${onBuyerPage ? btnSecondary : btnPrimary} min-h-12 px-5 text-base`}
           disabled={pending || !opinion || !nextStep}
           data-testid="visit-done-save"
         >

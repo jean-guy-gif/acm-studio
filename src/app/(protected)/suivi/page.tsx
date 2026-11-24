@@ -225,6 +225,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     cards,
     visits,
     pointsUnknown: pointRead.failed,
+    now,
   });
   const prospecting = prospectingCounts(cards);
   const competitors = competitorCounts(cards);

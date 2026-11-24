@@ -2,8 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { visitReportTasks } from '@/features/buyer-presentation/services/visit-report-tasks';
 import { taskLine } from '@/features/meeting-conclusion/services/suivi-step-labels';
-import { isTaskDue, taskLateDays } from '@/features/meeting-conclusion/services/suivi-tasks';
-import { seriesTitle, todayBoard } from '@/features/today/services/today-board';
+import { pendingVisitsByProject } from '@/features/meeting-conclusion/services/suivi-task-inputs';
+import {
+  isTaskDue,
+  sortDueTasks,
+  taskLateDays,
+  type SuiviTask,
+} from '@/features/meeting-conclusion/services/suivi-tasks';
+import { mineOnly, seriesTitle, todayBoard } from '@/features/today/services/today-board';
 
 // Lancement, mission 7 (Jean-Guy, 23/11) — « compte rendu de visite saisi en trente secondes après
 // la visite » : une visite confirmée dont l'heure est passée, pas encore marquée faite, fait naître
@@ -44,10 +50,62 @@ describe('le compte rendu à saisir', () => {
     expect(visitReportTasks([line({ buyerArchived: true })], NOW)).toEqual([]);
   });
 
-  it('le lendemain et après : en retard, dit en jours', () => {
+  it('le lendemain et après : en retard, dit en jours, avec un seul « · » à l’écran', () => {
     const [task] = visitReportTasks([line({ scheduledAt: '2026-11-22T09:00:00Z' })], NOW);
     expect(task?.dueOn).toBe('2026-11-22');
     expect(taskLateDays(task!, TODAY)).toBe(2);
+    const shown = taskLine(
+      task!,
+      { motiveLabel: null, lastContactDays: null, signedOn: null, propertyLabel: null },
+      TODAY,
+    );
+    expect(shown.late).toBe('en retard de 2 jours');
+    // L'écran pose lui-même le « · » devant le retard : le détail ne finit pas par un autre.
+    expect(shown.detail).toBe(
+      'Maison · 5 pièces · 145 m² · La Colle-sur-Loup · visite prévue il y a 2 jours',
+    );
+  });
+
+  it('avant les visites à organiser, et pour le titulaire de la fiche (« Mes tâches »)', () => {
+    const [report] = visitReportTasks([line()], NOW);
+    const organise: SuiviTask = {
+      kind: 'visit',
+      projectId: 'p1',
+      sellerName: 'M. et Mme Garnier',
+      dueOn: '2026-11-20',
+    };
+    expect(sortDueTasks([organise, report!]).map((task) => task.kind)).toEqual([
+      'visit_report',
+      'visit',
+    ]);
+    const owners = {
+      projectAdvisor: new Map([['p1', 'advisor-2']]),
+      buyerAdvisor: new Map([['b1', 'advisor-1']]),
+    };
+    expect(mineOnly([organise, report!], 'advisor-1', owners)).toEqual([report]);
+    expect(mineOnly([organise, report!], 'advisor-2', owners)).toEqual([organise]);
+  });
+
+  it('une visite confirmée dont l’heure est passée n’est plus « à organiser » : une seule ligne', () => {
+    const visit = (scheduledAt: string | null) => ({
+      itemSource: 'project',
+      itemReference: 'p1',
+      requestedAt: '2026-11-20T10:00:00Z',
+      cancelledAt: null,
+      visitedAt: null,
+      buyerArchived: false,
+      buyerName: 'Famille Moreau',
+      scheduledAt,
+    });
+    const past = visit('2026-11-24T09:00:00Z');
+    const future = visit('2026-11-25T09:00:00Z');
+    const unconfirmed = visit(null);
+    expect(pendingVisitsByProject([past, future, unconfirmed], NOW).get('p1')).toEqual([
+      future,
+      unconfirmed,
+    ]);
+    // Sans l'instant (le code d'avant), rien ne change.
+    expect(pendingVisitsByProject([past]).get('p1')).toEqual([past]);
   });
 
   it('la ligne d’« Aujourd’hui » : qui, quel bien, et le geste « Visite faite »', () => {
