@@ -126,7 +126,9 @@ test('la fiche complète d’un bien : biens idéaux, sélection, « Proposer ce
   await test.step('La sélection d’une fiche acquéreur : la fiche se lit, sans bouton plein', async () => {
     const lambert = await openBuyer(page, /M\. et Mme Lambert/);
     await page.goto(lambert);
-    const item = page.getByTestId('ideal-selection-item').first();
+    // Lancement, mission 10 — leur sélection est envoyée : ses biens se lisent dans « Son suivi ».
+    await expect(page.getByTestId('ideal-selection-item')).toHaveCount(0);
+    const item = page.getByTestId('buyer-follow-up-item').first();
     await expect(item).toBeVisible();
     await item.getByTestId('open-property-sheet').click();
     const sheet = await expectSheetOpen(page);

@@ -22,6 +22,9 @@ commits et des messages, à quelques minutes près.
 | 24/11 | Lancement 5 : plus aucun coût en euros devant le conseiller | Sensible | 1 h 20 | 0 | 40 min |
 | 24/11 | Lancement 6 : le suivi de l'acquéreur, un seul endroit | Moyen | 1 h 25 | 0 | 45 min |
 | 24/11 | Correctif : le classement par l'IA règle son coût réel | Petit | 15 min | 0 | 2 min |
+| 24/11 | Lancement 7 : le compte rendu de visite en trente secondes | Moyen | 1 h 30 | 0 | 50 min |
+| 24/11 | Lancement 8 : la lecture des notes vérifiée sur le compte réel | Petit | 15 min | 0 | 0 |
+| 24/11 | Lancement 9 : l'analyse des annonces (mesure, texte, photos éteintes) | Sensible | 1 h 30 | 0 | 25 min |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,

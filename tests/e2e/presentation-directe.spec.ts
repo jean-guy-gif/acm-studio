@@ -505,7 +505,7 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     // budget ni « Rapprocher » ; l'offre tombée, tout revient.
     await expect(page.getByTestId('buyer-paused')).toBeVisible();
     await expect(page.getByTestId('answer-suggestion')).toHaveCount(0);
-    await expect(page.getByTestId('buyer-matching')).toHaveCount(0);
+    await expect(page.getByTestId('buyer-matches-link')).toHaveCount(0);
     await page.getByRole('button', { name: 'L’offre est tombée : revenir en visite' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
     await expect(page.getByTestId('buyer-paused')).toHaveCount(0);

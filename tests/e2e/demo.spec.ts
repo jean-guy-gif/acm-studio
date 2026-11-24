@@ -1433,7 +1433,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(before.nth(0)).toHaveAttribute('data-done', 'true');
   await expect(before.nth(1)).toHaveAttribute('data-done', 'true');
   // Masqués pendant la vente : sa sélection, « Prêt à visiter ? », « Rapprocher ».
-  for (const hidden of ['ideal-selection', 'buyer-readiness', 'buyer-matching']) {
+  for (const hidden of ['ideal-selection', 'buyer-readiness', 'buyer-matches-link']) {
     await expect(page.getByTestId(hidden), hidden).toHaveCount(0);
   }
   // « Prévenir la famille Keller » prépare le message de la M138 (un lien neuf vers sa copie) :
