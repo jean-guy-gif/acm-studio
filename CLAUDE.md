@@ -53,7 +53,8 @@ Un moteur interactif, pas un diaporama ; chaque réponse du vendeur est enregist
 l'ordre de `build-live-pages.ts` (détail : `docs/ETAT_DU_PRODUIT.md`) :
 
 - Introduction → Votre bien (« Reconnaissez-vous votre bien ? »), absent sans bien vendeur →
-  Votre valeur perçue (le vendeur dit son prix, rien n'est révélé).
+  Votre valeur perçue (le vendeur dit son prix, rien n'est révélé ; s'il n'a aucune idée des prix,
+  « Voir les biens et leurs prix » passe en présentation directe, au choix du conseiller).
 - Chaque concurrent retenu, seul à l'écran : **Un sérieux concurrent ?** (sans prix ; « non » saute
   la suite) → **À quel prix ?** (le vendeur devine) → **Ce prix vous paraît-il cohérent ?**
   (révélation) → **Pourquoi toujours en vente ?** (durée devinée puis révélée, baisses, motif).

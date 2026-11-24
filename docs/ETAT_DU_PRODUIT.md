@@ -86,6 +86,9 @@ Hors `src` : `extension/` (extension Chrome, Manifest V3, version 0.3.0) ; CI da
 1. **Introduction** — l'agence, le vendeur, le nombre de concurrents.
 2. **Votre bien** — « Reconnaissez-vous votre bien dans cette présentation ? » (absent sans bien vendeur).
 3. **Votre valeur perçue** — le vendeur donne son prix avant de voir un concurrent ; rien n'est révélé.
+   S'il n'a aucune idée des prix, « Voir les biens et leurs prix » (un toucher demande, un second
+   confirme) passe le Live en présentation directe : chaque concurrent avec son prix, « Voir
+   l'annonce » en un toucher (lancement, 24/11).
 4. Pour chaque concurrent retenu, quatre écrans :
    1. **Un sérieux concurrent ?** — fiche, photos, grille ; ni prix ni délai. « Non » saute les trois suivants.
    2. **À quel prix ?** — le vendeur devine ; le prix reste masqué.

@@ -31,6 +31,7 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => server.clien
 import {
   buildLivePages,
   indexAfterModeChange,
+  indexOfFirstDirectCompetitor,
   type LiveNavComparable,
 } from '@/features/live-seller/services/build-live-pages';
 import { canAdvanceLivePage } from '@/features/live-seller/services/can-advance-live-page';
@@ -177,6 +178,41 @@ describe('les écrans de la présentation directe', () => {
     );
     const index = indexAfterModeChange(before[at], at, after);
     expect(after[index]).toMatchObject({ comparableId: 'c', type: 'comparable_direct' });
+  });
+
+  // Lancement, mission 1 (24/11) — depuis « Votre valeur perçue », « Voir les biens et leurs prix »
+  // passe en présentation directe et mène au premier concurrent, montré avec son prix : la valeur
+  // perçue n'est plus un écran, et les écrans du quartier (M159), s'il y en a, ne s'interposent pas.
+  it('« Voir les biens et leurs prix » mène au premier concurrent, même avec des écrans du quartier', () => {
+    const live = { comparables: [competitor('a'), competitor('b'), competitor('c')] };
+    const before = buildLivePages(live, true, 'complete', 'interactive');
+    const at = before.findIndex((page) => page.type === 'seller_perceived_price');
+    expect(at).toBeGreaterThan(0);
+    const after = buildLivePages(live, true, 'complete', 'direct');
+    expect(after.some((page) => page.type === 'seller_perceived_price')).toBe(false);
+    expect(after[indexOfFirstDirectCompetitor(after, at)]).toMatchObject({
+      comparableId: 'a',
+      type: 'comparable_direct',
+    });
+    // Des écrans du quartier cochés (M159) passent avant le premier concurrent : on ne s'y arrête
+    // pas, alors que la place d'avant y mènerait.
+    const withBlocks = buildLivePages(
+      { ...live, neighbourhood: ['urbanisme', 'risques'] },
+      true,
+      'complete',
+      'direct',
+    );
+    const blocks = withBlocks.filter((page) => page.type === 'neighbourhood_block');
+    expect(blocks).toHaveLength(2);
+    expect(withBlocks[indexAfterModeChange(before[at]!, at, withBlocks)]!.type).toBe(
+      'neighbourhood_block',
+    );
+    expect(withBlocks[indexOfFirstDirectCompetitor(withBlocks, at)]).toMatchObject({
+      comparableId: 'a',
+      type: 'comparable_direct',
+    });
+    // Sans concurrent à montrer : la place d'avant, bornée.
+    expect(indexOfFirstDirectCompetitor(after.slice(0, 2), 7)).toBe(1);
   });
 
   it('on ne quitte l’écran d’un concurrent qu’une fois le fait « montré » enregistré', () => {
