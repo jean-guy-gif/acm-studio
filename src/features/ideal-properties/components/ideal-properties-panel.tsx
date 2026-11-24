@@ -30,7 +30,13 @@ import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 import { undoDismissal } from '@/features/buyer-dismissals/actions/dismiss';
 import { DismissControl } from '@/features/buyer-dismissals/components/dismiss-control';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
-import { countSeen, seenLine } from '@/features/buyers/services/seen-properties';
+import {
+  countSeen,
+  currentSeenLabel,
+  isClosedForBuyer,
+  seenLine,
+  type CurrentSeenReason,
+} from '@/features/buyers/services/seen-properties';
 import { importIdealListing } from '@/features/ideal-properties/actions/import-ideal-listing';
 import { saveIdealSelection } from '@/features/ideal-properties/actions/save-ideal-selection';
 import {
@@ -173,6 +179,7 @@ export function IdealPropertiesPanel({
   watch = null,
   dismissed = [],
   seen = [],
+  currentSeen = {},
   mandatesUnread = false,
   buyerName = null,
   budgetMax = null,
@@ -215,6 +222,9 @@ export function IdealPropertiesPanel({
   // Lancement, mission 3 — ce qu'il a déjà vu (envoyé, visité, refusé), par la clé de chaque
   // bien : jamais reproposé dans les listes ; la sélection actuelle, elle, reste dans son bandeau.
   seen?: { key: string; reason: 'sent' | 'visited' | 'refused' }[];
+  // Ce qu'il a dit des biens de sa sélection actuelle (`source:reference` → refusé, écarté, visité) :
+  // un bien refusé ou écarté n'y est plus coché et ne se recoche pas.
+  currentSeen?: Record<string, CurrentSeenReason>;
   // Mission 145 — les offres de l'agence n'ont pas pu être lues : aucun mandat n'est proposé, et
   // l'écran le dit (M98).
   mandatesUnread?: boolean;
@@ -232,8 +242,11 @@ export function IdealPropertiesPanel({
   const [reasons, setReasons] = useState<Record<string, SoftReasons>>({});
   const [error, setError] = useState<string | null>(null);
   const [extensionIssue, setExtensionIssue] = useState<ExtensionIssue | null>(null);
+  // Lancement, mission 3 — un bien de sa sélection qu'il a refusé, ou écarté pour lui, n'est plus
+  // coché en arrivant : la prochaine sélection ne le reprend pas.
+  const closed = (item: SelectionItemInput) => isClosedForBuyer(currentSeen[keyOf(item)]);
   const [selected, setSelected] = useState<Map<string, SelectionItemInput>>(
-    () => new Map(current.map((item) => [keyOf(item), item])),
+    () => new Map(current.filter((item) => !closed(item)).map((item) => [keyOf(item), item])),
   );
   // La sélection enregistrée : « Retenir » ne s'active que si la sélection cochée en diffère.
   const [baseline, setBaseline] = useState<SelectionItemInput[]>(current);
@@ -503,7 +516,7 @@ export function IdealPropertiesPanel({
           type="checkbox"
           className="h-4 w-4 accent-brand"
           checked={checked}
-          disabled={!checked && full}
+          disabled={(!checked && full) || closed(item)}
           onChange={() => toggle(item)}
           aria-label={`Retenir ${item.label}`}
         />
@@ -527,9 +540,13 @@ export function IdealPropertiesPanel({
     agency: allAgencyHits.map(({ hit }) => asEntry(hit)),
   });
   const bannerItems = layout.banner;
+  // Ce qu'il a déjà vu n'a pas pu être lu : rien n'est proposé, jamais lu comme « rien de vu » (M98).
+  const seenUnread = dismissed == null;
   const agencyOpen = allAgencyHits.filter(
     ({ hit }) =>
-      layout.showAgency(asEntry(hit)) && !isHidden(agencyItem(hit), hit.candidate.listingUrl),
+      !seenUnread &&
+      layout.showAgency(asEntry(hit)) &&
+      !isHidden(agencyItem(hit), hit.candidate.listingUrl),
   );
   const agencyHits = agencyOpen.filter(
     ({ hit }) => seenReason(agencyItem(hit), hit.candidate.listingUrl) == null,
@@ -538,6 +555,7 @@ export function IdealPropertiesPanel({
     countSeen(agencyOpen.map(({ hit }) => seenReason(agencyItem(hit), hit.candidate.listingUrl))),
   );
   const marketOpen = (entry: CategorizedCandidate): boolean =>
+    !seenUnread &&
     layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url }) &&
     !isHidden(marketItem(entry), entry.candidate.url);
   const showMarket = (entry: CategorizedCandidate): boolean =>
@@ -683,7 +701,8 @@ export function IdealPropertiesPanel({
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
       {dismissed == null ? (
         <p role="alert" className="text-sm font-semibold text-red-700">
-          Ce que vous avez écarté pour lui n’a pas pu être lu : rechargez la page.
+          Ce qu’il a déjà reçu, visité ou refusé n’a pas pu être lu : rechargez la page. En
+          attendant, aucun bien ne lui est proposé ici.
         </p>
       ) : null}
       {justDismissed.length > 0 ? (
@@ -778,6 +797,14 @@ export function IdealPropertiesPanel({
                       .filter((part): part is string => part != null)
                       .join(' · ')}
                   </span>
+                  {currentSeenLabel(currentSeen[keyOf(item)]) ? (
+                    <span
+                      className="text-sm font-semibold text-amber-700 stage:text-amber-300"
+                      data-testid="ideal-current-seen"
+                    >
+                      {currentSeenLabel(currentSeen[keyOf(item)])}
+                    </span>
+                  ) : null}
                 </span>
                 {checkbox(item)}
               </li>
@@ -831,7 +858,7 @@ export function IdealPropertiesPanel({
             Vos mandats n’ont pas pu être lus : rechargez la page.
           </p>
         ) : null}
-        {allAgencyHits.length > 0 && agencyOpen.length === 0 ? (
+        {allAgencyHits.length > 0 && agencyOpen.length === 0 && !seenUnread ? (
           <p className="text-sm text-zinc-600 stage:text-white/70">
             Les biens de l’agence qui correspondent sont dans la sélection actuelle.
           </p>
@@ -985,7 +1012,7 @@ export function IdealPropertiesPanel({
               <button
                 type="button"
                 className={btnSecondary}
-                disabled={searching}
+                disabled={searching || seenUnread}
                 onClick={() => setConfirming(true)}
               >
                 {searching ? 'Recherche…' : MARKET_BUTTON}

@@ -229,8 +229,9 @@ export function countSeen(
 }
 
 // Le lien de proposition (M134) recopie les biens de sa sélection actuelle : jamais un bien qu'il
-// a refusé, déjà visité, ou que le conseiller a écarté pour lui. Un bien envoyé sans réponse y
-// reste : son nouveau lien remplace le précédent, il le perdrait.
+// a refusé, ni un bien que le conseiller a écarté pour lui. Un bien envoyé sans réponse, ou visité
+// sans refus (une deuxième visite, une offre envisagée), y reste : son nouveau lien remplace le
+// précédent, il le perdrait.
 export function keptForProposal<T extends { source: string; reference: string }>(
   items: T[],
   facts: ReadonlyMap<string, SeenFact> | undefined,
@@ -239,6 +240,28 @@ export function keptForProposal<T extends { source: string; reference: string }>
   return items.filter((item) => {
     const key = keyOf(item);
     const reason = key ? facts?.get(key)?.reason : undefined;
-    return reason == null || reason === 'sent';
+    return reason !== 'refused' && reason !== 'dismissed';
   });
+}
+
+// Sa sélection actuelle, sur les biens idéaux : ce qu'il a dit de chacun de ses biens. Un bien
+// refusé, ou écarté pour lui, n'est plus coché et ne se recoche pas : la prochaine sélection ne le
+// reprend pas ; un bien visité sans refus reste (une deuxième visite, une offre envisagée).
+export type CurrentSeenReason = 'refused' | 'dismissed' | 'visited';
+
+export function currentSeenReason(reason: SeenReason | undefined): CurrentSeenReason | null {
+  return reason === 'refused' || reason === 'dismissed' || reason === 'visited' ? reason : null;
+}
+
+export function isClosedForBuyer(reason: CurrentSeenReason | undefined): boolean {
+  return reason === 'refused' || reason === 'dismissed';
+}
+
+export function currentSeenLabel(reason: CurrentSeenReason | undefined): string | null {
+  if (reason === 'refused')
+    return 'Refusé par lui : il ne sera pas repris dans sa prochaine sélection.';
+  if (reason === 'dismissed') {
+    return 'Écarté pour lui : il ne sera pas repris dans sa prochaine sélection.';
+  }
+  return reason === 'visited' ? 'Déjà visité.' : null;
 }

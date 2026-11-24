@@ -18,6 +18,7 @@ commits et des messages, à quelques minutes près.
 | 24/11 | Lancement 4 : les portails, prouvés et corrigés       | Petit  | 1 h 30       | 0                        | 25 min     |
 | 24/11 | Lancement 1 : le Live sans idée des prix | Sensible | 1 h 25 | 0 | 45 min |
 | 24/11 | Lancement 2 : des visites ne supposent pas une offre | Petit | 35 min | 0 | 10 min |
+| 24/11 | Lancement 3 : un bien vu n'est jamais reproposé | Moyen | 1 h 10 | 0 | 45 min |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,
