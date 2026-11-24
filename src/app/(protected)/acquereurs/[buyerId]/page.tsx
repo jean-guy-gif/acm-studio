@@ -527,7 +527,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       {/* Lancement, mission 10 — la prochaine étape vient juste sous les étapes, à toutes les
           largeurs (elle était tout en bas de la fiche sur tablette et téléphone) ; sur ordinateur,
           elle reste à droite, « Autres actions » dessous. */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[auto_1fr] lg:items-start">
         <div className="flex min-w-0 flex-col gap-5 lg:col-start-2 lg:row-start-1">
           {/* UNE prochaine étape, en bloc plein. */}
           <section
@@ -982,33 +982,6 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             criteria={buyer.softCriteria}
             toVerify={buyer.fieldsToVerify.includes('soft_criteria')}
           />
-          {/* Ce qui s'est passé : lu dans les tables, rien de plus ; replié (Lancement 10). */}
-          <details className={`${card} p-5`} data-testid="buyer-timeline" open={history.failed}>
-            <summary className={`cursor-pointer ${foldLine}`}>
-              <span className={foldTitle}>Ce qui s’est passé</span>{' '}
-              <span data-testid="buyer-timeline-line">· {timelineLine(timeline.length)}</span>
-            </summary>
-            <div className="mt-3 flex flex-col gap-2">
-              {history.failed ? (
-                <p role="alert" className="text-sm font-semibold text-red-700">
-                  Une partie de l’historique n’a pas pu être lue : rechargez la page.
-                </p>
-              ) : null}
-              <ol className="flex flex-col">
-                {timeline.map((entry, index) => (
-                  <li
-                    key={`${entry.at}-${index}`}
-                    className="flex gap-6 border-t border-zinc-100 py-2 text-sm first:border-0 stage:border-white/10"
-                  >
-                    <span className="w-12 shrink-0 text-zinc-500 stage:text-white/60">
-                      {buyerDateLabel(entry.at).slice(0, 5)}
-                    </span>
-                    <span className="text-zinc-800 stage:text-white/85">{entry.text}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </details>
           {/* Lancement, mission 10 — replié : il s'ouvre seul quand il manque quelque chose.
               Mission 132 — « Prêt à visiter » : son financement, et le dernier contact ; en pause
               pendant la vente (M143). */}
@@ -1054,6 +1027,33 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               </div>
             </details>
           )}
+          {/* Ce qui s'est passé : lu dans les tables, rien de plus ; replié (Lancement 10). */}
+          <details className={`${card} p-5`} data-testid="buyer-timeline" open={history.failed}>
+            <summary className={`cursor-pointer ${foldLine}`}>
+              <span className={foldTitle}>Ce qui s’est passé</span>{' '}
+              <span data-testid="buyer-timeline-line">· {timelineLine(timeline.length)}</span>
+            </summary>
+            <div className="mt-3 flex flex-col gap-2">
+              {history.failed ? (
+                <p role="alert" className="text-sm font-semibold text-red-700">
+                  Une partie de l’historique n’a pas pu être lue : rechargez la page.
+                </p>
+              ) : null}
+              <ol className="flex flex-col">
+                {timeline.map((entry, index) => (
+                  <li
+                    key={`${entry.at}-${index}`}
+                    className="flex gap-6 border-t border-zinc-100 py-2 text-sm first:border-0 stage:border-white/10"
+                  >
+                    <span className="w-12 shrink-0 text-zinc-500 stage:text-white/60">
+                      {buyerDateLabel(entry.at).slice(0, 5)}
+                    </span>
+                    <span className="text-zinc-800 stage:text-white/85">{entry.text}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </details>
         </div>
 
         {/* Lancement, mission 10 — « Autres actions » : des liens discrets, jamais un bouton (M146). */}
@@ -1068,7 +1068,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 {index > 0 ? ' · ' : null}
                 <Link
                   href={action.href}
-                  className={`${link} font-semibold`}
+                  className={`${link} font-semibold whitespace-nowrap`}
                   data-testid={OTHER_TEST_IDS[action.key]}
                 >
                   {action.label}
