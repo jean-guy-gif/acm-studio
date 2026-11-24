@@ -87,6 +87,8 @@ type BuyerPageProps = {
     modifier?: string;
     rapide?: string;
     ajuste?: string;
+    // Lancement, mission 7 — juste après « Visite faite » sur la fiche : ses messages ouverts.
+    messages?: string;
   }>;
 };
 
@@ -114,7 +116,7 @@ const SOURCE_BADGE: Record<string, { label: string; className: string }> = {
 // e-mail ; ses quatre étapes ; UNE prochaine étape, en bloc plein ; sa sélection ; ce qui s'est
 // passé ; « Rapprocher », gratuit. Une fiche archivée ou d'une autre agence est introuvable (M93).
 export default async function BuyerPage({ params, searchParams }: BuyerPageProps) {
-  const [{ buyerId }, { enregistre, modifier, rapide, ajuste }] = await Promise.all([
+  const [{ buyerId }, { enregistre, modifier, rapide, ajuste, messages }] = await Promise.all([
     params,
     searchParams,
   ]);
@@ -713,6 +715,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 <VisitRow
                   key={line.id}
                   line={line}
+                  openMessages={line.id === messages}
                   letter={letters.get(line.id) ?? null}
                   voucher={vouchers.get(line.id) ?? null}
                 />,

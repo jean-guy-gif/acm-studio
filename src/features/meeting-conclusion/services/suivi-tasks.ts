@@ -39,6 +39,8 @@ export type SuiviTaskKind =
   | 'offer_answer'
   | 'offer_expiry'
   | 'visit'
+  // Lancement, mission 7 — le compte rendu d'une visite confirmée dont l'heure est passée.
+  | 'visit_report'
   | 'propose_buyers'
   | 'buyer_watch'
   | 'buyer_relaunch'
@@ -67,6 +69,9 @@ const KIND_ORDER: Record<SuiviTaskKind, number> = {
   offer_expiry: -1,
   follow_up: 0,
   follow_up_early: 0.5,
+  // Lancement, mission 7 — le compte rendu se saisit juste après la visite : avant d'organiser
+  // les suivantes.
+  visit_report: 0.8,
   visit: 1,
   propose_buyers: 2,
   buyer_watch: 3,
@@ -119,6 +124,8 @@ export type SuiviTask = {
   visitId?: string;
   // Mission 139 — le point de la semaine : le lundi de la semaine qu'il raconte (AAAA-MM-JJ).
   weekStart?: string;
+  // Lancement, mission 7 — le compte rendu à saisir : le jour et l'heure confirmés de la visite.
+  scheduledAt?: string;
   // Mission 145 — relance d'un vendeur à relancer : les acquéreurs prêts qui correspondent à son
   // bien (l'argument), et le jour de la relance prévue (« Relancer plus tôt ? »).
   readyBuyers?: number;

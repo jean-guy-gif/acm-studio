@@ -102,3 +102,6 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   inexact (données d'avant le Lancement 3) ; « Son suivi » ajoute sept lectures à la fiche, à
   mesurer ; le rangement des réponses par sélection (`answers-by-selection`, `AnswerGroupView`)
   n'a plus d'usage sur la fiche, à retirer avec la fiche simplifiée (mission 10).
+- 24/11 · Lancement 7 · La tâche « Saisir le compte rendu » d'« Aujourd'hui » n'est prouvée que par
+  ses tests unitaires : la démo n'a pas de visite confirmée dans le passé (celle des Moreau est pour
+  demain). Une visite jamais confirmée (sans jour ni heure) n'a pas de rappel de compte rendu.

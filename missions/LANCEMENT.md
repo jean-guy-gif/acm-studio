@@ -45,7 +45,9 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
    pourquoi, visités avec leur compte rendu, pour faire le point avec lui. — **fait le 24/11** :
    « Son suivi » sur la fiche acquéreur (maquette `maquettes/L6-suivi-de-l-acquereur.png`, capture
    `L6-son-suivi-rossi.png`)
-7. **Compte rendu de visite saisi en trente secondes** après la visite. — à faire
+7. **Compte rendu de visite saisi en trente secondes** après la visite. — **fait le 24/11** : son
+   avis et la suite en grands boutons, le reste replié, et une tâche « Saisir le compte rendu » le
+   jour de la visite
 8. **IA, la lecture des notes de découverte de l'acquéreur** : ouverte et vérifiée sur le compte
    normal de Jean-Guy, avec un plafond par agence. Lui dire en une ligne ce qu'il doit faire
    lui-même pour l'ouvrir à une agence. — à faire

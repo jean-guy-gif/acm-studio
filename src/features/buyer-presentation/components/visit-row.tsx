@@ -36,6 +36,7 @@ export function VisitRow({
   voucher = null,
   offerAnswer = null,
   openMessages = false,
+  openDone = false,
 }: {
   line: VisitLine;
   letter?: VisitLetter | null;
@@ -45,6 +46,8 @@ export function VisitRow({
   offerAnswer?: OfferAnswer | null;
   // Mission 139 — juste après « Visite faite » : ses messages ouverts aussitôt.
   openMessages?: boolean;
+  // Lancement, mission 7 — depuis « Aujourd'hui » : son compte rendu, ouvert.
+  openDone?: boolean;
 }) {
   const done = line.visitedAt != null;
   const next = visitNextStep({
@@ -149,6 +152,7 @@ export function VisitRow({
         letterState={letter?.state ?? { kind: 'none' }}
         colleague={letter?.colleague ?? false}
         openMessages={openMessages && line.report?.nextStep != null}
+        openDone={openDone && !done}
         // Correctif du 13/11 — la suite d'une visite faite se change ; pas une fois l'offre signée
         // (le serveur le refuse aussi).
         changeNext={

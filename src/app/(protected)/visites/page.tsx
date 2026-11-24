@@ -48,9 +48,10 @@ function groupByBuyer(
 export default async function VisitsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ messages?: string }>;
+  searchParams: Promise<{ messages?: string; faite?: string }>;
 }) {
-  const { messages: openMessages } = await searchParams;
+  // Lancement, mission 7 — `?faite=<visite>` : depuis « Aujourd'hui », son compte rendu ouvert.
+  const { messages: openMessages, faite: openDone } = await searchParams;
   const allLines = await getVisitLines();
   const lines = allLines.filter((line) => !line.buyerArchived);
   // Mission 120 — l'action de chaque visite et l'état de son courrier. Mission 146 (partie B) —
@@ -118,6 +119,7 @@ export default async function VisitsPage({
                       key={line.id}
                       line={line}
                       openMessages={line.id === openMessages}
+                      openDone={line.id === openDone}
                       letter={letters.get(line.id) ?? null}
                       voucher={vouchers.get(line.id) ?? null}
                       offerAnswer={offerAnswers?.get(line.id) ?? null}

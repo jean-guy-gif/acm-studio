@@ -71,6 +71,24 @@ test('son suivi : un bien par ligne, ce qu’il en a dit, ses visites', async ({
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('property-sheet')).toHaveCount(0);
 
+  // Lancement, mission 7 — le compte rendu en trente secondes, sans quitter la fiche : la deuxième
+  // visite, « Visite faite », son avis, la suite, « Enregistrer » — trois touchers ; ses messages
+  // s'ouvrent sur place, et « Son suivi » la range aussitôt sous « Visités ».
+  await toVisit.getByRole('button', { name: 'Visite faite' }).first().click();
+  const doneForm = page.getByTestId('visit-done-form');
+  await expect(doneForm.getByTestId('visit-liked-light')).toHaveCount(0);
+  await expect(doneForm.getByTestId('visit-done-save')).toBeDisabled();
+  await doneForm.getByTestId('visit-opinion-interested').click();
+  await doneForm.getByTestId('visit-next-keep_searching').click();
+  await doneForm.getByTestId('visit-done-save').click();
+  await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\?messages=[0-9a-f-]{36}/);
+  await expect(page.getByTestId('visit-messages')).toBeVisible();
+  await expect(visited.locator('[data-testid="visit-line"][data-state="done"]')).toHaveCount(2);
+  await expect(group('to_visit')).toHaveCount(0);
+  await expect(page.getByTestId('buyer-follow-up-summary')).toHaveText(
+    '3 biens envoyés · 1 visité · 1 refusé',
+  );
+
   // M. et Mme Lambert : ce que le conseiller a écarté pour eux, replié en fin de suivi.
   await page.goto('/acquereurs?vue=agence&q=lambert');
   await page.getByRole('link', { name: 'M. et Mme Lambert', exact: true }).first().click();
