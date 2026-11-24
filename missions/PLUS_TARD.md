@@ -47,3 +47,13 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   du bien chez Stream Estate (une migration).
 - 23/11 · Lancement, état des lieux · L'IA ne lit pas les biens démarchés ; chaque recherche relit et
   repaie les mêmes annonces (un cache des jugements par annonce demanderait une table).
+- 24/11 · Lancement 4 · Maisons & Appartements : une annonce périmée garde son prix à l'écran sous le
+  bandeau « Cette annonce périmée n'est plus diffusée » ; ACM l'importe comme une annonce en ligne
+  (la preuve de retrait n'est lue que sur une page sans prix, M103). Ce site n'apparaît dans aucun
+  vrai dossier.
+- 24/11 · Lancement 4 · SeLoger : 5 pages restées illisibles en 14 jours (« réseau » : l'extension
+  n'a pas obtenu la page en trois essais) ; le concurrent est alors créé depuis la recherche (M101).
+  À regarder si le nombre monte. Bien'ici ne publie pas le quartier dans ce que lit ACM.
+- 24/11 · Méthode · L'extension n'accepte ni les prévisualisations Vercel ni un autre site que la
+  production, l'essai et le poste local : un changement qui passe par elle ne s'essaie dans un vrai
+  navigateur qu'une fois en production (ou sur l'essai, où le Chrome de Jean-Guy n'est pas connecté).

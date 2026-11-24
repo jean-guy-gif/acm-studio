@@ -13,7 +13,7 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
 
 - **Mission 4** (voir mardi).
 - **Un état des lieux d'une page** du côté acquéreur et de l'IA : ce qui existe déjà pour les missions
-  2, 3, 6, 7, 8, 9 et 10, et ce qui manque (`missions/ETAT_DES_LIEUX_ACQUEREUR_IA.md`).
+  2, 3, 6, 7, 8, 9 et 10, et ce qui manque (`missions/ETAT_DES_LIEUX_ACQUEREUR_IA.md`). — **fait**
 
 ## Mardi 24/11
 
@@ -24,7 +24,8 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
    l'acquéreur reste en recherche et le conseiller continue à lui envoyer des biens. — à faire
 3. **Acquéreur : un bien déjà envoyé, visité ou refusé n'est jamais reproposé.** — à faire
 4. **Portails : la preuve, site par site, que l'annonce s'aspire comme prévu**, et la correction de
-   ceux qui échouent. — en cours (23/11 au soir)
+   ceux qui échouent. — **fait le 24/11** : les cinq sites se lisent ; Figaro réparé, la ville de
+   SeLoger et de Green Acres corrigée (preuve : `missions/L4-portails-preuve.md`)
 5. **Plus aucun coût en euros devant le conseiller** : ni pour chercher des concurrents, ni pour une
    sélection d'acquéreur, ni pour le suivi et la veille, ni pour l'IA. Les prix des biens restent
    affichés. Les coûts et les plafonds restent visibles pour l'opérateur seul. Plafond atteint : un
