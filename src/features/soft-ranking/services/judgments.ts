@@ -4,6 +4,7 @@ import {
   type BuyerSoftCriterionKey,
 } from '@/features/buyers/types';
 import type {
+  PhotoJudgment,
   RankingListing,
   SoftJudgment,
   SoftRanking,
@@ -118,7 +119,92 @@ const POINTS: Record<SoftVerdict, number> = {
   contrary: -2,
 };
 export function softScore(judgments: readonly SoftJudgment[] | undefined): number {
-  return (judgments ?? []).reduce((sum, judgment) => sum + POINTS[judgment.verdict], 0);
+  return (judgments ?? []).reduce(
+    (sum, judgment) => sum + POINTS[judgment.verdict] + photoPoint(judgment),
+    0,
+  );
+}
+
+// --- les photos (Lancement, mission 9) ---------------------------------------------------------
+
+// Les photos AJOUTENT, elles ne retirent jamais : là où l'annonce ne dit rien (ou n'a pas pu être
+// lue), des photos qui le montrent comptent un point, comme un « avec réserve » ; ce que l'annonce
+// dit déjà ne compte pas deux fois ; un « contraire » vu sur les photos ne retire rien — la mesure
+// du 24/11 l'a vu contredire deux annonces qui disaient « sans vis-à-vis » : il invite le
+// conseiller à regarder, il ne décide pas.
+const photoPoint = (judgment: SoftJudgment): number =>
+  judgment.photos?.verdict === 'shown' &&
+  (judgment.verdict === 'nothing' || judgment.verdict === 'unread')
+    ? 1
+    : 0;
+
+const PHOTO_VERDICTS: Record<string, PhotoJudgment['verdict']> = {
+  montre: 'shown',
+  contraire: 'contrary',
+};
+const PHOTO_NUMBERS_MAX = 3;
+
+// La réponse du modèle sur les photos d'UNE annonce, relue : les critères demandés, un verdict
+// connu, et des numéros de photos réellement envoyées (`sent` : une photo que son hébergeur a
+// refusée garde son numéro, elle n'est pas envoyée), trois au plus, sans doublon. « Ne se voit pas » n'a pas de ligne ; un verdict qui ne cite aucune photo envoyée
+// tombe : le conseiller n'aurait rien à vérifier.
+export function guardPhotoJudgments(
+  raw: unknown,
+  criteria: readonly BuyerSoftCriterionKey[],
+  sent: ReadonlySet<number>,
+): Map<BuyerSoftCriterionKey, PhotoJudgment> {
+  const said = new Map<BuyerSoftCriterionKey, PhotoJudgment>();
+  const jugements = (raw as { jugements?: unknown } | null)?.jugements;
+  if (!Array.isArray(jugements)) return said;
+  for (const one of jugements) {
+    const j = one as Record<string, unknown>;
+    const key = BUYER_SOFT_CRITERIA.find((criterion) => criterion === j.critere);
+    if (!key || !criteria.includes(key) || said.has(key)) continue;
+    const verdict = typeof j.verdict === 'string' ? PHOTO_VERDICTS[j.verdict] : undefined;
+    if (!verdict) continue;
+    const numbers = [
+      ...new Set(
+        (Array.isArray(j.photos) ? j.photos : []).filter(
+          (n): n is number => typeof n === 'number' && sent.has(n),
+        ),
+      ),
+    ]
+      // Les trois premières citées, puis rangées pour se lire.
+      .slice(0, PHOTO_NUMBERS_MAX)
+      .sort((a, b) => a - b);
+    if (numbers.length === 0) continue;
+    said.set(key, { verdict, numbers });
+  }
+  return said;
+}
+
+// Les jugements du texte, avec ce que les photos montrent de chaque critère.
+export function withPhotoJudgments(
+  judgments: readonly SoftJudgment[],
+  photos: ReadonlyMap<BuyerSoftCriterionKey, PhotoJudgment>,
+): SoftJudgment[] {
+  return judgments.map((judgment) => {
+    const seen = photos.get(judgment.key);
+    return seen ? { ...judgment, photos: seen } : judgment;
+  });
+}
+
+const photosLabel = (numbers: readonly number[]): string =>
+  numbers.length === 1
+    ? `la photo ${numbers[0]}`
+    : `les photos ${numbers.slice(0, -1).join(', ')} et ${numbers[numbers.length - 1]}`;
+
+// Ce que les photos ajoutent à la raison d'un critère, pour le conseiller : toujours les numéros
+// des photos de la fiche complète, jamais un commentaire du modèle.
+function photoNote(judgment: SoftJudgment): string | null {
+  const seen = judgment.photos;
+  if (!seen) return null;
+  const which = photosLabel(seen.numbers);
+  if (seen.verdict === 'contrary')
+    return `à regarder : ${which} ${seen.numbers.length === 1 ? 'montre' : 'montrent'} peut-être le contraire`;
+  return judgment.verdict === 'nothing' || judgment.verdict === 'unread'
+    ? `${which} ${seen.numbers.length === 1 ? 'le montre' : 'le montrent'}, à vérifier`
+    : `se voit sur ${which}`;
 }
 
 // L'ordre à l'intérieur d'une catégorie : le score d'abord, puis l'ordre d'avant (le %, puis le
@@ -201,6 +287,19 @@ export type WhyRow = { mark: '✓' | '≈' | '?' | '✗'; label: string; text: s
 
 export function whyRows(judgments: readonly SoftJudgment[]): WhyRow[] {
   return judgments.map((judgment) => {
+    const row = textRow(judgment);
+    const note = photoNote(judgment);
+    if (note == null) return row;
+    // Seules les photos le montrent : « ≈ », comme une réserve — c'est à vérifier.
+    const onlyPhotos =
+      judgment.photos?.verdict === 'shown' &&
+      (judgment.verdict === 'nothing' || judgment.verdict === 'unread');
+    return { ...row, mark: onlyPhotos ? '≈' : row.mark, text: `${row.text} · ${note}` };
+  });
+}
+
+function textRow(judgment: SoftJudgment): WhyRow {
+  {
     const label = BUYER_SOFT_CRITERION_LABELS[judgment.key];
     switch (judgment.verdict) {
       case 'clearly':
@@ -237,12 +336,12 @@ export function whyRows(judgments: readonly SoftJudgment[]): WhyRow[] {
       default:
         return { mark: '?', label, text: 'l’annonce n’en dit rien' };
     }
-  });
+  }
 }
 
 // Une annonce qui ne dit rien de ce qui compte pour eux se résume en une ligne (planche 4).
 export function saysNothing(judgments: readonly SoftJudgment[]): boolean {
-  return judgments.every((judgment) => judgment.verdict === 'nothing');
+  return judgments.every((judgment) => judgment.verdict === 'nothing' && judgment.photos == null);
 }
 
 export function mentionsLine(mentions: readonly string[]): string {

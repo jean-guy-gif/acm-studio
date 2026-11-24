@@ -79,3 +79,24 @@ export function demoRankingAnswer(
     }),
   };
 }
+
+// Lancement, mission 9 — les photos simulées d'une annonce de démonstration : aucune photo n'est
+// chargée ni envoyée. Une réponse de la forme de celle du modèle, déterministe, relue par la MÊME
+// vérification (`guardPhotoJudgments`) : ce que le texte dit se voit sur la première photo ; ce
+// qu'il ne dit pas se voit une fois sur deux, sur les deux premières. Pur.
+export function demoPhotoAnswer(
+  listing: RankingListing,
+  criteria: readonly BuyerSoftCriterionKey[],
+  photoCount: number,
+): unknown {
+  const text = fold(listing.text);
+  return {
+    jugements: criteria.map((critere, index) => {
+      const said = SOFT_WORDS[critere].some((word) => text.includes(fold(word)));
+      if (said) return { critere, verdict: 'montre', photos: [1] };
+      return (listing.text.length + index) % 2 === 0
+        ? { critere, verdict: 'montre', photos: photoCount > 1 ? [1, 2] : [1] }
+        : { critere, verdict: 'ne_se_voit_pas', photos: [] };
+    }),
+  };
+}
