@@ -16,7 +16,14 @@ export type SoftJudgment = {
   counterQuote: string | null;
   // Le calme dit par la seule étiquette du portail : « à vérifier ».
   toVerify: boolean;
+  // Lancement, mission 9 — ce que montrent les photos, pour les biens les mieux classés seulement.
+  photos?: PhotoJudgment;
 };
+
+// Ce que les photos d'une annonce montrent d'un critère : un verdict et les numéros des photos
+// (ceux de la fiche complète du bien), jamais un commentaire du modèle. « Ne se voit pas » n'a
+// pas de ligne : il n'ajoute rien.
+export type PhotoJudgment = { verdict: 'shown' | 'contrary'; numbers: number[] };
 
 // Le texte d'un bien, le temps du classement : jamais gardé, jamais renvoyé au navigateur.
 export type RankingListing = { key: string; text: string; tags: string[] };

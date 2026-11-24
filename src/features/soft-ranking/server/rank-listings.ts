@@ -2,7 +2,8 @@ import 'server-only';
 
 import { reserveAiBudget, settleAiBudget } from '@/features/ai-budget/services/ai-budget';
 import type { BuyerSoftCriterionKey } from '@/features/buyers/types';
-import { demoRankingAnswer } from '@/features/demo/services/demo-soft-ranking';
+import { demoPhotoAnswer, demoRankingAnswer } from '@/features/demo/services/demo-soft-ranking';
+import { photoCriteria } from '@/features/soft-ranking/photo-request';
 import {
   RANKING_BATCH,
   RANKING_FIXED_INPUT_TOKENS,
@@ -12,7 +13,18 @@ import {
   rankingInstructions,
   rankingSchema,
 } from '@/features/soft-ranking/ranking-request';
-import { guardJudgments, softMentions, unread } from '@/features/soft-ranking/services/judgments';
+import {
+  photoWorstCase,
+  readListingPhotos,
+  type PhotoPick,
+} from '@/features/soft-ranking/server/read-photos';
+import {
+  guardJudgments,
+  guardPhotoJudgments,
+  softMentions,
+  unread,
+  withPhotoJudgments,
+} from '@/features/soft-ranking/services/judgments';
 import type {
   RankingListing,
   SimpleReason,
@@ -48,6 +60,13 @@ export type RankInput = {
   // La veille de nuit ne prend que la moitié du budget d'IA (Jean-Guy, 12/11) : la place restante
   // est vérifiée avant de réserver (le pire cas en millièmes de centime).
   mayReserve?: (wantedMillicents: number) => Promise<boolean>;
+  // Lancement, mission 9 — les photos des biens les mieux classés : `max` biens au plus, choisis
+  // par l'appelant une fois le texte jugé (lui seul connaît les catégories). Absent : aucune photo
+  // n'est lue (la veille de nuit, et tant que la lecture des photos est éteinte).
+  photos?: {
+    max: number;
+    pick: (byKey: Readonly<Record<string, SoftJudgment[]>>) => PhotoPick[];
+  };
 };
 
 const simple = (
@@ -103,6 +122,8 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
   const deadline = started + (input.deadlineMs ?? RANKING_DEADLINE_MS);
   const judged = new Map<string, SoftJudgment[]>();
   const all = batchesOf(listings);
+  // Les critères de la fiche qu'une photo peut montrer : sans eux, aucune photo n'est lue.
+  const seen = input.photos ? photoCriteria(criteria) : [];
 
   // L'agence de démonstration : la lecture simulée, sans appel ni budget (M114).
   if (input.demo) {
@@ -115,7 +136,21 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
       ))
         judged.set(key, judgments);
     }
-    return full(listings, criteria, judged);
+    const ranked = full(listings, criteria, judged);
+    // Les photos simulées, sans rien charger : la même relecture que la vraie (M114).
+    if (input.photos && seen.length > 0) {
+      const byListing = new Map(listings.map((listing) => [listing.key, listing]));
+      for (const pick of input.photos.pick(ranked.byKey).slice(0, input.photos.max)) {
+        const listing = byListing.get(pick.key);
+        const sent = new Set(pick.urls.map((_, index) => index + 1));
+        if (!listing || sent.size === 0) continue;
+        ranked.byKey[pick.key] = withPhotoJudgments(
+          ranked.byKey[pick.key] ?? [],
+          guardPhotoJudgments(demoPhotoAnswer(listing, seen, sent.size), seen, sent),
+        );
+      }
+    }
+    return ranked;
   }
 
   const model = aiModel();
@@ -124,20 +159,31 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
   if (deadline - Date.now() < MIN_CALL_MS) return simple('failed', listings, criteria);
   // Le pire cas : chaque lot, plus la relance d'un lot.
   const perBatch = all.map((batch) => batchWorstCase(model, criteria, batch));
-  const wanted = perBatch.reduce((sum, cost) => sum + cost, 0) + Math.max(...perBatch);
-  if (input.mayReserve && !(await input.mayReserve(wanted)))
+  const wantedText = perBatch.reduce((sum, cost) => sum + cost, 0) + Math.max(...perBatch);
+  const wantedPhotos =
+    input.photos && seen.length > 0 ? input.photos.max * photoWorstCase(model) : 0;
+  if (input.mayReserve && !(await input.mayReserve(wantedText + wantedPhotos)))
     return simple('budget', listings, criteria);
-  const reservation = await reserveAiBudget({
-    agencyId: input.agencyId,
-    userId: input.userId,
-    purpose: 'ranking',
-    model,
-    source: 'listings',
-    wantedMillicents: wanted,
-    now: input.now,
-  });
+  const reserve = (wantedMillicents: number) =>
+    reserveAiBudget({
+      agencyId: input.agencyId,
+      userId: input.userId,
+      purpose: 'ranking',
+      model,
+      source: 'listings',
+      wantedMillicents,
+      now: input.now,
+    });
+  let wanted = wantedText + wantedPhotos;
+  let reservation = await reserve(wanted);
+  // Dans la limite du plafond de l'agence : s'il ne couvre plus les photos, le texte seul est lu.
+  if (!reservation.ok && reservation.reason === 'reached' && wantedPhotos > 0) {
+    wanted = wantedText;
+    reservation = await reserve(wanted);
+  }
   if (!reservation.ok)
     return simple(reservation.reason === 'reached' ? 'budget' : 'failed', listings, criteria);
+  const photosCovered = wanted > wantedText;
 
   let spent = 0;
   const run = async (batch: Batch): Promise<void> => {
@@ -176,18 +222,45 @@ export async function rankListings(input: RankInput): Promise<SoftRanking | null
   }
 
   const answered = judged.size > 0;
+  const ranked = full(listings, criteria, judged);
+  // Les photos des biens les mieux classés, une fois le texte jugé, s'il reste du temps et dans ce
+  // que la réservation couvre encore. Un échec ne retire rien : le texte reste jugé.
+  let photosRead = false;
+  if (answered && input.photos && photosCovered) {
+    const read = await readListingPhotos({
+      picks: input.photos.pick(ranked.byKey).slice(0, input.photos.max),
+      criteria: seen,
+      model,
+      deadline,
+      room: wanted - spent,
+    });
+    spent += read.spent;
+    photosRead = read.spent > 0;
+    for (const [key, photos] of read.byKey)
+      ranked.byKey[key] = withPhotoJudgments(ranked.byKey[key] ?? [], photos);
+  }
   await settleAiBudget({
     usageId: reservation.usageId,
     costMillicents: spent,
     outcome: answered ? 'ranked' : 'failed',
-    fieldsProposed: criteria.map((key) => `soft:${key}`),
+    // La trace dit les noms des critères lus, et ceux regardés sur les photos : jamais un texte,
+    // une photo ni une adresse de photo.
+    fieldsProposed: [
+      ...criteria.map((key) => `soft:${key}`),
+      ...(photosRead ? seen.map((key) => `photo:${key}`) : []),
+    ],
   });
   if (!answered) return simple('failed', listings, criteria);
-  return full(listings, criteria, judged);
+  return ranked;
 }
 
-// Trois appels à la fois au plus : Bedrock étrangle les rafales.
-const POOL = 3;
+// Huit appels à la fois au plus : une recherche entière (60 annonces, 8 lots) part d'un coup, pour
+// que le texte de TOUTES les annonces soit lu dans le délai. Mesuré le 24/11 sur vingt annonces
+// réelles (`missions/L9-mesure.md`) : huit appels ensemble, dix critères, 15,9 s, aucun refus ;
+// trois à la fois, la même recherche demandait trois vagues, donc plus que les 30 s du délai, et
+// les dernières annonces restaient « non lues » (remplace « trois à la fois », M151 B).
+export const RANKING_POOL = 8;
+const POOL = RANKING_POOL;
 async function inPool<T>(items: readonly T[], work: (item: T) => Promise<void>): Promise<void> {
   let next = 0;
   await Promise.all(
@@ -201,7 +274,7 @@ function full(
   listings: readonly RankingListing[],
   criteria: readonly BuyerSoftCriterionKey[],
   judged: ReadonlyMap<string, SoftJudgment[]>,
-): SoftRanking {
+): Extract<SoftRanking, { mode: 'full' }> {
   return {
     mode: 'full',
     byKey: Object.fromEntries(

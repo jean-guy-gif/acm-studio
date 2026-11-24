@@ -107,3 +107,10 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   demande une écriture en base, sur l'ordre de Jean-Guy. Aucun test ne joue la vraie base pour un
   appel de fonction : un argument oublié ne se voit qu'en production — un test SQL qui appelle
   chaque fonction avec les arguments que le code envoie le verrait.
+- 24/11 · Lancement 9 · À l'allumage des photos : vérifier sur une vraie recherche que les photos
+  du fournisseur (`pictures`) sont dans le même ordre que celles de la fiche complète
+  (`picturesRemote`), sinon « la photo 3 » ne serait pas la troisième de la fiche ; aucune sélection
+  réelle ne permet de le voir aujourd'hui. Les photos des mandats et des concurrents de l'agence ne
+  sont pas lues (le conseiller les connaît). Réduire les photos avant l'envoi (`sharp`) diviserait
+  leur coût par 2,5. Les six critères des photos n'ont été mesurés que sur vingt annonces, sans
+  corrigé écrit avant : une mesure de justesse reste à faire, comme celle du texte (M151).

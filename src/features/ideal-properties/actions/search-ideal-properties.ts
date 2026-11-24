@@ -52,7 +52,12 @@ import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { rankingCriteria } from '@/features/soft-ranking/ranking-request';
 import { agencyRankingListings } from '@/features/soft-ranking/server/agency-listings';
 import { rankListings } from '@/features/soft-ranking/server/rank-listings';
-import { rankCategorized } from '@/features/ideal-properties/services/rank-categorized';
+import {
+  rankCategorized,
+  topPhotoPicks,
+} from '@/features/ideal-properties/services/rank-categorized';
+import { PHOTO_TOP_LISTINGS, PHOTOS_PER_LISTING } from '@/features/soft-ranking/photo-request';
+import { listingPhotosRead } from '@/features/soft-ranking/services/photo-switch';
 import type { RankingListing, SoftRanking } from '@/features/soft-ranking/types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -259,6 +264,15 @@ export async function searchIdealProperties(
         agencyCapCents: await getPosedAiCap(profile.agency_id),
       }),
       now,
+      // Lancement, mission 9 — les photos des biens du marché les mieux classés, une fois le texte
+      // jugé ; éteint en production tant que Jean-Guy ne l'allume pas (`photo-switch.ts`).
+      photos: listingPhotosRead()
+        ? {
+            max: PHOTO_TOP_LISTINGS,
+            pick: (byKey) =>
+              topPhotoPicks(categorized, byKey, PHOTO_TOP_LISTINGS, PHOTOS_PER_LISTING),
+          }
+        : undefined,
     });
     if (ranking?.mode === 'full') rankCategorized(categorized, ranking.byKey);
   }

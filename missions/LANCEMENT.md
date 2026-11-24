@@ -54,7 +54,10 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
    et ce qu'elle ne lit pas. Le texte de toutes les annonces est lu. Pour les photos : mesurer le
    coût sur vingt annonces réelles et donner le chiffre par acquéreur ; par défaut, elles ne sont
    lues que pour les biens les mieux classés, dans la limite du plafond de l'agence. La raison du
-   classement reste pour le conseiller seul. — à faire
+   classement reste pour le conseiller seul. — **fait le 24/11** : le texte de toutes les annonces
+   lu dans le délai ; les photos mesurées (0,17 € par recherche et par acquéreur), codées, et
+   éteintes tant que Jean-Guy n'a pas décidé la phrase de la page de confidentialité
+   (`missions/L9-mesure.md`)
 
 ## Jeudi 26/11
 
