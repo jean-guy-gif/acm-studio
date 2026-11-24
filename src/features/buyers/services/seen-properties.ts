@@ -67,6 +67,11 @@ export function seenItemKey(
   return null;
 }
 
+// « Pas pour moi » après la visite (M139), ou l'issue « Pas pour lui » d'avant (M119).
+export function refusedAfterVisit(opinion: string | null | undefined, outcome: string): boolean {
+  return opinion === 'not_for_me' || outcome === 'declined';
+}
+
 type Notes = {
   dismissed: boolean;
   sentAt: string | null;
@@ -140,7 +145,7 @@ export function seenProperties(rows: SeenRows): SeenProperties {
     sent(target, row.requested_at);
     if (!row.visited_at) continue;
     if (!target.visitedAt || row.visited_at > target.visitedAt) target.visitedAt = row.visited_at;
-    verdict(target, row.opinion === 'not_for_me' || row.outcome === 'declined', row.visited_at);
+    verdict(target, refusedAfterVisit(row.opinion, row.outcome), row.visited_at);
   }
   for (const row of rows.dismissals) note(row.buyer_id, row.property_key).dismissed = true;
 

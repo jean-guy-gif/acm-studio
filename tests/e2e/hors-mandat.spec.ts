@@ -166,8 +166,8 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     // La fiche acquéreur montre la visite faite, passée en « Offre envisagée ».
     await page.goto(wilsonUrl);
     const onBuyer = page
-      .getByTestId('buyer-visits-done')
-      .getByTestId('visit-line')
+      .getByTestId('buyer-follow-up')
+      .locator('[data-testid="visit-line"][data-state="done"]')
       .filter({ hasText: /66\sm²/ });
     await expect(onBuyer.getByTestId('visit-report')).toContainText('Intéressé · Offre envisagée');
     await expect(onBuyer.getByTestId('visit-actions')).toHaveAttribute('data-step', 'offer');

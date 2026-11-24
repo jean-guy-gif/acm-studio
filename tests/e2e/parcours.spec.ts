@@ -1200,7 +1200,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     );
     await expect(page.getByTestId('buyer-timeline')).toContainText('Sélection présentée');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Visite demandée');
-    await expect(page.getByTestId('buyer-answers')).toContainText('Veut le visiter');
+    await expect(page.getByTestId('buyer-follow-up')).toContainText('Veut le visiter');
     // Relue en lecture seule : « Terminé le », plus de réponse possible.
     await page.getByTestId('present-selection').click();
     await expect(page.getByText(/^Terminé le \d{2}\/\d{2}\/\d{4}$/)).toBeVisible();
@@ -1265,7 +1265,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.goto(buyerUrl);
     // Correctif du 13/11 — la visite faite sur la fiche : sa suite se change ; « Pas pour moi »
     // n'y propose pas « Offre envisagée ».
-    const doneOnBuyer = page.getByTestId('buyer-visits-done').getByTestId('visit-line');
+    const doneOnBuyer = page
+      .getByTestId('buyer-follow-up')
+      .locator('[data-testid="visit-line"][data-state="done"]');
     await expect(doneOnBuyer).toHaveCount(1);
     await expect(doneOnBuyer.getByTestId('visit-report')).toContainText('On continue à chercher');
     await doneOnBuyer.getByTestId('visit-change-open').click();

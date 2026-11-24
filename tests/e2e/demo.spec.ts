@@ -1687,18 +1687,19 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   }
   await page.goto('/acquereurs');
   await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
-  await expect(page.getByTestId('buyer-answers')).toContainText('depuis le lien');
-  await expect(page.getByTestId('buyer-answers')).toContainText('Pas pour lui : Le prix');
+  // Lancement, mission 6 — ses réponses se lisent dans « Son suivi », un bien par ligne.
+  await expect(page.getByTestId('buyer-follow-up')).toContainText('depuis le lien');
+  await expect(page.getByTestId('buyer-follow-up')).toContainText('Pas pour lui : Le prix');
   // Mission 120 B — A et B « Je veux le visiter » sur le lien : aucun « Peut-être » ici.
-  await expect(page.getByTestId('buyer-answers')).toContainText('Veut le visiter');
+  await expect(page.getByTestId('buyer-follow-up')).toContainText('Veut le visiter');
   // Mission 143 (B1) — l'offre acceptée reste l'état le plus avancé : sa réponse par le lien ne
   // ramène pas la fiche en arrière ; le fil la date.
   await expect(page.getByTestId('buyer-next-step')).toContainText('Lancer le compromis');
   await expect(page.getByTestId('buyer-timeline')).toContainText('Sa réponse reçue par le lien');
   await expect(page.getByTestId('deck-prepare')).toHaveCount(0);
-  await expect(page.getByTestId('buyer-answer-group').first()).toContainText(
-    /Sélection du \d{2}\/\d{2}\/\d{4}/,
-  );
+  // Lancement, mission 6 — plus de réponses rangées par sélection : « Son suivi », un bien par ligne.
+  await expect(page.getByTestId('buyer-answer-group')).toHaveCount(0);
+  await expect(page.getByTestId('buyer-follow-up-summary')).toContainText('envoyés');
   // « Créer un nouveau lien » remplace l'ancien, qui cesse de marcher ; la réponse reçue reste.
   await page.goto(`${kellerUrl}/dossier`);
   await page.getByTestId('dossier-link-renew').click();
@@ -1884,10 +1885,12 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expectUnspoken(page, 'Présentation — sa réponse');
   await page.getByTestId('presentation-finish').click();
   await expect(page).toHaveURL(new RegExp(`${kellerUrl}$`));
-  const answers = page.getByTestId('buyer-answers');
-  // Trois réponses de la présentation, trois du lien ; mission 135 — plus les deux refus « Le
-  // prix » semés sur une sélection plus ancienne.
-  await expect(answers.getByTestId('buyer-answer')).toHaveCount(8);
+  // Lancement, mission 6 — « Son suivi » : un bien par ligne, sa dernière réponse (celle de la
+  // présentation, après celle du lien) ; mission 135 — plus les deux refus « Le prix » semés sur
+  // une sélection plus ancienne.
+  const answers = page.getByTestId('buyer-follow-up');
+  await expect(answers.getByTestId('buyer-follow-up-item')).toHaveCount(5);
+  await expect(page.getByTestId('buyer-answer')).toHaveCount(0);
   await expect(answers).toContainText('Veut le visiter');
   await expect(answers).toContainText('Pas pour lui : La surface');
   await expect(answers).toContainText('Peut-être');

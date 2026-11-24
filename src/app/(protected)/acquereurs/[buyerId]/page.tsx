@@ -14,7 +14,7 @@ import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
 import { answerSuggestions } from '@/features/buyer-deck/services/answer-suggestions';
 import { deckCriteria, proposedBuyerWords } from '@/features/buyer-deck/services/buyer-deck';
 import { VisitRow } from '@/features/buyer-presentation/components/visit-row';
-import { getVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { VISIT_OUTCOME_LABELS } from '@/features/buyer-presentation/types';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
@@ -33,10 +33,11 @@ import {
   RECONTACT_LABEL,
 } from '@/features/buyers/services/buyer-readiness';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
+import { BuyerFollowUp } from '@/features/buyers/components/buyer-follow-up';
+import { getBuyerFollowUpRows } from '@/features/buyers/queries/get-buyer-follow-up';
+import { buyerFollowUp, followUpSummary } from '@/features/buyers/services/buyer-follow-up';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
-import { ITEM_ANSWER_REPORT } from '@/features/buyer-deck/types';
 import { getBuyerHistory } from '@/features/buyers/queries/get-buyer-history';
-import { sentDayLabel } from '@/features/buyers/services/loop-properties';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
 import { buyerDateLabel, buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import {
@@ -119,12 +120,15 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   ]);
   const buyer = await getBuyer(buyerId);
   if (!buyer) notFound();
-  const [selection, profile, allVisits, dossiers] = await Promise.all([
+  // Lancement, mission 6 — la lecture des visites dit son échec : « Son suivi » ne range jamais
+  // un bien visité en « en attente » sans le dire (M98).
+  const [selection, profile, visitRead, dossiers] = await Promise.all([
     getIdealSelection(buyer.id),
     getProfile(),
-    getVisitLines(),
+    readVisitLines(),
     getSuiviDossiers(),
   ]);
+  const allVisits = visitRead.lines;
   const supabase = await createClient();
   const counted = withoutExamples(dossiers);
   const [
@@ -136,6 +140,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     lastWatch,
     loopProposals,
     condominiums,
+    followUpRows,
   ] = await Promise.all([
     selection ? loadDeck(buyer.id) : Promise.resolve(null),
     profile
@@ -170,6 +175,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           counted.map((dossier) => dossier.project.id),
         )
       : Promise.resolve(new Map<string, boolean>()),
+    // Lancement, mission 6 — « Son suivi » : ses biens envoyés, ses réponses, ce qui a été écarté
+    // pour lui. null : une lecture a échoué (M98).
+    profile ? getBuyerFollowUpRows(supabase, profile.agency_id, buyer.id) : null,
   ]);
   const facts = progress.get(buyer.id) ?? NO_PROGRESS;
   const ownVisits = allVisits.filter((line) => line.buyerId === buyer.id);
@@ -191,6 +199,21 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     profile ? getBuyerOffers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
   ]);
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
+  // Lancement, mission 6 — « Son suivi » : un bien = une ligne, ses visites sur sa ligne.
+  const followUp = followUpRows
+    ? buyerFollowUp({
+        ...followUpRows,
+        visits: ownVisits.map((line) => ({
+          id: line.id,
+          itemId: line.itemId,
+          requestedAt: line.requestedAt,
+          visitedAt: line.visitedAt,
+          opinion: line.report?.opinion ?? null,
+          outcome: line.outcome,
+        })),
+      })
+    : [];
+  const followedVisits = new Set(followUp.flatMap((entry) => entry.visitIds));
   const lastAnswer =
     (signedOffers ?? [])
       .flatMap((offer) =>
@@ -676,55 +699,56 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             <IdealSelectionList selection={selection} />
           ) : null}
 
-          {answers.lines.length > 0 ? (
-            <div id="reponses" className="scroll-mt-6">
-              <BuyerAnswers
-                buyerId={buyer.id}
-                answers={answers.lines}
-                suggestions={sale ? [] : suggestions}
-              />
-            </div>
-          ) : null}
-
-          {visits.length > 0 ? (
+          {/* Lancement, mission 6 — « Son suivi » : un seul endroit avec les biens envoyés, refusés
+              et pourquoi, visités avec leur compte rendu ; à la place de « Ce qu'il a répondu », de
+              « Ses visites à organiser », « Ses visites faites » et « Biens proposés ». */}
+          <BuyerFollowUp
+            entries={followUp}
+            summary={followUpSummary(followUp, visits.length)}
+            unread={followUpRows == null || visitRead.failed}
+            budgetMax={buyer.budgetMax}
+            visitRows={Object.fromEntries(
+              ownVisits.map((line) => [
+                line.id,
+                <VisitRow
+                  key={line.id}
+                  line={line}
+                  letter={letters.get(line.id) ?? null}
+                  voucher={vouchers.get(line.id) ?? null}
+                />,
+              ]),
+            )}
+          />
+          {/* Une visite que le suivi n'a pas pu rattacher à un bien (lecture en échec) reste visible. */}
+          {ownVisits.some((line) => !followedVisits.has(line.id)) ? (
             <section
               className={`${card} flex flex-col gap-3 p-5`}
               data-testid="buyer-visits-section"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-                  Ses visites à organiser
-                </h2>
-              </div>
+              <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+                Ses visites
+              </h2>
               <ul className="flex flex-col gap-2">
-                {visits.map((line) => (
-                  <VisitRow
-                    key={line.id}
-                    line={line}
-                    letter={letters.get(line.id) ?? null}
-                    voucher={vouchers.get(line.id) ?? null}
-                  />
-                ))}
+                {ownVisits
+                  .filter((line) => !followedVisits.has(line.id))
+                  .map((line) => (
+                    <VisitRow
+                      key={line.id}
+                      line={line}
+                      letter={letters.get(line.id) ?? null}
+                      voucher={vouchers.get(line.id) ?? null}
+                    />
+                  ))}
               </ul>
             </section>
           ) : null}
 
-          {doneVisits.length > 0 ? (
-            <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-visits-done">
-              <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-                Ses visites faites
-              </h2>
-              <ul className="flex flex-col gap-2">
-                {doneVisits.map((line) => (
-                  <VisitRow
-                    key={line.id}
-                    line={line}
-                    letter={letters.get(line.id) ?? null}
-                    voucher={vouchers.get(line.id) ?? null}
-                  />
-                ))}
-              </ul>
-            </section>
+          {/* Mission 122, 135 — ce que ses refus suggèrent : accepter ou ignorer, rien ne se modifie
+              seul ; en pause pendant la vente (M143). */}
+          {!sale && suggestions.length > 0 ? (
+            <div id="reponses" className="scroll-mt-6">
+              <BuyerAnswers buyerId={buyer.id} answers={[]} suggestions={suggestions} />
+            </div>
           ) : null}
 
           {/* Mission 137 — ses bons de visite : gardés sur la fiche, même ses visites toutes faites. */}
@@ -815,34 +839,6 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                   ))}
                 </ul>
               )}
-            </section>
-          ) : null}
-
-          {/* Mission 134 — les biens proposés, et sa réponse par le lien. */}
-          {history.proposals.length > 0 ? (
-            <section className={`${card} flex flex-col gap-2 p-5`} data-testid="buyer-proposals">
-              <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
-                Biens proposés
-              </h2>
-              <ul className="flex flex-col">
-                {history.proposals.map((proposal) => (
-                  <li
-                    key={`${proposal.at}-${proposal.label}`}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-100 py-2 text-sm first:border-0 stage:border-white/10"
-                    data-testid="buyer-proposal"
-                  >
-                    <span className="text-zinc-800 stage:text-white/85">{proposal.label}</span>
-                    <span className="text-zinc-500 stage:text-white/60">
-                      proposé le {sentDayLabel(proposal.at)}
-                    </span>
-                    {proposal.answer ? (
-                      <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-700">
-                        {ITEM_ANSWER_REPORT[proposal.answer]}
-                      </span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
             </section>
           ) : null}
 
