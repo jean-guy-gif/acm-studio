@@ -20,7 +20,8 @@ import { formatEuro, formatSquareMeters } from '@/lib/format';
 // Un bien est UN bien, quel que soit le nombre de dossiers où il est retenu (clé d'annonce, M47,
 // M98) ; un acquéreur à qui il a été proposé (« Envoyé », noté) n'y figure plus — une sélection seule
 // ne compte pas : « Passer » n'écrit rien (décision du 06/11) — ; la tâche se vide au fil des envois,
-// sans rien recréer.
+// sans rien recréer. Lancement, mission 3 — ni celui qui l'a déjà reçu dans une sélection présentée
+// ou partagée, ou visité ; celui qui l'a refusé ne lui correspond plus (`seen-properties.ts`).
 
 export const NEW_PROPERTY_WINDOW_DAYS = 14;
 
@@ -94,6 +95,9 @@ export type LoopContacts = {
   // Mission 139 — property_key → les acquéreurs pour qui le conseiller l'a écarté : ils ne lui
   // correspondent plus (ni à proposer, ni comptés).
   dismissals?: Map<string, Set<string>>;
+  // Lancement, mission 3 — property_key → les acquéreurs qui l'ont déjà visité (« déjà visité
+  // le … ») ; la date est alors celle de la visite.
+  visited?: Map<string, Set<string>>;
 };
 
 // Mission 139 — une seule règle partout (boucle, bloc du dossier, compteur du Live) : les acquéreurs
@@ -120,8 +124,8 @@ export function alreadyContacted(
 export type LoopBuyers = PropertyBuyers & {
   // Les acquéreurs qui correspondent et à qui le bien n'a pas encore été proposé, prêts d'abord.
   toPropose: PropertyBuyer[];
-  // Ceux à qui il a été proposé, avec la date : « déjà proposé le … ».
-  proposed: { entry: PropertyBuyer; sentAt: string | null }[];
+  // Ceux à qui il a été proposé, avec la date : « déjà proposé le … », « déjà visité le … ».
+  proposed: { entry: PropertyBuyer; sentAt: string | null; visited: boolean }[];
 };
 
 export function loopBuyers(
@@ -145,7 +149,11 @@ export function loopBuyers(
     toPropose: all.filter(({ buyer }) => !alreadyContacted(item, buyer.id, contacts)),
     proposed: all
       .filter(({ buyer }) => alreadyContacted(item, buyer.id, contacts))
-      .map((entry) => ({ entry, sentAt: sentOf?.get(entry.buyer.id) ?? null })),
+      .map((entry) => ({
+        entry,
+        sentAt: sentOf?.get(entry.buyer.id) || null,
+        visited: contacts.visited?.get(item.key)?.has(entry.buyer.id) === true,
+      })),
   };
 }
 

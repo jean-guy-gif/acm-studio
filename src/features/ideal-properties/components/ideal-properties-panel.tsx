@@ -33,6 +33,7 @@ import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 import { undoDismissal } from '@/features/buyer-dismissals/actions/dismiss';
 import { DismissControl } from '@/features/buyer-dismissals/components/dismiss-control';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
+import { countSeen, seenLine } from '@/features/buyers/services/seen-properties';
 import { importIdealListing } from '@/features/ideal-properties/actions/import-ideal-listing';
 import { saveIdealSelection } from '@/features/ideal-properties/actions/save-ideal-selection';
 import {
@@ -172,6 +173,7 @@ export function IdealPropertiesPanel({
   presented = false,
   watch = null,
   dismissed = [],
+  seen = [],
   mandatesUnread = false,
   buyerName = null,
   budgetMax = null,
@@ -211,6 +213,9 @@ export function IdealPropertiesPanel({
   // Mission 139 — ce que le conseiller a écarté pour lui (la clé de chaque bien) ; null : la
   // lecture a échoué (M98).
   dismissed?: string[] | null;
+  // Lancement, mission 3 — ce qu'il a déjà vu (envoyé, visité, refusé), par la clé de chaque
+  // bien : jamais reproposé dans les listes ; la sélection actuelle, elle, reste dans son bandeau.
+  seen?: { key: string; reason: 'sent' | 'visited' | 'refused' }[];
   // Mission 145 — les offres de l'agence n'ont pas pu être lues : aucun mandat n'est proposé, et
   // l'écran le dit (M98).
   mandatesUnread?: boolean;
@@ -468,6 +473,10 @@ export function IdealPropertiesPanel({
     );
   const isHidden = (item: SelectionItemInput, listingUrl: string | null) =>
     hidden.has(targetKey(item, listingUrl));
+  // Lancement, mission 3 — déjà envoyé, visité ou refusé : hors des listes, et compté.
+  const seenReasons = new Map(seen.map((fact) => [fact.key, fact.reason]));
+  const seenReason = (item: SelectionItemInput, listingUrl: string | null) =>
+    isHidden(item, listingUrl) ? undefined : seenReasons.get(targetKey(item, listingUrl));
 
   const actions = (item: SelectionItemInput) => (
     <div className="flex shrink-0 flex-col items-end gap-1">
@@ -519,13 +528,21 @@ export function IdealPropertiesPanel({
     agency: allAgencyHits.map(({ hit }) => asEntry(hit)),
   });
   const bannerItems = layout.banner;
-  const agencyHits = allAgencyHits.filter(
+  const agencyOpen = allAgencyHits.filter(
     ({ hit }) =>
       layout.showAgency(asEntry(hit)) && !isHidden(agencyItem(hit), hit.candidate.listingUrl),
   );
-  const showMarket = (entry: CategorizedCandidate): boolean =>
+  const agencyHits = agencyOpen.filter(
+    ({ hit }) => seenReason(agencyItem(hit), hit.candidate.listingUrl) == null,
+  );
+  const agencySeenLine = seenLine(
+    countSeen(agencyOpen.map(({ hit }) => seenReason(agencyItem(hit), hit.candidate.listingUrl))),
+  );
+  const marketOpen = (entry: CategorizedCandidate): boolean =>
     layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url }) &&
     !isHidden(marketItem(entry), entry.candidate.url);
+  const showMarket = (entry: CategorizedCandidate): boolean =>
+    marketOpen(entry) && seenReason(marketItem(entry), entry.candidate.url) == null;
 
   const watchEntries = (watch?.entries ?? []).filter(showMarket);
   // Mission 151 (partie B) — pendant la recherche et sa lecture, le message d'attente prend la
@@ -533,6 +550,20 @@ export function IdealPropertiesPanel({
   const waiting = searching && softLabels.length > 0 && softOpen;
   // Un bien de la veille, déjà en tête, ne se répète pas dans les annonces du marché.
   const watchUrls = new Set(watchEntries.map((entry) => entry.candidate.url));
+  // Les annonces du marché (la veille et la recherche, chacune une fois) qu'il a déjà vues.
+  const marketSeen = new Map<string, 'sent' | 'visited' | 'refused'>();
+  for (const entry of [
+    ...(watch?.entries ?? []),
+    ...(market
+      ? IDEAL_CATEGORIES.flatMap((category) => market.categorized.byCategory[category])
+      : []),
+  ]) {
+    const reason = marketOpen(entry)
+      ? seenReason(marketItem(entry), entry.candidate.url)
+      : undefined;
+    if (reason) marketSeen.set(entry.candidate.url, reason);
+  }
+  const marketSeenLine = seenLine(countSeen([...marketSeen.values()]));
 
   // Une annonce du marché : sa photo, son libellé neutre, son prix « affiché le », ses critères.
   const hitRow = (
@@ -801,9 +832,14 @@ export function IdealPropertiesPanel({
             Vos mandats n’ont pas pu être lus : rechargez la page.
           </p>
         ) : null}
-        {allAgencyHits.length > 0 && agencyHits.length === 0 ? (
+        {allAgencyHits.length > 0 && agencyOpen.length === 0 ? (
           <p className="text-sm text-zinc-600 stage:text-white/70">
             Les biens de l’agence qui correspondent sont dans la sélection actuelle.
+          </p>
+        ) : null}
+        {agencySeenLine ? (
+          <p className={hintText} data-testid="ideal-agency-seen">
+            {agencySeenLine}
           </p>
         ) : null}
         {allAgencyHits.length === 0 ? (
@@ -890,6 +926,11 @@ export function IdealPropertiesPanel({
           </p>
         </div>
         {budgetWarning ? <p className={hintText}>{budgetWarning}</p> : null}
+        {marketSeenLine ? (
+          <p className={hintText} data-testid="ideal-market-seen">
+            {marketSeenLine}
+          </p>
+        ) : null}
         {extensionIssue ? (
           <ExtensionRequiredNotice
             reason={extensionIssue}

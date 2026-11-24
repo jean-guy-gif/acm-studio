@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 
 import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
+import { readSeenProperties } from '@/features/buyers/queries/read-seen-properties';
+import { seenKeysOf } from '@/features/buyers/services/seen-properties';
 import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -62,26 +64,22 @@ export default async function IdealPropertiesPage({ params }: Props) {
   const signedIds = dossiers
     .filter((dossier) => dossier.conclusion?.outcome === 'signed')
     .map((dossier) => dossier.project.id);
-  const [{ cards }, selection, demo, watchRun, dismissals, offers, condominiums] =
-    await Promise.all([
-      getAgencyProspecting(dossiers),
-      getIdealSelection(buyer.id),
-      isDemoAgency(profile.agency_id),
-      // Mission 136 — ce que la veille a trouvé cette semaine, en tête.
-      getBuyerWatchFinds(profile.agency_id, buyer.id),
-      // Mission 139 — les biens écartés pour lui : ils ne s'affichent plus.
-      supabase
-        .from('buyer_dismissals')
-        .select('property_key')
-        .eq('agency_id', profile.agency_id)
-        .eq('buyer_id', buyer.id),
-      // Mission 145 (partie A) — un mandat sous offre acceptée ne se propose plus.
-      getAgencyOfferAnswers(supabase, profile.agency_id),
-      // Mission 151 — la copropriété connue des mandats, seulement s'il n'en veut pas.
-      buyer.condominiumAccepted === false
-        ? getMandateCondominiums(profile.agency_id, signedIds)
-        : Promise.resolve(new Map<string, boolean>()),
-    ]);
+  const [{ cards }, selection, demo, watchRun, seenRead, offers, condominiums] = await Promise.all([
+    getAgencyProspecting(dossiers),
+    getIdealSelection(buyer.id),
+    isDemoAgency(profile.agency_id),
+    // Mission 136 — ce que la veille a trouvé cette semaine, en tête.
+    getBuyerWatchFinds(profile.agency_id, buyer.id),
+    // Mission 139 — les biens écartés pour lui : ils ne s'affichent plus. Lancement, mission 3 —
+    // ni ceux qu'il a déjà reçus, visités ou refusés.
+    readSeenProperties(supabase, profile.agency_id, buyer.id),
+    // Mission 145 (partie A) — un mandat sous offre acceptée ne se propose plus.
+    getAgencyOfferAnswers(supabase, profile.agency_id),
+    // Mission 151 — la copropriété connue des mandats, seulement s'il n'en veut pas.
+    buyer.condominiumAccepted === false
+      ? getMandateCondominiums(profile.agency_id, signedIds)
+      : Promise.resolve(new Map<string, boolean>()),
+  ]);
   // Une lecture des offres en échec ne propose aucun mandat (M98) : les concurrents restent.
   const underOffer = offers == null ? new Set(signedIds) : projectsUnderOffer(offers);
   const agency = reconcileBuyer(
@@ -97,6 +95,8 @@ export default async function IdealPropertiesPage({ params }: Props) {
       underOffer,
     ),
   );
+  // Ce qu'il a déjà vu ; null : la lecture a échoué (M98).
+  const seenFacts = seenRead ? seenKeysOf(seenRead.seen, buyer.id) : null;
   const deduced = idealSearchCriteria(buyer);
   const watchCategorized =
     watchRun != null
@@ -170,7 +170,14 @@ export default async function IdealPropertiesPage({ params }: Props) {
         marketBlocked={marketBlocked}
         budgetWarning={budgetWarning}
         watch={watch}
-        dismissed={dismissals.error ? null : (dismissals.data ?? []).map((row) => row.property_key)}
+        dismissed={
+          seenFacts
+            ? seenFacts.filter((fact) => fact.reason === 'dismissed').map((fact) => fact.key)
+            : null
+        }
+        seen={(seenFacts ?? []).flatMap((fact) =>
+          fact.reason === 'dismissed' ? [] : [{ key: fact.key, reason: fact.reason }],
+        )}
         mandatesUnread={offers == null}
         buyerName={buyer.name}
         budgetMax={buyer.budgetMax}

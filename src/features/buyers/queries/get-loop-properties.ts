@@ -1,6 +1,7 @@
 import 'server-only';
 
-import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
+import { readSeenProperties } from '@/features/buyers/queries/read-seen-properties';
+import { contactedOf, ruledOutOf } from '@/features/buyers/services/seen-properties';
 import {
   loadAgencyBuyers,
   loadLoopProperties,
@@ -21,7 +22,6 @@ import { projectsUnderOffer } from '@/features/buyers/services/proposable';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
-import { readPages } from '@/lib/supabase/read-pages';
 import { createClient } from '@/lib/supabase/server';
 
 // Mission 134 — les biens qui appellent les acquéreurs de l'agence, lus en une vague, et les envois
@@ -35,7 +35,7 @@ export async function loadLoopCatalog(
 ): Promise<{ items: LoopProperty[]; contacts: LoopContacts; failed: boolean }> {
   const empty: LoopContacts = { proposals: new Map() };
   const supabase = await createClient();
-  const [conclusions, projects, proposals, dismissals] = await Promise.all([
+  const [conclusions, projects, seenRead] = await Promise.all([
     supabase
       .from('project_meeting_conclusions')
       .select('project_id, outcome, signed_at, concluded_at')
@@ -47,26 +47,27 @@ export async function loadLoopCatalog(
       .eq('agency_id', agencyId)
       .neq('status', 'archived')
       .eq('is_example', false),
-    readPages((from, to) =>
-      supabase
-        .from('buyer_proposals')
-        .select('buyer_id, property_key, sent_at')
-        .eq('agency_id', agencyId)
-        .order('id')
-        .range(from, to),
-    ),
-    // Mission 139 — les biens écartés pour un acquéreur ne lui sont plus proposés.
-    readDismissals(supabase, agencyId),
+    // Lancement, mission 3 — ce que chaque acquéreur a déjà vu : un bien écarté pour lui (M139) ou
+    // refusé par lui ne lui correspond plus ; un bien déjà envoyé (un envoi noté, M134, ou une
+    // sélection présentée ou partagée) ou visité ne lui est pas reproposé.
+    readSeenProperties(supabase, agencyId),
   ]);
-  if (conclusions.error || projects.error || proposals.error || dismissals == null) {
+  if (conclusions.error || projects.error || seenRead == null) {
     return { items: [], contacts: empty, failed: true };
   }
   const projectOf = new Map((projects.data ?? []).map((row) => [row.id, row]));
-  const contacts: LoopContacts = { proposals: new Map(), dismissals };
-  for (const row of proposals.data) {
-    const byBuyer = contacts.proposals.get(row.property_key) ?? new Map<string, string>();
-    byBuyer.set(row.buyer_id, row.sent_at);
-    contacts.proposals.set(row.property_key, byBuyer);
+  const contacts: LoopContacts = {
+    proposals: new Map(),
+    dismissals: ruledOutOf(seenRead.seen),
+    visited: new Map(),
+  };
+  for (const [key, byBuyer] of contactedOf(seenRead.seen)) {
+    contacts.proposals.set(
+      key,
+      new Map([...byBuyer].map(([buyerId, fact]) => [buyerId, fact.at ?? ''])),
+    );
+    const visited = [...byBuyer].filter(([, fact]) => fact.visited).map(([buyerId]) => buyerId);
+    if (visited.length > 0) contacts.visited?.set(key, new Set(visited));
   }
 
   // Les mandats signés de l'agence, au prix de la 133, sauf ceux qu'une offre acceptée tient.
