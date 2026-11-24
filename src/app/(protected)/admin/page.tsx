@@ -4,15 +4,13 @@ import { card, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styl
 import { getUnknownCommuneOppositions } from '@/features/prospecting/queries/get-unknown-commune-oppositions';
 import { UnknownCommuneAlerts } from '@/features/prospecting/components/unknown-commune-alerts';
 import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
-import { aiBudgetOpen, getAgencyAiBudget } from '@/features/ai-budget/queries/get-ai-budgets';
-import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
-import { formatEuro } from '@/lib/format';
 import {
-  BUDGET_REACHED_HINT,
-  BUDGET_REACHED_LABEL,
-  budgetUsageLabel,
-  budgetWarningLabel,
-} from '@/features/search-budget/services/budget';
+  aiBudgetOpen,
+  aiBudgetUsage,
+  getAgencyAiBudget,
+} from '@/features/ai-budget/queries/get-ai-budgets';
+import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
+import { BUDGET_REACHED_HINT, forfaitUsageLabel } from '@/features/search-budget/services/budget';
 import { isManagerRole } from '@/features/team/services/role';
 import { getProfile } from '@/lib/auth/get-profile';
 import { BuyerWatchAdmin } from '@/features/buyer-watch/components/buyer-watch-admin';
@@ -23,8 +21,9 @@ export default async function AdminPage() {
   // reste gardée par rôle, écran ET adresse). Un conseiller ne le voit pas.
   const profile = await getProfile();
   const isManager = isManagerRole(profile?.role);
-  // Mission 100 — la consommation Stream Estate du mois, pour le manager : il la voit, il ne
-  // règle pas le plafond (ce n'est pas un réglage d'agence).
+  // Mission 100 — la consommation de recherche du mois, pour le manager : il la voit, il ne
+  // règle pas le plafond (ce n'est pas un réglage d'agence). Lancement, mission 5 — en part du
+  // forfait, jamais en euros : les montants restent pour l'opérateur seul.
   const budgetRead = profile && isManager ? await getSearchBudget(profile.agency_id) : null;
   // Mission 151 — la lecture par l'IA : le manager la lit, l'opérateur règle le plafond (M55).
   const aiBudget = profile && isManager ? await getAgencyAiBudget(profile.agency_id) : undefined;
@@ -88,9 +87,9 @@ export default async function AdminPage() {
           <span className={kickerLabel}>Lecture par l’IA · ce mois-ci</span>
           <p className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
             {!aiBudget
-              ? 'Le budget n’a pas pu être lu : rechargez la page.'
+              ? 'Le forfait n’a pas pu être lu : rechargez la page.'
               : aiOpen
-                ? `${formatEuro(aiBudget.spentCents / 100)} sur ${formatEuro(aiBudget.capCents / 100)}`
+                ? forfaitUsageLabel(aiBudgetUsage(aiBudget))
                 : 'Pas encore ouverte pour votre agence : l’équipe ACM Studio l’ouvre à votre demande.'}
           </p>
         </div>
@@ -101,25 +100,26 @@ export default async function AdminPage() {
           <span className={kickerLabel}>Recherche de concurrents · ce mois-ci</span>
           {budgetRead.ok ? (
             <>
-              <p className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
-                {budgetUsageLabel(budgetRead.budget)}
+              <p
+                className={
+                  budgetRead.budget.reached
+                    ? 'font-title text-lg font-semibold text-red-600 stage:text-red-300'
+                    : budgetRead.budget.warning
+                      ? 'font-title text-lg font-semibold text-amber-700 stage:text-amber-300'
+                      : 'font-title text-lg font-semibold text-zinc-900 stage:text-white'
+                }
+                data-testid="admin-search-forfait"
+              >
+                {forfaitUsageLabel(budgetRead.budget)}
               </p>
               {budgetRead.budget.reached ? (
                 <p role="status" className="text-sm font-medium text-red-600 stage:text-red-300">
-                  {BUDGET_REACHED_LABEL}. {BUDGET_REACHED_HINT}
-                </p>
-              ) : null}
-              {budgetRead.budget.warning ? (
-                <p
-                  role="status"
-                  className="text-sm font-medium text-amber-700 stage:text-amber-300"
-                >
-                  {budgetWarningLabel(budgetRead.budget)}
+                  Contactez l’équipe ACM Studio pour le relever. {BUDGET_REACHED_HINT}
                 </p>
               ) : null}
               <p className="text-sm text-zinc-500 stage:text-white/55">
-                Ce que les recherches « Chercher les concurrents » ont coûté ce mois-ci, sur le
-                plafond mensuel de l’agence. Le compteur repart à zéro le 1er du mois.
+                Les recherches « Chercher les concurrents » de l’agence ce mois-ci, sur son forfait.
+                Le compteur repart à zéro le 1er du mois.
               </p>
             </>
           ) : (

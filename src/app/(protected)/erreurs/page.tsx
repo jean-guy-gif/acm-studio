@@ -12,6 +12,7 @@ import {
 import { setAgencyDemo } from '@/features/operations/actions/set-agency-demo';
 import { setAgencySearchCap } from '@/features/operations/actions/set-agency-search-cap';
 import { setAgencyAiCap } from '@/features/operations/actions/set-agency-ai-cap';
+import { setAgencyWatchCap } from '@/features/operations/actions/set-agency-watch-cap';
 import {
   aiBudgetOf,
   aiBudgetOpen,
@@ -28,10 +29,10 @@ import {
 import { ERRORS_WINDOW_DAYS, errorSourceLabel } from '@/features/operations/services/group-errors';
 import { requireOperator } from '@/features/operations/services/require-operator';
 import {
-  BUDGET_REACHED_LABEL,
+  OPERATOR_BUDGET_REACHED,
   budgetUsageLabel,
-  budgetWarningLabel,
-} from '@/features/search-budget/services/budget';
+} from '@/features/operations/services/usage-costs';
+import { budgetWarningLabel } from '@/features/search-budget/services/budget';
 import { formatRelativeMoment } from '@/lib/format';
 import { readAcademiaKeys } from '@/features/academia/queries/read-academia-keys';
 import { academiaKeyLine } from '@/features/academia/services/academia-key-status';
@@ -195,12 +196,14 @@ export default async function ErrorsPage() {
         <div className="flex flex-col gap-1">
           <h2 className={sectionTitle}>Budget de recherche par agence</h2>
           <p className={hintText}>
-            Ce que chaque agence a dépensé ce mois-ci en recherches Stream Estate, et son plafond
-            mensuel. À 0 €, la recherche est coupée.
+            Ce que chaque agence a dépensé ce mois-ci en recherches Stream Estate, et ses plafonds
+            mensuels : la recherche, la veille des acquéreurs (prise dans celui de la recherche, la
+            moitié au plus) et la lecture par l’IA. À 0 €, c’est coupé. Ni le conseiller ni le
+            manager ne voient ces montants.
           </p>
         </div>
         <ul className="flex flex-col gap-3">
-          {budgets.map(({ agencyId, agencyName, budget, isDemo }) => (
+          {budgets.map(({ agencyId, agencyName, budget, isDemo, watchCapCents }) => (
             <li
               key={agencyId}
               className={`${card} flex flex-wrap items-center justify-between gap-3 p-4`}
@@ -214,7 +217,7 @@ export default async function ErrorsPage() {
                 </span>
                 <span className="text-sm text-zinc-600 stage:text-white/65">
                   Ce mois-ci : {budgetUsageLabel(budget)}
-                  {budget.reached ? ` · ${BUDGET_REACHED_LABEL}` : ''}
+                  {budget.reached ? ` · ${OPERATOR_BUDGET_REACHED}` : ''}
                   {budget.warning ? ` · ${budgetWarningLabel(budget)}` : ''}
                 </span>
                 {/* Mission 151 — la lecture par l'IA : ce qui a été dépensé ce mois-ci et le plafond.
@@ -229,12 +232,23 @@ export default async function ErrorsPage() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <AgencyCapForm
+                  label="Recherche"
                   agencyName={agencyName}
                   initialEuros={budget.capCents / 100}
                   saveAction={setAgencySearchCap.bind(null, agencyId)}
                 />
+                {/* Lancement, mission 5 — le plafond de la veille des acquéreurs se règle ici,
+                    plus par le manager : une part du plafond de recherche, la moitié au plus ;
+                    0 € la coupe. */}
+                <AgencyCapForm
+                  label="Veille"
+                  agencyName={`${agencyName}, veille des acquéreurs`}
+                  initialEuros={watchCapCents / 100}
+                  saveAction={setAgencyWatchCap.bind(null, agencyId)}
+                />
                 {aiBudgets ? (
                   <AgencyCapForm
+                    label="IA"
                     agencyName={`${agencyName}, lecture par l’IA`}
                     initialEuros={
                       aiBudgetOf(aiBudgets, agencyId).posed

@@ -23,10 +23,7 @@ import {
   type ExtensionIssue,
 } from '@/features/browser-extension/extension-required-notice';
 import { listingPayload } from '@/features/competitor-search/services/listing-payload';
-import {
-  runPaidSearch,
-  STREAM_ESTATE_MAX_COST,
-} from '@/features/competitor-search/services/paid-search-guard';
+import { runPaidSearch } from '@/features/competitor-search/services/paid-search-guard';
 import { readPageViaExtension } from '@/features/competitor-search/services/read-page-via-extension';
 import { resumeMemory } from '@/features/competitor-search/services/stream-estate-summary';
 import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
@@ -93,7 +90,9 @@ import { displayPhotoUrl } from '@/lib/photo-url';
 //   3. la sélection : jusqu'à trois biens cochés, « Retenir la sélection ».
 // Une recherche n'est pas une disponibilité : « affiché le », jamais « disponible ».
 
-export const PAID_MARKET_WARNING = `Recherche payante sur le marché : jusqu’à ${STREAM_ESTATE_MAX_COST}. Les critères sont ceux de la fiche.`;
+// Lancement, mission 5 — sans montant : la recherche compte dans le forfait de l'agence.
+export const PAID_MARKET_WARNING =
+  'Recherche sur le marché, comptée dans le forfait du mois. Les critères sont ceux de la fiche.';
 export const MARKET_BUTTON = 'Trouver sur le marché';
 export const RETAIN_BUTTON = 'Retenir la sélection';
 
@@ -971,7 +970,7 @@ export function IdealPropertiesPanel({
             >
               <span>{PAID_MARKET_WARNING}</span>
               <button type="button" className={btnSecondary} onClick={() => void search(false)}>
-                Lancer et payer
+                Lancer la recherche
               </button>
               <button
                 type="button"
@@ -991,9 +990,6 @@ export function IdealPropertiesPanel({
               >
                 {searching ? 'Recherche…' : MARKET_BUTTON}
               </button>
-              <span className={hintText}>
-                Coût maximal : {STREAM_ESTATE_MAX_COST} par recherche
-              </span>
             </div>
           )
         ) : (
@@ -1005,7 +1001,7 @@ export function IdealPropertiesPanel({
               {market.portal.candidates.length} bien{market.portal.candidates.length > 1 ? 's' : ''}{' '}
               reçu
               {market.portal.candidates.length > 1 ? 's' : ''} sur {market.communes.join(', ')} ·{' '}
-              {market.billed} annonce{market.billed > 1 ? 's' : ''} facturée
+              {market.billed} annonce{market.billed > 1 ? 's' : ''} comptée
               {market.billed > 1 ? 's' : ''}
               {excludedLine(market.categorized.excluded)
                 ? ` · ${excludedLine(market.categorized.excluded)}`
@@ -1047,7 +1043,7 @@ export function IdealPropertiesPanel({
                 disabled={searching}
                 onClick={() => void search(true)}
               >
-                {searching ? 'Recherche…' : 'Chercher encore (20 annonces, 0,20 €)'}
+                {searching ? 'Recherche…' : 'Chercher encore (20 annonces)'}
               </button>
             ) : null}
           </>

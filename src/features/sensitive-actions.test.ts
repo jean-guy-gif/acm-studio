@@ -826,6 +826,48 @@ describe('plafond de recherche d’une agence', () => {
   });
 });
 
+// Lancement, mission 5 — le plafond de la veille des acquéreurs se règle par les seuls opérateurs
+// (le manager ne voit plus de montant : il coupe ou reprend la veille).
+describe('plafond de la veille d’une agence', () => {
+  const laurent = { id: 'u-op', email: 'laurent@start-academy.fr' };
+
+  it('refuse tout compte hors de la liste — manager compris — sans rien écrire', async () => {
+    const { setAgencyWatchCap } =
+      await import('@/features/operations/actions/set-agency-watch-cap');
+    process.env.ACM_OPERATOR_EMAILS = 'laurent@start-academy.fr';
+    for (const user of [null, { id: 'u-manager', email: 'manager@agence.fr' }]) {
+      state.user = user;
+      state.profile = manager;
+      expect(await setAgencyWatchCap(AGENCY, form({ cap: '5' }))).toEqual({
+        ok: false,
+        error: 'Réservé aux comptes autorisés.',
+      });
+    }
+    noWrite();
+  });
+
+  it('un compte autorisé le règle, jamais au-delà de la moitié du plafond de recherche', async () => {
+    const { setAgencyWatchCap } =
+      await import('@/features/operations/actions/set-agency-watch-cap');
+    process.env.ACM_OPERATOR_EMAILS = 'laurent@start-academy.fr';
+    state.user = laurent;
+    state.respond = (table) =>
+      table === 'agencies'
+        ? { data: { id: AGENCY } }
+        : table === 'agency_search_budgets'
+          ? { data: { monthly_cap_cents: 3000 } }
+          : {};
+    expect((await setAgencyWatchCap(AGENCY, form({ cap: '16' }))).ok).toBe(false);
+    expect((await setAgencyWatchCap('pas-un-id', form({ cap: '5' }))).ok).toBe(false);
+    expect(service.writes()).toEqual([]);
+    expect(await setAgencyWatchCap(AGENCY, form({ cap: '12' }))).toEqual({ ok: true });
+    expect(service.writes()).toEqual(['update agencies']);
+    expect(service.calls.find((call) => call.method === 'update')?.args[0]).toEqual({
+      buyer_watch_cap_cents: 1200,
+    });
+  });
+});
+
 // Mission 104 — rouvrir un Live figé par erreur : les seuls opérateurs, avec un motif ; la base
 // trace qui, quand, motif et les réponses effacées (supabase/tests/live_reopening.sql).
 describe('rouvrir un Live figé par erreur', () => {

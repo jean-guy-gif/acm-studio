@@ -254,6 +254,21 @@ async function measureOverflow(page: Page): Promise<OverflowMeasure> {
   });
 }
 
+// Lancement, mission 5 (Jean-Guy, 23/11) — plus aucun coût en euros devant le conseiller : ni un
+// montant à centimes (« 0,60 € » ; un prix de bien n'en a pas), ni « par recherche », « par
+// mois », ni un mot de dépense. Le test `no-usage-cost.test.ts` lit les textes du code ; celui-ci
+// lit l'écran tel qu'il s'affiche.
+const USAGE_COST =
+  /\d,\d{2}\s*€|€\s+par\s+(recherche|mois)|payant|\bpayer\b|\bfacturée?s?\b|\bcoûts?\b/i;
+export async function expectNoUsageCost(page: Page, where: string): Promise<void> {
+  const text = await page.locator('body').innerText();
+  const found = USAGE_COST.exec(text);
+  expect(
+    found ? `« ${text.slice(Math.max(0, found.index - 40), found.index + 60)} »` : null,
+    `${where} : un coût d’usage s’affiche devant le conseiller`,
+  ).toBeNull();
+}
+
 export async function expectNoHorizontalScroll(page: Page, screen: string): Promise<void> {
   await expect
     .poll(() => measureOverflow(page), {

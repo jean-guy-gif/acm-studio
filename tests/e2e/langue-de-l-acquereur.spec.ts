@@ -30,7 +30,7 @@ test('la langue de l’acquéreur : les Wilson, leur dossier, son lien et la pr�
     await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     await page
       .getByTestId('ideal-paid-confirm')
-      .getByRole('button', { name: 'Lancer et payer' })
+      .getByRole('button', { name: 'Lancer la recherche' })
       .click();
     await expect(page.getByTestId('ideal-market-summary')).toBeVisible({ timeout: 60_000 });
     const hits = page.getByTestId('ideal-market-hit');

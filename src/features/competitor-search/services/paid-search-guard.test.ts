@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   runPaidSearch,
   searchFingerprint,
-  STREAM_ESTATE_MAX_COST_LABEL,
 } from '@/features/competitor-search/services/paid-search-guard';
 import { DEFAULT_SEARCH_SETTINGS } from '@/features/competitor-search/services/search-settings';
 import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
@@ -34,12 +33,6 @@ describe('aucun appel payant sans extension (mission 93)', () => {
     const outcome = await runPaidSearch(async () => ({ available: true }), search);
     expect(outcome).toEqual({ ran: true, result: 'résultat' });
     expect(search).toHaveBeenCalledTimes(1);
-  });
-
-  it('dit le coût maximal avant de payer', () => {
-    expect(STREAM_ESTATE_MAX_COST_LABEL.replace(/[  ]/g, ' ')).toBe(
-      'Coût maximal : 0,60 € par recherche',
-    );
   });
 });
 
