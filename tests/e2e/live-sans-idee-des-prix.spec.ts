@@ -9,8 +9,9 @@ import {
 } from './support';
 
 // Lancement, mission 1 (24/11) — le vendeur n'a aucune idée des prix. Sur « Votre valeur perçue »,
-// la première question du Live, « Voir d'abord les biens et leurs prix » passe en présentation
-// directe : le premier concurrent s'affiche avec son prix, et « Voir l'annonce » est à un toucher.
+// la première question du Live, « Voir les biens et leurs prix » (un toucher demande, un second
+// confirme) passe en présentation directe : le premier concurrent s'affiche avec son prix, et
+// « Voir l'annonce » l'ouvre d'un toucher (dans la démo : la copie d'ACM, M152 A).
 // Joué sur le Live interactif de Mme Garcia (démo de Vence), aux trois fenêtres de la tablette :
 // rien ne défile avec le bouton en plus (M148 B). `E2E_CAPTURES=1` range deux captures dans
 // `missions/maquettes/`.
@@ -40,17 +41,22 @@ test('le vendeur n’a aucune idée des prix : un bouton ouvre les biens avec le
     await page.goto(`/live/${projectId}`);
     await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/lancer-le-live$`));
     await page.getByTestId('launch-for-real').click();
-    const start = page.locator('main button.btn-filled').first();
-    await expect(start).toBeVisible({ timeout: 90_000 });
-    await start.click();
+    // La scène du Live, sur son introduction (et non la page de lancement, qui a aussi un bouton plein).
     const main = page.locator('main');
+    await expect(main).toHaveAttribute('data-live-page', 'intro', { timeout: 90_000 });
+    await main.locator('button.btn-filled').first().click();
     await expect(main).not.toHaveAttribute('data-live-page', 'intro', { timeout: 30_000 });
 
-    // « Votre bien » : oui, puis la première question.
-    if ((await main.getAttribute('data-live-page')) !== 'seller_perceived_price') {
+    // Jusqu'à la première question (« Votre bien » : oui ; un écran sans question : continuer).
+    for (let step = 0; step < 8; step += 1) {
+      const type = (await main.getAttribute('data-live-page')) ?? '';
+      if (type === 'seller_perceived_price') break;
       const yes = main.locator('input[name="seller_property_confirmed"][value="yes"]');
-      await yes.first().locator('xpath=ancestor::label[1]').click();
+      if ((await yes.count()) > 0 && !(await yes.first().isChecked())) {
+        await yes.first().locator('xpath=ancestor::label[1]').click();
+      }
       await page.getByTestId('live-validate').click();
+      await expect(main).not.toHaveAttribute('data-live-page', type, { timeout: 30_000 });
     }
     await expect(main).toHaveAttribute('data-live-page', 'seller_perceived_price', {
       timeout: 30_000,
@@ -58,7 +64,7 @@ test('le vendeur n’a aucune idée des prix : un bouton ouvre les biens avec le
 
     const button = page.getByTestId('live-see-prices-first');
     await expect(button).toBeVisible();
-    await expect(button).toHaveText('Voir d’abord les biens et leurs prix');
+    await expect(button).toHaveText('Voir les biens et leurs prix');
     // Le seul bouton plein reste « Valider », et rien ne défile avec le bouton en plus.
     await expect(main.locator('.btn-filled')).toHaveCount(0);
     for (const size of TABLETS) {
@@ -71,12 +77,25 @@ test('le vendeur n’a aucune idée des prix : un bouton ouvre les biens avec le
       await page.screenshot({ path: 'missions/maquettes/L1-live-valeur-percue.png' });
     }
 
+    // Un premier toucher ne change rien : il demande. « Revenir à la question » le referme.
     await button.click();
+    await expect(page.getByTestId('live-see-prices-confirm')).toHaveText('Oui, voir les prix');
+    await expect(main).toHaveAttribute('data-live-page', 'seller_perceived_price');
+    for (const size of TABLETS) {
+      await page.setViewportSize(size);
+      await expectNoVerticalScroll(page, `La confirmation (${size.width} × ${size.height})`);
+    }
+    await page.setViewportSize(TABLETS[0]);
+    await page.getByTestId('live-see-prices-back').click();
+    await expect(page.getByTestId('live-see-prices-confirm')).toHaveCount(0);
+    await page.getByTestId('live-see-prices-first').click();
+    await page.getByTestId('live-see-prices-confirm').click();
+
     // Le premier concurrent, en présentation directe : son prix est là, sans rien deviner.
     await expect(main).toHaveAttribute('data-live-page', 'comparable_direct', { timeout: 30_000 });
     await expect(main).toContainText('€');
     await expect(main.locator('input[data-price-for]')).toHaveCount(0);
-    await expect(page.getByTestId('live-listing-open').first()).toBeVisible();
+    await expect(page.locator('[data-live-step]')).toContainText('1');
     for (const size of TABLETS) {
       await page.setViewportSize(size);
       await expectNoVerticalScroll(page, `Premier bien (${size.width} × ${size.height})`);
@@ -85,6 +104,16 @@ test('le vendeur n’a aucune idée des prix : un bouton ouvre les biens avec le
     if (process.env.E2E_CAPTURES === '1') {
       await page.screenshot({ path: 'missions/maquettes/L1-live-premier-bien.png' });
     }
+
+    // « Voir l'annonce », d'un toucher : dans la démo, la copie d'ACM s'ouvre (aucun portail).
+    await page.getByTestId('live-listing-open').first().click();
+    await expect(page.getByTestId('live-listing-copy')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId('live-listing-price')).toContainText('€');
+    if (process.env.E2E_CAPTURES === '1') {
+      await page.screenshot({ path: 'missions/maquettes/L1-live-voir-l-annonce.png' });
+    }
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('live-listing-copy')).toHaveCount(0);
 
     // Le choix est gardé : rechargé, le Live reste en présentation directe, sans « Votre valeur perçue ».
     await page.reload();

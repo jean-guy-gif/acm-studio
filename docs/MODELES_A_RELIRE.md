@@ -102,8 +102,9 @@ market », « … are for sale today », « At €745,000, three houses for sale
 recent sales », « half the houses for sale have been waiting for a buyer at least this long », et les
 sources « Planning », « Building permits », « Risks », « Residents ».
 
-## Lancement, mission 1 — « Voir d'abord les biens et leurs prix »
+## Lancement, mission 1 — « Voir les biens et leurs prix »
 
-- Sur « Votre valeur perçue » du Live, le bouton en anglais : « See the competing properties and
-  their asking prices first » (`src/lib/client-texts/en.ts`, `live.perceived.seePricesFirst`). À
-  faire relire par un locuteur natif, avec le reste de l'anglais du Live.
+- Sur « Votre valeur perçue » du Live, quatre textes en anglais (`src/lib/client-texts/en.ts`,
+  `live.perceived`) : « See the competing properties and their asking prices », « Shall we look at
+  the competing properties and their asking prices now? », « Yes, see the prices », « Back to the
+  question ». À faire relire par un locuteur natif, avec le reste de l'anglais du Live.

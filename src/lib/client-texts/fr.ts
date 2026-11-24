@@ -345,7 +345,10 @@ export const FRENCH_TEXTS: ClientTexts = {
       hint: 'D’abord votre intuition, avant de regarder le marché : c’est elle que nous notons ici.',
       label: 'Votre valeur perçue',
       confirmHint: 'Est-ce bien votre prix\u00a0? Une fois confirmé, il ne se modifie plus.',
-      seePricesFirst: 'Voir d’abord les biens et leurs prix',
+      seePrices: 'Voir les biens et leurs prix',
+      seePricesAsk: 'Nous regardons les biens et leurs prix maintenant\u00a0?',
+      seePricesYes: 'Oui, voir les prix',
+      seePricesBack: 'Revenir à la question',
     },
     competition: {
       question: 'Est-il un sérieux concurrent pour votre bien ?',

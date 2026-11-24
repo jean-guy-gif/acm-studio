@@ -55,6 +55,7 @@ import {
 import {
   buildLivePages,
   indexAfterModeChange,
+  indexOfFirstDirectCompetitor,
   type LivePage,
   type LiveRhythm,
 } from '@/features/live-seller/services/build-live-pages';
@@ -576,13 +577,18 @@ export function LiveComparativeShell({
       setBusy: setSwitching,
     });
     if (!r.ok) {
-      if (from === 'page') setAwaitError(errorFor(r.error, t.saveFailed));
-      else setMenuError(r.error ?? 'Le changement n’a pas pu être enregistré.');
+      if (from === 'page') {
+        setAwaitError(errorFor(r.error, t.saveFailed, texts.live.perceived.seePricesYes));
+      } else setMenuError(r.error ?? 'Le changement n’a pas pu être enregistré.');
       return;
     }
     const nextPages = buildLivePages(navLive, hasSubjectProperty, rhythm, next);
     setAwaitError(null);
-    setIndex(indexAfterModeChange(page, currentIndex, nextPages));
+    setIndex(
+      from === 'page'
+        ? indexOfFirstDirectCompetitor(nextPages, currentIndex)
+        : indexAfterModeChange(page, currentIndex, nextPages),
+    );
     setMode(next);
     setMenuOpen(false);
   };

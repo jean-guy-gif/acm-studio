@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { useLiveTexts } from '@/features/live-seller/components/live-texts';
 import { LiveLockedAnswer } from '@/features/live-seller/components/live-locked-answer';
 import {
@@ -27,10 +29,13 @@ import { PriceInput } from '@/features/live-seller/components/price-input';
 // grand (« 350 000 € ? ») : une faute de frappe se voit, une seule confirmation suffit.
 // Enregistré, il se relit ici sans champ de saisie.
 //
-// Lancement, mission 1 (24/11) — le vendeur n'a aucune idée des prix : « Voir d'abord les biens et
-// leurs prix », en contour sous le champ, passe le Live en présentation directe (M131) — chaque
-// bien avec son prix, « Voir l'annonce » en un toucher. Le choix reste au conseiller, qui touche
-// le bouton ; rien ne dit au vendeur qu'il n'a pas répondu. Le champ reste : il peut dire son prix.
+// Lancement, mission 1 (24/11) — le vendeur n'a aucune idée des prix : « Voir les biens et leurs
+// prix », en contour sous le champ, passe le Live en présentation directe (M131) — chaque bien avec
+// son prix, « Voir l'annonce » en un toucher. Le choix reste au conseiller, qui touche le bouton ;
+// rien ne dit au vendeur qu'il n'a pas répondu. Le champ reste : il peut dire son prix.
+// Le geste ne se défait pas (un prix montré, la valeur perçue n'est plus demandée, M131) : un
+// premier toucher pose la question, le second confirme, comme pour la valeur perçue (M92). Le
+// bouton s'efface pendant qu'un prix tapé attend sa confirmation.
 export function LivePagePerceived({
   summary,
   confirming = null,
@@ -45,6 +50,7 @@ export function LivePagePerceived({
   switching?: boolean;
 }) {
   const saved = summary?.seller_perceived_property_price ?? null;
+  const [asking, setAsking] = useState(false);
   const { language, texts } = useLiveTexts();
   const t = texts.live.perceived;
   return (
@@ -80,18 +86,46 @@ export function LivePagePerceived({
               <span className={questionHint}>{t.confirmHint}</span>
             </div>
           ) : null}
-          {onSeePricesFirst ? (
-            <div className="flex justify-start border-t border-zinc-200 pt-3 stage:border-white/15">
-              <button
-                type="button"
-                onClick={onSeePricesFirst}
-                disabled={switching}
-                aria-busy={switching || undefined}
-                data-testid="live-see-prices-first"
-                className={`${navBtn} px-4 py-2 disabled:opacity-60`}
-              >
-                {t.seePricesFirst}
-              </button>
+          {onSeePricesFirst && confirming == null ? (
+            <div
+              className="flex flex-wrap items-center gap-3 border-t border-zinc-200 pt-3 stage:border-white/15"
+              data-testid="live-see-prices"
+            >
+              {asking ? (
+                <>
+                  <span className={questionHint} role="status" aria-live="polite">
+                    {t.seePricesAsk}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onSeePricesFirst}
+                    disabled={switching}
+                    aria-busy={switching || undefined}
+                    data-testid="live-see-prices-confirm"
+                    className={`${navBtn} px-4 py-2 disabled:opacity-60`}
+                  >
+                    {t.seePricesYes}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAsking(false)}
+                    disabled={switching}
+                    data-testid="live-see-prices-back"
+                    className="px-2 py-2 text-sm font-medium text-zinc-600 underline underline-offset-4 disabled:opacity-60 stage:text-white/75"
+                  >
+                    {t.seePricesBack}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAsking(true)}
+                  data-testid="live-see-prices-first"
+                  className={`${navBtn} px-4 py-2`}
+                >
+                  {t.seePrices}
+                </button>
+              )}
             </div>
           ) : null}
         </form>

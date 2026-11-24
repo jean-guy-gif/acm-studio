@@ -8,6 +8,8 @@ const TRAP_TITLE = 'EXCLUSIVITÉ Agence Dupont 12 rue des Lilas';
 const state = vi.hoisted(() => ({
   revealed: true,
   serious: 'yes',
+  // Lancement, mission 1 — le prix montré en présentation directe, sans aucune devinette.
+  shownDirectly: false,
   demo: false,
   competitor: null as Record<string, unknown> | null,
 }));
@@ -39,7 +41,7 @@ vi.mock('@/features/demo/services/is-demo-agency', () => ({
 vi.mock('@/features/live-seller/services/load-live-presentation', () => ({
   loadLivePresentation: async () => ({
     live: {
-      direct: false,
+      direct: state.shownDirectly,
       comparables: [
         {
           id: 'c-1',
@@ -47,9 +49,18 @@ vi.mock('@/features/live-seller/services/load-live-presentation', () => ({
           listingUrl: URL,
           priceReveal: { currentPrice: 740_000 },
           photoUrls: ['https://photos.example.com/now.jpg'],
-          response: state.revealed
-            ? { seller_estimated_listing_price: 700_000, seller_serious_competitor: state.serious }
-            : null,
+          response: state.shownDirectly
+            ? {
+                shown_directly_at: '2026-11-24T08:00:00Z',
+                seller_estimated_listing_price: null,
+                seller_serious_competitor: null,
+              }
+            : state.revealed
+              ? {
+                  seller_estimated_listing_price: 700_000,
+                  seller_serious_competitor: state.serious,
+                }
+              : null,
         },
       ],
     },
@@ -62,6 +73,7 @@ beforeEach(() => {
   server.reset();
   state.revealed = true;
   state.serious = 'yes';
+  state.shownDirectly = false;
   state.demo = false;
   state.competitor = {
     listing_url: URL,
@@ -108,6 +120,15 @@ describe('« Voir l’annonce » au Live', () => {
   });
 
   it('prix dévoilé, annonce en ligne : son adresse, pour un nouvel onglet', async () => {
+    expect(await openLiveListing('p-1', 'c-1')).toEqual({ ok: true, kind: 'online', url: URL });
+    expect(server.writes()).toEqual([]);
+  });
+
+  // Lancement, mission 1 (24/11) — « Voir les biens et leurs prix » : un bien montré en
+  // présentation directe, sans devinette, ouvre son annonce d'un toucher.
+  it('prix montré en présentation directe, sans devinette : son adresse aussi', async () => {
+    state.revealed = false;
+    state.shownDirectly = true;
     expect(await openLiveListing('p-1', 'c-1')).toEqual({ ok: true, kind: 'online', url: URL });
     expect(server.writes()).toEqual([]);
   });
