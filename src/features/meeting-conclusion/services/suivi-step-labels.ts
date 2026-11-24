@@ -12,6 +12,10 @@ import {
 } from '@/features/buyers/services/loop-properties';
 import { offerAnswerTitle } from '@/features/purchase-offer/services/offer-answer';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
+import { formatRelativeDay } from '@/lib/format';
+
+// Midi d'un jour AAAA-MM-JJ : un instant de ce jour-là à Paris, pour une date relative.
+const parisNoon = (day: string): Date => new Date(`${day}T12:00:00Z`);
 
 // Mission 134 — la page « Proposer ce bien ».
 export const proposeHref = (propertyKey: string): string =>
@@ -124,6 +128,9 @@ export function taskHref(task: SuiviTask): string {
     case 'buyer_meeting':
     case 'buyer_weekly_report':
       return `/acquereurs/${task.buyerId ?? ''}`;
+    // Lancement, mission 7 — le formulaire « Visite faite » de cette visite, ouvert sur Visites.
+    case 'visit_report':
+      return `/visites?faite=${task.visitId ?? ''}#visite-${task.visitId ?? ''}`;
   }
 }
 
@@ -317,6 +324,25 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         detail: late ? `${parts.join(' · ')} · ` : parts.join(' · '),
         late,
         button: task.linkExpired ? 'Envoyer un nouveau lien' : 'Relancer',
+        href,
+      };
+    }
+    // Lancement, mission 7 — la visite confirmée a eu lieu : son compte rendu, en trente secondes.
+    case 'visit_report': {
+      const what = [
+        task.propertyLabel ?? null,
+        task.scheduledAt
+          ? `visite prévue ${formatRelativeDay(task.scheduledAt, parisNoon(today))}`
+          : null,
+      ]
+        .filter((part): part is string => part != null)
+        .join(' · ');
+      return {
+        title: `Saisir le compte rendu de la visite de ${buyerInSentence(task.buyerName)}`,
+        // L'écran pose lui-même le « · » devant le retard.
+        detail: what,
+        late,
+        button: 'Visite faite',
         href,
       };
     }
@@ -558,6 +584,7 @@ export function cardStep(
     case 'buyer_recontact':
     case 'buyer_meeting':
     case 'buyer_weekly_report':
+    case 'visit_report':
       return { when: 'aucune', whenLate: false, title: '', phrase: '', button: null };
   }
 }

@@ -4,6 +4,7 @@ import { cache } from 'react';
 
 import { readRuledOut } from '@/features/buyers/queries/read-seen-properties';
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { visitReportTasks } from '@/features/buyer-presentation/services/visit-report-tasks';
 import { getBuyerProspecting } from '@/features/buyer-prospecting/queries/get-buyer-prospecting';
 import { getWatchTasks } from '@/features/buyer-watch/queries/get-watch';
 import { getBuyerRecontactTasks } from '@/features/buyers/queries/get-buyer-recontact-tasks';
@@ -228,6 +229,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
     visits: visitRead.lines,
     pointsUnknown: pointsRes.error != null,
     alerted,
+    now,
   });
 
   // Les vendeurs à relancer que veulent des acquéreurs prêts.
@@ -279,6 +281,8 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
 
   const all = sortTasks([
     ...inputs.flatMap(dossierTasks),
+    // Lancement, mission 7 — le compte rendu d'une visite confirmée dont l'heure est passée.
+    ...visitReportTasks(visitRead.lines, now),
     ...buyerRead.tasks,
     ...loopTasks.tasks,
     ...watchRead.tasks,

@@ -1245,6 +1245,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     const doneForm = page.getByTestId('visit-done-form');
     await doneForm.getByTestId('visit-opinion-not_for_me').click();
     await expect(doneForm.getByTestId('visit-next-offer')).toHaveCount(0);
+    // Lancement, mission 7 — ce qui a gêné et la note : facultatifs, repliés.
+    await doneForm.getByTestId('visit-more-open').click();
     await doneForm.getByTestId('visit-disliked-light').click();
     await doneForm.getByTestId('visit-note').fill('Trop sombre, d’après le test automatique');
     await doneForm.getByTestId('visit-next-keep_searching').click();

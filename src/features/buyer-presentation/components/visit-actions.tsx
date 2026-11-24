@@ -38,6 +38,7 @@ export function VisitActions({
   letterState,
   colleague,
   openMessages = false,
+  openDone = false,
   changeNext = null,
 }: {
   visitId: string;
@@ -49,10 +50,14 @@ export function VisitActions({
   colleague: boolean;
   // Mission 139 — juste après « Visite faite » : ses messages ouverts aussitôt.
   openMessages?: boolean;
+  // Lancement, mission 7 — depuis « Aujourd'hui » : le compte rendu de cette visite, ouvert.
+  openDone?: boolean;
   // Correctif du 13/11 — une visite faite : sa suite se change (l'acquéreur a changé d'avis).
   changeNext?: { current: ReportNextStep | null; offerAllowed: boolean } | null;
 }) {
-  const [opened, setOpened] = useState<Opened>(openMessages ? 'messages' : null);
+  const [opened, setOpened] = useState<Opened>(
+    openMessages ? 'messages' : openDone ? 'done' : null,
+  );
   const toggle = (value: Exclude<Opened, null>) =>
     setOpened((current) => (current === value ? null : value));
   const projectId =

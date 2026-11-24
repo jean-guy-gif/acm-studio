@@ -2034,6 +2034,9 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // Mission 139 — le compte rendu en boutons, puis les messages prêts.
   const doneForm = page.getByTestId('visit-done-form');
   await doneForm.getByTestId('visit-opinion-love').click();
+  // Lancement, mission 7 — ce qui a plu, ce qui a gêné et la note sont facultatifs, repliés.
+  await expect(doneForm.getByTestId('visit-liked-light')).toHaveCount(0);
+  await doneForm.getByTestId('visit-more-open').click();
   await doneForm.getByTestId('visit-liked-light').click();
   await doneForm.getByTestId('visit-disliked-outdoor').click();
   await doneForm.getByTestId('visit-note').fill('Belle lumière, jardin un peu petit');

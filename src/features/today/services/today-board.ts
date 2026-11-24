@@ -36,6 +36,7 @@ const BLOCK_OF: Record<SuiviTaskKind, TodayBlockKey> = {
   follow_up_early: 'sellers',
   market_update: 'sellers',
   visit: 'buyers',
+  visit_report: 'buyers',
   propose_buyers: 'buyers',
   buyer_watch: 'buyers',
   buyer_relaunch: 'buyers',
@@ -172,6 +173,8 @@ export function seriesTitle(
       return `Faire ${plural(n, 'Point marché', 'Points marché')}`;
     case 'visit':
       return `Organiser des visites chez ${plural(n, 'vendeur', 'vendeurs')}`;
+    case 'visit_report':
+      return `Saisir le compte rendu de ${plural(n, 'visite', 'visites')}`;
     case 'propose_buyers':
       return `${plural(n, 'bien', 'biens')} à proposer à vos acquéreurs`;
     case 'buyer_watch':
