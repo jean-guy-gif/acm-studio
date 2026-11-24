@@ -1693,9 +1693,9 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('buyer-next-step')).toContainText('Lancer le compromis');
   await expect(page.getByTestId('buyer-timeline')).toContainText('Sa réponse reçue par le lien');
   await expect(page.getByTestId('deck-prepare')).toHaveCount(0);
-  await expect(page.getByTestId('buyer-answer-group').first()).toContainText(
-    /Sélection du \d{2}\/\d{2}\/\d{4}/,
-  );
+  // Lancement, mission 6 — plus de réponses rangées par sélection : « Son suivi », un bien par ligne.
+  await expect(page.getByTestId('buyer-answer-group')).toHaveCount(0);
+  await expect(page.getByTestId('buyer-follow-up-summary')).toContainText('envoyés');
   // « Créer un nouveau lien » remplace l'ancien, qui cesse de marcher ; la réponse reçue reste.
   await page.goto(`${kellerUrl}/dossier`);
   await page.getByTestId('dossier-link-renew').click();

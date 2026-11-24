@@ -7,7 +7,7 @@ import {
   type NoReason,
 } from '@/features/buyer-deck/types';
 import { DISMISS_REASON_LABELS } from '@/features/buyer-messages/report';
-import { seenItemKey } from '@/features/buyers/services/seen-properties';
+import { refusedAfterVisit, seenItemKey } from '@/features/buyers/services/seen-properties';
 import { formatRelativeDay } from '@/lib/format';
 
 // Lancement, mission 6 (Jean-Guy, 23/11) — « un seul endroit par acquéreur avec les biens envoyés,
@@ -18,6 +18,8 @@ import { formatRelativeDay } from '@/lib/format';
 //
 // L'ordre est celui du point à faire avec lui : ce qu'il a visité, les visites à organiser, ce qui
 // attend sa réponse, ce qu'il a refusé et pourquoi, puis ce que le conseiller a écarté pour lui.
+// Une visite à organiser a toujours sa ligne sous « Visites à organiser », même pour un bien déjà
+// visité (une deuxième visite) : la ligne du haut la compte, l'écran la montre (maquette).
 export type FollowUpGroup = 'visited' | 'to_visit' | 'waiting' | 'refused' | 'dismissed';
 
 export const FOLLOW_UP_GROUPS: readonly FollowUpGroup[] = [
@@ -63,56 +65,79 @@ export type FollowUpRows = {
     answered_during: string;
   }[];
   dismissals: { property_key: string; label: string; reason: string; dismissed_at: string }[];
-  // Ses demandes de visite non annulées ; `refused` : « Pas pour moi » après la visite.
+  // Ses demandes de visite non annulées, avec ce que dit leur compte rendu.
   visits: {
     id: string;
     itemId: string;
     requestedAt: string;
     visitedAt: string | null;
-    refused: boolean;
+    opinion: string | null;
+    outcome: string;
   }[];
   competitorUrls: ReadonlyMap<string, string | null>;
 };
+
+export type FollowUpAnswer = {
+  answer: ItemAnswer;
+  reasons: NoReason[];
+  at: string;
+  during: AnsweredDuring;
+};
+
+type SentHow = 'presentation' | 'link' | 'proposal';
 
 export type FollowUpEntry = {
   key: string;
   // Le libellé neutre du bien (type · pièces · surface · commune) : jamais un titre ni une adresse.
   label: string;
   price: number | null;
-  // « Dans l'agence » ou « Annonce du marché » ; null : inconnu (un bien seulement écarté).
-  inAgency: boolean | null;
+  // D'où vient le bien ; null : inconnu (un bien seulement écarté).
+  source: 'project' | 'competitor' | 'listing' | null;
   // Sa ligne de sélection la plus récente : elle ouvre la fiche complète du bien.
   itemId: string | null;
-  sent: { at: string; how: 'presentation' | 'link' | 'proposal' | null } | null;
-  // Sa dernière réponse sur ce bien.
-  answer: { answer: ItemAnswer; reasons: NoReason[]; at: string; during: AnsweredDuring } | null;
-  // Ses visites de ce bien, de la plus ancienne à la plus récente.
+  // Quand le bien lui est parvenu (la plus ancienne date connue), et par quoi.
+  sent: { at: string; how: SentHow | null } | null;
+  // Toutes ses réponses sur ce bien, de la plus ancienne à la plus récente (M122 : chaque réponse,
+  // ses raisons, le moment, la date) ; la dernière vaut.
+  answers: FollowUpAnswer[];
+  // Les visites que porte CETTE ligne, de la plus ancienne à la plus récente.
   visitIds: string[];
+  // Il l'a visité (une visite faite), quelle que soit la ligne.
+  visited: boolean;
   dismissed: { at: string; reason: string } | null;
   group: FollowUpGroup;
+  // La seconde ligne d'un bien déjà visité : sa visite à organiser. Elle ne redit pas ses faits.
+  again: boolean;
   // Le dernier fait daté, pour ranger dans un groupe.
   lastAt: string;
 };
 
-type Draft = Omit<FollowUpEntry, 'group' | 'lastAt' | 'label' | 'visitIds'> & {
+type Draft = {
+  key: string;
   label: string | null;
+  price: number | null;
+  source: FollowUpEntry['source'];
+  itemId: string | null;
   itemAt: string;
+  sentAt: string | null;
+  // Par quoi il l'a reçu : le plus ancien moyen connu (une réponse donnée pendant la présentation
+  // est datée AVANT la fin de celle-ci : elle ne l'efface pas).
+  how: { how: SentHow; at: string } | null;
+  answers: FollowUpAnswer[];
+  dismissed: FollowUpEntry['dismissed'];
   visits: FollowUpRows['visits'];
   // Son dernier mot : un refus, ou non.
   verdict: { refused: boolean; at: string } | null;
 };
 
 const ANSWERS: readonly string[] = ['visit', 'maybe', 'no'];
+const SOURCES: readonly string[] = ['project', 'competitor', 'listing'];
 
 export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
   const itemOf = new Map(rows.items.map((row) => [row.id, row]));
   // Quand la sélection lui est-elle parvenue, et comment ? La plus ancienne date connue.
-  const shownAt = new Map<string, NonNullable<FollowUpEntry['sent']>>();
-  const shown = (
-    selectionId: string | null | undefined,
-    at: string | null,
-    how: NonNullable<FollowUpEntry['sent']>['how'],
-  ) => {
+  const shownAt = new Map<string, { at: string; how: SentHow }>();
+  const shown = (selectionId: string | null | undefined, at: string | null, how: SentHow) => {
     if (!selectionId || !at) return;
     const known = shownAt.get(selectionId);
     if (!known || at < known.at) shownAt.set(selectionId, { at, how });
@@ -131,11 +156,12 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
       key,
       label: null,
       price: null,
-      inAgency: null,
+      source: null,
       itemId: null,
       itemAt: '',
-      sent: null,
-      answer: null,
+      sentAt: null,
+      how: null,
+      answers: [],
       dismissed: null,
       visits: [],
       verdict: null,
@@ -143,8 +169,9 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
     drafts.set(key, known);
     return known;
   };
-  const sent = (target: Draft, at: string, how: NonNullable<FollowUpEntry['sent']>['how']) => {
-    if (!target.sent || at < target.sent.at) target.sent = { at, how };
+  const sent = (target: Draft, at: string, how: SentHow | null) => {
+    if (!target.sentAt || at < target.sentAt) target.sentAt = at;
+    if (how && (!target.how || at < target.how.at)) target.how = { how, at };
   };
   // À date égale, un refus l'emporte (la règle de « jamais reproposé »).
   const verdict = (target: Draft, refused: boolean, at: string) => {
@@ -162,7 +189,9 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
       target.itemId = item.id;
       target.label = item.label;
       target.price = item.listed_price;
-      target.inAgency = item.source !== 'listing';
+      target.source = SOURCES.includes(item.source)
+        ? (item.source as FollowUpEntry['source'])
+        : 'listing';
     }
     return target;
   };
@@ -182,14 +211,12 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
     const target = ofItem(row.selection_item_id, row.answered_at);
     if (!target || !ANSWERS.includes(row.answer)) continue;
     sent(target, row.answered_at, null);
-    if (!target.answer || row.answered_at >= target.answer.at) {
-      target.answer = {
-        answer: row.answer as ItemAnswer,
-        reasons: row.reasons.filter((reason): reason is NoReason => reason in NO_REASON_LABELS),
-        at: row.answered_at,
-        during: row.answered_during === 'dossier' ? 'dossier' : 'presentation',
-      };
-    }
+    target.answers.push({
+      answer: row.answer as ItemAnswer,
+      reasons: row.reasons.filter((reason): reason is NoReason => reason in NO_REASON_LABELS),
+      at: row.answered_at,
+      during: row.answered_during === 'dossier' ? 'dossier' : 'presentation',
+    });
     verdict(target, row.answer === 'no', row.answered_at);
   }
   for (const visit of rows.visits) {
@@ -197,7 +224,9 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
     if (!target) continue;
     sent(target, visit.requestedAt, null);
     target.visits.push(visit);
-    if (visit.visitedAt) verdict(target, visit.refused, visit.visitedAt);
+    if (visit.visitedAt) {
+      verdict(target, refusedAfterVisit(visit.opinion, visit.outcome), visit.visitedAt);
+    }
   }
   for (const row of rows.dismissals) {
     const target = draft(row.property_key);
@@ -207,37 +236,54 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
 
   const entries: FollowUpEntry[] = [];
   for (const known of drafts.values()) {
-    if (!known.sent && !known.dismissed) continue;
+    if (!known.sentAt && !known.dismissed) continue;
     const visits = [...known.visits].sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
     const done = visits.filter((visit) => visit.visitedAt != null);
+    const pending = visits.filter((visit) => visit.visitedAt == null);
+    const answers = [...known.answers].sort((a, b) => a.at.localeCompare(b.at));
     const group: FollowUpGroup = known.dismissed
       ? 'dismissed'
       : known.verdict?.refused
         ? 'refused'
         : done.length > 0
           ? 'visited'
-          : visits.length > 0
+          : pending.length > 0
             ? 'to_visit'
             : 'waiting';
     const dates = [
-      known.sent?.at,
-      known.answer?.at,
+      known.sentAt,
+      known.how?.at,
       known.dismissed?.at,
+      ...answers.map((answer) => answer.at),
       ...visits.flatMap((visit) => [visit.requestedAt, visit.visitedAt]),
     ].filter((at): at is string => at != null);
-    entries.push({
+    const entry: FollowUpEntry = {
       key: known.key,
       label: known.label ?? 'Bien',
       price: known.price,
-      inAgency: known.inAgency,
+      source: known.source,
       itemId: known.itemId,
-      sent: known.sent,
-      answer: known.answer,
+      sent: known.sentAt ? { at: known.sentAt, how: known.how?.how ?? null } : null,
+      answers,
       visitIds: visits.map((visit) => visit.id),
+      visited: done.length > 0,
       dismissed: known.dismissed,
       group,
+      again: false,
       lastAt: dates.sort().at(-1) ?? '',
-    });
+    };
+    // Visité, et une autre visite à organiser : elle a sa ligne sous « Visites à organiser ».
+    if (group === 'visited' && pending.length > 0) {
+      entries.push({ ...entry, visitIds: done.map((visit) => visit.id) });
+      entries.push({
+        ...entry,
+        group: 'to_visit',
+        again: true,
+        visitIds: pending.map((visit) => visit.id),
+      });
+    } else {
+      entries.push(entry);
+    }
   }
   // Par groupe, puis du plus récent au plus ancien.
   return entries.sort(
@@ -248,8 +294,18 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
   );
 }
 
-// Ce que la ligne dit du bien, fait par fait, pour le conseiller (dates relatives, M143).
+// D'où vient le bien, avec les mots de la fiche : un concurrent à prospecter n'est pas « dans
+// l'agence » (elle n'a pas son mandat, M120, M145).
+export function followUpOrigin(entry: Pick<FollowUpEntry, 'source'>): string | null {
+  if (entry.source === 'project') return 'Dans l’agence';
+  if (entry.source === 'competitor') return 'Concurrent à prospecter';
+  return entry.source === 'listing' ? 'Annonce du marché' : null;
+}
+
+// Ce que la ligne dit du bien, fait par fait, pour le conseiller (dates relatives, M143). La
+// seconde ligne d'un bien déjà visité ne les redit pas.
 export function followUpFacts(entry: FollowUpEntry, now: Date = new Date()): string[] {
+  if (entry.again) return [];
   const facts: string[] = [];
   const how = entry.sent?.how;
   if (entry.sent && how === 'presentation') {
@@ -259,10 +315,10 @@ export function followUpFacts(entry: FollowUpEntry, now: Date = new Date()): str
   } else if (entry.sent && how === 'proposal') {
     facts.push(`Proposé ${formatRelativeDay(entry.sent.at, now)}`);
   }
-  if (entry.answer) {
-    const reasons = entry.answer.reasons.map((reason) => NO_REASON_LABELS[reason]);
+  for (const answer of entry.answers) {
+    const reasons = answer.reasons.map((reason) => NO_REASON_LABELS[reason]);
     facts.push(
-      `${ITEM_ANSWER_REPORT[entry.answer.answer]}${reasons.length > 0 ? ` : ${reasons.join(', ')}` : ''} · ${formatRelativeDay(entry.answer.at, now)}, ${ANSWERED_DURING_LABELS[entry.answer.during]}`,
+      `${ITEM_ANSWER_REPORT[answer.answer]}${reasons.length > 0 ? ` : ${reasons.join(', ')}` : ''} · ${formatRelativeDay(answer.at, now)}, ${ANSWERED_DURING_LABELS[answer.during]}`,
     );
   }
   if (entry.dismissed) {
@@ -284,20 +340,20 @@ export function followUpPill(entry: FollowUpEntry): { text: string; tone: Follow
   if (entry.group === 'refused') return { text: 'Refusé', tone: 'no' };
   if (entry.group === 'visited') return { text: 'Visité', tone: 'ok' };
   if (entry.group === 'to_visit') return { text: 'À organiser', tone: 'now' };
-  if (entry.answer?.answer === 'visit') return { text: 'Veut le visiter', tone: 'ok' };
-  if (entry.answer?.answer === 'maybe') return { text: 'Peut-être', tone: 'plain' };
+  const last = entry.answers.at(-1)?.answer;
+  if (last === 'visit') return { text: 'Veut le visiter', tone: 'ok' };
+  if (last === 'maybe') return { text: 'Peut-être', tone: 'plain' };
   return { text: 'Sans réponse', tone: 'wait' };
 }
 
-// La ligne du haut : les nombres, sans les zéros. `pendingVisits` : ses visites à organiser.
+// La ligne du haut : les nombres, sans les zéros ; un bien compte une fois, même sur deux lignes.
+// `pendingVisits` : ses visites à organiser.
 export function followUpSummary(entries: FollowUpEntry[], pendingVisits: number): string | null {
-  if (entries.length === 0) return null;
-  const count = (group: FollowUpGroup) => entries.filter((entry) => entry.group === group).length;
-  const sent = entries.filter((entry) => entry.sent != null && entry.group !== 'dismissed').length;
-  const visited = entries.filter(
-    (entry) =>
-      entry.group === 'visited' || (entry.group === 'refused' && entry.visitIds.length > 0),
-  ).length;
+  const biens = entries.filter((entry) => !entry.again);
+  if (biens.length === 0) return null;
+  const count = (group: FollowUpGroup) => biens.filter((entry) => entry.group === group).length;
+  const sent = biens.filter((entry) => entry.sent != null && entry.group !== 'dismissed').length;
+  const visited = biens.filter((entry) => entry.visited && entry.group !== 'dismissed').length;
   const refused = count('refused');
   const dismissed = count('dismissed');
   const s = (n: number) => (n > 1 ? 's' : '');

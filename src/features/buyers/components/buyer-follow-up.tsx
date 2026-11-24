@@ -5,6 +5,7 @@ import {
   FOLLOW_UP_GROUPS,
   FOLLOW_UP_GROUP_TITLES,
   followUpFacts,
+  followUpOrigin,
   followUpPill,
   type FollowUpEntry,
   type FollowUpTone,
@@ -46,6 +47,7 @@ function Entry({
   const facts = followUpFacts(entry, now);
   const pill = followUpPill(entry);
   const visits = entry.visitIds.map((id) => visitRows[id]).filter(Boolean);
+  const origin = followUpOrigin(entry);
   // Un bien visité, ou à visiter : la ligne de chaque visite porte déjà son libellé, son prix, son
   // compte rendu et ses gestes ; ce qui l'a précédée (l'envoi, sa réponse) se dit au-dessus.
   if (visits.length > 0) {
@@ -55,8 +57,20 @@ function Entry({
         data-testid="buyer-follow-up-item"
         data-group={entry.group}
       >
-        {facts.length > 0 ? (
-          <p className="px-1 text-xs text-zinc-600 stage:text-white/70">{facts.join(' · ')}</p>
+        {facts.length > 0 || (entry.itemId && !entry.again) ? (
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-xs text-zinc-600 stage:text-white/70">
+            {facts.length > 0 ? <span>{facts.join(' · ')}</span> : null}
+            {entry.itemId && !entry.again ? (
+              <PropertySheetButton
+                target={{ kind: 'selection-item', id: entry.itemId }}
+                backLabel="Son suivi"
+                budgetMax={budgetMax}
+                className="font-semibold text-brand-deep underline underline-offset-2 stage:text-brand"
+              >
+                Voir la fiche du bien
+              </PropertySheetButton>
+            ) : null}
+          </p>
         ) : null}
         <ul className="flex flex-col gap-2">{visits}</ul>
       </li>
@@ -83,16 +97,9 @@ function Entry({
             {entry.label}
           </span>
         )}
-        {entry.price != null || entry.inAgency != null ? (
+        {entry.price != null || origin ? (
           <span className="text-sm text-zinc-600 stage:text-white/70">
-            {[
-              entry.price != null ? formatEuro(entry.price) : null,
-              entry.inAgency == null
-                ? null
-                : entry.inAgency
-                  ? 'Dans l’agence'
-                  : 'Annonce du marché',
-            ]
+            {[entry.price != null ? formatEuro(entry.price) : null, origin]
               .filter((part): part is string => part != null)
               .join(' · ')}
           </span>
@@ -162,7 +169,7 @@ export function BuyerFollowUp({
           <ul className="flex flex-col gap-2">
             {list.map((entry) => (
               <Entry
-                key={entry.key}
+                key={`${entry.key}:${entry.group}`}
                 entry={entry}
                 visitRows={visitRows}
                 budgetMax={budgetMax}

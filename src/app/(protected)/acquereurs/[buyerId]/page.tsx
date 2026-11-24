@@ -14,7 +14,7 @@ import { loadDeck } from '@/features/buyer-deck/queries/load-deck';
 import { answerSuggestions } from '@/features/buyer-deck/services/answer-suggestions';
 import { deckCriteria, proposedBuyerWords } from '@/features/buyer-deck/services/buyer-deck';
 import { VisitRow } from '@/features/buyer-presentation/components/visit-row';
-import { getVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { VISIT_OUTCOME_LABELS } from '@/features/buyer-presentation/types';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
@@ -120,12 +120,15 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   ]);
   const buyer = await getBuyer(buyerId);
   if (!buyer) notFound();
-  const [selection, profile, allVisits, dossiers] = await Promise.all([
+  // Lancement, mission 6 — la lecture des visites dit son échec : « Son suivi » ne range jamais
+  // un bien visité en « en attente » sans le dire (M98).
+  const [selection, profile, visitRead, dossiers] = await Promise.all([
     getIdealSelection(buyer.id),
     getProfile(),
-    getVisitLines(),
+    readVisitLines(),
     getSuiviDossiers(),
   ]);
+  const allVisits = visitRead.lines;
   const supabase = await createClient();
   const counted = withoutExamples(dossiers);
   const [
@@ -205,7 +208,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           itemId: line.itemId,
           requestedAt: line.requestedAt,
           visitedAt: line.visitedAt,
-          refused: line.report?.opinion === 'not_for_me' || line.outcome === 'declined',
+          opinion: line.report?.opinion ?? null,
+          outcome: line.outcome,
         })),
       })
     : [];
@@ -701,7 +705,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           <BuyerFollowUp
             entries={followUp}
             summary={followUpSummary(followUp, visits.length)}
-            unread={followUpRows == null}
+            unread={followUpRows == null || visitRead.failed}
             budgetMax={buyer.budgetMax}
             visitRows={Object.fromEntries(
               ownVisits.map((line) => [

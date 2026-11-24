@@ -34,14 +34,17 @@ test('son suivi : un bien par ligne, ce qu’il en a dit, ses visites', async ({
   const group = (name: string) =>
     suivi.locator(`[data-testid="buyer-follow-up-group"][data-group="${name}"]`);
 
-  // Visité : sa visite faite et son compte rendu, la deuxième visite à organiser, sur la même ligne.
+  // Visité : sa visite faite et son compte rendu ; la deuxième visite a sa ligne, à organiser.
   const visited = group('visited');
   await expect(visited.getByTestId('buyer-follow-up-item')).toHaveCount(1);
   await expect(visited).toContainText('en présentation');
   await expect(visited).toContainText('Veut le visiter');
   await expect(visited.locator('[data-testid="visit-line"][data-state="done"]')).toHaveCount(1);
   await expect(visited.getByTestId('visit-report')).toContainText('Coup de cœur');
-  await expect(visited.locator('[data-testid="visit-line"][data-state="pending"]')).toHaveCount(1);
+  await expect(visited.locator('[data-testid="visit-line"][data-state="pending"]')).toHaveCount(0);
+  const toVisit = group('to_visit');
+  await expect(toVisit.getByTestId('buyer-follow-up-item')).toHaveCount(1);
+  await expect(toVisit.locator('[data-testid="visit-line"][data-state="pending"]')).toHaveCount(1);
 
   // En attente de sa réponse, puis refusé, avec la raison.
   await expect(group('waiting').getByTestId('buyer-follow-up-pill')).toHaveText('Peut-être');
