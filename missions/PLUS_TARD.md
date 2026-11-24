@@ -42,3 +42,8 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   lui-même en fin de journée, accord de Jean-Guy du 23/11).
 - 23/11 · Lancement · Les forfaits en jetons, à la place des coûts en euros (mission 5 du
   lancement : les coûts disparaissent des écrans du conseiller, les forfaits viendront après).
+- 23/11 · Lancement, état des lieux · Un même bien publié sur deux portails a deux identités, et un
+  mandat n'est pas relié à sa propre annonce publiée : le relier demanderait de garder l'identifiant
+  du bien chez Stream Estate (une migration).
+- 23/11 · Lancement, état des lieux · L'IA ne lit pas les biens démarchés ; chaque recherche relit et
+  repaie les mêmes annonces (un cache des jugements par annonce demanderait une table).
