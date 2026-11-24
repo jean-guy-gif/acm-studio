@@ -1,12 +1,12 @@
-// Mission 150 (mesures du 10/11) — Figaro Immobilier donne sa page, mais plus ni le prix ni la
-// surface (format de page changé depuis la M76). Une adresse de ce site COLLÉE par le conseiller
-// est refusée, à l'écran comme au serveur, et il saisit le bien à la main. Figaro reste dans la
-// recherche payante (décision de Jean-Guy, 10/11) : là, une page illisible crée le concurrent
-// depuis les données de la recherche (M101). L'extension garde son accès au site.
-export const UNREAD_PORTAL_SUFFIXES = ['immobilier.lefigaro.fr'] as const;
+// Mission 150 (mesures du 10/11) — un site dont ACM ne sait plus lire la page est refusé dès
+// l'adresse collée, à l'écran comme au serveur, et le conseiller saisit le bien à la main.
+// Lancement, mission 4 (24/11) : Figaro Immobilier, refusé depuis la M150, se lit de nouveau (son
+// prix et sa surface se lisent dans le bloc de l'annonce) ; la liste est vide. Un site s'y ajoute
+// le jour où sa page ne se lit plus, le temps de réparer son lecteur.
+export const UNREAD_PORTAL_SUFFIXES: readonly string[] = [];
 
 export const UNREAD_PORTAL_MESSAGE =
-  'Figaro Immobilier ne se lit plus : sa page ne donne plus ni le prix ni la surface. Saisissez le bien à la main ci-dessous.';
+  'Ce site ne se lit plus : sa page ne donne plus ni le prix ni la surface. Saisissez le bien à la main ci-dessous.';
 
 export function isUnreadPortalHost(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^www\./, '');

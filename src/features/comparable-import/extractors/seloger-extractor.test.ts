@@ -106,3 +106,48 @@ describe('extractSeLoger — commune et code postal', () => {
     expect(result.postalCode).toBe('06600');
   });
 });
+
+// Lancement, mission 4 (24/11) — sur de vrais dossiers, 4 fiches SeLoger sur 41 n'avaient pas de
+// ville, et 39 pas de quartier. Mesuré le 24/11 sur l'annonce 26FSCHYRU6XR, dans le Chrome de
+// Jean-Guy : la nouvelle adresse (`…/alpes-maritimes-06/nice-06000/26FSCHYRU6XR`) ne se lit plus
+// comme l'ancienne, et la page écrit la ville sous deux formes (« Nice » trois fois, « Nizza » une
+// fois) : deux valeurs, donc aucune retenue. Le bloc d'adresse de l'annonce elle-même
+// (`"location":{"address":{…}}`) donne la ville, le code postal et le quartier.
+describe('extractSeLoger — le bloc d’adresse de l’annonce (lancement, mission 4)', () => {
+  const NEW_URL =
+    'https://www.seloger.com/annonce/achat/provence-alpes-cote-d-azur/alpes-maritimes-06/nice-06000/26FSCHYRU6XR';
+  // Les guillemets échappés, comme dans la page (des chaînes JSON imbriquées).
+  const PAGE = `
+    <meta property="og:title" content="Appartement à vendre T3/F3 70.98 m² 420000 € Cimiez Nice (06000)" />
+    <script>window["__UFRN_LIFECYCLE_SERVERREQUEST__"]=JSON.parse("{\\"sections\\":{\\"location\\":{\\"address\\":{\\"country\\":\\"FRA\\",\\"city\\":\\"Nice\\",\\"zipCode\\":\\"06000\\",\\"district\\":\\"Cimiez\\"},\\"isAddressVisible\\":false}},\\"mortgage\\":{\\"zip\\":\\"06000\\",\\"city\\":\\"Nice\\"},\\"insights\\":{\\"city\\":\\"Nice\\"},\\"alternate\\":{\\"city\\":\\"Nizza\\"}}")</script>
+  `;
+
+  it('la ville, le code postal et le quartier viennent du bloc d’adresse de l’annonce', () => {
+    const data = extractSeLoger(PAGE, NEW_URL);
+    expect(data.city).toBe('Nice');
+    expect(data.postalCode).toBe('06000');
+    expect(data.district).toBe('Cimiez');
+  });
+
+  it('sans l’adresse d’origine (une adresse courte), le bloc suffit', () => {
+    const data = extractSeLoger(PAGE, 'https://www.seloger.com/annonce/26FSCHYRU6XR');
+    expect(data.city).toBe('Nice');
+    expect(data.district).toBe('Cimiez');
+  });
+
+  it('deux blocs d’adresse qui se contredisent ne décident rien', () => {
+    const two = PAGE.replace(
+      '\\"mortgage\\"',
+      '\\"other\\":{\\"location\\":{\\"address\\":{\\"city\\":\\"Paris\\",\\"zipCode\\":\\"75008\\"}}},\\"mortgage\\"',
+    );
+    const data = extractSeLoger(two, NEW_URL);
+    expect(data.city).toBeUndefined();
+    expect(data.district).toBeUndefined();
+  });
+
+  it('l’ancienne adresse garde la ville et le quartier de son chemin', () => {
+    const data = extractSeLoger(SERVED, ORIGINAL_URL);
+    expect(data.city).toBe('Antibes');
+    expect(data.district).toBe("L'Estagnol");
+  });
+});
