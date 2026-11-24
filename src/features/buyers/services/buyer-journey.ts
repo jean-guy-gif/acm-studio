@@ -64,6 +64,10 @@ export function buyerJourney(facts: BuyerProgressFacts, status?: string): Journe
   const sold = saleInProgress(facts, status) || purchased;
   const visited = done > 0 || offer != null || purchased;
   const shown = answered(facts) || visited;
+  // Lancement, mission 2 (Jean-Guy, 23/11) — des visites ne supposent pas une offre : sans offre
+  // formulée (une visite « Offre envisagée », ou une offre signée), l'offre n'est pas « à faire »,
+  // l'acquéreur reste en recherche et aucune étape ne l'attend.
+  const considered = facts.offerConsidered === true;
   const raw: Omit<JourneyStep, 'status'>[] = [
     {
       key: 'selection',
@@ -98,7 +102,7 @@ export function buyerJourney(facts: BuyerProgressFacts, status?: string): Journe
         facts.visitsToOrganize > 0 && !offer
           ? `${plural(facts.visitsToOrganize, 'demandée', 'demandées')}, à organiser`
           : facts.lastVisitDoneAt
-            ? `le ${dayMonth(facts.lastVisitDoneAt)}${facts.voucherSigned ? ' · bon signé' : ''}`
+            ? `${done > 1 ? `${done} faites · la dernière ` : ''}le ${dayMonth(facts.lastVisitDoneAt)}${facts.voucherSigned ? ' · bon signé' : ''}`
             : visited
               ? 'faite'
               : 'à faire',
@@ -108,7 +112,9 @@ export function buyerJourney(facts: BuyerProgressFacts, status?: string): Journe
       number: 4,
       title: 'Offre',
       state: !offer
-        ? 'à faire'
+        ? considered
+          ? 'envisagée, à préparer'
+          : 'quand il en formule une'
         : offer.decision === 'accepted' && offer.decidedAt
           ? `acceptée le ${dayMonth(offer.decidedAt)}`
           : offer.decision === 'refused' && offer.decidedAt
@@ -129,7 +135,8 @@ export function buyerJourney(facts: BuyerProgressFacts, status?: string): Journe
     offer: sold,
     compromise: purchased,
   };
-  const current = raw.find((step) => !isDone[step.key])?.key ?? null;
+  const firstOpen = raw.find((step) => !isDone[step.key])?.key ?? null;
+  const current = firstOpen === 'offer' && !offer && !considered ? null : firstOpen;
   return raw.map((step) => ({
     ...step,
     status: isDone[step.key] ? 'done' : step.key === current ? 'current' : 'later',
@@ -221,6 +228,17 @@ export function buyerNextAction(
       };
     }
     // Refusée, ou expirée sans réponse : la prochaine étape d'avant l'offre, comme avant.
+  }
+  // Lancement, mission 2 — l'offre n'est la prochaine étape que s'il l'a formulée (une visite
+  // « Offre envisagée », sans offre signée encore) ; sinon la recherche continue, ci-dessous.
+  if (!offer && facts.offerConsidered && buyer.status !== 'purchased') {
+    return {
+      title: 'Préparer son offre d’achat',
+      phrase: `Il envisage une offre après sa visite${facts.lastVisitDoneAt ? ` du ${dayMonth(facts.lastVisitDoneAt)}` : ''} : préparez-la avec lui.`,
+      primary: { label: 'Préparer l’offre d’achat', href: `/acquereurs/${id}/offre` },
+      secondary: { label: 'Trouver d’autres biens', href: `/acquereurs/${id}/biens-ideaux` },
+      since: facts.lastVisitDoneAt ?? null,
+    };
   }
   const ideal = { label: 'Trouver les biens idéaux', href: `/acquereurs/${id}/biens-ideaux` };
   const present = { label: 'Présenter maintenant', href: `/presentation/${id}` };

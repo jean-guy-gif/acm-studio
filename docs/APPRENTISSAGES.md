@@ -724,6 +724,19 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   `demo` et `live-sans-trou` (4G rapide) verts au troisième passage, seuls, chacun rouge deux fois
   pour deux causes différentes. Lire la cause de chaque échec avant de parler de défaut.
 
+- 23/11 · E2E, photos du stockage · Dès qu'une route Playwright existe (`page.route`,
+  `context.route`), le cache du navigateur est coupé pour tout le contexte : chaque page
+  retéléchargerait ses scripts et les photos de la démo. Pour remplacer quelques adresses sans
+  toucher au cache, l'interception passe par le protocole de Chromium (`Fetch.enable` avec un
+  motif d'adresse, une session par page, `tests/e2e/test.ts`). Toutes les specs importent `test`
+  de `./test` ; une spec qui vérifie les photos elles-mêmes écrit `test.use({ realPhotos: true })`.
+- 23/11 · E2E, photos du stockage · Le trafic d'un passage se lit dans les journaux de Supabase
+  (`edge_logs`, `response.headers.content_length`, chemin `/storage/v1/object/sign/project-photos/`),
+  filtrés sur la fenêtre du passage et sur le navigateur des tests (« Windows NT 10.0 … Chrome/153 »,
+  celui de Playwright) ; les réponses de la base n'ont pas de taille dans ces journaux. Un passage
+  complet dure 43 minutes : il se lance en tâche de fond depuis une copie de travail à part, pour ne
+  pas bloquer le dépôt.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -835,6 +848,23 @@ null` doit laisser passer la seule mise à nul de cette clé, sinon la suppressi
   11 jours). Les tâches `pg_cron` tournent quand même, seules les requêtes venues de l'extérieur
   sont refusées (`docs/PASSAGE_PAYANT.md`).
 
+- 23/11 · M164 · Dans un test SQL, un refus attendu se prouve en levant l'échec HORS du bloc qui
+  attend le refus : `begin perform f(); raise exception 'FAIL'; exception when raise_exception then
+null; end;` passe toujours, que la fonction refuse ou non (l'échec, lui aussi P0001, est avalé, et
+  tout le sous-bloc est annulé). Forme juste : un booléen posé dans le `exception`, relu après le
+  bloc, avec le message attendu (`sqlerrm`). Trouvé par le gardien-sql dans le test de la M104.
+- 23/11 · M164 · Docker éteint sur le poste : pousser la branche tôt, la CI SQL rejoue tous les
+  tests SQL sur une base neuve en 5 minutes, pendant que le gardien-sql relit. Remplacer un montant
+  par recherche dans un test touche aussi les identifiants qui le contiennent (`10411111-…`) :
+  relire le diff des lignes retirées. Une fonction remplacée se vérifie après l'application par
+  `md5(prosrc)`, que le gardien-sql prédit depuis le fichier. Durées : architecte 8 min, gardien-sql
+  12 min, CI SQL 5 min.
+- 23/11 · Méthode · Vercel fabrique une prévisualisation pour chaque branche poussée ; son adresse
+  se lit sur le commit (`gh api "repos/{owner}/{repo}/deployments?sha=…"`, puis ses `statuses`), et
+  elle répond aux tests avec le contournement de `.env.e2e.local` (`/api/version` rend le commit).
+  En local, `.env.local` vise la base locale, qui demande Docker : la prévisualisation est le plus
+  simple.
+
 ## Les rendus
 
 - 05/11 · M129 · `meetingDay()` écrit la date en toutes lettres (« 9 octobre 2026 ») : coupée à cinq
@@ -889,6 +919,25 @@ null` doit laisser passer la seule mise à nul de cette clé, sinon la suppressi
   bloc contre ces mesures (attribut `data-mm` de chaque bloc imprimé), à quelques millimètres près ;
   l'espace après le dernier bloc d'une page ne compte pas. Chromium imprime les marges `@page` (« 2 /
   7 »), le navigateur de Jean-Guy non : un numéro de page s'écrit dans la page.
+
+- 23/11 · Correctifs 163 (avis) · Une hauteur estimée au nombre de caractères ne tient ni d'une
+  langue ni d'une police à l'autre : des pages sortaient de leur feuille (une seule case du quartier,
+  l'anglais), et le PDF gagnait une feuille qui faussait numéros et renvois. Les hauteurs viennent
+  maintenant de la géométrie imprimée et de la largeur de chaque caractère par police
+  (`print-font-metrics.generated.json`, à refaire par `node scripts/print-font-metrics.mjs` quand une
+  police change). `npm run banc:etude` (après `npm run build`, environ 3 min) imprime 8 000 Études
+  dans Chromium et échoue si une page déborde : à lancer dès qu'on touche à un bloc de l'Étude
+  imprimée. C'est le relecteur qui a trouvé le défaut, en imprimant des Études que la démo n'a pas.
+
+- 23/11 · Correctifs 163 (avis) · Dans l'outil, la charte est posée à la racine : tout le texte
+  prend la police de l'agence ; sur le lien public, seuls les titres. Une boucle e2e qui injectait la
+  police dans `[data-synthesis]` ne changeait que les titres et ne prouvait rien : le banc joue les
+  deux rendus.
+
+- 23/11 · Correctifs 163 (avis) · Pour comparer la production et l'essai sans rien écrire : imprimer
+  les mêmes Études avec le compte de démo des tests sur les deux adresses (la base est commune) et
+  comparer le texte page à page ; les identifiants se relisent en base après chaque spec, qui remet
+  la démo à zéro.
 
 ## L'atelier et les hooks
 

@@ -381,3 +381,12 @@ export function indexAfterModeChange(
   }
   return Math.max(0, Math.min(currentIndex, next.length - 1));
 }
+
+// Lancement, mission 1 (24/11) — « Voir les biens et leurs prix », sur « Votre valeur perçue » : le
+// passage en présentation directe mène au PREMIER concurrent, montré avec son prix — même si des
+// écrans du quartier (M159) le précèdent dans l'ordre : le libellé promet les biens, « Précédent »
+// ramène au quartier. Sans concurrent en directe (aucun écran de ce genre), la place d'avant.
+export function indexOfFirstDirectCompetitor(next: LivePage[], fallback: number): number {
+  const first = next.findIndex((page) => page.type === 'comparable_direct');
+  return first >= 0 ? first : Math.max(0, Math.min(fallback, next.length - 1));
+}

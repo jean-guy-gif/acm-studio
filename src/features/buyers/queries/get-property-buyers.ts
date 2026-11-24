@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
+import { readRuledOut } from '@/features/buyers/queries/read-seen-properties';
 import { readBuyers } from '@/features/buyers/queries/get-buyers';
 import { withoutDismissed } from '@/features/buyers/services/loop-properties';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
@@ -143,7 +143,7 @@ export async function getPropertyBuyers(
   const [agency, loop, dismissals] = await Promise.all([
     loadAgencyBuyers(agencyId),
     loadLoopProperties(agencyId, [projectId]),
-    createClient().then((supabase) => readDismissals(supabase, agencyId)),
+    createClient().then((supabase) => readRuledOut(supabase, agencyId)),
   ]);
   if (agency.failed || loop.failed || dismissals == null) return null;
   const entry = loop.properties.get(projectId) ?? null;

@@ -7,8 +7,9 @@ import {
 } from '@/features/comparable-import/utils/unread-portals';
 import { fakeSupabase } from '@/test-fixtures/fake-supabase';
 
-// Mission 150 (mesures du 10/11) — Figaro Immobilier ne se lit plus (ni prix ni surface) : une
-// adresse collée de ce site est refusée avant toute lecture, à l'écran comme au serveur.
+// Mission 150 (mesures du 10/11) — un site dont la page ne se lit plus est refusé dès l'adresse
+// collée, à l'écran comme au serveur. Lancement, mission 4 (24/11) : Figaro Immobilier se lit de
+// nouveau, plus aucun site n'est refusé ; son adresse collée repart vers la lecture de la page.
 
 const state = vi.hoisted(() => ({ pageRead: 0, actions: 0 }));
 const db = fakeSupabase(() => ({ data: { id: 'p1' } }));
@@ -37,23 +38,23 @@ beforeEach(() => {
 });
 
 describe('les sites qu’ACM ne lit plus', () => {
-  it('Figaro Immobilier, et lui seul', () => {
-    expect(isUnreadPortalHost('immobilier.lefigaro.fr')).toBe(true);
-    expect(isUnreadPortalHost('www.immobilier.lefigaro.fr')).toBe(true);
-    expect(isUnreadPortalUrl(FIGARO)).toBe(true);
+  it('plus aucun : Figaro Immobilier se lit de nouveau', () => {
+    expect(UNREAD_PORTAL_MESSAGE).not.toMatch(/Figaro/);
     for (const url of [
+      FIGARO,
+      'https://www.immobilier.lefigaro.fr/annonces/annonce-1.html',
       'https://www.seloger.com/annonces/achat/maison/vence-06/1.htm',
       'https://www.bienici.com/annonce/vente/vence/maison/5pieces/ag-1',
       'https://www.green-acres.fr/fr/properties/Au9ynlkd33pc1o6v.htm',
       'https://www.maisonsetappartements.fr/ads/4580682',
-      'https://www.lefigaro.fr/actualite',
     ]) {
       expect(isUnreadPortalUrl(url), url).toBe(false);
     }
+    expect(isUnreadPortalHost('immobilier.lefigaro.fr')).toBe(false);
     expect(isUnreadPortalUrl('pas une adresse')).toBe(false);
   });
 
-  it('l’écran refuse une adresse Figaro collée, sans lire la page ni appeler le serveur', async () => {
+  it('l’écran lit de nouveau une adresse Figaro collée : la page est demandée à l’extension', async () => {
     const { importListingFromUrl } =
       await import('@/features/comparable-import/services/import-listing-from-url');
     const action = async () => {
@@ -66,29 +67,17 @@ describe('les sites qu’ACM ne lit plus', () => {
       importUrlAction: action,
       importHtmlAction: action,
     });
-    expect(result).toEqual({ ok: false, error: UNREAD_PORTAL_MESSAGE });
-    expect(state.pageRead).toBe(0);
-    expect(state.actions).toBe(0);
+    expect(result).not.toEqual({ ok: false, error: UNREAD_PORTAL_MESSAGE });
+    expect(state.pageRead).toBeGreaterThan(0);
   });
 
-  it('le serveur la refuse aussi, par l’adresse comme par la page lue, sans rien écrire', async () => {
-    const { importComparableUrl } =
-      await import('@/features/comparable-import/actions/import-comparable-url');
+  it('le serveur ne la refuse plus d’emblée', async () => {
     const { importComparableHtml } =
       await import('@/features/comparable-import/actions/import-comparable-html');
-    const byUrl = new FormData();
-    byUrl.set('url', FIGARO);
-    expect(await importComparableUrl('p1', byUrl)).toEqual({
-      ok: false,
-      error: UNREAD_PORTAL_MESSAGE,
-    });
     const byHtml = new FormData();
     byHtml.set('url', FIGARO);
     byHtml.set('html', '<html><title>495 000 €</title></html>');
-    expect(await importComparableHtml('p1', byHtml)).toEqual({
-      ok: false,
-      error: UNREAD_PORTAL_MESSAGE,
-    });
-    expect(db.writes()).toEqual([]);
+    const result = await importComparableHtml('p1', byHtml);
+    expect(result).not.toEqual({ ok: false, error: UNREAD_PORTAL_MESSAGE });
   });
 });

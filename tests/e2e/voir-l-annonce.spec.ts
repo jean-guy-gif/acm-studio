@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test';
 
 import { DEMO_SCENARIOS } from '../../src/features/demo/data/scenarios';
 import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './support';

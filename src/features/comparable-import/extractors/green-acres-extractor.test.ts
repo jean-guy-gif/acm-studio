@@ -168,6 +168,26 @@ describe('extractGreenAcres', () => {
       expect(data.district).toBeUndefined();
     });
 
+    // Lancement, mission 4 (24/11) — l'annonce Au9ynlkd33pc1o6v (une villa à Vence), importée
+    // dans le Chrome de Jean-Guy, donnait la ville « de luxe Vence » : le fil d'Ariane d'un bien de
+    // prestige dit « Maisons de luxe Vence », et seul le type était retiré.
+    it('un fil d’Ariane « Maisons de luxe Vence » donne Vence, jamais « de luxe Vence »', () => {
+      for (const [label, city] of [
+        ['Maisons de luxe Vence', 'Vence'],
+        ['Appartements de prestige Cannes', 'Cannes'],
+        ['Villas de luxe Saint-Paul-de-Vence', 'Saint-Paul-de-Vence'],
+      ]) {
+        const html = `
+          <title>Une annonce sans microdata</title>
+          <ul itemscope itemtype="http://schema.org/BreadcrumbList">
+            <li><span itemprop="name">Accueil</span></li>
+            <li><span itemprop="name">${label}</span></li>
+            <li><span itemprop="name">Villa avec vue mer</span></li>
+          </ul>`;
+        expect(extractGreenAcres(html).city, label).toBe(city);
+      }
+    });
+
     it('falls back to the URL city segment as a last resort', () => {
       const html = '<title>Sans localisation structurée</title>';
       const data = extractGreenAcres(

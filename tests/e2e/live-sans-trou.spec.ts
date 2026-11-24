@@ -1,6 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './test';
 
 import { demoCredentials, login, resetDemoByScreen } from './support';
+
+// Cette spec mesure le préchargement des photos du Live : elle garde les vraies photos du stockage
+// (`test.ts`).
+test.use({ realPhotos: true });
 
 // Mission 144 — « Le Live sans trou », chronométré. Le dossier de démo « Prêt pour le Live »
 // (5 concurrents, rythme accéléré), mené de l'introduction à la note de 1 à 10, en tablette

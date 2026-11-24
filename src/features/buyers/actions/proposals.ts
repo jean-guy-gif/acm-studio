@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { createDossierLink } from '@/features/buyer-dossier/actions/dossier-links';
 import { loadAgencyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import { loadLoopCatalog } from '@/features/buyers/queries/get-loop-properties';
+import { readSeenProperties } from '@/features/buyers/queries/read-seen-properties';
+import { keptForProposal } from '@/features/buyers/services/seen-properties';
 import {
   loopBuyers,
   PROPOSAL_FAILED,
@@ -76,7 +78,8 @@ async function resolve(
 // « Envoyé, suivant » note l'envoi. Mission 145 — seul un mandat signé sans offre acceptée se
 // propose : un bien de l'agence de la sélection actuelle qui ne l'est plus (vendeur à relancer,
 // mandat sous offre) n'est pas recopié dans le lien. Une sélection illisible n'est jamais lue comme
-// vide (M98) ; si le lien échoue, la nouvelle sélection est retirée.
+// vide (M98) ; si le lien échoue, la nouvelle sélection est retirée. Lancement, mission 3 — ni un
+// bien qu'il a refusé ou écarté pour lui : il ne lui est jamais reproposé.
 export async function prepareProposalLink(
   buyerId: unknown,
   propertyKey: unknown,
@@ -113,10 +116,17 @@ export async function prepareProposalLink(
         .order('position', { ascending: true })
     : { data: [], error: null };
   if (itemsReadError) return { ok: false, error: PROPOSAL_FAILED };
-  const kept = (previousItems ?? [])
-    .filter((row) => !item.selectionRefs.includes(`${row.source}:${row.reference}`))
-    .filter((row) => row.source !== 'project' || proposableKeys.has(`project:${row.reference}`))
-    .slice(0, MAX_IDEAL_SELECTION - 1);
+  // Lancement, mission 3 — un bien qu'il a refusé, ou que le conseiller a écarté pour lui, n'est
+  // pas recopié dans son nouveau lien. Une lecture en échec arrête tout (M98).
+  const seenRead = await readSeenProperties(client, agencyId, buyerIdOk);
+  if (!seenRead) return { ok: false, error: PROPOSAL_FAILED };
+  const kept = keptForProposal(
+    (previousItems ?? [])
+      .filter((row) => !item.selectionRefs.includes(`${row.source}:${row.reference}`))
+      .filter((row) => row.source !== 'project' || proposableKeys.has(`project:${row.reference}`)),
+    seenRead.seen.get(buyerIdOk),
+    seenRead.keyOf,
+  ).slice(0, MAX_IDEAL_SELECTION - 1);
 
   const { data: selection, error } = await client
     .from('buyer_selections')

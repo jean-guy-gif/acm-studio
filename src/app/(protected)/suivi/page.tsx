@@ -52,7 +52,7 @@ import {
   FOLLOW_UP_MOTIVE_LABELS,
   type FollowUpMotive,
 } from '@/features/meeting-conclusion/types';
-import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
+import { readRuledOut } from '@/features/buyers/queries/read-seen-properties';
 import {
   loadAgencyBuyers,
   loadLoopProperties,
@@ -146,7 +146,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
         : null,
     ]);
   const dismissals = profile
-    ? await createClient().then((supabase) => readDismissals(supabase, profile.agency_id))
+    ? await createClient().then((supabase) => readRuledOut(supabase, profile.agency_id))
     : null;
   const nowForBuyers = new Date();
   const followUpReady = new Map<string, number>();

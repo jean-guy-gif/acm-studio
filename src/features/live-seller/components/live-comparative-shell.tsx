@@ -55,6 +55,7 @@ import {
 import {
   buildLivePages,
   indexAfterModeChange,
+  indexOfFirstDirectCompetitor,
   type LivePage,
   type LiveRhythm,
 } from '@/features/live-seller/services/build-live-pages';
@@ -566,19 +567,28 @@ export function LiveComparativeShell({
 
   // Mission 131 — « Passer en présentation directe » / « Reprendre le Live interactif » : enregistré
   // sur le dossier d'abord ; on reste sur le même écran (ou le premier du même concurrent).
-  const switchMode = async (next: 'interactive' | 'direct') => {
+  // Lancement, mission 1 — le même changement part aussi de « Votre valeur perçue » (« Voir d'abord
+  // les biens et leurs prix ») : son échec se dit alors sur l'écran, pas dans le menu fermé.
+  const switchMode = async (next: 'interactive' | 'direct', from: 'menu' | 'page' = 'menu') => {
     if (switching) return;
     setMenuError(null);
+    if (from === 'page') setAwaitError(null);
     const r = await guardedSave(() => setLivePresentationMode(projectId, next), {
       setBusy: setSwitching,
     });
     if (!r.ok) {
-      setMenuError(r.error ?? 'Le changement n’a pas pu être enregistré.');
+      if (from === 'page') {
+        setAwaitError(errorFor(r.error, t.saveFailed, texts.live.perceived.seePricesYes));
+      } else setMenuError(r.error ?? 'Le changement n’a pas pu être enregistré.');
       return;
     }
     const nextPages = buildLivePages(navLive, hasSubjectProperty, rhythm, next);
     setAwaitError(null);
-    setIndex(indexAfterModeChange(page, currentIndex, nextPages));
+    setIndex(
+      from === 'page'
+        ? indexOfFirstDirectCompetitor(nextPages, currentIndex)
+        : indexAfterModeChange(page, currentIndex, nextPages),
+    );
     setMode(next);
     setMenuOpen(false);
   };
@@ -1453,7 +1463,14 @@ export function LiveComparativeShell({
           ) : page.type === 'dangerous_competitor' && live ? (
             <LivePageDangerous comparables={comparables} summary={summary} />
           ) : page.type === 'seller_perceived_price' ? (
-            <LivePagePerceived summary={summary} confirming={perceivedToConfirm} />
+            <LivePagePerceived
+              summary={summary}
+              confirming={perceivedToConfirm}
+              onSeePricesFirst={
+                mode === 'interactive' ? () => void switchMode('direct', 'page') : undefined
+              }
+              switching={switching}
+            />
           ) : page.type === 'seller_revised_price' ? (
             <LivePageRevised summary={summary} confirming={revisedToConfirm} />
           ) : page.type === 'price_analysis' && effectiveRange ? (

@@ -64,9 +64,11 @@ const AMBIGUOUS_LOCATION =
   /^(professionnels?|commercial(?:e|es|aux)?|locaux|local(?:\s+commercial)?|appartements?|maisons?|propri[ée]t[ée]s?|villas?|terrains?|immeubles?|biens?)$/i;
 
 // Leading property-type word to strip from a breadcrumb geo label ("Appartements
-// Nice" -> "Nice").
+// Nice" -> "Nice"). Lancement, mission 4 (24/11) : un bien de prestige y est dit « Maisons de
+// luxe Vence » ; « de luxe » et « de prestige » partent avec le type, sinon la ville devenait
+// « de luxe Vence ».
 const PROPERTY_TYPE_PREFIX =
-  /^(?:appartements?|maisons?|villas?|propri[ée]t[ée]s?|terrains?|locaux|local|immeubles?|ch[aâ]teaux?|fermes?|biens?)\s+/i;
+  /^(?:appartements?|maisons?|villas?|propri[ée]t[ée]s?|terrains?|locaux|local|immeubles?|ch[aâ]teaux?|fermes?|biens?)\s+(?:de\s+(?:luxe|prestige)\s+)?/i;
 
 function cleanLocation(value: string | null | undefined): string | undefined {
   if (!value) {

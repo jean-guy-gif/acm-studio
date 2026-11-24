@@ -16,6 +16,9 @@ const catalog = vi.hoisted(() => ({
   failed: false,
 }));
 const agency = vi.hoisted(() => ({ buyers: [] as Buyer[], failed: false }));
+// Lancement, mission 3 — ce que l'acquéreur a déjà vu : clé du bien → la raison ; null : la
+// lecture a échoué.
+const seen = vi.hoisted(() => ({ facts: new Map<string, string>() as Map<string, string> | null }));
 
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => profile.current }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => service.client }));
@@ -25,6 +28,18 @@ vi.mock('@/features/buyers/queries/get-loop-properties', () => ({
 }));
 vi.mock('@/features/buyers/queries/get-property-buyers', () => ({
   loadAgencyBuyers: async () => ({ ...agency, progress: new Map() }),
+}));
+vi.mock('@/features/buyers/queries/read-seen-properties', () => ({
+  readSeenProperties: async (_client: unknown, _agencyId: string, buyerId: string) =>
+    seen.facts == null
+      ? null
+      : {
+          seen: new Map([
+            [buyerId, new Map([...seen.facts].map(([key, reason]) => [key, { reason, at: null }]))],
+          ]),
+          keyOf: (item: { source: string; reference: string }) =>
+            `${item.source}:${item.reference}`,
+        },
 }));
 vi.mock('@/features/buyer-dossier/actions/dossier-links', () => ({
   createDossierLink: async () => ({
@@ -129,6 +144,7 @@ beforeEach(() => {
   catalog.failed = false;
   agency.buyers = [theBuyer];
   agency.failed = false;
+  seen.facts = new Map();
 });
 
 describe('« Envoyé, suivant »', () => {
@@ -206,5 +222,47 @@ describe('le lien de sa sélection, ce bien en tête', () => {
       ['project', 'p-lopez'],
       ['listing', 'https://www.seloger.com/1.htm'],
     ]);
+  });
+
+  // Lancement, mission 3 — un bien qu'il a refusé, ou écarté pour lui, n'est pas recopié dans son
+  // nouveau lien ; un bien envoyé sans réponse ou visité sans refus y reste.
+  it('un bien refusé ou écarté pour lui n’est pas recopié ; envoyé ou visité, il reste', async () => {
+    catalog.items = [
+      bien({ origin: 'mandate', source: 'project', reference: 'p-lopez', key: 'project:p-lopez' }),
+    ];
+    answers.buyers = { budget_max: 790_000 };
+    answers.buyer_selections = { id: 's-new', buyer_words: null };
+    const listing = (id: string) => `https://www.seloger.com/${id}.htm`;
+    answers.buyer_selection_items = [
+      { id: ITEM_ID, position: 1, source: 'listing', reference: listing('refuse') },
+      { id: 'i-2', position: 2, source: 'listing', reference: listing('ecarte') },
+      { id: 'i-3', position: 3, source: 'listing', reference: listing('visite') },
+      { id: 'i-4', position: 4, source: 'listing', reference: listing('envoye') },
+    ];
+    seen.facts = new Map([
+      [`listing:${listing('refuse')}`, 'refused'],
+      [`listing:${listing('ecarte')}`, 'dismissed'],
+      [`listing:${listing('visite')}`, 'visited'],
+      [`listing:${listing('envoye')}`, 'sent'],
+    ]);
+    await prepareProposalLink(BUYER, 'project:p-lopez');
+    const rows = fake.calls.filter((call) => call.method === 'insert')[1]?.args[0] as Record<
+      string,
+      unknown
+    >[];
+    expect(rows.map((row) => row.reference)).toEqual([
+      'p-lopez',
+      listing('visite'),
+      listing('envoye'),
+    ]);
+  });
+
+  it('ce qu’il a déjà vu illisible : rien n’est écrit (M98)', async () => {
+    answers.buyers = { budget_max: 790_000 };
+    answers.buyer_selections = { id: 's-new', buyer_words: null };
+    answers.buyer_selection_items = [{ id: ITEM_ID, position: 1 }];
+    seen.facts = null;
+    expect((await prepareProposalLink(BUYER, KEY)).ok).toBe(false);
+    expect(fake.writes()).toEqual([]);
   });
 });

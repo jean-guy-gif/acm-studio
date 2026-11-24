@@ -119,10 +119,14 @@ export default async function ProposePropertyPage({ searchParams }: ProposePageP
           propertyKey={item.key}
           item={{ property: item.property, price: item.price, origin: item.origin }}
           candidates={loop.toPropose.map(toCandidate)}
-          proposed={loop.proposed.map(({ entry, sentAt }) => ({
+          proposed={loop.proposed.map(({ entry, sentAt, visited }) => ({
             id: entry.buyer.id,
             name: entry.buyer.name,
-            label: sentAt ? `déjà proposé le ${sentDayLabel(sentAt)}` : 'déjà dans sa sélection',
+            label: !sentAt
+              ? 'déjà dans sa sélection'
+              : visited
+                ? `déjà visité le ${sentDayLabel(sentAt)}`
+                : `déjà proposé le ${sentDayLabel(sentAt)}`,
           }))}
           advisorFirstName={profile.first_name ?? null}
         />

@@ -5,7 +5,7 @@
 // du résumé deviennent faux. Le banc fabrique un millier d'Études (français et anglais, de 1 à 12
 // concurrents, avec ou sans prix, chaque jeu de blocs du quartier, maison ou appartement, avec ou
 // sans lien « Vivre ici »), les ouvre dans Chromium à l'impression, et mesure chaque bloc face à
-// son estimation : avec Montserrat et Rajdhani, puis avec chaque police de charte, rendue comme sur
+// sa hauteur calculée : avec Montserrat et Rajdhani, puis avec chaque police de charte, rendue comme sur
 // le lien public (les titres seuls la prennent) et comme dans l'outil (tout le texte la prend).
 //
 // Il échoue si une page déborde de sa feuille, ou si un bloc est estimé trop court de plus de
@@ -77,7 +77,7 @@ async function measure(browser, font, inApp) {
               : 0,
             units: units.map((unit, index) => ({
               kind: unit.getAttribute('data-print-unit'),
-              // L'estimation compte l'espace de 3 mm qui suit le bloc.
+              // La hauteur calculée compte l'espace de 3 mm qui suit le bloc.
               short: boxes[index].height * mm + 3 - Number(unit.getAttribute('data-mm')),
             })),
           };

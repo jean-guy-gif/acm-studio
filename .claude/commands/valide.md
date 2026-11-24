@@ -1,9 +1,14 @@
 ---
-description: Fusionne dans main une mission essayée et validée
+description: Fusionne dans main une mission Sensible validée par Jean-Guy ; pour une mission Petit ou Moyen, le chef joue ces étapes lui-même
 argument-hint: [numéro de mission]
 ---
 
 J'ai essayé la mission **$ARGUMENTS** : elle est validée.
+
+Les niveaux (règles de Jean-Guy, 23/11, CLAUDE.md) : une mission **Sensible** ne se fusionne que
+sur l'ordre de Jean-Guy. Une mission **Petit** ou **Moyen** n'attend pas « valide » : dès que ses
+barrières, ses specs e2e concernées, l'essai du chef dans un vrai navigateur et sa CI sont verts, le
+chef joue lui-même les étapes 2 à 8 ci-dessous ; Jean-Guy regarde après.
 
 Note chaque étape pour l'atelier : `node atelier/note.mjs --mission $ARGUMENTS "…"`.
 
@@ -54,5 +59,7 @@ Note chaque étape pour l'atelier : `node atelier/note.mjs --mission $ARGUMENTS 
 8. Lance `npm run verifier:production` : la commande attend que la production serve le commit de
    `main` (10 minutes au plus). Rapporte ce qu'elle répond — « production à jour », ou son échec
    tel quel. Ne dis plus « je n'ai pas vérifié le déploiement ».
-9. Dis-moi en 3 lignes ce qui vient de partir en ligne, puis UN test court à faire sur la production
-   (acm-studio-henna.vercel.app), pas à pas : Jean-Guy ne teste plus sur l'essai (règle du 06/11).
+9. Une ligne dans `missions/DUREES.md` (durée totale, dont attente de Jean-Guy, dont tests). Pas de
+   compte rendu par mission : le point du soir, en dix lignes, dit ce qui est parti, ce qui reste et
+   ce que Jean-Guy a à faire. Si un défaut apparaît en production : retour immédiat à la version
+   précédente sur Vercel, puis Jean-Guy est prévenu.

@@ -96,7 +96,7 @@ describe('ses cinq étapes (mission 143)', () => {
       ['selection', 'done', '3 biens'],
       ['present', 'current', 'à faire'],
       ['visit', 'later', 'à faire'],
-      ['offer', 'later', 'à faire'],
+      ['offer', 'later', 'quand il en formule une'],
       ['compromise', 'later', 'après l’offre acceptée'],
     ]);
   });
@@ -117,7 +117,55 @@ describe('ses cinq étapes (mission 143)', () => {
       }),
     );
     expect(visited[2]).toMatchObject({ status: 'done', state: 'le 07/11 · bon signé' });
-    expect(visited[3].status).toBe('current');
+    // Lancement, mission 2 — une visite faite ne suppose pas une offre.
+    expect(visited[3]).toMatchObject({ status: 'later', state: 'quand il en formule une' });
+  });
+
+  // Lancement, mission 2 (24/11) — « après trois visites, l'outil ne suppose plus une offre. Sans
+  // offre formulée, l'acquéreur reste en recherche et je continue à lui envoyer des biens. »
+  it('trois visites sans offre : l’offre n’est pas « à faire », aucune étape ne l’attend', () => {
+    const three = facts({
+      selectionCount: 3,
+      presentedAt: '2026-11-04T09:00:00Z',
+      visitsDone: 3,
+      lastVisitDoneAt: '2026-11-22T09:00:00Z',
+    });
+    const steps = buyerJourney(three, 'visiting');
+    expect(steps.map((step) => [step.key, step.status])).toEqual([
+      ['selection', 'done'],
+      ['present', 'done'],
+      ['visit', 'done'],
+      ['offer', 'later'],
+      ['compromise', 'later'],
+    ]);
+    expect(steps[2].state).toBe('3 faites · la dernière le 22/11');
+    expect(steps[3].state).toBe('quand il en formule une');
+    expect(steps.some((step) => step.status === 'current')).toBe(false);
+    // Et la prochaine étape reste la recherche : lui proposer d'autres biens.
+    expect(buyerNextAction({ ...buyer, status: 'visiting' }, three)).toMatchObject({
+      title: 'Lui proposer d’autres biens',
+      primary: { label: 'Trouver d’autres biens' },
+    });
+  });
+
+  it('une offre formulée après une visite (« Offre envisagée ») : l’offre devient l’étape du jour, à préparer', () => {
+    const considered = facts({
+      selectionCount: 3,
+      presentedAt: '2026-11-04T09:00:00Z',
+      visitsDone: 2,
+      lastVisitDoneAt: '2026-11-22T09:00:00Z',
+      offerConsidered: true,
+    });
+    const steps = buyerJourney(considered, 'visiting');
+    expect(steps[3]).toMatchObject({ status: 'current', state: 'envisagée, à préparer' });
+    expect(buyerNextAction({ ...buyer, status: 'visiting' }, considered)).toMatchObject({
+      title: 'Préparer son offre d’achat',
+      primary: { label: 'Préparer l’offre d’achat', href: '/acquereurs/b1/offre' },
+      secondary: { label: 'Trouver d’autres biens' },
+    });
+    // Signée, c'est le document qui parle : rien de « envisagée ».
+    const signed = buyerJourney({ ...considered, offer: OFFER }, 'visiting');
+    expect(signed[3]).toMatchObject({ status: 'current', state: 'signée le 07/11' });
   });
 
   it('une offre acceptée coche tout ce qui la précède, même sans présentation notée', () => {

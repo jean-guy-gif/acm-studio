@@ -111,6 +111,29 @@ function locationFromUrl(rawUrl: string | undefined): { city?: string; district?
   return { city: toLabel(match[1]), district: toLabel(match[2]) };
 }
 
+// Lancement, mission 4 (24/11) — le bloc d'adresse de l'annonce elle-même. Mesuré le 24/11
+// (26FSCHYRU6XR, dans le Chrome de Jean-Guy) : la page écrit la ville à plusieurs endroits et sous
+// plusieurs formes (« Nice », « Nizza ») — la règle « une seule valeur » ne retenait donc rien —,
+// mais son nœud `"location":{"address":{"country","city","zipCode","district"}}` est celui du bien.
+// On ne le retient que s'il n'y en a qu'UN, ou que tous disent la même chose : deux blocs qui se
+// contredisent ne décident rien.
+function listingAddress(flat: string): { city?: string; postalCode?: string; district?: string } {
+  const seen = new Map<string, { city?: string; postalCode?: string; district?: string }>();
+  for (const match of flat.matchAll(/"location"\s*:\s*\{\s*"address"\s*:\s*\{([^{}]*)\}/g)) {
+    const block = match[1];
+    const city = firstMatch(block, /"city"\s*:\s*"([^"]{2,60})"/)?.trim();
+    const postalCode = firstMatch(block, /"zipCode"\s*:\s*"(\d{5})"/) ?? undefined;
+    const district = firstMatch(block, /"district"\s*:\s*"([^"]{2,60})"/)?.trim();
+    if (!city) continue;
+    seen.set(`${city}|${postalCode ?? ''}|${district ?? ''}`, {
+      city,
+      postalCode,
+      district: district || undefined,
+    });
+  }
+  return seen.size === 1 ? [...seen.values()][0] : {};
+}
+
 // Classes DPE / GES.
 //
 // Terrain (19/08) : SeLoger ne les écrit pas en clair dans le HTML lisible, mais
@@ -208,6 +231,18 @@ export function extractSeLoger(html: string, originalUrl?: string): PartialListi
   // de chaque : une page contient aussi l'adresse de l'agence, et confondre les
   // deux placerait le bien dans la mauvaise ville.
   const flat = flattenQuotes(html);
+  // Le bloc d'adresse de l'annonce d'abord (lancement, mission 4) : la ville, le code postal, le
+  // quartier ; l'adresse collée, quand elle les dit, garde la main.
+  const address = listingAddress(flat);
+  if (result.city == null && address.city) {
+    result.city = address.city;
+  }
+  if (result.district == null && address.district) {
+    result.district = address.district;
+  }
+  if (result.postalCode == null && address.postalCode) {
+    result.postalCode = address.postalCode;
+  }
   if (result.city == null) {
     const city = onlyValue(flat, /"city"\s*:\s*"([^"]{2,60})"/gi);
     if (city != null) {

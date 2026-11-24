@@ -33,7 +33,7 @@ import {
   prospectionHref,
 } from '@/features/prospecting/services/filter-prospecting';
 import { prospectingCounters } from '@/features/prospecting/services/prospecting-status';
-import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
+import { readRuledOut } from '@/features/buyers/queries/read-seen-properties';
 import { loadAgencyBuyers } from '@/features/buyers/queries/get-property-buyers';
 import type { ProspectingRow } from '@/features/competitor-locator/services/build-prospecting-rows';
 import type { CardAlert } from '@/features/today/services/mandate-alerts';
@@ -67,7 +67,7 @@ export default async function ProspectionPage({ searchParams }: ProspectionPageP
   const [agencyBuyers, dismissals] = profile
     ? await Promise.all([
         loadAgencyBuyers(profile.agency_id),
-        readDismissals(await createClient(), profile.agency_id),
+        readRuledOut(await createClient(), profile.agency_id),
       ])
     : [null, null];
   const readyBuyers = new Map<ProspectingRow, CardAlert>();

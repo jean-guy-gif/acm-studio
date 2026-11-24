@@ -111,6 +111,72 @@ export function readFigaroMandateFacts(html: string): {
   };
 }
 
+// Lancement, mission 4 (24/11) — les faits de l'annonce, lus sur le MÊME chemin que ses photos.
+// Mesuré le 24/11 (annonce-110262791, dans le Chrome de Jean-Guy) et sur la page du 07/10
+// (annonce-109593037) : « price » et « area » sont des nombres, « areaGround » vaut 0 sans terrain,
+// « roomCount » est une LISTE d'un nombre, « location » porte « cityOnly » et « postalCode »,
+// « dpe » porte « energyCategory » et « gesCategory » (vides sans DPE publié),
+// « firstPublicationDate » est la date de mise en ligne. Le titre de la page ne dit plus le prix ni
+// la surface entre des « | » (M150) : c'est ici qu'ils se lisent. Une valeur qui n'est pas un
+// nombre plausible n'est pas lue.
+function positiveNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function structuredFacts(html: string): PartialListingData {
+  const opened = openClassified(html);
+  if (!opened) {
+    return {};
+  }
+  const { cell, classified } = opened;
+  const facts: PartialListingData = {};
+
+  const price = positiveNumber(cell(classified.price));
+  if (price != null) facts.price = price;
+  const area = positiveNumber(cell(classified.area));
+  if (area != null) facts.surfaceArea = area;
+  const ground = positiveNumber(cell(classified.areaGround));
+  if (ground != null) facts.landArea = ground;
+
+  const roomCount = cell(classified.roomCount);
+  const rooms = normalizeCount(Array.isArray(roomCount) ? cell(roomCount[0]) : roomCount);
+  if (rooms != null) facts.roomsCount = rooms;
+  const bedrooms = normalizeCount(cell(classified.bedRoomCount));
+  if (bedrooms != null) facts.bedroomsCount = bedrooms;
+  const bathrooms = normalizeCount(cell(classified.bathRoomCount));
+  if (bathrooms != null) facts.bathroomsCount = bathrooms;
+
+  const location = cell(classified.location);
+  if (isRecord(location)) {
+    const city = cell(location.cityOnly);
+    if (typeof city === 'string' && city.trim() !== '' && !/\d/.test(city)) {
+      facts.city = city.trim();
+    }
+    const postalCode = cell(location.postalCode);
+    if (typeof postalCode === 'string' && /^\d{5}$/.test(postalCode)) {
+      facts.postalCode = postalCode;
+    }
+  }
+
+  const dpe = cell(classified.dpe);
+  if (isRecord(dpe)) {
+    const energy = cell(dpe.energyCategory);
+    if (typeof energy === 'string' && /^[A-G]$/i.test(energy)) {
+      facts.energyRating = energy.toUpperCase();
+    }
+    const ges = cell(dpe.gesCategory);
+    if (typeof ges === 'string' && /^[A-G]$/i.test(ges)) {
+      facts.gesRating = ges.toUpperCase();
+    }
+  }
+
+  const published = cell(classified.firstPublicationDate);
+  const day = typeof published === 'string' ? firstMatch(published, /^(\d{4}-\d{2}-\d{2})/) : null;
+  if (day) facts.listingPublishedAt = day;
+
+  return facts;
+}
+
 function structuredPhotoUrls(html: string): string[] {
   const opened = openClassified(html);
   if (!opened) {
@@ -167,11 +233,15 @@ export function readFigaroDpe(html: string): string | null {
 }
 
 export function extractFigaro(html: string): PartialListingData {
-  const result: PartialListingData = {};
+  // Le bloc de l'annonce d'abord (lancement, mission 4) ; le titre et la page ne complètent que ce
+  // qu'il ne dit pas.
+  const result: PartialListingData = structuredFacts(html);
 
-  const energyRating = readFigaroDpe(html);
-  if (energyRating) {
-    result.energyRating = energyRating;
+  if (result.energyRating == null) {
+    const energyRating = readFigaroDpe(html);
+    if (energyRating) {
+      result.energyRating = energyRating;
+    }
   }
 
   const titleRaw =
@@ -201,6 +271,24 @@ export function extractFigaro(html: string): PartialListingData {
       }
     }
 
+    // Le titre d'aujourd'hui, sans « | » (mesuré le 24/11) : « Vente villa 6 pièces 223 m² à
+    // Cagnes-sur-Mer (06800), 790 000 € : Figaro Immobilier ». Le prix suit la virgule, la surface
+    // est la première du titre.
+    if (result.price == null) {
+      const price = normalizePrice(firstMatch(title, /,\s*([\d\s\u00a0\u202f.]+€)/));
+      if (price != null) {
+        result.price = price;
+      }
+    }
+    if (result.surfaceArea == null) {
+      const surface = normalizeArea(
+        firstMatch(title, /(\d+(?:[.,]\d+)?\s*m(?:²|2))(?![\p{L}\d])/u),
+      );
+      if (surface != null) {
+        result.surfaceArea = surface;
+      }
+    }
+
     // City: last words of the first segment, after the property-type wording.
     // "Vente Appartement / Penthouse de Luxe Lège-Cap-Ferret" -> "Lège-Cap-Ferret"
     // "Appartement à vendre 3 pièces 65 m² Nice (06000)" -> "Nice"
@@ -211,25 +299,27 @@ export function extractFigaro(html: string): PartialListingData {
       /([A-ZÀ-Ÿ][\p{L}'’-]+(?:\s[A-ZÀ-Ÿ][\p{L}'’-]+)*)\s*\(\d{5}\)/u,
     );
     const city = (cityFromLuxe ?? cityFromParens)?.trim();
-    if (city && !/\d/.test(city)) {
+    if (result.city == null && city && !/\d/.test(city)) {
       result.city = city;
     }
     const postalCode = firstMatch(head, /\((\d{5})\)/);
-    if (postalCode) {
+    if (result.postalCode == null && postalCode) {
       result.postalCode = postalCode;
     }
 
     // Mission 68 — « Studio » / « T1 » / « F1 » sans « N pièces » dans le titre = 1 pièce.
     const rooms =
       normalizeCount(firstMatch(title, /(\d+)\s*pi[eè]ces?\b/i)) ?? studioRoomsCount(title);
-    if (rooms != null) {
+    if (result.roomsCount == null && rooms != null) {
       result.roomsCount = rooms;
     }
   }
 
-  const bedrooms = normalizeCount(firstMatch(html, /(\d+)\s*chambres?\b/i));
-  if (bedrooms != null) {
-    result.bedroomsCount = bedrooms;
+  if (result.bedroomsCount == null) {
+    const bedrooms = normalizeCount(firstMatch(html, /(\d+)\s*chambres?\b/i));
+    if (bedrooms != null) {
+      result.bedroomsCount = bedrooms;
+    }
   }
 
   // Mission 76 — the ad's own structured list first (complete, full size). Without
