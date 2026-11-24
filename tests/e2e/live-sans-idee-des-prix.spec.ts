@@ -16,6 +16,9 @@ import {
 // rien ne défile avec le bouton en plus (M148 B). `E2E_CAPTURES=1` range deux captures dans
 // `missions/maquettes/`.
 
+// Pour les captures : la barre d'outils de Vercel, posée sur toute prévisualisation, n'est pas l'outil.
+const HIDE_PREVIEW_TOOLBAR = 'vercel-live-feedback { display: none !important; }';
+
 const TABLETS = [
   { width: 1024, height: 700 },
   { width: 1180, height: 750 },
@@ -74,6 +77,7 @@ test('le vendeur n’a aucune idée des prix : un bouton ouvre les biens avec le
     }
     await page.setViewportSize(TABLETS[0]);
     if (process.env.E2E_CAPTURES === '1') {
+      await page.addStyleTag({ content: HIDE_PREVIEW_TOOLBAR });
       await page.screenshot({ path: 'missions/maquettes/L1-live-valeur-percue.png' });
     }
 

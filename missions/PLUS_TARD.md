@@ -57,3 +57,8 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 24/11 · Méthode · L'extension n'accepte ni les prévisualisations Vercel ni un autre site que la
   production, l'essai et le poste local : un changement qui passe par elle ne s'essaie dans un vrai
   navigateur qu'une fois en production (ou sur l'essai, où le Chrome de Jean-Guy n'est pas connecté).
+- 24/11 · Lancement 1 · Relecteur, cas qu'aucun vrai rendez-vous ne montre : un prix tapé puis
+  « Voir les biens et leurs prix », puis retour en Live interactif : « 350 000 € ? » réapparaît
+  au-dessus d'un champ vide ; « Précédent » et « Valider » restent actifs pendant les 20 secondes
+  au plus de l'enregistrement du changement ; l'échec du changement n'a pas de test (le chemin
+  heureux est joué par l'e2e).
