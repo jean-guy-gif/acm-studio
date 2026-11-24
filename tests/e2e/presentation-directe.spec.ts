@@ -456,7 +456,9 @@ test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en
     const row = page.getByTestId('buyer-row').filter({ hasText: 'Famille Moreau' });
     await expect(row).not.toContainText('Lui proposer la maison');
     await row.getByRole('link', { name: 'Famille Moreau' }).click();
-    await expect(page.getByTestId('buyer-proposals')).toContainText('proposé le');
+    // Lancement, mission 6 — l'envoi noté se lit dans « Son suivi », sur la ligne du bien.
+    await expect(page.getByTestId('buyer-follow-up')).toContainText('Proposé aujourd’hui');
+    await expect(page.getByTestId('buyer-proposals')).toHaveCount(0);
     await expect(page.getByTestId('buyer-timeline')).toContainText('Bien proposé');
   });
 });

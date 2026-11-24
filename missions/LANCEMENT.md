@@ -36,12 +36,15 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
    affichés. Les coûts et les plafonds restent visibles pour l'opérateur seul. Plafond atteint : un
    message sans montant, par exemple « Votre forfait du mois est atteint : contactez votre agence. »
    Un test parcourt les écrans du conseiller et refuse tout montant lié à l'usage. Les forfaits en
-   jetons vont dans `missions/PLUS_TARD.md`. — à faire
+   jetons vont dans `missions/PLUS_TARD.md`. — **fait le 24/11** : une recherche « compte dans le
+   forfait du mois », le manager lit une part du forfait, les montants restent sur `/erreurs`
 
 ## Mercredi 25/11
 
 6. **Suivi de l'acquéreur** : un seul endroit par acquéreur avec les biens envoyés, refusés et
-   pourquoi, visités avec leur compte rendu, pour faire le point avec lui. — à faire
+   pourquoi, visités avec leur compte rendu, pour faire le point avec lui. — **fait le 24/11** :
+   « Son suivi » sur la fiche acquéreur (maquette `maquettes/L6-suivi-de-l-acquereur.png`, capture
+   `L6-son-suivi-rossi.png`)
 7. **Compte rendu de visite saisi en trente secondes** après la visite. — à faire
 8. **IA, la lecture des notes de découverte de l'acquéreur** : ouverte et vérifiée sur le compte
    normal de Jean-Guy, avec un plafond par agence. Lui dire en une ligne ce qu'il doit faire
