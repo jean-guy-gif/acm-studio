@@ -146,7 +146,7 @@ describe('les photos dans le classement', () => {
     );
     expect(confirmed).toMatchObject({
       mark: '✓',
-      text: '« vue mer » · se voit sur les photos 1, 4 et 6',
+      text: '« vue mer » · les photos 1, 4 et 6 le montrent aussi, à vérifier',
     });
     const [doubt] = whyRows(
       withPhotoJudgments(
@@ -158,6 +158,38 @@ describe('les photos dans le classement', () => {
       mark: '✓',
       text: '« sans vis-à-vis » · à regarder : la photo 3 montre peut-être le contraire',
     });
+  });
+
+  it('quand l’annonce dit le contraire, la note parle toujours du critère, jamais à contresens', () => {
+    const against = judgment({
+      key: 'pret_a_vivre',
+      verdict: 'contrary',
+      quote: 'travaux à prévoir',
+    });
+    // Les photos montrent le critère, contre l'annonce : « pourtant », jamais « se voit ».
+    const [shown] = whyRows(
+      withPhotoJudgments(
+        [against],
+        new Map([['pret_a_vivre', { verdict: 'shown', numbers: [3] }]]),
+      ),
+    );
+    expect(shown).toMatchObject({
+      mark: '✗',
+      text: 'le contraire : « travaux à prévoir » · pourtant la photo 3 le montre, à vérifier',
+    });
+    // Les photos confirment l'annonce : elles ne « montrent » pas « peut-être le contraire ».
+    const [confirmed] = whyRows(
+      withPhotoJudgments(
+        [against],
+        new Map([['pret_a_vivre', { verdict: 'contrary', numbers: [2, 3] }]]),
+      ),
+    );
+    expect(confirmed).toMatchObject({
+      mark: '✗',
+      text: 'le contraire : « travaux à prévoir » · comme sur les photos 2 et 3, à vérifier',
+    });
+    // Et rien ne bouge au score : les photos ne retirent ni n'ajoutent à ce que l'annonce dit.
+    expect(softScore([against])).toBe(-2);
   });
 
   it('une annonce muette dont les photos disent quelque chose ne « dit » plus rien', () => {

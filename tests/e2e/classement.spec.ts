@@ -78,9 +78,7 @@ test('le classement par ce qui compte pour eux : les biens idéaux des Lambert',
   await test.step('Les photos des mieux classés : des numéros de photos, à vérifier', async () => {
     const withPhotos = page.getByTestId('soft-why').filter({ hasText: /photos? \d/ });
     await expect(withPhotos.first()).toBeVisible();
-    await expect(withPhotos.first()).toContainText(
-      /se voit sur (la photo|les photos) \d|(le montre|le montrent), à vérifier/,
-    );
+    await expect(withPhotos.first()).toContainText(/(le montre|le montrent)( aussi)?, à vérifier/);
     // Cinq biens au plus, et jamais un bien de l'agence : seules les annonces du marché.
     expect(await withPhotos.count()).toBeLessThanOrEqual(5);
     await expect(

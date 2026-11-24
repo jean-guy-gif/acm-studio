@@ -9,6 +9,17 @@
 
 export const PHOTOS_DES_ANNONCES_LUES = false;
 
+// Les photos ne sont lues qu'à la PREMIÈRE recherche d'une fiche : « Chercher encore » ne
+// connaît que ses nouveaux biens — ses cinq meilleurs ne seraient pas les mieux classés de la
+// recherche — et repaierait la lecture.
+export function photosForSearch(
+  search: { demo: boolean; resumed: boolean },
+  env: { VERCEL_ENV?: string; NODE_ENV?: string } = process.env,
+  lit: boolean = PHOTOS_DES_ANNONCES_LUES,
+): boolean {
+  return !search.resumed && listingPhotosRead(search.demo, env, lit);
+}
+
 export function listingPhotosRead(
   demo: boolean,
   env: { VERCEL_ENV?: string; NODE_ENV?: string } = process.env,

@@ -11,6 +11,18 @@ const state = vi.hoisted(() => ({
   buyer: null as Record<string, unknown> | null,
   budgetReads: 0,
   reservations: 0,
+  // Lancement, mission 9 — ce que l'action demande au classement.
+  ranked: [] as { criteria: string[]; demo: boolean; photos?: { max: number; pick: unknown } }[],
+}));
+vi.mock('@/features/soft-ranking/server/rank-listings', () => ({
+  rankListings: async (input: {
+    criteria: string[];
+    demo: boolean;
+    photos?: { max: number; pick: unknown };
+  }) => {
+    state.ranked.push(input);
+    return null;
+  },
 }));
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/features/demo/services/is-demo-agency', () => ({
@@ -81,7 +93,9 @@ describe('searchIdealProperties', () => {
     state.buyer = keller;
     state.budgetReads = 0;
     state.reservations = 0;
+    state.ranked = [];
     fetchSpy.mockReset();
+    vi.unstubAllEnvs();
   });
 
   it('sans profil, ou fiche introuvable (archivée, autre agence) : refusée, aucun appel', async () => {
@@ -128,4 +142,41 @@ describe('searchIdealProperties', () => {
       expect(['Mougins', 'Mouans-Sartoux', 'Valbonne']).toContain(candidate.city);
     }
   }, 20_000);
+
+  // Lancement, mission 9 — la lecture des photos est éteinte : c'est la garde de la page de
+  // confidentialité. L'action ne demande des photos au classement que si l'interrupteur le dit.
+  describe('les photos des mieux classés', () => {
+    const withSoft = { ...keller, soft_criteria: [{ key: 'vue', words: 'une vue dégagée' }] };
+
+    it('la démo sur l’essai et dans les tests : cinq biens au plus, simulés', async () => {
+      state.buyer = withSoft;
+      expect((await searchIdealProperties(BUYER)).ok).toBe(true);
+      expect(state.ranked).toHaveLength(1);
+      expect(state.ranked[0]!.criteria).toEqual(['vue']);
+      expect(state.ranked[0]!.photos?.max).toBe(5);
+      expect(typeof state.ranked[0]!.photos?.pick).toBe('function');
+    });
+
+    it('en production, interrupteur éteint : aucune photo demandée, démo comprise', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('VERCEL_ENV', 'production');
+      state.buyer = withSoft;
+      expect((await searchIdealProperties(BUYER)).ok).toBe(true);
+      expect(state.ranked).toHaveLength(1);
+      expect(state.ranked[0]!.photos).toBeUndefined();
+    });
+
+    it('l’action est le seul endroit qui demande des photos, et seulement par l’interrupteur', async () => {
+      const { readFileSync } = await import('node:fs');
+      const action = readFileSync(
+        'src/features/ideal-properties/actions/search-ideal-properties.ts',
+        'utf8',
+      );
+      expect(action).toMatch(/photos: photosForSearch\(\{ demo, resumed: resumeFrom != null \}\)/);
+      expect(action.match(/photos:/g)).toHaveLength(1);
+      // La veille de nuit ne lit aucune photo.
+      const watch = readFileSync('src/features/buyer-watch/server/run-buyer-watch.ts', 'utf8');
+      expect(watch).not.toMatch(/photos:|photosForSearch|listingPhotosRead/);
+    });
+  });
 });

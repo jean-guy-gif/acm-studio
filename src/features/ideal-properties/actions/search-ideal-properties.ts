@@ -57,7 +57,7 @@ import {
   topPhotoPicks,
 } from '@/features/ideal-properties/services/rank-categorized';
 import { PHOTO_TOP_LISTINGS, PHOTOS_PER_LISTING } from '@/features/soft-ranking/photo-request';
-import { listingPhotosRead } from '@/features/soft-ranking/services/photo-switch';
+import { photosForSearch } from '@/features/soft-ranking/services/photo-switch';
 import type { RankingListing, SoftRanking } from '@/features/soft-ranking/types';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
@@ -265,8 +265,9 @@ export async function searchIdealProperties(
       }),
       now,
       // Lancement, mission 9 — les photos des biens du marché les mieux classés, une fois le texte
-      // jugé ; éteint tant que Jean-Guy ne l'allume pas (`photo-switch.ts`).
-      photos: listingPhotosRead(demo)
+      // jugé, à la première recherche seulement ; éteint tant que Jean-Guy ne l'allume pas
+      // (`photo-switch.ts`).
+      photos: photosForSearch({ demo, resumed: resumeFrom != null })
         ? {
             max: PHOTO_TOP_LISTINGS,
             pick: (byKey) =>
