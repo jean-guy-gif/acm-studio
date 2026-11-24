@@ -19,7 +19,8 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
 
 1. **Live : le vendeur n'a aucune idée des prix.** Un bouton au début du Live ouvre le dossier avec
    le prix de chaque bien, et « Voir l'annonce » en un clic ramène à l'annonce. Partir de ce que
-   « Présentation directe » fait déjà. — à faire
+   « Présentation directe » fait déjà. — **fait le 24/11** : sur « Votre valeur perçue », « Voir les
+   biens et leurs prix » (captures `maquettes/L1-live-*.png`)
 2. **Acquéreur : après trois visites, l'outil ne suppose plus une offre.** Sans offre formulée,
    l'acquéreur reste en recherche et le conseiller continue à lui envoyer des biens. — à faire
 3. **Acquéreur : un bien déjà envoyé, visité ou refusé n'est jamais reproposé.** — à faire
