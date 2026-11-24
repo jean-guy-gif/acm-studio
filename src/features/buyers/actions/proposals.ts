@@ -79,7 +79,7 @@ async function resolve(
 // propose : un bien de l'agence de la sélection actuelle qui ne l'est plus (vendeur à relancer,
 // mandat sous offre) n'est pas recopié dans le lien. Une sélection illisible n'est jamais lue comme
 // vide (M98) ; si le lien échoue, la nouvelle sélection est retirée. Lancement, mission 3 — ni un
-// bien qu'il a refusé, déjà visité, ou écarté pour lui : il ne lui est jamais reproposé.
+// bien qu'il a refusé ou écarté pour lui : il ne lui est jamais reproposé.
 export async function prepareProposalLink(
   buyerId: unknown,
   propertyKey: unknown,
@@ -116,8 +116,8 @@ export async function prepareProposalLink(
         .order('position', { ascending: true })
     : { data: [], error: null };
   if (itemsReadError) return { ok: false, error: PROPOSAL_FAILED };
-  // Lancement, mission 3 — un bien qu'il a refusé, déjà visité, ou que le conseiller a écarté pour
-  // lui n'est pas recopié dans son nouveau lien. Une lecture en échec arrête tout (M98).
+  // Lancement, mission 3 — un bien qu'il a refusé, ou que le conseiller a écarté pour lui, n'est
+  // pas recopié dans son nouveau lien. Une lecture en échec arrête tout (M98).
   const seenRead = await readSeenProperties(client, agencyId, buyerIdOk);
   if (!seenRead) return { ok: false, error: PROPOSAL_FAILED };
   const kept = keptForProposal(

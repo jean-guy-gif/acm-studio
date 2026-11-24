@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   contactedOf,
   countSeen,
+  currentSeenLabel,
+  currentSeenReason,
+  isClosedForBuyer,
   keptForProposal,
   ruledOutOf,
   seenKeysOf,
@@ -203,7 +206,7 @@ describe('la ligne dite au conseiller', () => {
 });
 
 describe('le lien de proposition', () => {
-  it('ne recopie ni un bien refusé, ni visité, ni écarté ; un bien envoyé sans réponse reste', () => {
+  it('ne recopie ni un bien refusé ni un bien écarté ; envoyé ou visité sans refus, il reste', () => {
     const items = [
       { source: 'project', reference: 'p1' },
       { source: 'project', reference: 'p2' },
@@ -221,8 +224,28 @@ describe('le lien de proposition', () => {
       `${item.source}:${item.reference}`;
     expect(keptForProposal(items, facts, keyOf).map((item) => item.reference)).toEqual([
       'p2',
+      'p3',
       'p5',
     ]);
     expect(keptForProposal(items, undefined, keyOf)).toHaveLength(5);
+  });
+});
+
+describe('sa sélection actuelle, sur les biens idéaux', () => {
+  it('refusé ou écarté : plus coché, dit à l’écran ; visité sans refus : reste, dit aussi', () => {
+    expect(currentSeenReason('refused')).toBe('refused');
+    expect(currentSeenReason('dismissed')).toBe('dismissed');
+    expect(currentSeenReason('visited')).toBe('visited');
+    expect(currentSeenReason('sent')).toBeNull();
+    expect(currentSeenReason(undefined)).toBeNull();
+    expect(isClosedForBuyer('refused')).toBe(true);
+    expect(isClosedForBuyer('dismissed')).toBe(true);
+    expect(isClosedForBuyer('visited')).toBe(false);
+    expect(isClosedForBuyer(undefined)).toBe(false);
+    expect(currentSeenLabel('refused')).toBe(
+      'Refusé par lui : il ne sera pas repris dans sa prochaine sélection.',
+    );
+    expect(currentSeenLabel('visited')).toBe('Déjà visité.');
+    expect(currentSeenLabel(undefined)).toBeNull();
   });
 });

@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { readSeenProperties } from '@/features/buyers/queries/read-seen-properties';
-import { seenKeysOf } from '@/features/buyers/services/seen-properties';
+import { currentSeenReason, seenKeysOf } from '@/features/buyers/services/seen-properties';
 import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -97,6 +97,16 @@ export default async function IdealPropertiesPage({ params }: Props) {
   );
   // Ce qu'il a déjà vu ; null : la lecture a échoué (M98).
   const seenFacts = seenRead ? seenKeysOf(seenRead.seen, buyer.id) : null;
+  // Sa sélection actuelle : ce qu'il a dit de chacun de ses biens (refusé, écarté, visité).
+  const currentSeen = Object.fromEntries(
+    (selection?.items ?? []).flatMap((item) => {
+      const key = seenRead?.keyOf(item);
+      const reason = currentSeenReason(
+        key ? seenRead?.seen.get(buyer.id)?.get(key)?.reason : undefined,
+      );
+      return reason ? [[selectionKey(item), reason]] : [];
+    }),
+  );
   const deduced = idealSearchCriteria(buyer);
   const watchCategorized =
     watchRun != null
@@ -175,6 +185,7 @@ export default async function IdealPropertiesPage({ params }: Props) {
             ? seenFacts.filter((fact) => fact.reason === 'dismissed').map((fact) => fact.key)
             : null
         }
+        currentSeen={currentSeen}
         seen={(seenFacts ?? []).flatMap((fact) =>
           fact.reason === 'dismissed' ? [] : [{ key: fact.key, reason: fact.reason }],
         )}

@@ -66,3 +66,16 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   visite » dès qu'une visite existe, et depuis « En visite » le statut suivant proposé est « A
   acheté » : deux signaux laissés tels quels (ils ne bloquent rien) ; à revoir avec la fiche
   simplifiée (mission 10).
+- 24/11 · Lancement 3 · Restent hors de la règle « jamais reproposé » : le rapprochement
+  (`/acquereurs/rapprochement`, recherche libre du conseiller) ; le serveur accepte encore une
+  sélection qui contiendrait un bien refusé (l'écran ne permet plus de le cocher) et un lien de
+  proposition pour un acquéreur qui a déjà le bien (page restée ouverte) ; un même bien publié sur
+  deux portails a deux identités, et la clé change quand une annonce devient un mandat ou qu'un
+  concurrent est supprimé (les relier demande une migration).
+- 24/11 · Lancement 3 · Relecteur, cas qu'aucun vrai dossier ne montre : une réponse reçue par le
+  lien sans partage noté ne marque « envoyé » que le bien répondu ; un bien retiré de la sélection
+  après l'envoi passe pour non vu ; un bien envoyé puis sorti de la sélection ne peut plus être
+  repris depuis les biens idéaux (il faudrait un geste « le reproposer quand même »).
+- 24/11 · Lancement 3 · La règle lit sept tables à chaque page qui s'en sert, en une vague, pour
+  toute l'agence ; elle part deux fois sur « Aujourd'hui », sa pastille et le Suivi, une fois à
+  l'ouverture du Live : à mesurer, et à lire une seule fois par page si cela ralentit.
