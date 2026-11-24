@@ -66,3 +66,9 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   visite » dès qu'une visite existe, et depuis « En visite » le statut suivant proposé est « A
   acheté » : deux signaux laissés tels quels (ils ne bloquent rien) ; à revoir avec la fiche
   simplifiée (mission 10).
+- 24/11 · Lancement 5 · Les forfaits en jetons (demande de Jean-Guy, 23/11) : aujourd'hui « le
+  forfait » est le plafond mensuel en euros que l'opérateur règle sur `/erreurs` ; ce qu'une agence
+  achète (jetons, paliers, dépassement) reste à définir. Quand le manager reprend une veille coupée,
+  elle retrouve le plafond par défaut (10 €), pas celui que l'opérateur avait réglé (aucune colonne
+  pour le retenir). Sur la recherche, le message du plafond atteint dit « contactez votre agence »
+  même au manager ; Administration lui dit de contacter l'équipe ACM Studio.
