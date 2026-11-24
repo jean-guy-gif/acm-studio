@@ -3,15 +3,10 @@ import {
   queryFilters,
 } from '@/features/competitor-search/services/search-filters';
 import {
-  STREAM_ESTATE_BILLING_CAP,
-  STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
-} from '@/features/competitor-search/services/stream-estate-limits';
-import {
   isDefaultSettings,
   type SearchSettings,
 } from '@/features/competitor-search/services/search-settings';
 import type { CompetitorSearchCriteria } from '@/features/competitor-search/types';
-import { formatEuro } from '@/lib/format';
 
 // Mission 93 — aucune recherche Stream Estate payée pour rien.
 //
@@ -39,13 +34,8 @@ export async function runPaidSearch<T>(
   return { ran: true, result: await search() };
 }
 
-// « Coût maximal : 0,60 € par recherche » — le plafond automatique (M71), dit avant de payer.
-// Mission 105 — le montant seul : « 0,60 € », pour la confirmation avant de relancer.
-export const STREAM_ESTATE_MAX_COST = formatEuro(
-  STREAM_ESTATE_BILLING_CAP * STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
-  { minDecimals: 2, maxDecimals: 2 },
-);
-export const STREAM_ESTATE_MAX_COST_LABEL = `Coût maximal : ${STREAM_ESTATE_MAX_COST} par recherche`;
+// Lancement, mission 5 — le coût d'une recherche ne se dit plus devant le conseiller (« Coût
+// maximal : 0,60 € par recherche », M93, retiré) : elle compte dans le forfait de l'agence.
 
 // --- 2 et 3. Le dernier résultat, gardé puis invalidé --------------------------------------
 

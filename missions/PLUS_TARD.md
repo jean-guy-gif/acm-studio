@@ -66,6 +66,20 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   visite » dès qu'une visite existe, et depuis « En visite » le statut suivant proposé est « A
   acheté » : deux signaux laissés tels quels (ils ne bloquent rien) ; à revoir avec la fiche
   simplifiée (mission 10).
+- 24/11 · Lancement 5 · Les forfaits en jetons (demande de Jean-Guy, 23/11) : aujourd'hui « le
+  forfait » est le plafond mensuel en euros que l'opérateur règle sur `/erreurs` ; ce qu'une agence
+  achète (jetons, paliers, dépassement) reste à définir. Quand le manager reprend une veille coupée,
+  elle retrouve le plafond par défaut (10 €), pas celui que l'opérateur avait réglé (aucune colonne
+  pour le retenir). Sur la recherche, le message du plafond atteint dit « contactez votre agence »
+  même au manager ; Administration lui dit de contacter l'équipe ACM Studio.
+- 24/11 · Lancement 5 · La veille : un interrupteur à part pour le manager (une colonne, donc une
+  migration), pour que « Reprendre la veille » rende le plafond réglé par l'opérateur au lieu du
+  plafond par défaut, et ne lève pas un 0 € posé par lui. Relecteur, cas imaginés : « forfait du
+  mois » nomme trois plafonds (recherche, veille, IA), le bandeau du classement peut dire « forfait
+  du mois atteint » sous une recherche qui vient de réussir ; le test des coûts pourra refuser à
+  tort « stationnement payant », « coût des travaux » ou « charges … € par mois » dans un futur
+  texte ; l'e2e ne relit pas à l'écran « Depuis mes notes », la fiche acquéreur ni « Aujourd'hui »
+  (le test unitaire lit leurs textes).
 - 24/11 · Lancement 3 · Restent hors de la règle « jamais reproposé » : le rapprochement
   (`/acquereurs/rapprochement`, recherche libre du conseiller) ; le serveur accepte encore une
   sélection qui contiendrait un bien refusé (l'écran ne permet plus de le cocher) et un lien de
@@ -79,3 +93,7 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 24/11 · Lancement 3 · La règle lit sept tables à chaque page qui s'en sert, en une vague, pour
   toute l'agence ; elle part deux fois sur « Aujourd'hui », sa pastille et le Suivi, une fois à
   l'ouverture du Live : à mesurer, et à lire une seule fois par page si cela ralentit.
+- 24/11 · Méthode · Pour que la prévisualisation d'une branche suffise à toutes les specs : déduire
+  l'adresse du site de celle que Vercel donne à la branche quand `NEXT_PUBLIC_SITE_URL` manque, et
+  poser la clé de recherche sur les prévisualisations (geste de Jean-Guy dans Vercel) ; d'ici là,
+  quatre specs se jouent sur l'essai (`docs/APPRENTISSAGES.md`, 24/11).

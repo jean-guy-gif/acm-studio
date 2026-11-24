@@ -108,12 +108,8 @@ import {
   resumeMemory,
   type StreamEstateSearchNote,
 } from '@/features/competitor-search/services/stream-estate-summary';
-import {
-  runPaidSearch,
-  STREAM_ESTATE_MAX_COST,
-  STREAM_ESTATE_MAX_COST_LABEL,
-} from '@/features/competitor-search/services/paid-search-guard';
-import { relaunchConfirmText } from '@/features/competitor-search/services/kept-result';
+import { runPaidSearch } from '@/features/competitor-search/services/paid-search-guard';
+import { RELAUNCH_CONFIRM_TEXT } from '@/features/competitor-search/services/kept-result';
 import { surfaceToleranceLabel } from '@/features/competitor-search/services/describe-loosening';
 import { SECTOR_NEUTRAL_MESSAGES } from '@/features/competitor-search/services/geocode-subject';
 import { splitVisible, VISIBLE_CANDIDATES } from '@/features/competitor-search/services/proximity';
@@ -1247,7 +1243,7 @@ export function CompetitorSearchPanel({
             confirmingPaidChange ? (
               <div
                 role="group"
-                aria-label="Nouvelle recherche payante"
+                aria-label="Nouvelle recherche"
                 data-testid="paid-change-confirm"
                 className="flex w-full flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
               >
@@ -1297,7 +1293,8 @@ export function CompetitorSearchPanel({
       ) : null}
       {streamEstateAction ? (
         <div className="flex flex-wrap items-center gap-3">
-          {/* Mission 105 — relancer repaie : on le confirme dans l'écran, avec le montant. */}
+          {/* Mission 105 — relancer compte de nouveau : on le confirme dans l'écran. Lancement,
+              mission 5 — sans montant. */}
           {confirmingRelaunch && streamNote ? (
             <div
               role="group"
@@ -1305,7 +1302,7 @@ export function CompetitorSearchPanel({
               data-testid="relaunch-confirm"
               className="flex w-full flex-col gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
             >
-              <p>{relaunchConfirmText(STREAM_ESTATE_MAX_COST)}</p>
+              <p>{RELAUNCH_CONFIRM_TEXT}</p>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -1323,7 +1320,7 @@ export function CompetitorSearchPanel({
                     void searchViaStreamEstate();
                   }}
                 >
-                  Relancer et payer
+                  Relancer
                 </button>
               </div>
             </div>
@@ -1345,12 +1342,6 @@ export function CompetitorSearchPanel({
             </button>
           )}
           <p className={hintText}>Critères : {criteriaLabel}</p>
-          {/* Mission 93 — le coût se dit avant de payer. Mission 114 — rien n'est payé en démo. */}
-          {demo ? null : (
-            <p className="w-full text-xs text-zinc-500 stage:text-white/50">
-              {STREAM_ESTATE_MAX_COST_LABEL}
-            </p>
-          )}
           {budgetNotice ? (
             <p
               role="status"

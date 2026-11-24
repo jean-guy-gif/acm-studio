@@ -264,7 +264,7 @@ describe('le bandeau (planches 4 et 4 b)', () => {
       'jusqu’à la recherche du marché',
     );
     expect(softBanner({ mode: 'simple', reason: 'budget' }, labels).text).toBe(
-      ' : budget de lecture du mois atteint.',
+      ' : forfait du mois atteint.',
     );
     expect(softBanner({ mode: 'simple', reason: 'closed' }, labels)).toEqual({
       strong: 'Classement simplifié',

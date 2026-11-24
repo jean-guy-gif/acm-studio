@@ -864,6 +864,13 @@ null; end;` passe toujours, que la fonction refuse ou non (l'échec, lui aussi P
   elle répond aux tests avec le contournement de `.env.e2e.local` (`/api/version` rend le commit).
   En local, `.env.local` vise la base locale, qui demande Docker : la prévisualisation est le plus
   simple.
+- 24/11 · Lancement 3 · La prévisualisation d'une branche n'a ni l'adresse du site
+  (`NEXT_PUBLIC_SITE_URL` : les liens publics y pointent vers `localhost:3000`), ni la clé de
+  recherche (le bloc « Réglages de la recherche » n'y existe pas) : `demo`, `langue-de-l-acquereur`,
+  `parcours` et `fiche-complete` y échouent sans défaut du code. Le local ne les joue pas non plus
+  (base locale). Ces quatre specs se jouent sur l'essai, où le chef fusionne sa branche ; les autres
+  sur la prévisualisation. Une attente de l'essai par `curl` demande le contournement de
+  `.env.e2e.local` : sans lui, la boucle tourne à vide (sept minutes perdues).
 
 ## Les rendus
 

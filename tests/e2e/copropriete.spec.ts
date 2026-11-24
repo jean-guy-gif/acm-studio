@@ -47,14 +47,14 @@ test('la copropriété : biens idéaux et rapprochement des Lambert', async ({ p
     await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     await page
       .getByTestId('ideal-paid-confirm')
-      .getByRole('button', { name: 'Lancer et payer' })
+      .getByRole('button', { name: 'Lancer la recherche' })
       .click();
     await expect(page.getByTestId('ideal-market-summary')).toBeVisible({ timeout: 60_000 });
     // Les annonces que la piscine (★) n'écarte pas sont les concurrents des Lopez, déjà montrés
     // plus haut une seule fois avec « Copropriété : à vérifier » ; aucune n'est écartée pour sa
     // copropriété, inconnue.
     const summary = page.getByTestId('ideal-market-summary');
-    await expect(summary).toContainText('0 annonce facturée');
+    await expect(summary).toContainText('0 annonce comptée');
     await expect(summary).not.toContainText(/copropriété/i);
     const hits = page.getByTestId('ideal-market-hit');
     const hitCount = await hits.count();

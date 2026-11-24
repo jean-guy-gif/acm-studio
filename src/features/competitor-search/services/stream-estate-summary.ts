@@ -9,7 +9,6 @@ import {
 } from '@/features/competitor-search/services/search-settings';
 import {
   STREAM_ESTATE_MORE_CAP,
-  STREAM_ESTATE_PRICE_PER_ADVERT_EUR,
   STREAM_ESTATE_TARGET,
 } from '@/features/competitor-search/services/stream-estate-limits';
 import type {
@@ -24,7 +23,6 @@ import {
   type RankedCandidate,
   type StreamEstateTier,
 } from '@/features/competitor-search/types';
-import { formatEuro } from '@/lib/format';
 
 // MISSION 71 §6 — la ligne de bilan d'une recherche Stream Estate, dite telle quelle :
 // « 10 comparables : 2 identiques, 3 plus grands, 5 à moins de 2 km — 37 annonces facturées
@@ -61,7 +59,7 @@ export const RESORTED_LOOSER_NOTE =
 export const STALE_SETTINGS_NOTE =
   'Résultat obtenu avec vos réglages précédents : relancez la recherche pour appliquer les nouveaux.';
 export const PAID_CHANGE_WARNING =
-  'Ce changement demande une nouvelle recherche payante (jusqu’à 0,60 €). Le résultat actuel sera remplacé quand elle aura réussi.';
+  'Ce changement demande une nouvelle recherche, comptée dans le forfait du mois. Le résultat actuel sera remplacé quand elle aura réussi.';
 
 const TIER_LABELS: Record<StreamEstateTier, [string, string]> = {
   1: ['identique', 'identiques'],
@@ -103,11 +101,9 @@ function resumePoint(tier: StreamEstateTier, arrondissement: boolean | undefined
 const plural = (count: number, one: string, many: string): string =>
   `${count} ${count > 1 ? many : one}`;
 
-export const euroCost = (billed: number): string =>
-  formatEuro(billed * STREAM_ESTATE_PRICE_PER_ADVERT_EUR, { minDecimals: 2, maxDecimals: 2 });
-
-// « Chercher encore (20 annonces, 0,20 €) » : seulement au plafond, avant 10, s'il reste des crans.
-export const MORE_LABEL = `Chercher encore (${STREAM_ESTATE_MORE_CAP} annonces, ${euroCost(STREAM_ESTATE_MORE_CAP)})`;
+// « Chercher encore (20 annonces) » : seulement au plafond, avant 10, s'il reste des crans. Sans
+// montant (Lancement, mission 5) : les annonces comptent dans le forfait de l'agence.
+export const MORE_LABEL = `Chercher encore (${STREAM_ESTATE_MORE_CAP} annonces)`;
 
 const proposedOf = (ranked: RankedCandidate[]) =>
   ranked.filter((entry) => entry.portal === STREAM_ESTATE_SOURCE && !entry.newBuildComplement);
@@ -185,7 +181,7 @@ export function describeStreamEstateSearch(
     .map(([tier, count]) => `${count} ${tierLabel(tier, count)}`);
   const headline = `${plural(proposed.length, 'concurrent', 'concurrents')}${
     composition.length > 0 ? ` : ${composition.join(', ')}` : ''
-  } — ${plural(note.billed, 'annonce facturée', 'annonces facturées')} (${euroCost(note.billed)})`;
+  } — ${plural(note.billed, 'annonce comptée', 'annonces comptées')}`;
 
   const details: string[] = [];
   // Mission 111 — ce que l'écran a fait des biens déjà reçus depuis la recherche.
@@ -250,7 +246,7 @@ export function describeStreamEstateSearch(
   ];
   if (fallback.length > 0) {
     details.push(
-      `Pour ${fallback.map((tier) => `« ${labelsOf(tier, note.arrondissement)[0]} »`).join(', ')} : communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais facturés.`,
+      `Pour ${fallback.map((tier) => `« ${labelsOf(tier, note.arrondissement)[0]} »`).join(', ')} : communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais comptés.`,
     );
   }
   const { counts } = note;
@@ -278,7 +274,7 @@ export function describeStreamEstateSearch(
       : null,
   ].filter((part): part is string => part != null);
   if (excluded.length > 0) {
-    details.push(`Écartés, mais facturés : ${excluded.join(' · ')}.`);
+    details.push(`Écartés, mais comptés : ${excluded.join(' · ')}.`);
   }
   if (note.newBuild > 0) {
     details.push(

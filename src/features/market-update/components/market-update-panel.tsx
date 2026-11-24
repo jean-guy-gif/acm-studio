@@ -132,7 +132,8 @@ export function MarketUpdateList({
             : nextOn
               ? `Le premier est prévu le ${nextOn.slice(8, 10)}/${nextOn.slice(5, 7)}`
               : 'Le premier se fait un mois après la signature'}{' '}
-          : ACM relit les annonces des concurrents (gratuit) et prépare le document pour le vendeur.
+          : ACM relit les annonces des concurrents (sans compter dans le forfait) et prépare le
+          document pour le vendeur.
         </p>
       ) : (
         <ul className="flex flex-col gap-1">

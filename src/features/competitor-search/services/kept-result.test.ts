@@ -3,16 +3,17 @@ import { describe, expect, it } from 'vitest';
 import {
   KEPT_RESULT_MAX_BYTES,
   parseKeptResult,
-  relaunchConfirmText,
+  RELAUNCH_CONFIRM_TEXT,
 } from '@/features/competitor-search/services/kept-result';
-import { STREAM_ESTATE_MAX_COST } from '@/features/competitor-search/services/paid-search-guard';
 
-// Mission 105 — ne jamais payer deux fois sans le savoir.
+// Mission 105 — ne jamais relancer sans le savoir. Lancement, mission 5 — sans montant : la
+// recherche compte dans le forfait de l'agence.
 describe('relancer la recherche', () => {
-  it('se confirme avec le montant maximal : on sait qu’on repaie', () => {
-    expect(relaunchConfirmText(STREAM_ESTATE_MAX_COST)).toBe(
-      'Nouvelle recherche payante : jusqu’à 0,60 €. Le résultat actuel sera remplacé.',
+  it('se confirme : elle compte de nouveau, et remplace le résultat', () => {
+    expect(RELAUNCH_CONFIRM_TEXT).toBe(
+      'Nouvelle recherche, comptée dans le forfait du mois. Le résultat actuel sera remplacé.',
     );
+    expect(RELAUNCH_CONFIRM_TEXT).not.toMatch(/€|pay/);
   });
 });
 

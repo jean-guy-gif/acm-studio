@@ -40,6 +40,16 @@ export async function getAiBudgets(now: Date = new Date()): Promise<Map<string, 
   return budgets;
 }
 
+// Pour le manager (Administration) : la part du forfait utilisée, jamais un montant (Lancement,
+// mission 5).
+export function aiBudgetUsage(budget: AiBudget): { percent: number; reached: boolean } {
+  const reached = budget.spentCents >= budget.capCents;
+  return {
+    reached,
+    percent: budget.capCents > 0 ? Math.floor((budget.spentCents / budget.capCents) * 100) : 100,
+  };
+}
+
 export function aiBudgetOf(budgets: Map<string, AiBudget>, agencyId: string): AiBudget {
   return (
     budgets.get(agencyId) ?? { capCents: AI_DEFAULT_MONTHLY_CAP_CENTS, spentCents: 0, posed: false }

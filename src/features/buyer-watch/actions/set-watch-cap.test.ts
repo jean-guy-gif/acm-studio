@@ -7,8 +7,9 @@ import {
 } from '@/features/demo/services/demo-seed';
 import { DEMO_SCENARIOS } from '@/features/demo/data/scenarios';
 
-// Mission 136 — « Veille des acquéreurs : jusqu'à … € par mois » : le manager seul, jamais plus de
-// la moitié du budget de l'agence, un refus n'écrit rien. Et la veille semée de la démo.
+// Mission 136 — la veille des acquéreurs, réglée par le manager seul ; Lancement, mission 5 — sans
+// montant : il la coupe (0) ou la reprend (le plafond par défaut, jamais plus de la moitié de celui
+// de l'agence) ; un refus n'écrit rien. Et la veille semée de la démo.
 const profile = vi.hoisted(() => ({
   current: null as null | {
     id: string;
@@ -41,7 +42,7 @@ vi.mock('@/lib/supabase/service-role', () => ({
   }),
 }));
 
-const { setBuyerWatchCap } = await import('@/features/buyer-watch/actions/set-watch-cap');
+const { setBuyerWatchActive } = await import('@/features/buyer-watch/actions/set-watch-cap');
 
 beforeEach(() => {
   profile.current = { id: 'u1', agency_id: 'agency-a', removed_at: null, role: 'manager' };
@@ -49,26 +50,34 @@ beforeEach(() => {
   writes.agencyCap = null;
 });
 
-describe('le plafond de la veille', () => {
-  it('le manager le règle, jusqu’à la moitié du budget de l’agence (30 € par défaut)', async () => {
-    expect(await setBuyerWatchCap('12')).toEqual({ ok: true, cents: 1200 });
-    expect(writes.list).toEqual([['agencies', { buyer_watch_cap_cents: 1200 }]]);
-  });
-
-  // Mission 155 (question de Jean-Guy, 13/11) — 0 € s'enregistre : c'est ce qui coupe la veille.
-  it('0 € est accepté et écrit tel quel', async () => {
-    expect(await setBuyerWatchCap('0')).toEqual({ ok: true, cents: 0 });
+describe('couper et reprendre la veille', () => {
+  // Mission 155 (question de Jean-Guy, 13/11) — coupée, le plafond écrit est 0 : c'est ce qui
+  // arrête la veille en base.
+  it('le manager la coupe : 0 est écrit', async () => {
+    expect(await setBuyerWatchActive(false)).toEqual({ ok: true, active: false });
     expect(writes.list).toEqual([['agencies', { buyer_watch_cap_cents: 0 }]]);
   });
 
-  it('au-delà de la moitié, un conseiller, un membre retiré : refusé, rien d’écrit', async () => {
-    expect((await setBuyerWatchCap('16')).ok).toBe(false);
-    writes.agencyCap = 10_000;
-    expect((await setBuyerWatchCap('51')).ok).toBe(false);
+  it('il la reprend : le plafond par défaut, jamais plus de la moitié de celui de l’agence', async () => {
+    expect(await setBuyerWatchActive(true)).toEqual({ ok: true, active: true });
+    expect(writes.list).toEqual([['agencies', { buyer_watch_cap_cents: 1000 }]]);
+    writes.list = [];
+    writes.agencyCap = 1200;
+    expect(await setBuyerWatchActive(true)).toEqual({ ok: true, active: true });
+    expect(writes.list).toEqual([['agencies', { buyer_watch_cap_cents: 600 }]]);
+  });
+
+  it('une recherche coupée par l’opérateur : la veille ne reprend pas, et l’écran le sait', async () => {
+    writes.agencyCap = 0;
+    expect(await setBuyerWatchActive(true)).toEqual({ ok: true, active: false });
+  });
+
+  it('un conseiller, un membre retiré, une valeur qui n’est pas oui ou non : refusé, rien d’écrit', async () => {
+    expect((await setBuyerWatchActive('12')).ok).toBe(false);
     profile.current = { ...profile.current!, role: 'advisor' };
-    expect((await setBuyerWatchCap('5')).ok).toBe(false);
+    expect((await setBuyerWatchActive(false)).ok).toBe(false);
     profile.current = { ...profile.current!, role: 'manager', removed_at: '2026-11-01T00:00:00Z' };
-    expect((await setBuyerWatchCap('5')).ok).toBe(false);
+    expect((await setBuyerWatchActive(false)).ok).toBe(false);
     expect(writes.list).toEqual([]);
   });
 });

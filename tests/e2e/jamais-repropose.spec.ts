@@ -32,7 +32,7 @@ test('un bien refusé ou visité n’est pas reproposé', async ({ page }) => {
   await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
   await page
     .getByTestId('ideal-paid-confirm')
-    .getByRole('button', { name: 'Lancer et payer' })
+    .getByRole('button', { name: 'Lancer la recherche' })
     .click();
   await expect(page.getByTestId('ideal-market-summary')).toBeVisible({ timeout: 60_000 });
   const lines = page.locator(

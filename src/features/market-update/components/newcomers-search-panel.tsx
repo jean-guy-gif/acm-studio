@@ -34,9 +34,10 @@ import type { NewcomerCandidate } from '@/features/market-update/services/newcom
 import { formatEuro, formatEuroPerSquareMeter, formatNumber } from '@/lib/format';
 
 export const NEWCOMERS_SEARCH_LABEL = 'Chercher les nouveaux venus';
-// Mission 129 — le coût annoncé avant (une passe à −5 %, une seconde à −10 % s'il le faut).
+// Mission 129 — annoncé avant (une passe à −5 %, une seconde à −10 % s'il le faut). Lancement,
+// mission 5 — sans montant : la recherche compte dans le forfait de l'agence.
 export const NEWCOMERS_COST_LABEL =
-  'Recherche payante : jusqu’à 0,60 €, 1,20 € si la recherche s’élargit.';
+  'Recherche comptée dans le forfait du mois, deux fois si elle s’élargit.';
 export const NEWCOMERS_LIMITED_LABEL = 'Recherche limitée à la fourchette cherchée';
 
 type Found = Extract<SearchNewcomersResult, { ok: true }>;
@@ -249,8 +250,8 @@ export function NewcomersSearchPanel({
     const parts = [
       `${found.found} trouvé${found.found > 1 ? 's' : ''}`,
       demo
-        ? '0 annonce facturée'
-        : `${formatNumber(found.billed)} annonce${found.billed > 1 ? 's' : ''} facturée${found.billed > 1 ? 's' : ''} (${formatEuro(found.billed * 0.01)})`,
+        ? '0 annonce comptée'
+        : `${formatNumber(found.billed)} annonce${found.billed > 1 ? 's' : ''} comptée${found.billed > 1 ? 's' : ''}`,
       'critères du dossier',
       since ? `vus sur le marché après le ${since}` : null,
       found.priceRange.max > 0
@@ -258,9 +259,9 @@ export function NewcomersSearchPanel({
         : NEWCOMERS_LIMITED_LABEL,
       found.widened ? 'recherche élargie à 10 % sous le prix de commercialisation' : null,
       found.widenRefused === 'budget'
-        ? 'recherche non élargie : budget du mois atteint'
+        ? 'recherche non élargie : forfait du mois atteint'
         : found.widenRefused === 'unreadable'
-          ? 'recherche non élargie : budget du mois illisible, réessayez plus tard'
+          ? 'recherche non élargie : forfait du mois illisible, réessayez plus tard'
           : found.widenRefused === 'failed'
             ? 'recherche non élargie pour l’instant, réessayez plus tard'
             : null,
@@ -350,8 +351,7 @@ export function NewcomersSearchPanel({
         {busy ? (
           <span className={hintText}>
             {/* Rien ne dit « démonstration » à l'écran (décision du 23/10). */}
-            Jusqu’à 0,60 € réservés par recherche sur le budget du mois (1,20 € si elle s’élargit) ;
-            la part non utilisée est rendue.
+            La recherche compte dans le forfait du mois ; seules les annonces reçues sont comptées.
           </span>
         ) : (
           <button

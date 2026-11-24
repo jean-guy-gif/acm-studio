@@ -10,10 +10,13 @@ import { MAX_MONTHLY_CAP_EUR } from '@/features/search-budget/services/budget';
 // Mission 100 — le plafond mensuel d'une agence, en euros entiers. Le serveur revérifie tout,
 // à commencer par le compte qui règle.
 export function AgencyCapForm({
+  label,
   agencyName,
   initialEuros,
   saveAction,
 }: {
+  // Ce que règle ce plafond, dit devant le champ : « Recherche », « Veille », « IA ».
+  label?: string;
   agencyName: string;
   initialEuros: number;
   saveAction: (formData: FormData) => Promise<SetAgencySearchCapResult>;
@@ -40,6 +43,11 @@ export function AgencyCapForm({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {label ? (
+        <span className="w-20 text-right text-sm font-medium text-zinc-700 stage:text-white/75">
+          {label}
+        </span>
+      ) : null}
       <input
         type="number"
         min={0}

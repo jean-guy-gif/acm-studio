@@ -32,7 +32,6 @@ export function parseKeptResult(raw: unknown): KeptResult | null {
   return { portal: raw.portal, note: raw.note };
 }
 
-// « Nouvelle recherche payante : jusqu'à 0,60 €. Le résultat actuel sera remplacé. »
-export function relaunchConfirmText(maxCostLabel: string): string {
-  return `Nouvelle recherche payante : jusqu’à ${maxCostLabel}. Le résultat actuel sera remplacé.`;
-}
+// Relancer compte de nouveau dans le forfait : on le confirme, sans montant (Lancement, mission 5).
+export const RELAUNCH_CONFIRM_TEXT =
+  'Nouvelle recherche, comptée dans le forfait du mois. Le résultat actuel sera remplacé.';
