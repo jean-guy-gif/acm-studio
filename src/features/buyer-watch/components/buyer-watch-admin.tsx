@@ -3,22 +3,19 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { btnSecondary, card, hintText, inputBase, kickerLabel } from '@/components/ui/styles';
-import { setBuyerWatchCap } from '@/features/buyer-watch/actions/set-watch-cap';
+import { btnSecondary, card, hintText, kickerLabel } from '@/components/ui/styles';
+import { setBuyerWatchActive } from '@/features/buyer-watch/actions/set-watch-cap';
 import type { WatchAdmin } from '@/features/buyer-watch/queries/get-watch';
-import {
-  WATCH_BUDGET_LABELS,
-  watchUsageLabel,
-} from '@/features/buyer-watch/services/watch-schedule';
-import { formatEuro, formatRelativeMoment } from '@/lib/format';
+import { WATCH_BUDGET_LABELS } from '@/features/buyer-watch/services/watch-schedule';
+import { formatRelativeMoment } from '@/lib/format';
 
 // Mission 155 — une réponse perdue ne laisse jamais « Veille active » sans le dire (décision de
-// Jean-Guy, 13/11 : le 13/11, la base tenait 0 € et l'écran restait sur l'ancien état) : au-delà
-// de 20 secondes sans réponse, ou si l'appel échoue, l'écran dit que l'enregistrement n'a pas
-// abouti et propose de recharger.
+// Jean-Guy, 13/11 : le 13/11, la base tenait la veille coupée et l'écran restait sur l'ancien
+// état) : au-delà de 20 secondes sans réponse, ou si l'appel échoue, l'écran dit que
+// l'enregistrement n'a pas abouti et propose de recharger.
 const SAVE_TIMEOUT_MS = 20_000;
 const SAVE_LOST =
-  'L’enregistrement n’a pas abouti : rechargez la page pour voir le plafond enregistré.';
+  'L’enregistrement n’a pas abouti : rechargez la page pour voir l’état enregistré de la veille.';
 
 const STATUS_LABELS: Record<WatchAdmin['journal'][number]['status'], string> = {
   running: 'en cours',
@@ -26,90 +23,87 @@ const STATUS_LABELS: Record<WatchAdmin['journal'][number]['status'], string> = {
   failed: 'en échec',
 };
 
-// Mission 136 — Administration, pour le manager : « Veille des acquéreurs : jusqu'à … € par mois »,
-// son état (« Veille en pause : plafond du mois atteint », « Veille coupée ») et le journal des
-// passages (acquéreur, biens trouvés, coût). Le conseiller ne voit rien de tout cela.
-export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
+// Mission 136 — Administration, pour le manager : l'état de la veille des acquéreurs (« Veille
+// active », « Veille en pause : forfait du mois atteint », « Veille coupée ») et le journal des
+// passages (acquéreur, biens trouvés). Lancement, mission 5 (Jean-Guy, 23/11) — plus aucun
+// montant : le manager coupe ou reprend la veille ; son plafond se règle par l'opérateur. Le
+// conseiller ne voit rien de tout cela.
+export function BuyerWatchAdmin({ watch }: { watch: Pick<WatchAdmin, 'state' | 'journal'> }) {
   const router = useRouter();
-  const [value, setValue] = useState(String(Math.round(watch.watchCapCents / 100)));
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{
     ok: boolean;
     text: string;
     reload?: true;
   } | null>(null);
-  const maxEuros = Math.floor(watch.agencyCapCents / 200);
+  const off = watch.state === 'off';
+
+  const toggle = () => {
+    setMessage(null);
+    setPending(true);
+    let settled = false;
+    const lost = () => {
+      if (settled) return;
+      settled = true;
+      setPending(false);
+      setMessage({ ok: false, text: SAVE_LOST, reload: true });
+    };
+    const timer = window.setTimeout(lost, SAVE_TIMEOUT_MS);
+    void setBuyerWatchActive(off)
+      .then((result) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        setPending(false);
+        if (!result.ok) {
+          setMessage({ ok: false, text: result.error });
+          return;
+        }
+        // Reprise demandée, mais la recherche de l'agence est coupée : la veille ne repart pas.
+        setMessage(
+          off && !result.active
+            ? {
+                ok: false,
+                text: 'La veille ne peut pas reprendre : la recherche de l’agence est coupée. Contactez l’équipe ACM Studio.',
+              }
+            : { ok: true, text: result.active ? 'Veille reprise.' : 'Veille coupée.' },
+        );
+        router.refresh();
+      })
+      .catch(() => {
+        window.clearTimeout(timer);
+        lost();
+      });
+  };
 
   return (
     <section className={`${card} flex flex-col gap-3 p-5`} data-testid="buyer-watch-admin">
-      <span className={kickerLabel}>Veille des acquéreurs · ce mois-ci</span>
-      <p className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
-        {watchUsageLabel(watch.watchSpentCents, watch.effectiveCapCents)}
-      </p>
-      <p
-        role="status"
-        data-testid="buyer-watch-state"
-        className={
-          watch.state === 'active'
-            ? 'text-sm font-medium text-emerald-700 stage:text-emerald-300'
-            : 'text-sm font-medium text-amber-700 stage:text-amber-300'
-        }
-      >
-        {WATCH_BUDGET_LABELS[watch.state]}
-      </p>
-      <form
-        className="flex flex-wrap items-end gap-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setMessage(null);
-          setPending(true);
-          let settled = false;
-          const lost = () => {
-            if (settled) return;
-            settled = true;
-            setPending(false);
-            setMessage({ ok: false, text: SAVE_LOST, reload: true });
-          };
-          const timer = window.setTimeout(lost, SAVE_TIMEOUT_MS);
-          void setBuyerWatchCap(value)
-            .then((result) => {
-              if (settled) return;
-              settled = true;
-              window.clearTimeout(timer);
-              setPending(false);
-              if (!result.ok) {
-                setMessage({ ok: false, text: result.error });
-                return;
-              }
-              setMessage({ ok: true, text: 'Plafond de la veille enregistré.' });
-              router.refresh();
-            })
-            .catch(() => {
-              window.clearTimeout(timer);
-              lost();
-            });
-        }}
-      >
-        <label className="flex flex-col gap-1 text-sm font-medium text-zinc-700 stage:text-white/80">
-          Veille des acquéreurs : jusqu’à … € par mois
-          <input
-            className={`${inputBase} w-32`}
-            inputMode="numeric"
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            data-testid="buyer-watch-cap"
-            aria-describedby="buyer-watch-cap-hint"
-          />
-        </label>
-        <button type="submit" className={btnSecondary} disabled={pending}>
-          {pending ? 'Enregistrement…' : 'Enregistrer'}
+      <span className={kickerLabel}>Veille des acquéreurs</span>
+      <div className="flex flex-wrap items-center gap-3">
+        <p
+          role="status"
+          data-testid="buyer-watch-state"
+          className={
+            watch.state === 'active'
+              ? 'font-title text-lg font-semibold text-emerald-700 stage:text-emerald-300'
+              : 'font-title text-lg font-semibold text-amber-700 stage:text-amber-300'
+          }
+        >
+          {WATCH_BUDGET_LABELS[watch.state]}
+        </p>
+        <button
+          type="button"
+          className={btnSecondary}
+          disabled={pending}
+          onClick={toggle}
+          data-testid="buyer-watch-toggle"
+        >
+          {pending ? 'Enregistrement…' : off ? 'Reprendre la veille' : 'Couper la veille'}
         </button>
-      </form>
-      <p id="buyer-watch-cap-hint" className={hintText}>
-        Chaque semaine, une recherche sur le marché pour chaque acquéreur prêt à visiter, prise dans
-        le budget de recherche de l’agence ({formatEuro(watch.agencyCapCents / 100)}), jamais plus
-        de la moitié ({formatEuro(maxEuros)} au plus). 0 € coupe la veille. Le reste du budget va
-        aux recherches des conseillers.
+      </div>
+      <p className={hintText}>
+        Chaque semaine, une recherche sur le marché pour chaque acquéreur prêt à visiter, comptée
+        dans le forfait de l’agence. Coupée, plus aucune recherche ne part la nuit.
       </p>
       {message ? (
         <p
@@ -157,7 +151,7 @@ export function BuyerWatchAdmin({ watch }: { watch: WatchAdmin }) {
                   {[
                     STATUS_LABELS[entry.status],
                     `${entry.found} bien${entry.found > 1 ? 's' : ''} trouvé${entry.found > 1 ? 's' : ''}`,
-                    `${entry.adverts} annonce${entry.adverts > 1 ? 's' : ''} facturée${entry.adverts > 1 ? 's' : ''}`,
+                    `${entry.adverts} annonce${entry.adverts > 1 ? 's' : ''} comptée${entry.adverts > 1 ? 's' : ''}`,
                   ].join(' · ')}
                 </span>
               </li>

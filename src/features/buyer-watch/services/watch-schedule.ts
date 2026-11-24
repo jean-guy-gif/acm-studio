@@ -80,8 +80,8 @@ export function effectiveWatchCapCents(watchCapCents: number, agencyCapCents: nu
 
 export type WatchBudgetState = 'off' | 'paused' | 'active';
 
-// Pour le manager : « Veille coupée » (0 €), « Veille en pause : plafond du mois atteint », sinon
-// active ; le conseiller ne le voit pas.
+// Pour le manager : « Veille coupée », « Veille en pause : forfait du mois atteint », sinon
+// active ; le conseiller ne le voit pas. Lancement, mission 5 — jamais un montant.
 export function watchBudgetState(input: {
   watchCapCents: number;
   agencyCapCents: number;
@@ -98,16 +98,17 @@ export function watchBudgetState(input: {
 
 export const WATCH_BUDGET_LABELS: Record<WatchBudgetState, string> = {
   off: 'Veille coupée',
-  paused: 'Veille en pause : plafond du mois atteint',
+  paused: 'Veille en pause : forfait du mois atteint',
   active: 'Veille active',
 };
 
-export function watchUsageLabel(watchSpentCents: number, watchCapCents: number): string {
-  const spent = formatEuro(watchSpentCents / 100, { minDecimals: 2, maxDecimals: 2 });
-  return `${spent} sur ${formatEuro(watchCapCents / 100)} ce mois-ci`;
+// Lancement, mission 5 — ce que la veille reprend quand le manager la rallume : son plafond par
+// défaut, jamais plus de la moitié de celui de l'agence.
+export function resumedWatchCapCents(agencyCapCents: number): number {
+  return effectiveWatchCapCents(DEFAULT_WATCH_CAP_CENTS, agencyCapCents);
 }
 
-// Ce que le manager peut régler : de 0 à la moitié du plafond de l'agence, en euros entiers.
+// Ce que l'opérateur peut régler : de 0 à la moitié du plafond de l'agence, en euros entiers.
 export function parseWatchCapEuros(
   raw: unknown,
   agencyCapCents: number,
@@ -121,7 +122,7 @@ export function parseWatchCapEuros(
   if (cents > max) {
     return {
       ok: false,
-      error: `La veille ne peut pas dépasser la moitié du budget de recherche de l’agence : ${formatEuro(max / 100)} au plus.`,
+      error: `La veille ne peut pas dépasser la moitié du plafond de recherche de l’agence : ${formatEuro(max / 100)} au plus.`,
     };
   }
   return { ok: true, cents };

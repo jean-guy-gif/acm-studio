@@ -66,6 +66,20 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   visite » dès qu'une visite existe, et depuis « En visite » le statut suivant proposé est « A
   acheté » : deux signaux laissés tels quels (ils ne bloquent rien) ; à revoir avec la fiche
   simplifiée (mission 10).
+- 24/11 · Lancement 5 · Les forfaits en jetons (demande de Jean-Guy, 23/11) : aujourd'hui « le
+  forfait » est le plafond mensuel en euros que l'opérateur règle sur `/erreurs` ; ce qu'une agence
+  achète (jetons, paliers, dépassement) reste à définir. Quand le manager reprend une veille coupée,
+  elle retrouve le plafond par défaut (10 €), pas celui que l'opérateur avait réglé (aucune colonne
+  pour le retenir). Sur la recherche, le message du plafond atteint dit « contactez votre agence »
+  même au manager ; Administration lui dit de contacter l'équipe ACM Studio.
+- 24/11 · Lancement 5 · La veille : un interrupteur à part pour le manager (une colonne, donc une
+  migration), pour que « Reprendre la veille » rende le plafond réglé par l'opérateur au lieu du
+  plafond par défaut, et ne lève pas un 0 € posé par lui. Relecteur, cas imaginés : « forfait du
+  mois » nomme trois plafonds (recherche, veille, IA), le bandeau du classement peut dire « forfait
+  du mois atteint » sous une recherche qui vient de réussir ; le test des coûts pourra refuser à
+  tort « stationnement payant », « coût des travaux » ou « charges … € par mois » dans un futur
+  texte ; l'e2e ne relit pas à l'écran « Depuis mes notes », la fiche acquéreur ni « Aujourd'hui »
+  (le test unitaire lit leurs textes).
 - 24/11 · Lancement 3 · Restent hors de la règle « jamais reproposé » : le rapprochement
   (`/acquereurs/rapprochement`, recherche libre du conseiller) ; le serveur accepte encore une
   sélection qui contiendrait un bien refusé (l'écran ne permet plus de le cocher) et un lien de

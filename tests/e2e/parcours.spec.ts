@@ -4,6 +4,7 @@ import {
   fillLiveComment,
   ageTestBuyer,
   expectNoHorizontalScroll,
+  expectNoUsageCost,
   expectNoVerticalScroll,
   goViaAccountMenu,
   login,
@@ -202,7 +203,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // Replié : les valeurs que l'outil utiliserait seul, rien de réglé.
     await expect(summary).toContainText('3 pièces');
     await expect(summary).not.toContainText('réglé par vous');
-    await expect(page.getByText('Coût maximal : 0,60 € par recherche')).toBeVisible();
+    // Lancement, mission 5 — plus aucun coût devant le conseiller.
+    await expect(page.getByText(/Coût maximal/)).toHaveCount(0);
+    await expectNoUsageCost(page, 'Chercher les concurrents');
 
     await summary.click();
     await block.getByLabel('Toute la commune', { exact: true }).check();
@@ -1081,7 +1084,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByText(/disponible/i)).toHaveCount(0);
     await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     const paid = page.getByTestId('ideal-paid-confirm');
-    await expect(paid).toContainText('Recherche payante sur le marché : jusqu’à 0,60 €');
+    await expect(paid).toContainText('Recherche sur le marché, comptée dans le forfait du mois.');
+    await expectNoUsageCost(page, 'Biens idéaux, avant la recherche');
     await paid.getByRole('button', { name: 'Annuler' }).click();
     await expect(paid).toHaveCount(0);
     await expect(page.getByTestId('ideal-market-summary')).toHaveCount(0);

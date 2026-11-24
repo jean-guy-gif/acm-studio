@@ -5,9 +5,11 @@ import type { NoteReadingCause } from '@/features/buyer-notes/types';
 export const NOTE_READING_MESSAGES: Record<NoteReadingCause, string> = {
   closed: 'La lecture des notes n’est pas encore ouverte : saisissez la fiche à la main.',
   unconfigured: 'La lecture des notes ne répond pas pour l’instant : saisissez la fiche à la main.',
-  budget_reached: 'Budget de lecture du mois atteint : saisissez la fiche à la main.',
+  // Lancement, mission 5 — sans montant ni « budget » : le forfait de l'agence.
+  budget_reached:
+    'Votre forfait du mois est atteint : contactez votre agence. Vous pouvez saisir la fiche à la main.',
   budget_unavailable:
-    'Le budget de lecture n’a pas pu être vérifié : réessayez, ou saisissez la fiche à la main.',
+    'Le forfait du mois n’a pas pu être vérifié : réessayez, ou saisissez la fiche à la main.',
   unsupported_file:
     'Ce fichier ne se lit pas : envoyez une photo (JPEG, PNG), un PDF ou collez le texte.',
   too_large: 'C’est trop long à lire d’un coup : trois photos au plus, ou un texte plus court.',

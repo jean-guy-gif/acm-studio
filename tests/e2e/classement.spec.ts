@@ -44,7 +44,7 @@ test('le classement par ce qui compte pour eux : les biens idéaux des Lambert',
     await page.getByRole('button', { name: 'Trouver sur le marché' }).click();
     await page
       .getByTestId('ideal-paid-confirm')
-      .getByRole('button', { name: 'Lancer et payer' })
+      .getByRole('button', { name: 'Lancer la recherche' })
       .click();
     await expect(page.getByTestId('ideal-market-summary')).toBeVisible({ timeout: 60_000 });
     await expect(page.getByTestId('soft-banner')).toContainText(

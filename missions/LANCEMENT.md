@@ -36,7 +36,8 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
    affichés. Les coûts et les plafonds restent visibles pour l'opérateur seul. Plafond atteint : un
    message sans montant, par exemple « Votre forfait du mois est atteint : contactez votre agence. »
    Un test parcourt les écrans du conseiller et refuse tout montant lié à l'usage. Les forfaits en
-   jetons vont dans `missions/PLUS_TARD.md`. — à faire
+   jetons vont dans `missions/PLUS_TARD.md`. — **fait le 24/11** : une recherche « compte dans le
+   forfait du mois », le manager lit une part du forfait, les montants restent sur `/erreurs`
 
 ## Mercredi 25/11
 
