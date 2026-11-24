@@ -367,3 +367,29 @@ export function followUpSummary(entries: FollowUpEntry[], pendingVisits: number)
     .filter((part): part is string => part != null)
     .join(' · ');
 }
+
+// Lancement, mission 10 — la sélection en cours est-elle déjà dans « Son suivi » ? Chacun de ses
+// BIENS (par la clé de la boucle, pas par sa ligne de sélection : un même bien peut avoir plusieurs
+// lignes, d'une sélection à l'autre) y a une ligne qui dit qu'il lui est parvenu — envoyé, répondu
+// ou visité. Un bien seulement écarté pour lui ne compte pas. La fiche n'écrit alors ses biens
+// qu'une fois (`selectionShown`).
+export function selectionFollowed(
+  itemIds: readonly string[],
+  rows: Pick<FollowUpRows, 'items' | 'competitorUrls'>,
+  entries: readonly FollowUpEntry[],
+): boolean {
+  if (itemIds.length === 0) return false;
+  const reached = new Set(
+    entries
+      .filter(
+        (entry) => entry.sent != null || entry.answers.length > 0 || entry.visitIds.length > 0,
+      )
+      .map((entry) => entry.key),
+  );
+  const byId = new Map(rows.items.map((item) => [item.id, item]));
+  return itemIds.every((id) => {
+    const item = byId.get(id);
+    const key = item ? seenItemKey(item, rows.competitorUrls) : null;
+    return key != null && reached.has(key);
+  });
+}

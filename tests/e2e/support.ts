@@ -129,6 +129,18 @@ export async function dragCompetitor(from: Locator, to: Locator): Promise<void> 
   await handle.dispatchEvent('dragend', { dataTransfer: transfer });
 }
 
+// Lancement, mission 10 — un bloc replié de la fiche acquéreur (« Prêt à visiter ? », « Ce qui s'est
+// passé ») : la spec l'ouvre, comme le conseiller, avant de lire ce qu'il contient — sinon elle
+// lirait un texte que l'écran ne montre pas.
+export async function openFold(page: Page, testId: string): Promise<void> {
+  const fold = page.getByTestId(testId);
+  await expect(fold).toHaveCount(1);
+  if (!(await fold.evaluate((element) => (element as HTMLDetailsElement).open))) {
+    await fold.locator('summary').click();
+  }
+  await expect(fold).toHaveAttribute('open', '');
+}
+
 // Mission 146 — la règle de la 143 : au plus un bouton plein visible par écran. Les boutons pleins
 // portent le repère `btn-filled` (le style `btnPrimary`).
 export async function expectOneFilled(page: Page, screen: string): Promise<void> {

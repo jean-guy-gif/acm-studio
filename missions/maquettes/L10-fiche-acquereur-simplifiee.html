@@ -1,0 +1,142 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
+@font-face{font-family:Rajdhani;font-weight:700;src:url(file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2)}
+@font-face{font-family:Montserrat;font-weight:100 900;src:url(file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:16px}
+h1{font-size:22px}.sub{font-size:13px;color:#3f3f46;max-width:1700px}
+.layout{display:flex;gap:24px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px}.ftitle{font-size:13px;font-weight:700;color:#3f3f46}
+.notes{width:340px;display:flex;flex-direction:column;gap:10px}.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.5;color:#3d3200}
+.page{background:#f4f4f5;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:8px}
+h2{font-family:Rajdhani;font-size:26px;color:#003a57}h3{font-family:Rajdhani;font-size:20px;color:#003a57}
+.hrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.grow{flex:1}
+.words{font-size:14px;color:#27272a}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:11.5px;background:#f4f4f5;border-radius:8px;padding:3px 8px;color:#3f3f46}.chip.star{background:#fef9c3;font-weight:700}.chip.link{background:#e0f2fe;color:#075985;font-weight:700}
+.btn{font-size:12px;border:1px solid #d4d4d8;border-radius:10px;padding:5px 10px;background:#fff;white-space:nowrap}
+.pill{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 10px;background:#f4f4f5;color:#3f3f46;white-space:nowrap}
+.pill.now{background:#e0f2fe;color:#075985}.pill.ready{background:#059669;color:#fff}.pill.no{background:#fff7ed;color:#9a3412}.pill.wait{background:#fafafa;color:#52525b;border:1px solid #e4e4e7}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border:1px solid #e4e4e7;border-radius:14px;overflow:hidden}
+.step{padding:8px 10px;display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:#71717a;border-top:3px solid #e4e4e7}.step b{color:#18181b;font-size:12px}.step.done{border-top-color:#047857}.step.done b{color:#047857}
+.narrow .steps{grid-template-columns:repeat(5,minmax(0,1fr))}.narrow .step{padding:6px 6px;font-size:10px}.narrow .step b{font-size:10.5px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}.main,.aside{display:flex;flex-direction:column;gap:12px}
+.next{background:#00527a;color:#fff;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.next .over{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ffffffb3}.next h3{color:#fff}.next p{font-size:12.5px;color:#ffffffd9}
+.cta{background:#fff;color:#003a57;font-weight:700;font-size:14px;border-radius:12px;padding:10px;text-align:center}
+.others{font-size:12.5px;line-height:1.9}.l{font-size:12.5px;font-weight:600;color:#00527a;text-decoration:underline;text-underline-offset:3px}.l.red{color:#b91c1c}
+.muted{font-size:12.5px;color:#71717a}
+.gtitle{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#00527a;display:flex;align-items:center;gap:8px;margin-top:4px}
+.count{font-size:11px;background:#e0f2fe;color:#075985;border-radius:999px;padding:1px 8px;letter-spacing:0}
+ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.item{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border:1px solid #e4e4e7;border-radius:12px;padding:9px 12px}
+.narrow .item{flex-direction:column}
+.what{display:flex;flex-direction:column;gap:2px;min-width:0}.label{font-size:13.5px;font-weight:700;color:#003a57}.fact{font-size:12.5px;color:#3f3f46}
+.fold{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:10px 14px;font-size:13px;color:#003a57}
+.before{gap:6px}.bb{background:#fff;border:1px solid #e4e4e7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#52525b;text-align:center;padding:0 8px}
+.bb.nextb{background:#00527a;color:#fff;font-weight:700;border-color:#00527a}
+</style></head><body>
+<h1>Lancement · 10 — La fiche acquéreur simplifiée : une seule prochaine étape, comme côté vendeur</h1>
+<p class="sub">Avant / après. M. et Mme Rossi, de la démo, avec des biens inventés. Rien n’est retiré : ce qui ne sert pas à la prochaine étape se replie ou devient un lien.</p>
+<div class="layout">
+<div class="col"><div class="ftitle">Avant · tablette et téléphone : dix blocs, la prochaine étape en bas</div>
+<div class="page narrow before" style="width:300px">
+  <div class="bb " style="height:70px"><span>En-tête : son nom, ses mots, ses critères</span></div>
+  <div class="bb " style="height:34px"><span>Les cinq étapes</span></div>
+  <div class="bb " style="height:110px"><span>Sa sélection · 3 biens</span></div>
+  <div class="bb " style="height:190px"><span>Son suivi (les mêmes biens, encore)</span></div>
+  <div class="bb " style="height:40px"><span>Ses bons de visite — « Aucun bon signé »</span></div>
+  <div class="bb " style="height:120px"><span>Ce qui s’est passé · 8 lignes</span></div>
+  <div class="bb nextb" style="height:60px"><span>PROCHAINE ÉTAPE — tout en bas</span></div>
+  <div class="bb " style="height:80px"><span>Prêt à visiter ?</span></div>
+  <div class="bb " style="height:50px"><span>Rapprocher</span></div>
+  <div class="bb " style="height:34px"><span>Statut · Archiver</span></div>
+</div></div>
+<div class="col"><div class="ftitle">Après · ordinateur</div>
+<div class="page " style="width:980px">
+  
+<div class="card head">
+  <div class="hrow"><h2>M. et Mme Rossi</h2><span class="pill now">En visite ▾</span><span class="pill ready">Prêt à visiter</span>
+    <span class="grow"></span><span class="btn">☎ 06 39 98 63 04</span><span class="btn">✉ E-mail</span></div>
+  <p class="words">« Un 3 pièces à Antibes ou Juan-les-Pins, avec un extérieur, jusqu’à 400 000 €. »</p>
+  <div class="chips"><span class="chip star">★ Budget ≤ 400 000 €</span><span class="chip star">★ Extérieur</span><span class="chip">Appartement</span><span class="chip">Antibes, Juan-les-Pins</span><span class="chip">3 pièces et plus</span><span class="chip link">Modifier</span></div>
+</div>
+<div class="steps">
+  <div class="step done"><b>1 · Sélection ✓</b><span>3 biens</span></div>
+  <div class="step done"><b>2 · Présentée ✓</b><span>le 14/11</span></div>
+  <div class="step done"><b>3 · Visite ✓</b><span>2 faites</span></div>
+  <div class="step"><b>4 · Offre</b><span>quand il en formule une</span></div>
+  <div class="step"><b>5 · Compromis</b><span>après l’offre acceptée</span></div>
+</div>
+  <div class="cols"><div class="main">
+<div class="card">
+  <div class="hrow"><h3>Son suivi</h3><span class="grow"></span><span class="l">Changer la sélection</span><span class="l">Dossier acquéreur et lien</span></div>
+  <span class="muted">3 biens envoyés · 1 visité · 1 refusé</span>
+  <div class="gtitle">Visités <span class="count">1</span></div>
+  <ul>
+  <li class="item"><div class="what"><span class="label">Appartement · 3 pièces · 65 m² · Antibes</span><span class="muted">395 000 € · Dans l’agence</span><span class="fact">Envoyé le 14/11, en présentation · Veut le visiter</span><span class="fact">Visité le 22/11 : coup de cœur · gêné : le bruit</span><span class="fact">Visité aujourd’hui : intéressé · on continue à chercher</span></div><span class="pill now">Visité, à suivre</span></li></ul>
+  <div class="gtitle">Envoyés, en attente <span class="count">1</span></div>
+  <ul>
+  <li class="item"><div class="what"><span class="label">Appartement · 3 pièces · 64 m² · Antibes</span><span class="muted">372 000 € · Annonce du marché</span><span class="fact">Envoyé le 14/11, en présentation</span></div><span class="pill wait">Peut-être</span></li></ul>
+  <div class="gtitle">Refusés <span class="count">1</span></div>
+  <ul>
+  <li class="item"><div class="what"><span class="label">Appartement · 3 pièces · 67 m² · Antibes</span><span class="muted">388 000 € · Annonce du marché</span><span class="fact">Pas pour lui : Le quartier · le 14/11</span></div><span class="pill no">Refusé</span></li></ul>
+</div>
+<div class="fold">▸ <b>Prêt à visiter</b> <span class="muted">· financement validé · dernier échange aujourd’hui · veille : prochaine recherche le 29/11</span></div>
+<div class="fold">▸ <b>Ce qui s’est passé</b> <span class="muted">· 8 événements, le dernier aujourd’hui</span></div></div><div class="aside">
+<div class="next">
+  <span class="over">Prochaine étape</span>
+  <h3>Lui proposer d’autres biens</h3>
+  <p>Ses visites sont faites : une nouvelle sélection relance la recherche.</p>
+  <span class="cta">Trouver d’autres biens</span>
+</div>
+<p class="others"><span class="muted">Autres actions :</span> <span class="l">Rapprocher · 8 correspondances</span> · <span class="l">Bon de visite</span> · <span class="l">Offre d’achat</span> · <span class="l">Modifier sa recherche</span> · <span class="l red">Archiver…</span></p></div></div>
+</div></div>
+<div class="col"><div class="ftitle">Après · tablette et téléphone</div>
+<div class="page narrow" style="width:390px">
+  
+<div class="card head">
+  <div class="hrow"><h2>M. et Mme Rossi</h2><span class="pill now">En visite ▾</span><span class="pill ready">Prêt à visiter</span>
+    <span class="grow"></span><span class="btn">☎ 06 39 98 63 04</span><span class="btn">✉ E-mail</span></div>
+  <p class="words">« Un 3 pièces à Antibes ou Juan-les-Pins, avec un extérieur, jusqu’à 400 000 €. »</p>
+  <div class="chips"><span class="chip star">★ Budget ≤ 400 000 €</span><span class="chip star">★ Extérieur</span><span class="chip">Appartement</span><span class="chip">Antibes, Juan-les-Pins</span><span class="chip">3 pièces et plus</span><span class="chip link">Modifier</span></div>
+</div>
+<div class="steps">
+  <div class="step done"><b>1 · Sélection ✓</b><span>3 biens</span></div>
+  <div class="step done"><b>2 · Présentée ✓</b><span>le 14/11</span></div>
+  <div class="step done"><b>3 · Visite ✓</b><span>2 faites</span></div>
+  <div class="step"><b>4 · Offre</b><span>quand il en formule une</span></div>
+  <div class="step"><b>5 · Compromis</b><span>après l’offre acceptée</span></div>
+</div>
+  
+<div class="next">
+  <span class="over">Prochaine étape</span>
+  <h3>Lui proposer d’autres biens</h3>
+  <p>Ses visites sont faites : une nouvelle sélection relance la recherche.</p>
+  <span class="cta">Trouver d’autres biens</span>
+</div>
+<div class="card">
+  <div class="hrow"><h3>Son suivi</h3><span class="grow"></span><span class="l">Changer la sélection</span><span class="l">Dossier acquéreur et lien</span></div>
+  <span class="muted">3 biens envoyés · 1 visité · 1 refusé</span>
+  <div class="gtitle">Visités <span class="count">1</span></div>
+  <ul>
+  <li class="item"><div class="what"><span class="label">Appartement · 3 pièces · 65 m² · Antibes</span><span class="muted">395 000 € · Dans l’agence</span><span class="fact">Envoyé le 14/11, en présentation · Veut le visiter</span><span class="fact">Visité le 22/11 : coup de cœur · gêné : le bruit</span><span class="fact">Visité aujourd’hui : intéressé · on continue à chercher</span></div><span class="pill now">Visité, à suivre</span></li></ul>
+  <div class="gtitle">Envoyés, en attente <span class="count">1</span></div>
+  <ul>
+  <li class="item"><div class="what"><span class="label">Appartement · 3 pièces · 64 m² · Antibes</span><span class="muted">372 000 € · Annonce du marché</span><span class="fact">Envoyé le 14/11, en présentation</span></div><span class="pill wait">Peut-être</span></li></ul>
+  <div class="gtitle">Refusés <span class="count">1</span></div>
+  <ul>
+  <li class="item"><div class="what"><span class="label">Appartement · 3 pièces · 67 m² · Antibes</span><span class="muted">388 000 € · Annonce du marché</span><span class="fact">Pas pour lui : Le quartier · le 14/11</span></div><span class="pill no">Refusé</span></li></ul>
+</div>
+<div class="fold">▸ <b>Prêt à visiter</b> <span class="muted">· financement validé · dernier échange aujourd’hui · veille : prochaine recherche le 29/11</span></div>
+<div class="fold">▸ <b>Ce qui s’est passé</b> <span class="muted">· 8 événements, le dernier aujourd’hui</span></div>
+<p class="others"><span class="muted">Autres actions :</span> <span class="l">Rapprocher · 8 correspondances</span> · <span class="l">Bon de visite</span> · <span class="l">Offre d’achat</span> · <span class="l">Modifier sa recherche</span> · <span class="l red">Archiver…</span></p>
+</div></div>
+<div class="notes">
+  <div class="note"><b>Avant :</b> sur tablette et téléphone, « Prochaine étape » vient après toute la fiche, 3 000 pixels plus bas. <b>Après :</b> juste sous les étapes, à toutes les largeurs, comme sur la Vue d’ensemble d’un dossier vendeur.</div>
+  <div class="note"><b>Avant :</b> le même bien écrit trois fois (« Sa sélection », puis deux lignes de « Son suivi »). <b>Après :</b> une fois sa sélection envoyée ou présentée, ses biens ne se lisent plus que dans « Son suivi » ; « Sa sélection » ne reste que tant qu’elle est à présenter.</div>
+  <div class="note"><b>Avant :</b> « Rapprocher », « Ses bons de visite » vides, « Archiver » : chacun son bloc. <b>Après :</b> une ligne « Autres actions », en liens discrets. Les bons et les offres gardent leur bloc dès qu’il y en a un de signé.</div>
+  <div class="note"><b>Replié</b>, une ligne chacun, qui dit l’essentiel : « Prêt à visiter » (financement, dernier échange, veille) et « Ce qui s’est passé ». « Prêt à visiter » s’ouvre seul quand il manque quelque chose (financement à confirmer, acquéreur à recontacter).</div>
+  <div class="note">Un seul bouton plein : celui de la prochaine étape. Pendant une vente (offre acceptée), « La vente » et « Avant le compromis » restent tels qu’aujourd’hui.</div>
+</div>
+</div>
+</body></html>

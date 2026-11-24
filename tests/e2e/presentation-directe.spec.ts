@@ -8,6 +8,7 @@ import {
   goViaAccountMenu,
   login,
   mainText,
+  openFold,
   openToday,
   pagePayload,
   readDemoBuyersShown,
@@ -459,6 +460,7 @@ test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en
     // Lancement, mission 6 — l'envoi noté se lit dans « Son suivi », sur la ligne du bien.
     await expect(page.getByTestId('buyer-follow-up')).toContainText('Proposé aujourd’hui');
     await expect(page.getByTestId('buyer-proposals')).toHaveCount(0);
+    await openFold(page, 'buyer-timeline');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Bien proposé');
   });
 });
@@ -505,7 +507,7 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     // budget ni « Rapprocher » ; l'offre tombée, tout revient.
     await expect(page.getByTestId('buyer-paused')).toBeVisible();
     await expect(page.getByTestId('answer-suggestion')).toHaveCount(0);
-    await expect(page.getByTestId('buyer-matching')).toHaveCount(0);
+    await expect(page.getByTestId('buyer-matches-link')).toHaveCount(0);
     await page.getByRole('button', { name: 'L’offre est tombée : revenir en visite' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
     await expect(page.getByTestId('buyer-paused')).toHaveCount(0);
@@ -517,6 +519,7 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     await suggestion.getByRole('button', { name: /Appliquer|Accepter/ }).click();
     await expect(page).toHaveURL(/\?ajuste=1$/);
     await expect(page.getByTestId('buyer-adjusted-matches')).toBeVisible();
+    await openFold(page, 'buyer-timeline');
     await expect(page.getByTestId('buyer-timeline')).toContainText(
       'Recherche ajustée : Budget plafond',
     );
@@ -587,6 +590,7 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
   await test.step('La fiche dit la veille', async () => {
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
+    await openFold(page, 'buyer-readiness');
     await expect(page.getByTestId('buyer-watch-line')).toHaveText(
       /^Veille : dernière recherche le \d{2}\/\d{2}, prochaine le \d{2}\/\d{2}$/,
     );

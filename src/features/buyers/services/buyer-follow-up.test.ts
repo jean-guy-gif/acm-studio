@@ -6,6 +6,7 @@ import {
   followUpOrigin,
   followUpPill,
   followUpSummary,
+  selectionFollowed,
   type FollowUpRows,
 } from '@/features/buyers/services/buyer-follow-up';
 import { seenKeysOf, seenProperties } from '@/features/buyers/services/seen-properties';
@@ -326,5 +327,70 @@ describe('le suivi et « jamais reproposé » disent la même chose', () => {
           : 'sent',
       );
     }
+  });
+});
+
+// Lancement, mission 10 — « Sa sélection » ne garde son bloc que tant qu'elle est à présenter : la
+// règle se lit par BIEN (la clé de la boucle), jamais par ligne de sélection.
+describe('la sélection en cours est-elle déjà dans « Son suivi » ?', () => {
+  it('présentée : chacun de ses biens y a sa ligne', () => {
+    expect(selectionFollowed(['i1', 'i2', 'i3', 'i4'], base, buyerFollowUp(base))).toBe(true);
+  });
+
+  it('une sélection neuve qui recopie les mêmes biens : toujours dans le suivi, quelle que soit la ligne', () => {
+    // « Proposer ce bien » recopie ses biens dans une sélection neuve (d'autres lignes, les mêmes
+    // biens) ; une visite notée ensuite sur l'ancienne ligne ne fait pas revenir « Sa sélection ».
+    const rows: FollowUpRows = {
+      ...base,
+      selections: [...base.selections, { id: 's2', presented_at: null }],
+      items: [
+        ...base.items,
+        item('j1', 'p1', { selection_id: 's2' }),
+        item('j2', 'p2', { selection_id: 's2' }),
+      ],
+    };
+    expect(selectionFollowed(['j1', 'j2'], rows, buyerFollowUp(rows))).toBe(true);
+  });
+
+  it('une sélection neuve avec un bien qu’il n’a jamais reçu : elle reste à présenter', () => {
+    const rows: FollowUpRows = {
+      ...base,
+      selections: [...base.selections, { id: 's2', presented_at: null }],
+      items: [
+        ...base.items,
+        item('j1', 'p1', { selection_id: 's2' }),
+        item('j9', 'p9', { selection_id: 's2' }),
+      ],
+    };
+    expect(selectionFollowed(['j1', 'j9'], rows, buyerFollowUp(rows))).toBe(false);
+  });
+
+  it('pas encore envoyée, vide, ou un bien inconnu : non', () => {
+    const fresh: FollowUpRows = {
+      ...base,
+      selections: [{ id: 's1', presented_at: null }],
+      responses: [],
+      visits: [],
+    };
+    expect(selectionFollowed(['i1', 'i2'], fresh, buyerFollowUp(fresh))).toBe(false);
+    expect(selectionFollowed([], base, buyerFollowUp(base))).toBe(false);
+    expect(selectionFollowed(['inconnu'], base, buyerFollowUp(base))).toBe(false);
+  });
+
+  it('un bien seulement écarté pour lui ne compte pas comme reçu', () => {
+    const rows: FollowUpRows = {
+      ...base,
+      selections: [{ id: 's1', presented_at: null }],
+      responses: [],
+      visits: [],
+      items: [
+        item('i1', 'p1', {
+          source: 'listing',
+          reference: 'https://www.seloger.com/annonces/achat/maison/vence-06/ABC.htm',
+        }),
+      ],
+    };
+    const entries = buyerFollowUp(rows);
+    expect(selectionFollowed(['i1'], rows, entries)).toBe(false);
   });
 });

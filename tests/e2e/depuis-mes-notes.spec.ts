@@ -5,6 +5,7 @@ import {
   expectNoHorizontalScroll,
   expectOneFilled,
   login,
+  openFold,
   readNotesTraces,
 } from './support';
 
@@ -102,6 +103,7 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(page.getByTestId('buyer-soft-criteria')).toContainText(
       '« AU CALME — pas de route »',
     );
+    await openFold(page, 'buyer-timeline');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Fiche créée');
   });
 
