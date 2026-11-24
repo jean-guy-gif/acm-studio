@@ -22,6 +22,9 @@ export type BuyerProgressFacts = {
   // l'étape la plus avancée de son parcours.
   lastVisitDoneAt?: string | null;
   voucherSigned?: boolean;
+  // Lancement, mission 2 — une visite faite dont la suite est « Offre envisagée » : l'acquéreur a
+  // formulé une offre. Sans elle (et sans offre signée), l'offre n'est pas une étape à faire.
+  offerConsidered?: boolean;
   offer?: BuyerOfferFacts | null;
   // La plus récente signée : elle vaut dès que la vente ne tient plus (« L'offre est tombée »).
   latestOffer?: BuyerOfferFacts | null;
