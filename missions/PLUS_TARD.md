@@ -123,3 +123,11 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   sont pas lues (le conseiller les connaît). Réduire les photos avant l'envoi (`sharp`) diviserait
   leur coût par 2,5. Les six critères des photos n'ont été mesurés que sur vingt annonces, sans
   corrigé écrit avant : une mesure de justesse reste à faire, comme celle du texte (M151).
+- 24/11 · Lancement 7 · Relecteur : dans « Aujourd'hui », la relance d'une sélection et la reprise
+  de contact d'un acquéreur en retard s'écrivent avec deux « · » devant « en retard »
+  (`suivi-step-labels.ts`, le détail finit par un « · » que l'écran pose déjà). Une visite confirmée
+  qui n'a pas eu lieu reste « en retard » sans geste pour la lever, hors « Changer la date ». Une
+  visite confirmée À VENIR reste « à organiser » dans « Aujourd'hui » alors qu'elle l'est déjà : à
+  trancher par Jean-Guy. Sur la fiche acquéreur, « Confirmer la visite » ouvert porte un second
+  bouton plein (depuis le Lancement 6). À la mise en production, une seule visite confirmée et
+  passée attendait son compte rendu, dans l'agence de démonstration.

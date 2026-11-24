@@ -339,7 +339,8 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         .join(' · ');
       return {
         title: `Saisir le compte rendu de la visite de ${buyerInSentence(task.buyerName)}`,
-        detail: late ? `${what} · ` : what,
+        // L'écran pose lui-même le « · » devant le retard.
+        detail: what,
         late,
         button: 'Visite faite',
         href,
