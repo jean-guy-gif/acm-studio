@@ -102,3 +102,8 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   inexact (données d'avant le Lancement 3) ; « Son suivi » ajoute sept lectures à la fiche, à
   mesurer ; le rangement des réponses par sélection (`answers-by-selection`, `AnswerGroupView`)
   n'a plus d'usage sur la fiche, à retirer avec la fiche simplifiée (mission 10).
+- 24/11 · Correctif du règlement de l'IA · Les deux classements restés « en cours » (13/11, 24/11)
+  sont comptés au pire dans le forfait d'IA de novembre de Start Academy (1,29 €) : les solder
+  demande une écriture en base, sur l'ordre de Jean-Guy. Aucun test ne joue la vraie base pour un
+  appel de fonction : un argument oublié ne se voit qu'en production — un test SQL qui appelle
+  chaque fonction avec les arguments que le code envoie le verrait.
