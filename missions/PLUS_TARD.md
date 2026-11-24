@@ -137,3 +137,12 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   ne laisse aucune trace au journal : à tracer si le classement simplifié apparaît sur de vrais
   dossiers. Sur l'essai seulement, la démo montre des photos simulées que la production n'a pas
   (précédent : le bon de la tournée, M154).
+- 24/11 · Lancement 10 · Relecteur : sur la fiche, « Rapprocher » ne dit plus « Ne compte pas dans
+  le forfait » (c'est un lien, plus un bloc) ; seuls les biens idéaux le disent : à trancher par
+  Jean-Guy. Pour un acquéreur prêt, changer son financement ou noter « J'ai eu l'acquéreur
+  aujourd'hui » coûte un toucher de plus (ouvrir « Prêt à visiter ? »). Au clavier, sur ordinateur,
+  « Autres actions » vient après toute la colonne, alors qu'à l'œil elle est sous la prochaine
+  étape. « Archiver » reste un bouton sous le statut (la maquette en faisait un lien). La fiche
+  complète d'un bien n'est plus ouverte depuis le bloc « Sa sélection » par aucune spec.
+  « Offre d'achat » reste proposée dès la première visite, et le rangement des réponses par
+  sélection (`answers-by-selection`) n'a toujours plus d'usage : à retirer.

@@ -1,26 +1,27 @@
 import { expect, test, type BrowserContext, type Page } from './test';
 
 import {
-  fillLiveComment,
+  chooseInCardMenu,
   demoCredentials,
   expectNoHorizontalScroll,
   expectNoUsageCost,
-  expectReadableBands,
-  chooseInCardMenu,
   expectOneFilled,
+  expectPhotosLoaded,
+  expectReadableBands,
+  fillLiveComment,
   goViaAccountMenu,
   login,
   mainText,
   openAccountMenu,
+  openFold,
+  openToday,
   pagePayload,
+  readDemoLinkAnswers,
   removeDemoRunDossiers,
+  resetDemoByScreen,
+  sideNav,
   uniqueDossierName,
   withoutSpaces,
-  readDemoLinkAnswers,
-  openToday,
-  sideNav,
-  expectPhotosLoaded,
-  resetDemoByScreen,
 } from './support';
 
 // Mission 114 (point 14) — la démonstration des closers, de bout en bout, sur l'URL d'essai, avec
@@ -1445,6 +1446,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(before.nth(2)).toHaveAttribute('data-done', 'true');
   await expect(before.nth(3)).toHaveAttribute('data-done', 'false');
   // « Ce qui s'est passé », le plus récent en haut ; la fiche existe avant sa première sélection.
+  await openFold(page, 'buyer-timeline');
   await expect(page.getByTestId('buyer-timeline').locator('li').last()).toContainText(
     'Fiche créée',
   );
@@ -1695,6 +1697,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // Mission 143 (B1) — l'offre acceptée reste l'état le plus avancé : sa réponse par le lien ne
   // ramène pas la fiche en arrière ; le fil la date.
   await expect(page.getByTestId('buyer-next-step')).toContainText('Lancer le compromis');
+  await openFold(page, 'buyer-timeline');
   await expect(page.getByTestId('buyer-timeline')).toContainText('Sa réponse reçue par le lien');
   await expect(page.getByTestId('deck-prepare')).toHaveCount(0);
   // Lancement, mission 6 — plus de réponses rangées par sélection : « Son suivi », un bien par ligne.

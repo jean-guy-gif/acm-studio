@@ -43,7 +43,11 @@ import {
   timelineLine,
 } from '@/features/buyers/services/buyer-sheet-layout';
 import { getBuyerFollowUpRows } from '@/features/buyers/queries/get-buyer-follow-up';
-import { buyerFollowUp, followUpSummary } from '@/features/buyers/services/buyer-follow-up';
+import {
+  buyerFollowUp,
+  followUpSummary,
+  selectionFollowed,
+} from '@/features/buyers/services/buyer-follow-up';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { getBuyerHistory } from '@/features/buyers/queries/get-buyer-history';
 import { getBuyersProgress } from '@/features/buyers/queries/get-buyers-progress';
@@ -82,7 +86,7 @@ import { frenchDay } from '@/features/purchase-offer/services/offer-dates';
 import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
 import { visitReportLine } from '@/features/buyer-messages/report';
 import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
-import { formatEuro } from '@/lib/format';
+import { formatEuro, formatRelativeDay } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 import { createClient } from '@/lib/supabase/server';
 
@@ -308,8 +312,12 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     // Envoyée ou présentée : chacun de ses biens a déjà sa ligne dans « Son suivi ».
     sent:
       deck != null &&
-      deck.items.length > 0 &&
-      deck.items.every((item) => followUp.some((entry) => entry.itemId === item.item.itemId)),
+      followUpRows != null &&
+      selectionFollowed(
+        deck.items.map((item) => item.item.itemId),
+        followUpRows,
+        followUp,
+      ),
     followUpRead,
   });
   const others = otherActions({
@@ -324,7 +332,17 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     offer: 'buyer-offer-new',
     search: 'buyer-edit-search',
   } as const;
-  const foldTitle = 'font-title text-lg font-semibold text-brand-deep stage:text-white';
+  // La veille, telle que le bloc la dit : sa ligne repliée la reprend (M136).
+  const watchSentence = lastWatch.ok
+    ? watchLine({
+        ready: readiness.state === 'ready',
+        lastRunAt: lastWatch.lastRunAt,
+        off: lastWatch.off,
+        now,
+      })
+    : null;
+  const searching = buyer.status === 'searching' || buyer.status === 'visiting';
+  const foldTitle = 'inline font-title text-lg font-semibold text-brand-deep stage:text-white';
   const foldLine = 'text-sm text-zinc-500 stage:text-white/60';
 
   return (
@@ -989,12 +1007,17 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             <details
               className={`${card} p-5`}
               data-testid="buyer-readiness"
-              open={readinessOpen(readiness.state)}
+              open={readinessOpen(readiness.state, searching)}
             >
               <summary className={`cursor-pointer ${foldLine}`}>
-                <span className={foldTitle}>Prêt à visiter ?</span>{' '}
+                <h2 className={foldTitle}>Prêt à visiter ?</h2>{' '}
                 <span data-testid="buyer-readiness-line">
-                  · {readinessLine({ financing: buyer.financing, lastExchange })}
+                  ·{' '}
+                  {readinessLine({
+                    financing: buyer.financing,
+                    lastExchange,
+                    watch: watchSentence,
+                  })}
                 </span>
               </summary>
               <div className="mt-3 flex flex-col gap-3">
@@ -1016,12 +1039,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                     className="text-sm text-zinc-600 stage:text-white/70"
                     data-testid="buyer-watch-line"
                   >
-                    {watchLine({
-                      ready: readiness.state === 'ready',
-                      lastRunAt: lastWatch.lastRunAt,
-                      off: lastWatch.off,
-                      now,
-                    })}
+                    {watchSentence}
                   </p>
                 ) : null}
               </div>
@@ -1030,8 +1048,14 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           {/* Ce qui s'est passé : lu dans les tables, rien de plus ; replié (Lancement 10). */}
           <details className={`${card} p-5`} data-testid="buyer-timeline" open={history.failed}>
             <summary className={`cursor-pointer ${foldLine}`}>
-              <span className={foldTitle}>Ce qui s’est passé</span>{' '}
-              <span data-testid="buyer-timeline-line">· {timelineLine(timeline.length)}</span>
+              <h2 className={foldTitle}>Ce qui s’est passé</h2>{' '}
+              <span data-testid="buyer-timeline-line">
+                ·{' '}
+                {timelineLine(
+                  timeline.length,
+                  timeline[0] ? formatRelativeDay(timeline[0].at, now) : null,
+                )}
+              </span>
             </summary>
             <div className="mt-3 flex flex-col gap-2">
               {history.failed ? (

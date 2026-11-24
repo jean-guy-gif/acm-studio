@@ -1,26 +1,27 @@
 import { expect, test, type Page } from './test';
 
 import {
-  fillLiveComment,
   ageTestBuyer,
+  ageTestFollowUp,
+  chooseInCardMenu,
+  chooseInMoreMenu,
+  dragCompetitor,
   expectNoHorizontalScroll,
   expectNoUsageCost,
   expectNoVerticalScroll,
+  expectOneFilled,
+  fillLiveComment,
   goViaAccountMenu,
   login,
   mainText,
   openAccountMenu,
+  openFold,
   openToday,
-  sideNav,
   pagePayload,
-  TEST_PRICE_DROP,
-  ageTestFollowUp,
-  chooseInMoreMenu,
-  dragCompetitor,
-  chooseInCardMenu,
-  expectOneFilled,
   readTestOppositions,
   removeTestOppositions,
+  sideNav,
+  TEST_PRICE_DROP,
   uniqueDossierName,
   withoutSpaces,
 } from './support';
@@ -956,6 +957,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // « J'ai eu l'acquéreur aujourd'hui » : il redevient prêt, la tâche s'en va.
     await page.goto(buyerUrl);
     await page.getByTestId('buyer-contacted').click();
+    await openFold(page, 'buyer-readiness');
     await expect(page.getByTestId('buyer-contacted')).toHaveText('Contact noté aujourd’hui ✓');
     await expect(page.getByTestId('buyer-ready')).toHaveText('Prêt à visiter');
     await openToday(page);
@@ -1074,6 +1076,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       'href',
       /\/acquereurs\/proposer\?bien=project%3A/,
     );
+    await openFold(page, 'buyer-timeline');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Fiche créée');
     await page.getByTestId('buyer-next-secondary').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/biens-ideaux$`));
@@ -1200,6 +1203,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       'data-status',
       'done',
     );
+    await openFold(page, 'buyer-timeline');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Sélection présentée');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Visite demandée');
     await expect(page.getByTestId('buyer-follow-up')).toContainText('Veut le visiter');
