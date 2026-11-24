@@ -111,3 +111,8 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   manque : vérifier contre les listes reçues, et regarder au parcours du jeudi si le service des
   communes répond depuis la production. Une lecture de classement du 13/11 est restée « en cours »
   dans la trace, comptée au pire (0,64 €) : à régler ou à purger.
+- 24/11 · Correctif du règlement de l'IA · Les deux classements restés « en cours » (13/11, 24/11)
+  sont comptés au pire dans le forfait d'IA de novembre de Start Academy (1,29 €) : les solder
+  demande une écriture en base, sur l'ordre de Jean-Guy. Aucun test ne joue la vraie base pour un
+  appel de fonction : un argument oublié ne se voit qu'en production — un test SQL qui appelle
+  chaque fonction avec les arguments que le code envoie le verrait.

@@ -66,7 +66,10 @@ export async function settleAiBudget(input: {
       p_cost_millicents: Math.max(0, Math.ceil(input.costMillicents)),
       p_outcome: input.outcome,
       p_fields_proposed: (input.fieldsProposed ?? []) as string[],
-      p_personal_mentions_skipped: input.personalMentionsSkipped as number,
+      // Toujours envoyé, `null` quand il n'y en a pas (le classement) : une clé `undefined`
+      // disparaît de la requête, et la base ne trouve plus sa fonction à cinq arguments — la
+      // réservation restait alors comptée au pire (correctif du 24/11).
+      p_personal_mentions_skipped: (input.personalMentionsSkipped ?? null) as number,
     });
     if (error) await reportServerError('settleAiBudget', error);
   } catch (error) {
