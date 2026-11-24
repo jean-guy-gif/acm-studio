@@ -72,6 +72,27 @@ test('le classement par ce qui compte pour eux : les biens idéaux des Lambert',
     await expectOneFilled(page, 'Biens idéaux classés');
   });
 
+  // Lancement, mission 9 — les photos des biens du marché les mieux classés (simulées dans la démo,
+  // et sur l'essai seulement tant que la lecture est éteinte) : la raison dit des numéros de photos,
+  // à vérifier par le conseiller, jamais un commentaire.
+  await test.step('Les photos des mieux classés : des numéros de photos, à vérifier', async () => {
+    const withPhotos = page.getByTestId('soft-why').filter({ hasText: /photos? \d/ });
+    await expect(withPhotos.first()).toBeVisible();
+    await expect(withPhotos.first()).toContainText(/(le montre|le montrent)( aussi)?, à vérifier/);
+    // Cinq biens au plus, et jamais un bien de l'agence : seules les annonces du marché.
+    expect(await withPhotos.count()).toBeLessThanOrEqual(5);
+    await expect(
+      page
+        .getByTestId('ideal-agency-hit')
+        .getByTestId('soft-why')
+        .filter({ hasText: /photos? \d/ }),
+    ).toHaveCount(0);
+    if (process.env.E2E_CAPTURES === '1') {
+      await withPhotos.first().scrollIntoViewIfNeeded();
+      await withPhotos.first().screenshot({ path: 'missions/maquettes/L9-raison-avec-photos.png' });
+    }
+  });
+
   await test.step('Chaque citation se lit dans le texte de l’annonce', async () => {
     await hitAt(page, /715\s000/)
       .getByTestId('open-property-sheet')

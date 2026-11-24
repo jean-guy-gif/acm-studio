@@ -124,3 +124,16 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   trancher par Jean-Guy. Sur la fiche acquéreur, « Confirmer la visite » ouvert porte un second
   bouton plein (depuis le Lancement 6). À la mise en production, une seule visite confirmée et
   passée attendait son compte rendu, dans l'agence de démonstration.
+- 24/11 · Lancement 9 · À l'allumage des photos : vérifier sur une vraie recherche que les photos
+  du fournisseur (`pictures`) sont dans le même ordre que celles de la fiche complète
+  (`picturesRemote`), sinon « la photo 3 » ne serait pas la troisième de la fiche ; aucune sélection
+  réelle ne permet de le voir aujourd'hui. Les photos des mandats et des concurrents de l'agence ne
+  sont pas lues (le conseiller les connaît). Réduire les photos avant l'envoi (`sharp`) diviserait
+  leur coût par 2,5. Les six critères des photos n'ont été mesurés que sur vingt annonces, sans
+  corrigé écrit avant : une mesure de justesse reste à faire, comme celle du texte (M151).
+- 24/11 · Lancement 9 · Relecteur : huit appels ensemble n'ont été mesurés qu'une fois (60
+  annonces) ; au-delà de 64 annonces, un neuvième lot part en seconde vague. Un lot que le
+  fournisseur refuse est compté au pire sur le forfait, relancé seulement s'il reste du temps, et
+  ne laisse aucune trace au journal : à tracer si le classement simplifié apparaît sur de vrais
+  dossiers. Sur l'essai seulement, la démo montre des photos simulées que la production n'a pas
+  (précédent : le bon de la tournée, M154).

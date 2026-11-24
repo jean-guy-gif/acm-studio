@@ -18,3 +18,26 @@ export function rankCategorized(
   }
   return categorized;
 }
+
+// Lancement, mission 9 — les biens les mieux classés, dont les photos sont lues : les catégories
+// dans leur ordre (M118), le score du texte à l'intérieur (comme `rankCategorized`), et seulement
+// les biens du marché qui ont une photo. Les photos sont celles de la recherche, dans leur ordre.
+// Ne modifie rien. Pur.
+export function topPhotoPicks(
+  categorized: IdealCategorization,
+  byKey: Readonly<Record<string, SoftJudgment[]>>,
+  max: number,
+  perListing: number,
+): { key: string; urls: string[] }[] {
+  return IDEAL_CATEGORIES.flatMap((category) =>
+    orderBySoftScore(categorized.byCategory[category], (entry) =>
+      softScore(byKey[entry.candidate.url]),
+    ),
+  )
+    .map(({ candidate }) => ({
+      key: candidate.url,
+      urls: candidate.photoUrls.slice(0, perListing),
+    }))
+    .filter((pick) => pick.urls.length > 0)
+    .slice(0, max);
+}
