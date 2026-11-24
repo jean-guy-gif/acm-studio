@@ -2,7 +2,7 @@ import 'server-only';
 
 import { cache } from 'react';
 
-import { readDismissals } from '@/features/buyer-dismissals/queries/read-dismissals';
+import { readRuledOut } from '@/features/buyers/queries/read-seen-properties';
 import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { getBuyerProspecting } from '@/features/buyer-prospecting/queries/get-buyer-prospecting';
 import { getWatchTasks } from '@/features/buyer-watch/queries/get-watch';
@@ -98,7 +98,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
     getSuiviDossiers(),
     readVisitLines(),
     loadAgencyBuyers(agencyId),
-    readDismissals(supabase, agencyId),
+    readRuledOut(supabase, agencyId),
   ]);
   const dossiers = withoutExamples(allDossiers);
   const projectIds = dossiers.map((dossier) => dossier.project.id);

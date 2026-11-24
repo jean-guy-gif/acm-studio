@@ -123,6 +123,43 @@ describe('le catalogue de la boucle', () => {
     expect(catalog.contacts.proposals.get('x')?.get('b1')).toBe('2026-11-06T09:00:00Z');
   });
 
+  it('un bien déjà reçu dans une sélection présentée, visité ou refusé ne se repropose pas', async () => {
+    answers.buyer_selections = [
+      { id: 's1', buyer_id: 'b-sent', presented_at: '2026-11-05T10:00:00Z' },
+      { id: 's2', buyer_id: 'b-visited', presented_at: null },
+      { id: 's3', buyer_id: 'b-refused', presented_at: '2026-11-05T10:00:00Z' },
+      { id: 's4', buyer_id: 'b-saved', presented_at: null },
+    ];
+    answers.buyer_selection_items = ['s1', 's2', 's3', 's4'].map((selection, index) => ({
+      id: `i${index + 1}`,
+      selection_id: selection,
+      source: 'project',
+      reference: 'p-lopez',
+      removed_at: null,
+    }));
+    answers.buyer_visit_requests = [
+      {
+        buyer_selection_item_id: 'i2',
+        requested_at: '2026-11-05T10:00:00Z',
+        visited_at: '2026-11-06T15:00:00Z',
+        opinion: 'interested',
+        outcome: 'visited',
+      },
+    ];
+    answers.buyer_item_responses = [
+      { selection_item_id: 'i3', answer: 'no', answered_at: '2026-11-05T10:30:00Z' },
+    ];
+    const { contacts } = await loadLoopCatalog('agency-a', now);
+    const lopez = contacts.proposals.get('project:p-lopez');
+    expect(lopez?.get('b-sent')).toBe('2026-11-05T10:00:00Z');
+    expect(lopez?.get('b-visited')).toBe('2026-11-06T15:00:00Z');
+    expect(contacts.visited?.get('project:p-lopez')).toEqual(new Set(['b-visited']));
+    // Refusé : le bien n'est plus pour lui, comme un bien écarté (M139).
+    expect(contacts.dismissals?.get('project:p-lopez')).toEqual(new Set(['b-refused']));
+    // Une sélection seulement enregistrée ne compte pas (M134).
+    expect(lopez?.has('b-saved')).toBe(false);
+  });
+
   it('ne lit ni les concurrents, ni les biens démarchés, ni les vendeurs à relancer', async () => {
     const tables: string[] = [];
     const filters: unknown[][] = [];
@@ -169,6 +206,13 @@ describe('le catalogue de la boucle', () => {
       'buyer_proposals',
       'projects',
       'buyer_documents',
+      // Lancement, mission 3 — ce que les acquéreurs ont déjà vu.
+      'buyer_dismissals',
+      'buyer_selections',
+      'buyer_selection_items',
+      'buyer_item_responses',
+      'buyer_visit_requests',
+      'buyer_events',
     ]) {
       failing = table;
       expect((await loadLoopCatalog('agency-a', now)).failed).toBe(true);

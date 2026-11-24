@@ -33,6 +33,13 @@ import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 import { undoDismissal } from '@/features/buyer-dismissals/actions/dismiss';
 import { DismissControl } from '@/features/buyer-dismissals/components/dismiss-control';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
+import {
+  countSeen,
+  currentSeenLabel,
+  isClosedForBuyer,
+  seenLine,
+  type CurrentSeenReason,
+} from '@/features/buyers/services/seen-properties';
 import { importIdealListing } from '@/features/ideal-properties/actions/import-ideal-listing';
 import { saveIdealSelection } from '@/features/ideal-properties/actions/save-ideal-selection';
 import {
@@ -172,6 +179,8 @@ export function IdealPropertiesPanel({
   presented = false,
   watch = null,
   dismissed = [],
+  seen = [],
+  currentSeen = {},
   mandatesUnread = false,
   buyerName = null,
   budgetMax = null,
@@ -211,6 +220,12 @@ export function IdealPropertiesPanel({
   // Mission 139 — ce que le conseiller a écarté pour lui (la clé de chaque bien) ; null : la
   // lecture a échoué (M98).
   dismissed?: string[] | null;
+  // Lancement, mission 3 — ce qu'il a déjà vu (envoyé, visité, refusé), par la clé de chaque
+  // bien : jamais reproposé dans les listes ; la sélection actuelle, elle, reste dans son bandeau.
+  seen?: { key: string; reason: 'sent' | 'visited' | 'refused' }[];
+  // Ce qu'il a dit des biens de sa sélection actuelle (`source:reference` → refusé, écarté, visité) :
+  // un bien refusé ou écarté n'y est plus coché et ne se recoche pas.
+  currentSeen?: Record<string, CurrentSeenReason>;
   // Mission 145 — les offres de l'agence n'ont pas pu être lues : aucun mandat n'est proposé, et
   // l'écran le dit (M98).
   mandatesUnread?: boolean;
@@ -228,8 +243,11 @@ export function IdealPropertiesPanel({
   const [reasons, setReasons] = useState<Record<string, SoftReasons>>({});
   const [error, setError] = useState<string | null>(null);
   const [extensionIssue, setExtensionIssue] = useState<ExtensionIssue | null>(null);
+  // Lancement, mission 3 — un bien de sa sélection qu'il a refusé, ou écarté pour lui, n'est plus
+  // coché en arrivant : la prochaine sélection ne le reprend pas.
+  const closed = (item: SelectionItemInput) => isClosedForBuyer(currentSeen[keyOf(item)]);
   const [selected, setSelected] = useState<Map<string, SelectionItemInput>>(
-    () => new Map(current.map((item) => [keyOf(item), item])),
+    () => new Map(current.filter((item) => !closed(item)).map((item) => [keyOf(item), item])),
   );
   // La sélection enregistrée : « Retenir » ne s'active que si la sélection cochée en diffère.
   const [baseline, setBaseline] = useState<SelectionItemInput[]>(current);
@@ -468,6 +486,10 @@ export function IdealPropertiesPanel({
     );
   const isHidden = (item: SelectionItemInput, listingUrl: string | null) =>
     hidden.has(targetKey(item, listingUrl));
+  // Lancement, mission 3 — déjà envoyé, visité ou refusé : hors des listes, et compté.
+  const seenReasons = new Map(seen.map((fact) => [fact.key, fact.reason]));
+  const seenReason = (item: SelectionItemInput, listingUrl: string | null) =>
+    isHidden(item, listingUrl) ? undefined : seenReasons.get(targetKey(item, listingUrl));
 
   const actions = (item: SelectionItemInput) => (
     <div className="flex shrink-0 flex-col items-end gap-1">
@@ -495,7 +517,7 @@ export function IdealPropertiesPanel({
           type="checkbox"
           className="h-4 w-4 accent-brand"
           checked={checked}
-          disabled={!checked && full}
+          disabled={(!checked && full) || closed(item)}
           onChange={() => toggle(item)}
           aria-label={`Retenir ${item.label}`}
         />
@@ -519,13 +541,26 @@ export function IdealPropertiesPanel({
     agency: allAgencyHits.map(({ hit }) => asEntry(hit)),
   });
   const bannerItems = layout.banner;
-  const agencyHits = allAgencyHits.filter(
+  // Ce qu'il a déjà vu n'a pas pu être lu : rien n'est proposé, jamais lu comme « rien de vu » (M98).
+  const seenUnread = dismissed == null;
+  const agencyOpen = allAgencyHits.filter(
     ({ hit }) =>
-      layout.showAgency(asEntry(hit)) && !isHidden(agencyItem(hit), hit.candidate.listingUrl),
+      !seenUnread &&
+      layout.showAgency(asEntry(hit)) &&
+      !isHidden(agencyItem(hit), hit.candidate.listingUrl),
   );
-  const showMarket = (entry: CategorizedCandidate): boolean =>
+  const agencyHits = agencyOpen.filter(
+    ({ hit }) => seenReason(agencyItem(hit), hit.candidate.listingUrl) == null,
+  );
+  const agencySeenLine = seenLine(
+    countSeen(agencyOpen.map(({ hit }) => seenReason(agencyItem(hit), hit.candidate.listingUrl))),
+  );
+  const marketOpen = (entry: CategorizedCandidate): boolean =>
+    !seenUnread &&
     layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url }) &&
     !isHidden(marketItem(entry), entry.candidate.url);
+  const showMarket = (entry: CategorizedCandidate): boolean =>
+    marketOpen(entry) && seenReason(marketItem(entry), entry.candidate.url) == null;
 
   const watchEntries = (watch?.entries ?? []).filter(showMarket);
   // Mission 151 (partie B) — pendant la recherche et sa lecture, le message d'attente prend la
@@ -533,6 +568,20 @@ export function IdealPropertiesPanel({
   const waiting = searching && softLabels.length > 0 && softOpen;
   // Un bien de la veille, déjà en tête, ne se répète pas dans les annonces du marché.
   const watchUrls = new Set(watchEntries.map((entry) => entry.candidate.url));
+  // Les annonces du marché (la veille et la recherche, chacune une fois) qu'il a déjà vues.
+  const marketSeen = new Map<string, 'sent' | 'visited' | 'refused'>();
+  for (const entry of [
+    ...(watch?.entries ?? []),
+    ...(market
+      ? IDEAL_CATEGORIES.flatMap((category) => market.categorized.byCategory[category])
+      : []),
+  ]) {
+    const reason = marketOpen(entry)
+      ? seenReason(marketItem(entry), entry.candidate.url)
+      : undefined;
+    if (reason) marketSeen.set(entry.candidate.url, reason);
+  }
+  const marketSeenLine = seenLine(countSeen([...marketSeen.values()]));
 
   // Une annonce du marché : sa photo, son libellé neutre, son prix « affiché le », ses critères.
   const hitRow = (
@@ -653,7 +702,8 @@ export function IdealPropertiesPanel({
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
       {dismissed == null ? (
         <p role="alert" className="text-sm font-semibold text-red-700">
-          Ce que vous avez écarté pour lui n’a pas pu être lu : rechargez la page.
+          Ce qu’il a déjà reçu, visité ou refusé n’a pas pu être lu : rechargez la page. En
+          attendant, aucun bien ne lui est proposé ici.
         </p>
       ) : null}
       {justDismissed.length > 0 ? (
@@ -748,6 +798,14 @@ export function IdealPropertiesPanel({
                       .filter((part): part is string => part != null)
                       .join(' · ')}
                   </span>
+                  {currentSeenLabel(currentSeen[keyOf(item)]) ? (
+                    <span
+                      className="text-sm font-semibold text-amber-700 stage:text-amber-300"
+                      data-testid="ideal-current-seen"
+                    >
+                      {currentSeenLabel(currentSeen[keyOf(item)])}
+                    </span>
+                  ) : null}
                 </span>
                 {checkbox(item)}
               </li>
@@ -801,9 +859,14 @@ export function IdealPropertiesPanel({
             Vos mandats n’ont pas pu être lus : rechargez la page.
           </p>
         ) : null}
-        {allAgencyHits.length > 0 && agencyHits.length === 0 ? (
+        {allAgencyHits.length > 0 && agencyOpen.length === 0 && !seenUnread ? (
           <p className="text-sm text-zinc-600 stage:text-white/70">
             Les biens de l’agence qui correspondent sont dans la sélection actuelle.
+          </p>
+        ) : null}
+        {agencySeenLine ? (
+          <p className={hintText} data-testid="ideal-agency-seen">
+            {agencySeenLine}
           </p>
         ) : null}
         {allAgencyHits.length === 0 ? (
@@ -890,6 +953,11 @@ export function IdealPropertiesPanel({
           </p>
         </div>
         {budgetWarning ? <p className={hintText}>{budgetWarning}</p> : null}
+        {marketSeenLine ? (
+          <p className={hintText} data-testid="ideal-market-seen">
+            {marketSeenLine}
+          </p>
+        ) : null}
         {extensionIssue ? (
           <ExtensionRequiredNotice
             reason={extensionIssue}
@@ -945,7 +1013,7 @@ export function IdealPropertiesPanel({
               <button
                 type="button"
                 className={btnSecondary}
-                disabled={searching}
+                disabled={searching || seenUnread}
                 onClick={() => setConfirming(true)}
               >
                 {searching ? 'Recherche…' : MARKET_BUTTON}
