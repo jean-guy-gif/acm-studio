@@ -241,7 +241,9 @@ export function BuyerFollowUp({
             pills: list.map((entry) => followUpPill(entry).text),
             lastVisit,
           });
-          const wide = group === 'to_visit' ? 'col-span-3' : '';
+          // « Visites à organiser » prend la ligne entière, SOUS les trois chiffres : ils restent
+          // côte à côte, quel que soit l'ordre des lignes dans le document.
+          const wide = group === 'to_visit' ? 'order-last col-span-3' : '';
           // Une tuile sans bien ne s'ouvre pas : elle dit « aucun », en gris. Sauf si le suivi n'a
           // pas pu être lu en entier : on ne dit jamais « aucun » sur une lecture en échec (M98).
           if (list.length === 0) {
