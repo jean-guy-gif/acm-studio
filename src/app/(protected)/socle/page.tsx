@@ -47,7 +47,7 @@ export default function SoclePreviewPage() {
         </h2>
         <div className="flex flex-col gap-3 md:max-w-md">
           <TaskCard
-            name="M. et Mme Mercier"
+            name="M. et Mme Moreau"
             task="4 nouveaux biens pour eux"
             action={
               <button type="button" className={socleBtnFilled}>

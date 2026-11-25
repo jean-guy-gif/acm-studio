@@ -22,7 +22,7 @@ import {
 // La refonte, lot A — les blocs du socle (maquettes REFONTE-1 à 8).
 describe('le rond aux initiales', () => {
   it('la première lettre du premier mot et celle du dernier ; rien n’est deviné', () => {
-    expect(initialsOf('M. et Mme Mercier')).toBe('MM');
+    expect(initialsOf('M. et Mme Moreau')).toBe('MM');
     expect(initialsOf('Mme Rossi')).toBe('MR');
     expect(initialsOf('Famille Keller')).toBe('FK');
     expect(initialsOf('M. et Mme Lambert-Duval')).toBe('ML');
@@ -34,7 +34,7 @@ describe('le rond aux initiales', () => {
   it('une teinte par personne, toujours la même, parmi trois', () => {
     expect(INITIALS_TINTS).toHaveLength(3);
     expect(initialsTint('Mme Rossi')).toBe(initialsTint('Mme Rossi'));
-    expect(INITIALS_TINTS).toContain(initialsTint('M. et Mme Mercier'));
+    expect(INITIALS_TINTS).toContain(initialsTint('M. et Mme Moreau'));
     // La teinte n'est pas une couleur de sens : ni rouge, ni alerte.
     for (const tint of INITIALS_TINTS) expect(tint).not.toMatch(/red|amber/);
   });
@@ -75,14 +75,14 @@ describe('la carte « à faire »', () => {
   it('la personne, ce qu’il y a à faire, et son bouton', () => {
     const html = renderToStaticMarkup(
       createElement(TaskCard, {
-        name: 'M. et Mme Mercier',
+        name: 'M. et Mme Moreau',
         task: '4 nouveaux biens pour eux',
         action: createElement('a', { href: '/x', className: socleBtnFilled }, 'Voir les biens'),
       }),
     );
     expect(html).toContain('data-testid="task-card"');
     expect(html).toContain('>MM<');
-    const order = ['M. et Mme Mercier', '4 nouveaux biens pour eux', 'Voir les biens'];
+    const order = ['M. et Mme Moreau', '4 nouveaux biens pour eux', 'Voir les biens'];
     const positions = order.map((text) => html.indexOf(text));
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
