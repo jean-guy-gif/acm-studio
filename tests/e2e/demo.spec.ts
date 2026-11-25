@@ -236,6 +236,15 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       );
       await page.getByRole('button', { name: 'Importer l’annonce' }).click();
       await expect(page.getByText('Informations détectées')).toBeVisible({ timeout: 30_000 });
+      // Lancement, mission 11 — le résumé ne dit que des champs de la fiche, en français : jamais le
+      // nom technique d'un champ (vu sur un vrai dossier : « title, portalPricePerSquareMeter,
+      // daysOnMarket »).
+      const importSummary = await page
+        .getByText('Informations détectées')
+        .locator('../..')
+        .innerText();
+      expect(importSummary).toContain('Informations à compléter');
+      expect(importSummary).not.toMatch(/title|portalPrice|daysOnMarket|[a-z][A-Z]/);
       // Le prix lu reste « pour information » (M38) : affiché, jamais dans un champ.
       const read = page.getByText('Prix lu sur l’annonce').locator('..');
       expect(withoutSpaces(await read.innerText())).toContain(String(LISTED_PRICE));
@@ -1001,6 +1010,10 @@ async function walkLive(
     // Mission 112 — un vrai dossier jamais lancé : la confirmation « devant le vendeur » d'abord.
     await page.goto(`/live/${projectId}`);
     await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/lancer-le-live$`));
+    // Lancement, mission 11 — des annonces entrées dans le dossier il y a quelques minutes viennent
+    // d'être lues : aucun rappel « non vérifiées depuis plus de 24 h » (vu sur un vrai dossier).
+    await expect(page.getByTestId('launch-for-real')).toBeVisible();
+    await expect(page.getByTestId('launch-listings-check')).toHaveCount(0);
     await page.getByTestId('launch-for-real').click();
     await expect(page).toHaveURL(new RegExp(`/live/${projectId}$`));
   } else {
