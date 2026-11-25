@@ -26,7 +26,11 @@ commits et des messages, à quelques minutes près.
 | 24/11 | Lancement 8 : la lecture des notes vérifiée sur le compte réel | Petit | 15 min | 0 | 0 |
 | 24/11 | Lancement 9 : l'analyse des annonces (mesure, texte, photos éteintes) | Sensible | 1 h 30 | 0 | 25 min |
 | 24/11 | Lancement 10 : la fiche acquéreur simplifiée | Moyen | 1 h 40 | 0 | 55 min |
+| 24/11 | **Total de la journée (douze lignes, menées en parallèle : 8 h d'horloge, de 8 h 45 à 16 h 45)** | | **13 h 10** | 0 | 5 h 40 |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,
 de 20 h 15 à 22 h : les deux dernières missions ont tourné en même temps.
+
+Le 24/11, la session s'est arrêtée vers 16 h 45, après la mise en production de la mission 10 :
+la suite e2e complète du soir et le point du soir sont partis le 25/11 à 7 h.
