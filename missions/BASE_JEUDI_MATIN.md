@@ -40,6 +40,10 @@ confondre) et `acm-studio-essai` (à créer jeudi).
    27 sur des colonnes, 115 sur les fonctions).
 3. « Personne n'est connecté » : la dernière activité d'un vrai compte, lue dans les journaux de
    la base. Claude Code la donne, et Jean-Guy décide du moment.
+4. La liste des variables de Vercel, relue avant tout geste — leurs noms, leurs cibles, leur
+   branche et leurs dates, jamais leurs valeurs : le 25/11, 23 entrées ; les trois de la base sont
+   communes à « Production » et « Preview », modifiées pour la dernière fois le 15/09/2026 (les
+   deux premières) et le 06/10/2026 (la clé du serveur). C'est le relevé de référence du geste 3.
 
 ## Geste 1 — Supabase : la taille de la base actuelle
 
