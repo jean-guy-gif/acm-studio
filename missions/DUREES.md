@@ -43,7 +43,8 @@ commits et des messages, à quelques minutes près.
 | 25/11 | Les specs de « Aide » et les dix de la fiche acquéreur, sur la base d'essai (18 parcours, verts du premier coup) | — | 25 min | 0 | 22 min |
 | 25/11 | Mission 10 bis en production : la seconde relecture de Vercel, la fusion, la mesure et la capture sur la fiche des Mercier | Moyen | 20 min | 0 | 0 |
 | 25/11 | La suite e2e complète du 25/11 au soir, sur la base d'essai (37 sur 37, un aléa rejoué) | — | 40 min | 0 | 40 min |
-| 25/11 | **Total de la journée à 21 h 10 (seize lignes ; 14 h d'horloge, de 7 h à 21 h 10 ; la 10 bis et la base ont tourné en même temps de 16 h 35 à 17 h 40)** | | **15 h 00** | 2 h 05 | 5 h 52 |
+| 25/11 | `CLAUDE.md`, deux phrases sur le « oui » de Jean-Guy ; la spec de la langue du vendeur rejouée cinq fois sur l'essai (cinq sur cinq) | Petit | 15 min | 0 | 5 min |
+| 25/11 | **Total de la journée à 21 h 25 (dix-sept lignes ; 14 h 15 d'horloge, de 7 h à 21 h 25 ; la 10 bis et la base ont tourné en même temps de 16 h 35 à 17 h 40)** | | **15 h 15** | 2 h 05 | 5 h 57 |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,

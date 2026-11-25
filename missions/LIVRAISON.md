@@ -92,7 +92,7 @@ agences.
     production.
   - Plus tard : faire lire moins à « Aujourd'hui » et à la liste des dossiers
     (`missions/PLUS_TARD.md`).
-- **Avant le 31/12/2026 : les clés de Supabase.** Sa documentation annonce la fin des anciennes
+- **Après la livraison, pas avant (Jean-Guy, 25/11 au soir), et avant le 31/12/2026 : les clés de Supabase.** Sa documentation annonce la fin des anciennes
   clés (« anon », « service_role ») pour la fin de 2026. Si les variables de la production en
   portent (une valeur qui commence par « eyJ »), elles sont à remplacer par les nouvelles : deux
   valeurs dans Vercel, un redéploiement. La base d'essai, créée le 26/11, prend les nouvelles :
