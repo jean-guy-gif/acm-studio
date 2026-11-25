@@ -30,7 +30,8 @@
     "verifier:production": "node scripts/verifier-production.mjs",
     "atelier": "node atelier/serveur.mjs --ouvrir",
     "cle-adresse": "node --experimental-strip-types --no-warnings scripts/cle-adresse.mjs",
-    "demo:fiches": "node --experimental-strip-types --no-warnings scripts/demo-fiches.mjs"
+    "demo:fiches": "node --experimental-strip-types --no-warnings scripts/demo-fiches.mjs",
+    "guide:pdf": "node scripts/guide-pdf.mjs"
   },
   "dependencies": {
     "@anthropic-ai/bedrock-sdk": "0.36.0",
