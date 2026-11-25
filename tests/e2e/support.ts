@@ -132,13 +132,70 @@ export async function dragCompetitor(from: Locator, to: Locator): Promise<void> 
 // Lancement, mission 10 — un bloc replié de la fiche acquéreur (« Prêt à visiter ? », « Ce qui s'est
 // passé ») : la spec l'ouvre, comme le conseiller, avant de lire ce qu'il contient — sinon elle
 // lirait un texte que l'écran ne montre pas.
+// Mission 10 bis — la fiche est repliée : un pli peut être rangé sous un autre (« Ce qui s'est
+// passé » sous « Tout le dossier »). La spec ouvre d'abord ceux qui le contiennent.
 export async function openFold(page: Page, testId: string): Promise<void> {
   const fold = page.getByTestId(testId);
   await expect(fold).toHaveCount(1);
+  await reveal(fold);
   if (!(await fold.evaluate((element) => (element as HTMLDetailsElement).open))) {
-    await fold.locator('summary').click();
+    await fold.locator('xpath=./summary').click();
   }
   await expect(fold).toHaveAttribute('open', '');
+}
+
+// Mission 10 bis — ce qu'une spec va lire ou toucher sur la fiche repliée : elle ouvre, comme le
+// conseiller, chaque pli fermé qui le contient, du plus large au plus étroit (« Tout le dossier »,
+// puis « Ce qui s'est passé » ; « Son suivi », la ligne « Visités »). Sans pli fermé, elle ne fait
+// rien : les specs l'appellent sans savoir où l'écran range l'élément.
+export async function reveal(target: Locator): Promise<void> {
+  const element = target.first();
+  await expect(element).toBeAttached();
+  for (let depth = 0; depth < 6; depth += 1) {
+    // Le plus large des plis fermés qui le contiennent : `ancestor::` rend l'ordre du document.
+    const closed = element.locator('xpath=ancestor::details[not(@open)]').first();
+    if ((await closed.count()) === 0) return;
+    await closed.locator('xpath=./summary').click();
+    await expect(closed).toHaveAttribute('open', '');
+  }
+  throw new Error('Un pli de la fiche ne s’ouvre pas.');
+}
+
+// Mission 10 bis — une ligne de « Son suivi » (visités, à organiser, en attente, refusés) : la spec
+// l'ouvre avant de lire ses biens ; ce que le conseiller a écarté pour lui est dans « Tout le
+// dossier ». Rend la ligne.
+export async function openSuiviLine(
+  page: Page,
+  group: 'visited' | 'to_visit' | 'waiting' | 'refused' | 'dismissed',
+): Promise<Locator> {
+  const line = page.locator(`[data-testid="buyer-follow-up-group"][data-group="${group}"]`);
+  await expect(line).toHaveCount(1);
+  await reveal(line);
+  if (!(await line.evaluate((element) => (element as HTMLDetailsElement).open))) {
+    await line.locator('xpath=./summary').click();
+  }
+  await expect(line).toHaveAttribute('open', '');
+  return line;
+}
+
+// Mission 10 bis — toute la fiche acquéreur, dépliée : « Ses critères », chaque ligne du suivi,
+// « Tout le dossier » et ses plis. Pour une spec qui lit la fiche de haut en bas (le suivi entier,
+// l'historique), une fois la fiche affichée ; les specs qui prouvent le pli lui-même ne l'appellent
+// pas.
+export async function unfoldBuyerSheet(page: Page): Promise<void> {
+  await expect(page.getByTestId('buyer-header')).toBeVisible();
+  // Les plis de la fiche, et eux seuls : un pli rangé sous un autre vient après lui dans la page.
+  const closed = page.locator(
+    ['buyer-search-fold', 'buyer-follow-up-group', 'buyer-all', 'buyer-readiness', 'buyer-timeline']
+      .map((testId) => `details[data-testid="${testId}"]:not([open])`)
+      .join(', '),
+  );
+  for (let pass = 0; pass < 12; pass += 1) {
+    const next = closed.first();
+    if ((await next.count()) === 0) return;
+    await next.locator('xpath=./summary').click();
+    await expect(next).toHaveAttribute('open', '');
+  }
 }
 
 // Mission 146 — la règle de la 143 : au plus un bouton plein visible par écran. Les boutons pleins

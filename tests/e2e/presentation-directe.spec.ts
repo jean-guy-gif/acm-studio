@@ -9,6 +9,7 @@ import {
   login,
   mainText,
   openFold,
+  openSuiviLine,
   openToday,
   pagePayload,
   readDemoBuyersShown,
@@ -457,7 +458,9 @@ test('personne n’est oublié : un mandat signé, ses acquéreurs, l’envoi en
     const row = page.getByTestId('buyer-row').filter({ hasText: 'Famille Moreau' });
     await expect(row).not.toContainText('Lui proposer la maison');
     await row.getByRole('link', { name: 'Famille Moreau' }).click();
-    // Lancement, mission 6 — l'envoi noté se lit dans « Son suivi », sur la ligne du bien.
+    // Lancement, mission 6 — l'envoi noté se lit dans « Son suivi », sur la ligne du bien (Mission
+    // 10 bis : sous « Envoyés, en attente », qu'un toucher ouvre).
+    await openSuiviLine(page, 'waiting');
     await expect(page.getByTestId('buyer-follow-up')).toContainText('Proposé aujourd’hui');
     await expect(page.getByTestId('buyer-proposals')).toHaveCount(0);
     await openFold(page, 'buyer-timeline');
@@ -508,9 +511,17 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     await expect(page.getByTestId('buyer-paused')).toBeVisible();
     await expect(page.getByTestId('answer-suggestion')).toHaveCount(0);
     await expect(page.getByTestId('buyer-matches-link')).toHaveCount(0);
+    // Mission 10 bis — le statut se change dans « Tout le dossier » : « la rouvrir » l'ouvre, sur
+    // « Son statut ».
+    await expect(page.getByTestId('buyer-all')).not.toHaveAttribute('open', '');
+    await page.getByTestId('buyer-paused').getByRole('link', { name: 'la rouvrir' }).click();
+    await expect(page).toHaveURL(/\?dossier=1#statut$/);
+    await expect(page.getByTestId('buyer-all')).toHaveAttribute('open', '');
     await page.getByRole('button', { name: 'L’offre est tombée : revenir en visite' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
+    await expect(page.getByTestId('buyer-status-pill')).toHaveText('En visite');
     await expect(page.getByTestId('buyer-paused')).toHaveCount(0);
+    await expect(page.getByTestId('buyer-matches-link')).toBeVisible();
     const before = Number(
       /· (\d+)/.exec(await page.getByTestId('buyer-matches-link').innerText())?.[1] ?? -1,
     );
@@ -524,6 +535,7 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
       'Recherche ajustée : Budget plafond',
     );
     await expect(suggestion).toHaveCount(0);
+    await expect(page.getByTestId('buyer-matches-link')).toBeVisible();
     // Le budget baissé change ses correspondances : moins de biens qu'avant.
     const after = Number(
       /· (\d+)/.exec(await page.getByTestId('buyer-matches-link').innerText())?.[1] ?? -1,
@@ -550,6 +562,8 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     await expect(page.getByText('2 nouveaux biens pour la famille Keller')).toHaveCount(0);
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
+    // Mission 10 bis — son statut et ses boutons sont dans « Tout le dossier ».
+    await openFold(page, 'buyer-all');
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('Sous offre');
     // Mission 143 (B1) — pendant la vente, la veille et « Prêt à visiter ? » sont en pause.
     await expect(page.getByTestId('buyer-watch-line')).toHaveCount(0);
@@ -679,6 +693,8 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     // Le bon signé se lit sur la fiche, ses visites toutes faites ; un nouveau bon part d'ici.
+    // Mission 10 bis — ses bons signés et « Bon de visite » sont dans « Tout le dossier ».
+    await openFold(page, 'buyer-all');
     await expect(page.getByTestId('buyer-voucher-signed').first()).toContainText(/^Signé le /);
     await page.getByTestId('buyer-voucher-new').click();
     await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\/bon-de-visite$/);
@@ -823,6 +839,7 @@ test('l’offre d’achat : acceptée, ses suites, une nouvelle offre refusée',
   await test.step('L’offre signée s’ouvre : couverture, texte validé', async () => {
     await page.goto('/acquereurs');
     await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
+    await openFold(page, 'buyer-all');
     await page.getByTestId('buyer-offer-signed').first().click();
     await expect(page.getByTestId('offer-cover')).toContainText("OFFRE D'ACHAT FERME");
     await expect(page.getByTestId('offer-cover-mandate')).toHaveText('Mandat n° M-2026-0142');

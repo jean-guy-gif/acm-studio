@@ -99,6 +99,10 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
       await expect(page.getByText(city).first(), city).toBeVisible();
     }
     await expect(page.getByTestId('buyer-to-verify')).toContainText(/À vérifier · \d+/);
+    // Mission 10 bis — ses critères sont repliés, sauf tant qu'il reste des champs « À vérifier » :
+    // le pli s'ouvre seul, c'est là qu'on les relit.
+    await expect(page.getByTestId('buyer-search-fold')).toHaveAttribute('open', '');
+    await expect(page.getByTestId('buyer-soft-criteria')).toBeVisible();
     await expect(page.getByTestId('buyer-soft-criteria')).toContainText('Au calme');
     await expect(page.getByTestId('buyer-soft-criteria')).toContainText(
       '« AU CALME — pas de route »',
@@ -119,7 +123,11 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
       .getByRole('button', { name: 'Tout est juste' })
       .click();
     await expect(page.getByTestId('buyer-to-verify')).toBeHidden();
-    // La fiche est marquée démo : la remise à zéro la retirerait ; on l'archive ici, par l'écran.
+    // Plus rien à vérifier : ses critères se replient.
+    await expect(page.getByTestId('buyer-search-fold')).not.toHaveAttribute('open', '');
+    // La fiche est marquée démo : la remise à zéro la retirerait ; on l'archive ici, par l'écran
+    // (« Archiver » est dans « Tout le dossier »).
+    await openFold(page, 'buyer-all');
     await page.getByRole('button', { name: 'Archiver', exact: true }).first().click();
     await page
       .getByTestId('buyer-archive-confirm')

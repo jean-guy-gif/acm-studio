@@ -5,6 +5,7 @@ import {
   expectNoHorizontalScroll,
   expectOneFilled,
   login,
+  openSuiviLine,
   resetDemoByScreen,
 } from './support';
 
@@ -128,7 +129,9 @@ test('la fiche complète d’un bien : biens idéaux, sélection, « Proposer ce
     await page.goto(lambert);
     // Lancement, mission 10 — leur sélection est envoyée : ses biens se lisent dans « Son suivi ».
     await expect(page.getByTestId('ideal-selection-item')).toHaveCount(0);
-    const item = page.getByTestId('buyer-follow-up-item').first();
+    // Mission 10 bis — sous « Envoyés, en attente », qu'un toucher ouvre.
+    const waiting = await openSuiviLine(page, 'waiting');
+    const item = waiting.getByTestId('buyer-follow-up-item').first();
     await expect(item).toBeVisible();
     await item.getByTestId('open-property-sheet').click();
     const sheet = await expectSheetOpen(page);
