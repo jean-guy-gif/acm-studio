@@ -82,6 +82,8 @@ const render = (
     list?: typeof entries;
     messagesGroup?: 'visited' | 'refused';
     lastVisit?: { day: string; outcome: string };
+    pendingVisitIds?: string[];
+    sale?: boolean;
   } = {},
 ) =>
   renderToStaticMarkup(
@@ -93,6 +95,8 @@ const render = (
       visitRows,
       lastVisit: over.lastVisit ?? null,
       messagesGroup: over.messagesGroup ?? null,
+      pendingVisitIds: over.pendingVisitIds ?? [],
+      sale: over.sale ?? false,
     }),
   );
 
@@ -181,6 +185,22 @@ describe('« Son suivi », à l’écran', () => {
     expect(html).toMatch(/<details[^>]*data-group="to_visit"[^>]*open=""/);
     // Sa visite, avec ses gestes, est sur sa ligne.
     expect(line(html, 'to_visit')).toContain('La visite du 22/11');
+    // Pendant une vente, sa recherche est en pause : la ligne garde son nombre, fermée.
+    const paused = render({ list, sale: true });
+    expect(paused).toMatch(/<details[^>]*data-group="to_visit"/);
+    expect(paused).not.toMatch(/<details[^>]*open=""/);
+  });
+
+  it('une visite à organiser sur un bien refusé ouvre « Refusés » : c’est là qu’on agit', () => {
+    // Le bien de la visite v1, ici refusé depuis : sa ligne porte la visite demandée.
+    const refused = entries.map((entry) =>
+      entry.group === 'refused' ? { ...entry, visitIds: ['v9'] } : entry,
+    );
+    const html = render({ list: refused, pendingVisitIds: ['v9'] });
+    expect(html).toMatch(/<details[^>]*data-group="refused"[^>]*open=""/);
+    expect(html).not.toMatch(/<details[^>]*data-group="visited"[^>]*open=""/);
+    // Sans visite à organiser, « Refusés » reste fermée.
+    expect(render({ list: refused })).not.toMatch(/<details[^>]*open=""/);
   });
 
   it('un bien visité : la ligne de sa visite, ce qui l’a précédée, et sa fiche à un toucher', () => {
@@ -239,10 +259,33 @@ describe('« Son suivi », à l’écran', () => {
   });
 
   it('une lecture en échec le dit, même sans rien à montrer ; sans rien ni échec, pas de bloc', () => {
-    expect(render({ unread: true, list: [] })).toContain(
-      'Son suivi n’a pas pu être lu en entier : rechargez la page.',
-    );
+    const failed = render({ unread: true, list: [] });
+    expect(failed).toContain('Son suivi n’a pas pu être lu en entier : rechargez la page.');
+    // Jamais « aucun » sur une lecture en échec (M98) : une ligne qu'on n'a pas pu lire ne s'écrit pas.
+    expect(failed).not.toContain('aucun');
+    expect(failed).not.toContain('data-testid="buyer-follow-up-group"');
     expect(render({ list: [] })).toBe('');
+  });
+
+  it('lu en partie : les lignes lues s’écrivent, aucune ne dit « aucun »', () => {
+    const html = render({ unread: true });
+    expect(html).toContain('Son suivi n’a pas pu être lu en entier');
+    expect(html).toMatch(/<details[^>]*data-group="visited"/);
+    expect(html).toMatch(/<details[^>]*data-group="refused"/);
+    expect(html).not.toContain('data-group="waiting"');
+    expect(html).not.toContain('aucun');
+  });
+
+  it('une suggestion à lire garde le bloc, même sans ligne de suivi', () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        BuyerFollowUp,
+        { entries: [], summary: null, unread: false, now: NOW, visitRows },
+        createElement('p', { 'data-testid': 'suggestions' }, 'Le prix a été refusé deux fois.'),
+      ),
+    );
+    expect(html).toContain('data-testid="suggestions"');
+    expect(html).toContain('Son suivi');
   });
 
   it('aucun bouton plein', () => {

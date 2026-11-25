@@ -515,7 +515,7 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
     // « Son statut ».
     await expect(page.getByTestId('buyer-all')).not.toHaveAttribute('open', '');
     await page.getByTestId('buyer-paused').getByRole('link', { name: 'la rouvrir' }).click();
-    await expect(page).toHaveURL(/\?dossier=1#statut$/);
+    await expect(page).toHaveURL(/\?tout=1#statut$/);
     await expect(page.getByTestId('buyer-all')).toHaveAttribute('open', '');
     await page.getByRole('button', { name: 'L’offre est tombée : revenir en visite' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');

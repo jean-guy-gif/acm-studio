@@ -151,12 +151,15 @@ export async function openFold(page: Page, testId: string): Promise<void> {
 export async function reveal(target: Locator): Promise<void> {
   const element = target.first();
   await expect(element).toBeAttached();
+  // Les plis fermés qui le contiennent ; `ancestor::` rend l'ordre du document : le plus large
+  // d'abord. Un pli ouvert sort de cette liste : on compte ceux qui restent (le localisateur se
+  // relit à chaque fois, il ne désigne jamais deux fois le même pli).
+  const closed = element.locator('xpath=ancestor::details[not(@open)]');
   for (let depth = 0; depth < 6; depth += 1) {
-    // Le plus large des plis fermés qui le contiennent : `ancestor::` rend l'ordre du document.
-    const closed = element.locator('xpath=ancestor::details[not(@open)]').first();
-    if ((await closed.count()) === 0) return;
-    await closed.locator('xpath=./summary').click();
-    await expect(closed).toHaveAttribute('open', '');
+    const left = await closed.count();
+    if (left === 0) return;
+    await closed.first().locator('xpath=./summary').click();
+    await expect(closed).toHaveCount(left - 1);
   }
   throw new Error('Un pli de la fiche ne s’ouvre pas.');
 }
@@ -190,12 +193,15 @@ export async function unfoldBuyerSheet(page: Page): Promise<void> {
       .map((testId) => `details[data-testid="${testId}"]:not([open])`)
       .join(', '),
   );
-  for (let pass = 0; pass < 12; pass += 1) {
-    const next = closed.first();
-    if ((await next.count()) === 0) return;
-    await next.locator('xpath=./summary').click();
-    await expect(next).toHaveAttribute('open', '');
+  // Le premier pli fermé de la page n'est jamais rangé sous un autre pli fermé : il se touche.
+  // Ouvert, il sort de la liste : on compte ceux qui restent.
+  for (let pass = 0; pass < 14; pass += 1) {
+    const left = await closed.count();
+    if (left === 0) return;
+    await closed.first().locator('xpath=./summary').click();
+    await expect(closed).toHaveCount(left - 1);
   }
+  throw new Error('Les plis de la fiche ne s’ouvrent pas tous.');
 }
 
 // Mission 146 — la règle de la 143 : au plus un bouton plein visible par écran. Les boutons pleins

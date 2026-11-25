@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  dossierLine,
-  dossierOpen,
+  everythingLine,
+  everythingOpen,
   editSearchHref,
   otherActions,
   readinessLine,
@@ -153,40 +153,19 @@ describe('la fiche repliée : les lignes de « Son suivi »', () => {
   });
 
   it('fermées à l’ouverture ; s’ouvrent seules la visite à organiser, et la visite dont on sort', () => {
-    expect(suiviLineOpen('visited', { messagesGroup: null })).toBe(false);
-    expect(suiviLineOpen('waiting', { messagesGroup: null })).toBe(false);
-    expect(suiviLineOpen('refused', { messagesGroup: null })).toBe(false);
-    expect(suiviLineOpen('to_visit', { messagesGroup: null })).toBe(true);
+    const closed = { messages: false, pendingVisit: false, sale: false };
+    expect(suiviLineOpen(closed)).toBe(false);
+    // Une visite à organiser : c'est là qu'on la confirme.
+    expect(suiviLineOpen({ ...closed, pendingVisit: true })).toBe(true);
     // Juste après « Visite faite » : ses messages sont sur sa ligne, elle s'ouvre.
-    expect(suiviLineOpen('visited', { messagesGroup: 'visited' })).toBe(true);
-    expect(suiviLineOpen('refused', { messagesGroup: 'visited' })).toBe(false);
+    expect(suiviLineOpen({ ...closed, messages: true })).toBe(true);
   });
 
-  it('pendant une vente, sa recherche est en pause : « Visites à organiser » reste fermée', () => {
-    expect(suiviLineOpen('to_visit', { messagesGroup: null, sale: true })).toBe(false);
-    expect(suiviLineOpen('to_visit', { messagesGroup: null, sale: false })).toBe(true);
+  it('pendant une vente, sa recherche est en pause : une visite à organiser n’ouvre plus sa ligne', () => {
+    expect(suiviLineOpen({ messages: false, pendingVisit: true, sale: true })).toBe(false);
     // … sauf si l'on vient d'y noter une visite.
-    expect(suiviLineOpen('to_visit', { messagesGroup: 'to_visit', sale: true })).toBe(true);
-    expect(suiviLineOpen('visited', { messagesGroup: 'visited', sale: true })).toBe(true);
-  });
-
-  it('une ligne fermée dit l’essentiel : la dernière visite et sa suite', () => {
-    expect(
-      suiviLineGist({
-        group: 'visited',
-        count: 1,
-        lastVisit: { day: 'le 13/11', outcome: 'Offre envisagée' },
-      }),
-    ).toBe('le 13/11 · offre envisagée');
-    expect(
-      suiviLineGist({
-        group: 'visited',
-        count: 3,
-        lastVisit: { day: 'hier', outcome: 'Visité, à suivre' },
-      }),
-    ).toBe('la dernière hier · visité, à suivre');
-    // Sans visite datée lue : le nombre suffit.
-    expect(suiviLineGist({ group: 'visited', count: 2, lastVisit: null })).toBeNull();
+    expect(suiviLineOpen({ messages: true, pendingVisit: true, sale: true })).toBe(true);
+    expect(suiviLineOpen({ messages: true, pendingVisit: false, sale: true })).toBe(true);
   });
 
   it('la visite que dit la ligne « Visités » : la plus récente de ses biens visités, eux seuls', () => {
@@ -259,11 +238,11 @@ describe('la fiche repliée : « Tout le dossier »', () => {
   const base = { selection: false, vouchers: false, offers: false, dismissed: 0, readiness: true };
 
   it('sa ligne dit ce qu’il contient, sans l’ouvrir', () => {
-    expect(dossierLine(base)).toBe(
+    expect(everythingLine(base)).toBe(
       'les cinq étapes · autres actions · prêt à visiter ? · ce qui s’est passé · statut',
     );
     expect(
-      dossierLine({
+      everythingLine({
         selection: true,
         vouchers: true,
         offers: true,
@@ -273,16 +252,21 @@ describe('la fiche repliée : « Tout le dossier »', () => {
     ).toBe(
       'les cinq étapes · sa sélection · autres actions · bons de visite · offres d’achat · 2 écartés pour lui · ce qui s’est passé · statut',
     );
-    expect(dossierLine({ ...base, dismissed: 1 })).toContain('1 écarté pour lui');
+    expect(everythingLine({ ...base, dismissed: 1 })).toContain('1 écarté pour lui');
   });
 
   it('replié à l’ouverture ; il s’ouvre quand on y mène, ou quand une lecture y a échoué (M98)', () => {
-    expect(dossierOpen({ asked: false, unread: false })).toBe(false);
-    expect(dossierOpen({ asked: true, unread: false })).toBe(true);
-    expect(dossierOpen({ asked: false, unread: true })).toBe(true);
+    expect(everythingOpen({ asked: false, unread: false })).toBe(false);
+    expect(everythingOpen({ asked: true, unread: false })).toBe(true);
+    expect(everythingOpen({ asked: false, unread: true })).toBe(true);
+  });
+
+  it('il s’ouvre aussi quand il range une visite à organiser (un bien écarté pour lui)', () => {
+    expect(everythingOpen({ asked: false, unread: false, pendingVisit: true })).toBe(true);
+    expect(everythingOpen({ asked: false, unread: false, pendingVisit: false })).toBe(false);
   });
 
   it('le statut se change dans « Tout le dossier » : son lien l’ouvre sur « Son statut »', () => {
-    expect(statusHref('b1')).toBe('/acquereurs/b1?dossier=1#statut');
+    expect(statusHref('b1')).toBe('/acquereurs/b1?tout=1#statut');
   });
 });

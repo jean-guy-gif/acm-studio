@@ -115,7 +115,7 @@ export const editSearchHref = (buyerId: string): string =>
   `/acquereurs/${buyerId}?modifier=1#recherche`;
 
 // Là où l'on change son statut : « Tout le dossier », ouvert sur « Son statut ».
-export const statusHref = (buyerId: string): string => `/acquereurs/${buyerId}?dossier=1#statut`;
+export const statusHref = (buyerId: string): string => `/acquereurs/${buyerId}?tout=1#statut`;
 
 // Les lignes de « Son suivi » : visités, envoyés en attente, refusés, toujours ; « Visites à
 // organiser » seulement quand il y en a une. Ce que le conseiller a écarté pour lui passe dans
@@ -128,14 +128,19 @@ export function suiviLineGroups(toVisit: number): SuiviLine[] {
     : ['visited', 'waiting', 'refused'];
 }
 
-// Une ligne est fermée à l'ouverture de la fiche. S'ouvrent seules celles où il faut agir : la
-// visite à organiser (c'est là qu'on la confirme), et la ligne de la visite dont on vient de noter
-// le compte rendu (ses messages y sont prêts, Lancement 7). Pendant une vente, sa recherche est en
-// pause (M143) : « Visites à organiser » reste fermée, avec son nombre — on y agit d'un toucher.
-export const suiviLineOpen = (
-  group: SuiviLine,
-  input: { messagesGroup: FollowUpGroup | null; sale?: boolean },
-): boolean => group === input.messagesGroup || (group === 'to_visit' && !input.sale);
+// Une ligne est fermée à l'ouverture de la fiche. S'ouvrent seules celles où il faut agir : celle
+// qui porte une visite à organiser (c'est là qu'on la confirme) — « Visites à organiser », mais
+// aussi « Refusés » quand un bien refusé garde une visite demandée —, et celle de la visite dont on
+// vient de noter le compte rendu (ses messages y sont prêts, Lancement 7). Pendant une vente, sa
+// recherche est en pause (M143) : une visite à organiser n'ouvre plus sa ligne, qui garde son
+// nombre — on y agit d'un toucher.
+export const suiviLineOpen = (input: {
+  // La ligne porte la visite dont on vient de noter le compte rendu (`?messages=`).
+  messages: boolean;
+  // La ligne porte une visite à organiser.
+  pendingVisit: boolean;
+  sale: boolean;
+}): boolean => input.messages || (input.pendingVisit && !input.sale);
 
 const lowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1);
 
@@ -213,7 +218,7 @@ export const searchFoldOpen = (fieldsToVerify: number): boolean => fieldsToVerif
 // La ligne de « Tout le dossier », replié : ce qu'il contient, dans l'ordre où on l'y trouve.
 // `readiness` : « Prêt à visiter ? » y est rangé (il est prêt) ; quand il manque quelque chose, le
 // bloc reste dehors, ouvert (Lancement 10).
-export function dossierLine(input: {
+export function everythingLine(input: {
   selection: boolean;
   vouchers: boolean;
   offers: boolean;
@@ -237,7 +242,11 @@ export function dossierLine(input: {
     .join(' · ');
 }
 
-// Replié à l'ouverture. Il s'ouvre quand on y mène (`?dossier=1` : changer son statut), ou quand
-// une lecture y a échoué : un échec se dit, il ne reste jamais sous un pli fermé (M98).
-export const dossierOpen = (input: { asked: boolean; unread: boolean }): boolean =>
-  input.asked || input.unread;
+// Replié à l'ouverture. Il s'ouvre quand on y mène (`?tout=1` : changer son statut), quand une
+// lecture y a échoué — un échec se dit, il ne reste jamais sous un pli fermé (M98) —, ou quand il
+// range une visite à organiser (celle d'un bien écarté pour lui).
+export const everythingOpen = (input: {
+  asked: boolean;
+  unread: boolean;
+  pendingVisit?: boolean;
+}): boolean => input.asked || input.unread || input.pendingVisit === true;
