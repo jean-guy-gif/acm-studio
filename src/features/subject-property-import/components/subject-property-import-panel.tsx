@@ -17,35 +17,13 @@ import { importListingFromUrl } from '@/features/comparable-import/services/impo
 import type { ComparableImportResult } from '@/features/comparable-import/types';
 import { formatEuro, formatEuroPerSquareMeter } from '@/lib/format';
 import type { RecoverPropertyPhotoResult } from '@/features/subject-property-import/actions/recover-property-photos';
+import { subjectImportSummary } from '@/features/subject-property-import/services/import-summary';
 import { summarizeRecoveryFailures } from '@/features/subject-property-import/services/summarize-recovery-failures';
 import { mapListingToProperty } from '@/features/subject-property-import/services/map-listing-to-property';
 import type {
   SubjectPropertyImportInfo,
   SubjectPropertyImportPrefill,
 } from '@/features/subject-property-import/types';
-
-// The advisor-facing labels for the fields the aspiration reports as detected /
-// missing (informational only — reused vocabulary, not a duplicated engine).
-const FIELD_LABELS: Record<string, string> = {
-  price: 'Prix (indicatif)',
-  surfaceArea: 'Surface',
-  landArea: 'Terrain',
-  roomsCount: 'Pièces',
-  bedroomsCount: 'Chambres',
-  bathroomsCount: 'Salles de bains',
-  energyRating: 'DPE',
-  gesRating: 'GES',
-  address: 'Adresse',
-  postalCode: 'Code postal',
-  city: 'Ville',
-  district: 'Quartier',
-  constructionYear: 'Année de construction',
-  heatingType: 'Chauffage',
-  listingDescription: 'Description',
-  photoUrls: 'Photos',
-};
-
-const label = (key: string): string => FIELD_LABELS[key] ?? key;
 
 const euro = (value: number | null): string => (value != null ? formatEuro(value) : '—');
 
@@ -94,8 +72,7 @@ export function SubjectPropertyImportPanel({
     if (res.ok) {
       const { prefill, info } = mapListingToProperty(res.data);
       setSummary({
-        found: res.foundFields,
-        missing: res.missingFields,
+        ...subjectImportSummary({ found: res.foundFields, missing: res.missingFields }),
         info,
         photoUrls: res.data.photoUrls,
       });
@@ -208,7 +185,7 @@ export function SubjectPropertyImportPanel({
               Informations détectées
             </p>
             <p className="text-zinc-600 stage:text-white/65">
-              {summary.found.length > 0 ? summary.found.map(label).join(', ') : 'Aucune'}
+              {summary.found.length > 0 ? summary.found.join(', ') : 'Aucune'}
             </p>
           </div>
           <div>
@@ -216,7 +193,7 @@ export function SubjectPropertyImportPanel({
               Informations à compléter
             </p>
             <p className="text-zinc-600 stage:text-white/65">
-              {summary.missing.length > 0 ? summary.missing.map(label).join(', ') : 'Aucune'}
+              {summary.missing.length > 0 ? summary.missing.join(', ') : 'Aucune'}
             </p>
           </div>
           {summary.info.readPrice != null ? (

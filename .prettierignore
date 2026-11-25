@@ -22,3 +22,6 @@ src/features/demo/data/photo-sets.generated.json
 # Correctifs 163 — la largeur des caractères des polices, écrite par scripts/print-font-metrics.mjs
 src/features/market-study/services/print-font-metrics.generated.json
 tests/print/.banc
+
+# Cache local d'outil (extension de l'éditeur), jamais dans le dépôt.
+.impeccable

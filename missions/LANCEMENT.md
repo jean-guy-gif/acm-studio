@@ -69,7 +69,9 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
     mission à sacrifier si le temps manque. — **fait le 24/11** : la prochaine étape juste sous les
     étapes à toutes les largeurs, la sélection fondue dans « Son suivi », le reste replié ou en liens
 11. **Parcours complet sur le compte de Jean-Guy**, vendeur puis acquéreur, avec captures, et
-    correction des défauts vus. — à faire
+    correction des défauts vus. — **fait le 25/11** : le parcours joué en entier sur un dossier et un
+    acquéreur TEST, quatre défauts corrigés ; restent deux lignes de test à retirer de la base, sur
+    l'accord de Jean-Guy (le dossier TEST conclu, sa visite comptée sur un vrai mandat)
 12. **Sauvegardes quotidiennes vérifiées sur l'offre Pro, journal d'erreurs vide, suite de nuit
     verte.** — à faire
 13. **Livraison.** — à faire
