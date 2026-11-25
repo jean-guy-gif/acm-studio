@@ -189,13 +189,13 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
   fois, chacune avec sa réponse par défaut, et avance avec elle ; Jean-Guy corrige après. Le chef
   tranche seul les détails et le dit après. Restent à Jean-Guy : appliquer une migration, et
   essayer lui-même une mission Sensible quand il le faut.
-- **Petit et Moyen ne passent plus par l'essai** (Jean-Guy, 23/11) : le chef teste en fusionnant
-  sa branche dans `essai` : les specs ne se jouent que sur l'essai ; il fait l'essai lui-même dans
-  un vrai navigateur, range deux ou trois captures dans `missions/maquettes/`, puis pousse sur
-  `main` et met en production ; Jean-Guy regarde après. Si quelque chose empêche de
+- **Petit et Moyen n'attendent plus l'essai de Jean-Guy** (Jean-Guy, 23/11) : le chef teste en
+  fusionnant sa branche dans `essai` : les specs ne se jouent que sur l'essai ; il fait l'essai
+  lui-même dans un vrai navigateur, range deux ou trois captures dans `missions/maquettes/`, puis
+  pousse sur `main` et met en production ; Jean-Guy regarde après. Si quelque chose empêche de
   tester ainsi (connexion, adresse du site), le chef le dit en une ligne, avec sa solution.
-  L'essai (branche `essai`) ne sert plus qu'aux missions Sensible que Jean-Guy doit essayer
-  lui-même : celles-là attendent son « valide » (`/valide NN`).
+  L'essai de Jean-Guy ne sert plus qu'aux missions Sensible qu'il doit essayer lui-même :
+  celles-là attendent son « valide » (`/valide NN`).
 - **Les tests** (Jean-Guy, 23/11) : la suite e2e complète tourne une fois par nuit, plus à chaque
   mission ; en journée, les specs concernées seulement. Le relecteur ne passe qu'une fois, et pas
   du tout sur une mission Petit.
