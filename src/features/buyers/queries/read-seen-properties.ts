@@ -3,9 +3,14 @@ import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
+  receivedSelections,
   ruledOutOf,
   seenItemKey,
+  seenMarksOf,
   seenProperties,
+  toLike,
+  type SeenLike,
+  type SeenMark,
   type SeenProperties,
 } from '@/features/buyers/services/seen-properties';
 import type { Database } from '@/lib/supabase/database.types';
@@ -19,6 +24,10 @@ export type SeenRead = {
   seen: SeenProperties;
   // La clé d'un bien de sélection, celle de la boucle.
   keyOf: (item: { source: string; reference: string }) => string | null;
+  // Ce qui fait reconnaître ses biens sous une autre annonce (`seenMatcher`).
+  marks: (buyerId: string) => SeenMark[];
+  // Quand une sélection lui est parvenue (présentée, lien partagé, envoi noté) ; null : pas encore.
+  receivedAt: (selectionId: string) => string | null;
 };
 
 export async function readSeenProperties(
@@ -75,7 +84,11 @@ export async function readSeenProperties(
     readPages((from, to) =>
       supabase
         .from('buyer_selection_items')
-        .select('id, selection_id, source, reference, removed_at')
+        // Sans tout le `snapshot` (photos, texte) : seulement l'identifiant du bien chez le
+        // fournisseur de la recherche et les quatre faits de sa ressemblance.
+        .select(
+          'id, selection_id, source, reference, removed_at, listed_price, property_id:snapshot->>key, like_city:snapshot->>city, like_rooms:snapshot->>roomsCount, like_surface:snapshot->>surfaceArea',
+        )
         .eq('agency_id', agencyId)
         .order('id')
         .range(from, to),
@@ -98,27 +111,72 @@ export async function readSeenProperties(
     ? await readPages((from, to) =>
         supabase
           .from('comparables')
-          .select('id, listing_url')
+          .select('id, listing_url, city, rooms_count, surface_area, price')
           .eq('agency_id', agencyId)
-          .not('listing_url', 'is', null)
           .order('id')
           .range(from, to),
       )
     : { data: [], error: false };
   if (comparables.error) return null;
-  const competitorUrls = new Map(comparables.data.map((row) => [row.id, row.listing_url]));
+  const competitorUrls = new Map(
+    comparables.data.flatMap((row) =>
+      row.listing_url ? [[row.id, row.listing_url] as const] : [],
+    ),
+  );
+  const competitorLikes = new Map<string, SeenLike>();
+  for (const row of comparables.data) {
+    const like = toLike({
+      city: row.city,
+      rooms: row.rooms_count,
+      surface: row.surface_area,
+      price: row.price,
+    });
+    if (like) competitorLikes.set(row.id, like);
+  }
+  const itemRows = items.data.map((row) => {
+    const facts = row as unknown as Record<string, unknown>;
+    return {
+      id: row.id,
+      selection_id: row.selection_id,
+      source: row.source,
+      reference: row.reference,
+      removed_at: row.removed_at,
+      property_id:
+        typeof facts.property_id === 'string' && facts.property_id ? facts.property_id : null,
+      like: toLike({
+        city: facts.like_city,
+        rooms: facts.like_rooms,
+        surface: facts.like_surface,
+        price: row.listed_price,
+      }),
+    };
+  });
+  const received = receivedSelections({
+    selections: selections.data,
+    shares: shares.data,
+    proposals: proposals.data,
+    items: itemRows,
+  });
+  const marks = seenMarksOf({
+    selections: selections.data,
+    items: itemRows,
+    competitorUrls,
+    competitorLikes,
+  });
   return {
     seen: seenProperties({
       dismissals: dismissals.data,
       proposals: proposals.data,
       selections: selections.data,
       shares: shares.data,
-      items: items.data,
+      items: itemRows,
       responses: responses.data,
       visits: visits.data,
       competitorUrls,
     }),
     keyOf: (item) => seenItemKey(item, competitorUrls),
+    marks: (buyerId) => marks.get(buyerId) ?? [],
+    receivedAt: (selectionId) => received.get(selectionId) ?? null,
   };
 }
 

@@ -17,6 +17,9 @@ import type { SoftReasons } from '@/features/soft-ranking/types';
 
 // La clé d'un bien : son identité publiée (portail + numéro, M47), sinon son adresse d'annonce.
 export const watchKey = (url: string): string => listingIdentityKey(url) ?? url.trim();
+// Lancement, mission 3 (suite, 25/11) — le même bien sous une autre annonce : l'identifiant du bien
+// chez le fournisseur de la recherche, gardé avec ses sélections, le fait reconnaître aussi.
+export const watchPropertyKey = (propertyId: string): string => `se:${propertyId}`;
 
 const httpsUrl = z
   .string()
@@ -208,7 +211,7 @@ export function filterWatchFinds(
     const key = watchKey(candidate.url);
     if (seen.has(key)) continue;
     seen.add(key);
-    if (known.has(key)) {
+    if (known.has(key) || (candidate.key != null && known.has(watchPropertyKey(candidate.key)))) {
       outcome.excludedKnown += 1;
       continue;
     }

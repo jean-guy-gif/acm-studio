@@ -11,7 +11,9 @@ import {
 } from '@/features/ideal-properties/services/ideal-selection';
 import type { IdealSelection } from '@/features/ideal-properties/types';
 import { readWatchFinds } from '@/features/buyer-watch/services/watch-finds';
+import { readSeenProperties } from '@/features/buyers/queries/read-seen-properties';
 import { projectsUnderOffer, proposableMandate } from '@/features/buyers/services/proposable';
+import { seenKeysOf, seenMatcher, toLike } from '@/features/buyers/services/seen-properties';
 import { NOT_PROPOSABLE } from '@/features/ideal-properties/services/ideal-agency';
 import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
@@ -24,6 +26,7 @@ export type SaveIdealSelectionResult =
   | { ok: false; error: string };
 
 const FAILED = 'La sélection n’a pas pu être enregistrée. Réessayez.';
+const ALREADY_SEEN = 'Il a déjà vu l’un de ces biens : il ne se retient plus. Rechargez la page.';
 
 // Mission 118 — « Retenir la sélection » : jusqu'à trois biens, enregistrés d'un coup pour la fiche
 // (une sélection précédente reste lisible, la nouvelle vaut). Les annonces du marché retenues
@@ -77,6 +80,40 @@ export async function saveIdealSelection(
       row,
     ]),
   );
+  // Lancement, mission 3 (suite, Jean-Guy, 25/11) — un bien qu'il a déjà reçu, visité ou refusé, ou
+  // que le conseiller a écarté pour lui, ne se retient plus : relu en base, jamais cru du
+  // navigateur, et reconnu aussi sous une autre annonce (`seenMatcher`). Un bien gardé de sa
+  // sélection en cours, pas encore reçue, reste (le conseiller la compose). Une lecture en échec
+  // n'écrit rien : jamais lue comme « rien de vu » (M98).
+  const seenRead = await readSeenProperties(client, profile.agency_id, buyerId);
+  if (!seenRead) return { ok: false, error: FAILED };
+  const composing = previous?.id != null && seenRead.receivedAt(previous.id) == null;
+  const seenOf = seenMatcher(seenKeysOf(seenRead.seen, buyerId), seenRead.marks(buyerId));
+  const alreadySeen = read.items.some((item) => {
+    if (composing && kept.has(`${item.source}:${item.reference}`)) return false;
+    const key = seenRead.keyOf(item);
+    if (!key) return false;
+    const facts =
+      item.source === 'listing' && typeof item.snapshot === 'object' && item.snapshot != null
+        ? (item.snapshot as Record<string, unknown>)
+        : null;
+    return (
+      seenOf({
+        key,
+        propertyId: typeof facts?.key === 'string' ? facts.key : null,
+        like: facts
+          ? toLike({
+              city: facts.city,
+              rooms: facts.roomsCount,
+              surface: facts.surfaceArea,
+              price: item.listedPrice,
+            })
+          : null,
+      }) != null
+    );
+  });
+  if (alreadySeen) return { ok: false, error: ALREADY_SEEN };
+
   // Mission 145 (partie A) — un bien de l'agence NOUVEAU dans la sélection doit être un mandat
   // signé sans offre acceptée (décision de Jean-Guy, 07/11) : ni un vendeur à relancer, ni un
   // dossier sans mandat ; relu en base, jamais cru du navigateur. Un bien déjà retenu reste.

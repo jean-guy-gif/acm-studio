@@ -6,6 +6,7 @@ import {
   followUpOrigin,
   followUpPill,
   followUpSummary,
+  seenWithHim,
   selectionFollowed,
   type FollowUpRows,
 } from '@/features/buyers/services/buyer-follow-up';
@@ -392,5 +393,85 @@ describe('la sélection en cours est-elle déjà dans « Son suivi » ?', () => 
     };
     const entries = buyerFollowUp(rows);
     expect(selectionFollowed(['i1'], rows, entries)).toBe(false);
+  });
+});
+
+// Lancement, mission 3 (suite, Jean-Guy, 25/11) — sur les biens idéaux, « Déjà vus avec lui » : les
+// biens qu'il a reçus, visités ou refusés, à part, chacun avec sa mention, sans case « Retenir ».
+describe('« Déjà vus avec lui »', () => {
+  const rows: FollowUpRows = {
+    ...base,
+    visits: [
+      visit('v1', 'i1', '2026-11-14T09:10:00Z', {
+        visitedAt: '2026-11-20T15:00:00Z',
+        opinion: 'interested',
+        outcome: 'follow_up',
+      }),
+    ],
+  };
+  const list = () => seenWithHim(buyerFollowUp(rows), rows.visits, NOW);
+  const mention = (reference: string) =>
+    list().find((line) => line.label.endsWith(reference))?.mention;
+
+  it('chaque bien une fois, avec sa mention : visité, présenté, refusé et pourquoi', () => {
+    // Dates du conseiller, relatives (M143) : « il y a 4 jours », puis « le 14/11 ».
+    expect(mention('p1')).toBe('Visité il y a 4 jours');
+    expect(mention('p2')).toBe('Présenté le 14/11');
+    expect(mention('p3')).toBe('Refusé : Le quartier, Le prix');
+    expect(mention('p4')).toBe('Présenté le 14/11');
+    expect(list()).toHaveLength(4);
+  });
+
+  it('ce que le conseiller a écarté pour lui n’y est pas : il ne l’a pas vu', () => {
+    expect(list().some((line) => line.label.includes('Vence'))).toBe(false);
+  });
+
+  it('envoyé par le lien, ou proposé : la mention dit comment', () => {
+    const shared = {
+      ...base,
+      selections: [{ id: 's1', presented_at: null }],
+      shares: [{ selection_id: 's1', occurred_at: '2026-11-23T08:00:00Z' }],
+      responses: [],
+      dismissals: [],
+      visits: [],
+    };
+    expect(seenWithHim(buyerFollowUp(shared), [], NOW)[0].mention).toBe('Envoyé hier, par le lien');
+  });
+
+  it('refusé après la visite : la mention le dit', () => {
+    const refused = {
+      ...rows,
+      visits: [
+        visit('v1', 'i1', '2026-11-14T09:10:00Z', {
+          visitedAt: '2026-11-20T15:00:00Z',
+          opinion: 'not_for_me',
+          outcome: 'declined',
+        }),
+      ],
+    };
+    expect(
+      seenWithHim(buyerFollowUp(refused), refused.visits, NOW).find((line) =>
+        line.label.endsWith('p1'),
+      )?.mention,
+    ).toBe('Refusé après la visite');
+  });
+
+  it('une visite à organiser : dite avec la présentation', () => {
+    const asked = { ...rows, visits: [visit('v1', 'i1', '2026-11-14T09:10:00Z')] };
+    expect(
+      seenWithHim(buyerFollowUp(asked), asked.visits, NOW).find((line) => line.label.endsWith('p1'))
+        ?.mention,
+    ).toBe('Présenté le 14/11 · visite à organiser');
+  });
+
+  it('une sélection seulement enregistrée : rien de vu', () => {
+    const saved = {
+      ...base,
+      selections: [{ id: 's1', presented_at: null }],
+      responses: [],
+      dismissals: [],
+      visits: [],
+    };
+    expect(seenWithHim(buyerFollowUp(saved), [], NOW)).toEqual([]);
   });
 });

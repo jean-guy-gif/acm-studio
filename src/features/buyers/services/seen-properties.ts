@@ -1,4 +1,5 @@
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
+import { normalizeCommuneName } from '@/features/competitor-search/utils/commune-name';
 
 // Lancement, mission 3 (Jean-Guy, 23/11) — « un bien déjà envoyé, visité ou refusé n'est jamais
 // reproposé ». Une seule règle, lue dans les faits datés qui existent, par la clé de la boucle
@@ -32,6 +33,10 @@ export type SeenRows = {
     source: string;
     reference: string;
     removed_at: string | null;
+    // Une annonce du marché : l'identifiant du bien chez le fournisseur de la recherche, et ce qui
+    // le fait reconnaître sous une autre annonce (`SeenLike`).
+    property_id?: string | null;
+    like?: SeenLike | null;
   }[];
   responses: { selection_item_id: string; answer: string; answered_at: string }[];
   // Les demandes de visite non annulées.
@@ -44,7 +49,49 @@ export type SeenRows = {
   }[];
   // L'annonce d'un concurrent, pour sa clé d'annonce (un même bien a une seule clé).
   competitorUrls: ReadonlyMap<string, string | null>;
+  // Ce qui fait reconnaître un concurrent de l'agence sous une annonce du marché.
+  competitorLikes?: ReadonlyMap<string, SeenLike>;
 };
+
+// Lancement, mission 3 (suite, Jean-Guy, 25/11) — le même bien sous une autre annonce. Le
+// fournisseur de la recherche rend un bien par l'une de ses annonces, pas toujours la même : une
+// maison présentée le 13/11 ressortait 1re du marché le 25/11, sa clé (l'annonce publiée) n'étant
+// plus la même. Un bien de sélection garde donc deux marques de plus :
+// - l'identifiant du bien chez le fournisseur (celui que la sélection a gardé) ;
+// - à défaut, sa ressemblance — même commune, même prix, mêmes pièces, surface à 2 m² près, la
+//   règle des doublons de la recherche (M78). Les quatre doivent être connus des deux côtés.
+export type SeenLike = { city: string; rooms: number; surface: number; price: number };
+export type SeenMark = { key: string; propertyId: string | null; like: SeenLike | null };
+export type SeenTarget = { key: string; propertyId?: string | null; like?: SeenLike | null };
+
+const LIKE_SURFACE_TOLERANCE = 2;
+
+const positive = (value: unknown): number | null => {
+  const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+  return typeof number === 'number' && Number.isFinite(number) && number > 0 ? number : null;
+};
+
+// Une ressemblance ne se dit que sur quatre faits connus.
+export function toLike(facts: {
+  city: unknown;
+  rooms: unknown;
+  surface: unknown;
+  price: unknown;
+}): SeenLike | null {
+  const city = typeof facts.city === 'string' ? facts.city.trim() : '';
+  const rooms = positive(facts.rooms);
+  const surface = positive(facts.surface);
+  const price = positive(facts.price);
+  return city && rooms != null && surface != null && price != null
+    ? { city, rooms, surface, price }
+    : null;
+}
+
+const sameBien = (a: SeenLike, b: SeenLike): boolean =>
+  normalizeCommuneName(a.city) === normalizeCommuneName(b.city) &&
+  a.rooms === b.rooms &&
+  Math.round(a.price) === Math.round(b.price) &&
+  Math.abs(a.surface - b.surface) <= LIKE_SURFACE_TOLERANCE;
 
 // Acquéreur → clé du bien → pourquoi il ne lui est plus proposé.
 export type SeenProperties = Map<string, Map<string, SeenFact>>;
@@ -80,11 +127,12 @@ type Notes = {
   verdict: { refused: boolean; at: string } | null;
 };
 
-export function seenProperties(rows: SeenRows): SeenProperties {
-  const buyerOfSelection = new Map(rows.selections.map((row) => [row.id, row.buyer_id]));
+// Quand chaque sélection lui est-elle parvenue ? Présentée, son lien partagé, ou un envoi noté sur
+// l'un de ses biens : la plus ancienne date connue. Une sélection absente n'a pas été reçue.
+export function receivedSelections(
+  rows: Pick<SeenRows, 'selections' | 'shares' | 'proposals' | 'items'>,
+): Map<string, string> {
   const itemOf = new Map(rows.items.map((row) => [row.id, row]));
-
-  // Quand la sélection lui est-elle parvenue ? La plus ancienne date connue.
   const shownAt = new Map<string, string>();
   const shown = (selectionId: string | null | undefined, at: string | null) => {
     if (!selectionId || !at) return;
@@ -96,6 +144,13 @@ export function seenProperties(rows: SeenRows): SeenProperties {
   for (const row of rows.proposals) {
     if (row.selection_item_id) shown(itemOf.get(row.selection_item_id)?.selection_id, row.sent_at);
   }
+  return shownAt;
+}
+
+export function seenProperties(rows: SeenRows): SeenProperties {
+  const buyerOfSelection = new Map(rows.selections.map((row) => [row.id, row.buyer_id]));
+  const itemOf = new Map(rows.items.map((row) => [row.id, row]));
+  const shownAt = receivedSelections(rows);
 
   const notes = new Map<string, Map<string, Notes>>();
   const note = (buyerId: string, key: string): Notes => {
@@ -218,8 +273,8 @@ export function seenLine(counts: Record<'sent' | 'visited' | 'refused', number>)
     counts.refused > 0 ? `${counts.refused} refusé${s(counts.refused)}` : null,
   ].filter(Boolean);
   return total > 1
-    ? `${total} biens ne lui sont pas reproposés : ${why.join(', ')}.`
-    : `1 bien ne lui est pas reproposé : ${why.join(', ')}.`;
+    ? `${total} biens retirés parce que déjà vus avec lui : ${why.join(', ')}.`
+    : `1 bien retiré parce que déjà vu avec lui : ${why.join(', ')}.`;
 }
 
 // Le compte, par raison, des biens d'une liste que l'acquéreur a déjà vus.
@@ -249,9 +304,11 @@ export function keptForProposal<T extends { source: string; reference: string }>
   });
 }
 
-// Sa sélection actuelle, sur les biens idéaux : ce qu'il a dit de chacun de ses biens. Un bien
-// refusé, ou écarté pour lui, n'est plus coché et ne se recoche pas : la prochaine sélection ne le
-// reprend pas ; un bien visité sans refus reste (une deuxième visite, une offre envisagée).
+// Sa sélection retenue qu'il n'a pas encore reçue, sur les biens idéaux (« Sélection actuelle ») :
+// ce qu'il a dit de chacun de ses biens. Un bien refusé, ou écarté pour lui, n'est plus coché et
+// ne se recoche pas : la prochaine sélection ne le reprend pas ; un bien visité sans refus reste
+// (une deuxième visite, une offre envisagée). Une sélection qu'il a reçue n'est plus « actuelle » :
+// ses biens passent sous « Déjà vus avec lui », sans case (suite du 25/11).
 export type CurrentSeenReason = 'refused' | 'dismissed' | 'visited';
 
 export function currentSeenReason(reason: SeenReason | undefined): CurrentSeenReason | null {
@@ -269,4 +326,47 @@ export function currentSeenLabel(reason: CurrentSeenReason | undefined): string 
     return 'Écarté pour lui : il ne sera pas repris dans sa prochaine sélection.';
   }
   return reason === 'visited' ? 'Déjà visité.' : null;
+}
+
+// Les marques des biens de sélection de chaque acquéreur (retirés avant l'envoi exclus). Une marque
+// ne dit rien seule : elle ne vaut que si sa clé porte un fait (`seenMatcher`).
+export function seenMarksOf(
+  rows: Pick<SeenRows, 'selections' | 'items' | 'competitorUrls' | 'competitorLikes'>,
+): Map<string, SeenMark[]> {
+  const buyerOfSelection = new Map(rows.selections.map((row) => [row.id, row.buyer_id]));
+  const marks = new Map<string, SeenMark[]>();
+  for (const item of rows.items) {
+    const buyerId = buyerOfSelection.get(item.selection_id);
+    const key = seenItemKey(item, rows.competitorUrls);
+    if (!buyerId || !key || item.removed_at != null) continue;
+    const like =
+      item.source === 'competitor'
+        ? (rows.competitorLikes?.get(item.reference) ?? null)
+        : (item.like ?? null);
+    const propertyId = item.source === 'listing' ? (item.property_id ?? null) : null;
+    if (!propertyId && !like) continue;
+    marks.set(buyerId, [...(marks.get(buyerId) ?? []), { key, propertyId, like }]);
+  }
+  return marks;
+}
+
+// Ce bien, il l'a déjà vu ? Par la clé de la boucle, puis par l'identifiant du fournisseur, puis
+// par ressemblance. Rend la raison (envoyé, visité, refusé, écarté), sinon rien.
+export function seenMatcher(
+  facts: readonly { key: string; reason: SeenReason }[],
+  marks: readonly SeenMark[],
+): (target: SeenTarget) => SeenReason | undefined {
+  const reasons = new Map(facts.map((fact) => [fact.key, fact.reason]));
+  const known = marks.filter((mark) => reasons.has(mark.key));
+  return (target) => {
+    const direct = reasons.get(target.key);
+    if (direct) return direct;
+    const sameProperty = target.propertyId
+      ? known.find((mark) => mark.propertyId === target.propertyId)
+      : undefined;
+    if (sameProperty) return reasons.get(sameProperty.key);
+    const like = target.like;
+    const alike = like ? known.find((mark) => mark.like && sameBien(mark.like, like)) : undefined;
+    return alike ? reasons.get(alike.key) : undefined;
+  };
 }

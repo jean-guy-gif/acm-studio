@@ -918,6 +918,11 @@ null; end;` passe toujours, que la fonction refuse ou non (l'échec, lui aussi P
   défaut ne s'est vu que dans le journal d'erreurs de la production. Un argument facultatif part
   toujours, `null` s'il le faut ; et le test compare ce qui part vraiment (`JSON.stringify`).
 
+- 25/11 · Lancement 12 · `npm run sauvegarde` prend désormais 5 min 40 (1 041 fichiers du stockage,
+  téléchargés un par un) et s'arrête si la base change pendant qu'elle tourne : la lancer quand
+  aucune spec e2e ne tourne. La sauvegarde quotidienne de Supabase (offre Pro) ne prend PAS les
+  fichiers du stockage : la nôtre reste la seule copie des photos et des signatures.
+
 ## Les rendus
 
 - 05/11 · M129 · `meetingDay()` écrit la date en toutes lettres (« 9 octobre 2026 ») : coupée à cinq

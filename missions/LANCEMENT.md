@@ -73,7 +73,9 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
     acquéreur TEST, quatre défauts corrigés ; restent deux lignes de test à retirer de la base, sur
     l'accord de Jean-Guy (le dossier TEST conclu, sa visite comptée sur un vrai mandat)
 12. **Sauvegardes quotidiennes vérifiées sur l'offre Pro, journal d'erreurs vide, suite de nuit
-    verte.** — à faire
+    verte.** — **fait le 25/11** : Supabase sauvegarde la base chaque nuit (sans les fichiers du
+    stockage, que notre sauvegarde prend : faite et vérifiée par restauration le 25/11) ; journal
+    vide depuis le 24/11 à 16 h 33 ; suite complète 37 sur 37
 13. **Livraison.** — à faire
 
 ## Chaque soir
