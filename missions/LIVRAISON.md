@@ -90,6 +90,11 @@ agences.
     ne pèsent plus sur les vraies agences.
   - Plus tard : faire lire moins à « Aujourd'hui » et à la liste des dossiers
     (`missions/PLUS_TARD.md`).
+- **Avant le 31/12/2026 : les clés de Supabase.** Sa documentation annonce la fin des anciennes
+  clés (« anon », « service_role ») pour la fin de 2026. Si les variables de la production en
+  portent (une valeur qui commence par « eyJ »), elles sont à remplacer par les nouvelles : deux
+  valeurs dans Vercel, un redéploiement. À essayer d'abord sur l'essai, après la livraison
+  (`missions/PLUS_TARD.md`).
 - **La démo en production** : Jean-Guy la remet à zéro lui-même, de préférence hors des heures
   de rendez-vous tant que la base est commune.
 - **Chaque semaine** : `npm run sauvegarde`, puis `npm run sauvegarde:verifier` (la sauvegarde de

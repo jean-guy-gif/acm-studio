@@ -239,7 +239,21 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     valeur comprise pour la clé secrète ; d'ici là, aucune spec sur une prévisualisation ;
   - l'agence des tests et l'agence de démonstration des tests restent dans la production, vides :
     leur retrait suit la procédure d'effacement, sur décision de Jean-Guy ;
-  - le poste de développement (`.env.local`) lit encore la base de la production ;
   - les modèles d'e-mail et l'adresse du site de la base d'essai (invitation, mot de passe
-    oublié) ne sont pas réglés : aucune spec n'envoie d'e-mail.
+    oublié) ne sont pas réglés : aucune spec n'envoie d'e-mail ;
+  - le compte de Jean-Guy n'existe pas dans la base d'essai : à créer le jour où une mission
+    Sensible lui demande d'essayer lui-même sur l'essai (`missions/BASE_JEUDI_MATIN.md`) ;
+  - `CLAUDE.md` dit encore « La base Supabase est partagée entre la production, l'essai et les
+    prévisualisations » : la phrase est à Jean-Guy, à lui proposer une fois la séparation faite.
+- 25/11 · Supabase, deux échéances lues dans sa documentation (relecture de la base d'essai) :
+  - **les clés** : les anciennes clés (« anon », « service_role ») fonctionnent jusqu'à la fin de
+    2026, puis laissent la place aux nouvelles (« Publishable », « Secret »). Si les variables de
+    la production portent des anciennes clés (une valeur qui commence par « eyJ »), elles sont à
+    remplacer avant le 31/12/2026 : deux valeurs dans Vercel et un redéploiement, par Jean-Guy.
+    À essayer d'abord sur l'essai ; le code ne fait que passer les clés au client Supabase ;
+  - **les droits par défaut** : Supabase retire, sur les projets existants aussi, les droits
+    donnés d'office aux trois rôles de l'application sur ce que crée une migration (pas encore
+    appliqué à la production le 25/11). Ce jour-là, une migration qui crée une table ou une
+    fonction sans lui donner ses droits, rôle du serveur compris, casserait en production : les
+    prochaines migrations les donnent en toutes lettres, et le gardien-sql le vérifie.
 

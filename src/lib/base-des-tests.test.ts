@@ -1,16 +1,20 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
 import {
+  ESSAI_HOST,
   linkedProjectRef,
   MALFORMED_REF,
   MISSING_REF,
+  NOT_ESSAI_URL,
   PRODUCTION_REF,
   readTestEnv,
   testDatabaseTarget,
+  testsBaseUrl,
 } from '../../scripts/base-des-tests.mjs';
 
 // La base d'essai séparée (décision de Jean-Guy du 25/11) : les tests e2e et le nettoyage de
@@ -85,4 +89,55 @@ describe('les lectures du poste', () => {
     expect(linkedProjectRef(file)).toBe(PRODUCTION);
     expect(linkedProjectRef(join(dir, 'absent'))).toBeNull();
   });
+});
+
+describe('l’adresse où se jouent les specs', () => {
+  it('avant la séparation : toute adresse, comme avant', () => {
+    const preview = 'https://acm-studio-abc123-jean-guy-s-projects.vercel.app';
+    expect(testsBaseUrl(preview, { separateRequired: false })).toBe(preview);
+  });
+
+  it('une fois la base séparée : l’essai seulement, jamais la prévisualisation d’une autre branche', () => {
+    const essai = `https://${ESSAI_HOST}`;
+    expect(testsBaseUrl(essai, { separateRequired: true })).toBe(essai);
+    for (const url of [
+      'https://acm-studio-abc123-jean-guy-s-projects.vercel.app',
+      'https://acm-studio-henna.vercel.app',
+      `https://${ESSAI_HOST}.exemple.fr`,
+      'http://localhost:3000',
+      'pas une adresse',
+      '',
+    ]) {
+      expect(() => testsBaseUrl(url, { separateRequired: true }), url).toThrow(NOT_ESSAI_URL);
+    }
+  });
+});
+
+// Relecture du 25/11 — ce module est aussi lu par Playwright, qui le compile en CommonJS : avec un
+// `import.meta` ou une attente au premier niveau, plus aucune spec ne se chargeait (« 0 tests »),
+// et les barrières ne le voyaient pas.
+describe('la suite e2e se charge', () => {
+  it('le module partagé avec les specs reste lisible par Playwright', () => {
+    const source = readFileSync(join(process.cwd(), 'scripts', 'base-des-tests.mjs'), 'utf8')
+      .split('\n')
+      .filter((line) => !line.trimStart().startsWith('//'))
+      .join('\n');
+    expect(source).not.toContain('import.meta');
+    expect(source).not.toMatch(/^await\s/m);
+  });
+
+  it('Playwright liste les specs, sans en jouer aucune', () => {
+    const listed = spawnSync('npx', ['playwright', 'test', '--list'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        E2E_BASE_URL: process.env.E2E_BASE_URL ?? `https://${ESSAI_HOST}`,
+      },
+    });
+    const total = /Total: (\d+) tests? in (\d+) files?/.exec(listed.stdout ?? '');
+    expect(total, `${listed.stdout}\n${listed.stderr}`.slice(-600)).not.toBeNull();
+    expect(Number(total?.[1])).toBeGreaterThan(30);
+    expect(Number(total?.[2])).toBeGreaterThan(20);
+  }, 120_000);
 });
