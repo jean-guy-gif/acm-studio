@@ -37,9 +37,9 @@ commits et des messages, à quelques minutes près.
 | 25/11 | Lancement 13 : le guide de prise en main, la feuille de livraison, les contrôles, la base qui se fige | Petit | 1 h 10 | 0 | 10 min |
 | 25/11 | La suite e2e complète du 25/11, jouée à 14 h (37 sur 37, 4 rejouées) | — | 1 h 00 | 0 | 1 h 00 |
 | 25/11 | Lancement 13 (suite) : le lien « Guide de prise en main » dans « Aide » | Petit | 20 min | 0 | 0 |
-| 25/11 | Mission 10 bis : la maquette de la fiche acquéreur repliée (le code attend l'« ok » de Jean-Guy) | Moyen | 15 min | en cours | 0 |
-| 25/11 | La base d'essai séparée : l'outillage des tests et le déroulé de jeudi matin | Sensible | 45 min | 0 | 0 |
-| 25/11 | **Total de la journée à 16 h 45 (douze lignes ; 9 h d'horloge, de 7 h à 16 h 45, avec une heure d'attente de 15 h à 16 h)** | | **9 h 35** | 1 h | 4 h 20 |
+| 25/11 | Mission 10 bis : la fiche acquéreur repliée — la maquette, l'« ok » de Jean-Guy, le code, le relecteur une passe, vue sur l'essai ; ses dix specs se jouent jeudi sur la base d'essai, puis la production | Moyen | 1 h 40 | 25 min | 10 min |
+| 25/11 | La base d'essai séparée : l'outillage, le déroulé de jeudi matin, deux relectures, la preuve et la sonde | Sensible | 2 h 20 | 0 | 15 min |
+| 25/11 | **Total de la journée à 18 h 40 (douze lignes ; 11 h 40 d'horloge, de 7 h à 18 h 40 ; la 10 bis et la base ont tourné en même temps de 16 h 35 à 17 h 40)** | | **12 h 35** | 1 h 25 | 4 h 45 |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,
@@ -51,4 +51,6 @@ la suite e2e complète du soir et le point du soir sont partis le 25/11 à 7 h.
 Le 25/11, la session s'est arrêtée de 11 h 20 à 11 h 57, relancée par Jean-Guy (ce temps n'est
 compté dans aucune mission) ; à 12 h 23 le relecteur a buté sur la limite d'usage du modèle et a
 été relancé sur un autre. La suite complète a tourné à 14 h, pas la nuit : c'était à tort, elle
-pèse sur la base de la production (`missions/LIVRAISON.md`).
+pèse sur la base de la production (`missions/LIVRAISON.md`). Le soir du 25/11, elle n'est pas
+lancée : tant que la base est commune, elle pèserait sur un rendez-vous du soir ; elle se joue
+jeudi sur la base d'essai.

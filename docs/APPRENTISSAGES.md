@@ -76,6 +76,10 @@ de commencer. Ce qui devient une règle produit va dans `docs/DECISIONS.md` ; ic
   côtés. Et vérifier `git status` après le retour sur sa branche : une fusion interrompue avait
   laissé une copie de travail de `docs/DECISIONS.md` qui n'était celle d'aucune branche.
 
+- 25/11 · `git merge --abort` peut échouer (« Entry … not uptodate. Cannot merge ») quand un outil
+  a touché un fichier sans le changer pendant une fusion d'essai : `git update-index -q --refresh`,
+  puis de nouveau `git merge --abort`. Vérifier ensuite que la tête est celle de la branche envoyée.
+
 ## La démo et les tests
 
 - 05/11 · M129 · Une recherche des nouveaux venus par point : des rendus faits À LA MAIN sur le
@@ -803,6 +807,18 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   sont des sessions expirées, pas des défauts.
 - 25/11 · Un `-g` de Playwright filtre TOUTES les specs de la commande : jouer à part les specs
   qu'on veut entières, sinon elles sont ignorées sans un mot (« 1 passed »).
+- 25/11 · Base d'essai · Un module importé par `playwright.config.ts` ou par une spec ne contient
+  ni `import.meta` ni `await` au premier niveau : Playwright le compile à sa façon et charge alors
+  0 spec, sans erreur lisible. `npx playwright test --list` le prouve sans jouer aucune spec ; un
+  test des barrières le fait à chaque passage (`base-des-tests.test.ts`, 37 specs).
+- 25/11 · Mission 10 bis · Un localisateur de Playwright se relit à chaque attente : attendre
+  « ouvert » sur un localisateur défini comme « pli fermé » échoue toujours après le clic. On
+  compte les plis fermés qui restent (`reveal`, `unfoldBuyerSheet`). Dans un pli fermé
+  (`<details>`), `toHaveText` et `toHaveCount` passent sur un élément caché, `toBeVisible` et
+  `click` non ; `getByRole` l'ignore, `getByText` le trouve.
+- 25/11 · Mission 10 bis · Un `<details open={…}>` rendu par le serveur : React ne touche
+  l'attribut que si la valeur change. Un pli ouvert à la main reste ouvert après une action qui
+  rafraîchit la page ; pour le rouvrir (ou le refermer) de force, changer sa `key`.
 
 ## La base
 
@@ -959,6 +975,23 @@ null; end;` passe toujours, que la fonction refuse ou non (l'échec, lui aussi P
   réel reste un geste de Jean-Guy, ou d'une session où il peut confirmer. Une visite « faite »
   ne s'annule pas telle quelle (contrainte `cancelled_not_visited`) : son compte rendu se vide
   d'abord, dans la même écriture.
+
+- 25/11 · Base d'essai · Dans Supabase, la base de la production s'appelle `acm-studio-staging`
+  (son nom d'origine). La CLI écrit « · production » après le nom de TOUT projet (sa branche
+  principale) : seul le nom compte. `--remote` vise le projet lié au dépôt, `--remote=<référence>`
+  un autre ; `db query --read-only` lit comme un rôle en lecture seule, catalogues et
+  `auth.sessions` compris ; `projects list --output-format json` rend `{ "projects": [...] }`.
+
+- 25/11 · Base d'essai · Un projet Supabase neuf ne ressemble plus à la production. Depuis le
+  30/05/2026 il ne donne plus d'office aux trois rôles de l'application leurs droits sur ce que
+  crée une migration, il peut aussi retirer à tous le droit d'exécuter une fonction neuve, et il
+  porte sans doute les seules nouvelles clés. Nos migrations comptent sur ces droits d'office
+  (aucune ne donne un droit de table au rôle du serveur) : ils se posent AVANT la première
+  migration, sur une base vide — ils ne valent que pour ce qui est créé ensuite. `alter default
+privileges for role postgres grant execute on functions to public` (sans schéma) rend le
+  réglage d'origine de Postgres et supprime la ligne du catalogue : prouvé sur la base locale,
+  dans une transaction annulée (`docker exec -i supabase_db_acm-studio psql …`, `begin` …
+  `rollback`). Pour lire une page publique sans outil de lecture : l'agent `web-fetch`.
 
 ## Les rendus
 
