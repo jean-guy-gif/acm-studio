@@ -188,3 +188,14 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   modification de l'extension repasse par Google. Les autres sites qu'aucun lecteur ne connaît
   (le site d'une agence) se lisent désormais par le serveur seul, sans solliciter l'extension :
   aucun vrai dossier ne l'a encore montré.
+- 25/11 · Vu sur le compte réel en jouant les deux recherches, laissé tel quel :
+  - « Son suivi » dit « Envoyé le 13/11, par le lien » là où les biens idéaux disent « Présenté
+    le 13/11 » pour le même bien (le lien partagé trois minutes avant la fin de la présentation) :
+    à aligner sur la présentation, comme « Déjà vus avec lui » ;
+  - sur les biens idéaux, deux maisons proches de celle qu'il a déjà vue (même commune, 1 ou 2 m²
+    d'écart, un autre prix) restent proposées : ce sont d'autres maisons, la ressemblance exige le
+    même prix. Si un bien déjà vu revient un jour avec un autre prix ET un autre identifiant chez le
+    fournisseur, il ne sera pas reconnu : à regarder si un vrai dossier le montre ;
+  - la recherche de concurrents sur un bien sans adresse dit « Secteur non utilisé : la fiche du
+    bien vendeur n'a pas d'adresse » et « 2 biens neufs non proposés » : deux bandeaux jaunes l'un
+    sous l'autre, avant le premier concurrent.

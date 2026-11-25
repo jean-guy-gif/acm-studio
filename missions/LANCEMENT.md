@@ -29,7 +29,9 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
    `maquettes/L3-biens-ideaux-non-reproposes.png`, `L3-selection-actuelle-refuse.png`,
    `L3-proposer-deja-visite.png`) ; **repris le 25/11** sur la demande de Jean-Guy : un bien déjà
    vu est reconnu aussi sous une autre annonce, rien n'est coché après une présentation (0/3),
-   « Déjà vus avec lui » à part (maquette `maquettes/L3b-deja-vus-avec-lui.png`)
+   « Déjà vus avec lui » à part (maquette `maquettes/L3b-deja-vus-avec-lui.png`) ; **vérifié le
+   25/11 sur le compte réel**, recherche du marché comprise : la maison présentée le 13/11 n'y
+   est plus (capture `maquettes/L3b-compte-reel-biens-ideaux.png`)
 4. **Portails : la preuve, site par site, que l'annonce s'aspire comme prévu**, et la correction de
    ceux qui échouent. — **fait le 24/11** : les cinq sites se lisent ; Figaro réparé, la ville de
    SeLoger et de Green Acres corrigée (preuve : `missions/L4-portails-preuve.md`)
@@ -74,7 +76,8 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
     correction des défauts vus. — **fait le 25/11** : le parcours joué en entier sur un dossier et un
     acquéreur TEST, quatre défauts corrigés ; les deux restes du test retirés le 25/11 sur l'accord
     de Jean-Guy (dossier archivé, visite annulée) ; Belles Demeures dite avant toute lecture, et
-    « L'annonce semble supprimée » qui ne se dit plus quand l'extension n'a pas lu
+    « L'annonce semble supprimée » qui ne se dit plus quand l'extension n'a pas lu ; les deux
+    recherches du forfait jouées le 25/11 sur le compte réel (biens idéaux, concurrents)
 12. **Sauvegardes quotidiennes vérifiées sur l'offre Pro, journal d'erreurs vide, suite de nuit
     verte.** — **fait le 25/11** : Supabase sauvegarde la base chaque nuit (sans les fichiers du
     stockage, que notre sauvegarde prend : faite et vérifiée par restauration le 25/11) ; journal

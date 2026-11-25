@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>ACM Studio — Guide de prise en main</title>
+    <!--
+      Lancement, mission 13 — le guide de prise en main, pour les conseillers. Deux pages A4.
+      Ce fichier est la source : on le corrige ici, puis `npm run guide:pdf` refait le PDF d'à côté.
+      Les polices sont celles du dépôt (src/features/branding/fonts, licence OFL) : rien ne vient du
+      réseau. Chaque page est une <section class="page"> au format exact ; tailles en mm et en pt.
+    -->
+    <style>
+      @font-face {
+        font-family: 'Inter';
+        src: url('../../src/features/branding/fonts/inter/inter-latin.woff2') format('woff2');
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'Montserrat';
+        src: url('../../src/features/branding/fonts/montserrat/montserrat-latin.woff2')
+          format('woff2');
+        font-weight: 400 700;
+        font-style: normal;
+        font-display: block;
+      }
+      @page {
+        size: 210mm 297mm;
+        margin: 0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 8.3pt;
+        line-height: 1.37;
+        color: #0b1220;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .page {
+        width: 210mm;
+        height: 297mm;
+        overflow: hidden;
+        position: relative;
+        padding: 0 13mm;
+        background: #fff;
+        page-break-after: always;
+        break-after: page;
+      }
+      .page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+      .band {
+        margin: 0 -13mm;
+        padding: 9mm 13mm 7.5mm;
+        background: #00527a;
+        color: #fff;
+      }
+      .band .brand {
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-size: 9pt;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #bfe2ff;
+      }
+      .band h1 {
+        margin: 1.5mm 0 0;
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-size: 23pt;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .band .for {
+        margin: 2mm 0 0;
+        font-size: 9pt;
+        color: #d7ecfb;
+      }
+      .band.small {
+        padding: 4.2mm 13mm 3.8mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .band.small .brand {
+        color: #fff;
+      }
+      .band.small .for {
+        margin: 0;
+      }
+      .motto {
+        margin: 5mm 0 0;
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-size: 11pt;
+        font-weight: 600;
+        color: #00527a;
+      }
+      .lead {
+        margin: 1.8mm 0 0;
+        font-size: 9pt;
+        line-height: 1.42;
+        max-width: 176mm;
+      }
+      h2 {
+        margin: 4.6mm 0 1.9mm;
+        padding-top: 2.3mm;
+        border-top: 0.3mm solid #d4d4d8;
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-size: 9.2pt;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: #00527a;
+      }
+      h2 span {
+        margin-left: 2mm;
+        font-family: 'Inter', Arial, sans-serif;
+        font-size: 8.4pt;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: none;
+        color: #52525b;
+      }
+      .start {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5mm 7mm;
+        counter-reset: start;
+      }
+      .start li {
+        position: relative;
+        padding-left: 6.5mm;
+        counter-increment: start;
+      }
+      .start li::before {
+        content: counter(start);
+        position: absolute;
+        left: 0;
+        top: 0.2mm;
+        width: 4.6mm;
+        height: 4.6mm;
+        border-radius: 50%;
+        background: #eaf5ff;
+        color: #00527a;
+        font-weight: 700;
+        font-size: 7.6pt;
+        line-height: 4.6mm;
+        text-align: center;
+      }
+      .note {
+        margin: 2.2mm 0 0;
+        color: #52525b;
+      }
+      .menu {
+        margin: 2.4mm 0 0;
+        padding: 1.6mm 2.6mm;
+        border-radius: 1.6mm;
+        background: #eaf5ff;
+      }
+      .menu b {
+        font-family: 'Montserrat', Arial, sans-serif;
+        font-size: 7.4pt;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #00527a;
+      }
+      .steps {
+        border: 0.3mm solid #d4d4d8;
+        border-radius: 1.6mm;
+        overflow: hidden;
+      }
+      .step {
+        display: grid;
+        grid-template-columns: 30mm 1fr 61mm;
+        border-top: 0.3mm solid #e4e4e7;
+      }
+      .step:first-child {
+        border-top: 0;
+      }
+      .step > div {
+        padding: 1.45mm 2.4mm;
+      }
+      .step .name {
+        display: flex;
+        gap: 1.8mm;
+        align-items: flex-start;
+        font-weight: 600;
+        color: #00527a;
+      }
+      .step .name i {
+        flex: none;
+        width: 4.6mm;
+        height: 4.6mm;
+        border-radius: 50%;
+        background: #00527a;
+        color: #fff;
+        font-style: normal;
+        font-size: 7.6pt;
+        font-weight: 700;
+        line-height: 4.6mm;
+        text-align: center;
+      }
+      .step .know {
+        background: #f3f9ff;
+        color: #27272a;
+      }
+      .step.head > div {
+        padding: 1.1mm 2.4mm;
+        background: #eaf5ff;
+        font-size: 7.4pt;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #00527a;
+      }
+      .lines {
+        border: 0.3mm solid #d4d4d8;
+        border-radius: 1.6mm;
+        overflow: hidden;
+      }
+      .line {
+        display: grid;
+        grid-template-columns: 34mm 1fr;
+        border-top: 0.3mm solid #e4e4e7;
+      }
+      .line:first-child {
+        border-top: 0;
+      }
+      .line > div {
+        padding: 1.35mm 2.4mm;
+      }
+      .line .name {
+        font-weight: 600;
+        color: #00527a;
+        background: #f3f9ff;
+      }
+      .line.key .name,
+      .line.key > div {
+        background: #fff8db;
+      }
+      .line.key .name {
+        color: #5c4a00;
+      }
+      .help {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2.5mm;
+      }
+      .help li {
+        padding: 1.6mm 2.4mm;
+        border: 0.3mm solid #d4d4d8;
+        border-radius: 1.6mm;
+      }
+      .help b {
+        display: block;
+        color: #00527a;
+      }
+      .star {
+        width: 2.9mm;
+        height: 2.9mm;
+        vertical-align: -0.4mm;
+        fill: #b8892b;
+      }
+      .foot {
+        position: absolute;
+        left: 13mm;
+        right: 13mm;
+        bottom: 7mm;
+        display: flex;
+        justify-content: space-between;
+        padding-top: 1.6mm;
+        border-top: 0.3mm solid #d4d4d8;
+        font-size: 7.4pt;
+        color: #52525b;
+      }
+      b,
+      strong {
+        font-weight: 600;
+      }
+      @media screen {
+        body {
+          background: #e4e4e7;
+        }
+        .page {
+          margin: 8mm auto;
+          box-shadow: 0 1mm 4mm rgba(0, 0, 0, 0.18);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="page">
+      <header class="band">
+        <div class="brand">ACM Studio</div>
+        <h1>Guide de prise en main</h1>
+        <p class="for">Pour le conseiller · version du 26 novembre 2026</p>
+      </header>
+
+      <p class="motto">Le conseiller décide. Le logiciel prépare. Le vendeur comprend.</p>
+      <p class="lead">
+        ACM Studio vous aide à préparer puis à mener le rendez-vous vendeur, pour que le vendeur
+        comprenne son marché et vous confie son bien&nbsp;; puis à suivre vos vendeurs et vos
+        acquéreurs. Il ne donne jamais la valeur d’un bien&nbsp;: il montre le marché, et c’est vous
+        qui décidez du prix.
+      </p>
+
+      <h2>Avant de commencer <span>une fois, cinq minutes</span></h2>
+      <ol class="start">
+        <li>
+          <b>L’adresse de l’outil&nbsp;:</b> acm-studio-henna.vercel.app. Vous y entrez par
+          l’invitation reçue par e-mail&nbsp;; «&nbsp;Mot de passe oublié&nbsp;?&nbsp;» est sur la
+          page de connexion.
+        </li>
+        <li>
+          <b>Un ordinateur avec Google Chrome</b> pour préparer, <b>une tablette</b> pour le
+          rendez-vous.
+        </li>
+        <li>
+          <b>L’extension ACM Studio</b> pour Chrome&nbsp;: c’est elle qui lit les annonces des
+          portails, dans votre navigateur. «&nbsp;Aide&nbsp;» dit si elle est en place et donne le
+          lien.
+        </li>
+        <li>
+          <b>Mon profil&nbsp;:</b> votre téléphone et votre photo. Ils
+          signent&nbsp;vos&nbsp;documents.
+        </li>
+        <li>
+          <b>L’agence, par son manager&nbsp;:</b> Administration&nbsp;› Identité de l’agence. Le
+          logo&nbsp;; puis l’adresse, la carte professionnelle et l’identité légale&nbsp;: sans
+          elles, ni courrier, ni bon de visite, ni offre d’achat. Il invite ses conseillers dans
+          Administration&nbsp;›&nbsp;L’équipe.
+        </li>
+        <li>
+          <b>Pour vous entraîner&nbsp;:</b> «&nbsp;Aide&nbsp;»&nbsp;› «&nbsp;Ouvrir le dossier
+          d’exemple&nbsp;». Un bien et des concurrents fictifs, à mener jusqu’au bout&nbsp;; il ne
+          compte dans aucun chiffre.
+        </li>
+      </ol>
+      <p class="menu">
+        <b>Le menu</b> · Aujourd’hui&nbsp;: ce qu’il y a à faire · Vendeurs&nbsp;: Préparation,
+        Live, Suivi · Acquéreurs&nbsp;: Acquéreurs, Visites · Les deux&nbsp;: Prospection.
+        «&nbsp;Aide&nbsp;», «&nbsp;Mon profil&nbsp;» et «&nbsp;Administration&nbsp;» s’ouvrent en
+        touchant votre nom, en bas du menu.
+      </p>
+
+      <h2>Côté vendeur <span>du premier contact au mandat</span></h2>
+      <div class="steps">
+        <div class="step head">
+          <div>Étape</div>
+          <div>Ce que vous faites</div>
+          <div>À savoir</div>
+        </div>
+        <div class="step">
+          <div class="name"><i>1</i>Le dossier</div>
+          <div>Préparation&nbsp;› «&nbsp;Nouveau dossier vendeur&nbsp;».</div>
+          <div class="know">L’outil ne vous demande jamais le prix du bien.</div>
+        </div>
+        <div class="step">
+          <div class="name"><i>2</i>Le bien vendeur</div>
+          <div>
+            «&nbsp;Importer l’annonce&nbsp;» (collez son adresse) ou «&nbsp;Analyser la fiche&nbsp;»
+            (un PDF). Relisez les champs marqués «&nbsp;À vérifier&nbsp;», saisissez «&nbsp;Votre
+            fourchette&nbsp;», puis «&nbsp;Enregistrer&nbsp;».
+          </div>
+          <div class="know">Votre fourchette cible la recherche. Le vendeur ne la voit jamais.</div>
+        </div>
+        <div class="step">
+          <div class="name"><i>3</i>Les concurrents</div>
+          <div>
+            «&nbsp;Chercher les concurrents&nbsp;»&nbsp;: les biens les plus proches sont cochés
+            d’avance, puis «&nbsp;Retenir et importer&nbsp;». Ou «&nbsp;Ajouter un
+            bien&nbsp;»&nbsp;: l’adresse d’une annonce, ou une saisie à la main.
+          </div>
+          <div class="know">
+            Il en faut au moins trois pour un dossier «&nbsp;Prêt&nbsp;». La recherche compte dans
+            le forfait du mois.
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>4</i>Avant le rendez-vous</div>
+          <div>
+            «&nbsp;Vérifier les annonces&nbsp;» (un prix baissé, une annonce retirée). «&nbsp;Votre
+            décision de prix&nbsp;». Puis la façon de présenter (Live interactif, Présentation
+            directe ou Document seul) et la langue du&nbsp;vendeur.
+          </div>
+          <div class="know">
+            Ce que vous enregistrez dans «&nbsp;Votre décision de prix&nbsp;» est montré au vendeur.
+            Sans décision, il ne voit aucun prix final.
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>5</i>Le Live</div>
+          <div>
+            Sur la tablette, face au vendeur&nbsp;: «&nbsp;Lancer le Live&nbsp;». Il dit d’abord son
+            prix. Puis, pour chaque concurrent&nbsp;: est-ce un sérieux concurrent&nbsp;? À quel
+            prix&nbsp;? Le prix se dévoile («&nbsp;Voir l’annonce&nbsp;» l’ouvre sur son portail).
+            Pourquoi est-il toujours en vente&nbsp;? Enfin, le prix sur lequel vous partez ensemble.
+          </div>
+          <div class="know">
+            Ses réponses sont enregistrées pour de bon&nbsp;: un Live ne se rejoue pas. S’il n’a
+            aucune idée des prix&nbsp;: «&nbsp;Voir les biens et leurs prix&nbsp;».
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>6</i>Conclure</div>
+          <div>
+            L’issue&nbsp;: mandat signé (exclusif ou simple), à relancer (avec son motif et sa
+            date), vendu ailleurs, retiré de la vente. Puis la «&nbsp;Synthèse pour le
+            vendeur&nbsp;» et l’«&nbsp;Étude de marché&nbsp;».
+          </div>
+          <div class="know">
+            La synthèse raconte le rendez-vous&nbsp;; l’Étude de marché est prête dès la
+            préparation. Elles s’impriment, ou partent par un lien de 30&nbsp;jours que vous
+            envoyez&nbsp;vous-même.
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>7</i>Le Suivi</div>
+          <div>
+            Relancer le vendeur à la date prévue, avec un message prêt. Pour un mandat signé&nbsp;:
+            «&nbsp;Faire le point marché&nbsp;», chaque mois.
+          </div>
+          <div class="know">Les concurrents d’un mandat signé passent dans Prospection.</div>
+        </div>
+      </div>
+
+      <footer class="foot">
+        <span>ACM Studio · Guide de prise en main</span>
+        <span>1&nbsp;/&nbsp;2</span>
+      </footer>
+    </section>
+
+    <section class="page">
+      <header class="band small">
+        <div class="brand">ACM Studio</div>
+        <p class="for">Guide de prise en main</p>
+      </header>
+
+      <h2 style="border-top: 0; margin-top: 4mm">
+        Côté acquéreur <span>de la première rencontre à l’offre</span>
+      </h2>
+      <div class="steps">
+        <div class="step head">
+          <div>Étape</div>
+          <div>Ce que vous faites</div>
+          <div>À savoir</div>
+        </div>
+        <div class="step">
+          <div class="name"><i>1</i>La fiche</div>
+          <div>
+            Acquéreurs&nbsp;› «&nbsp;Nouvel acquéreur&nbsp;»&nbsp;: son nom, son téléphone, le type
+            de bien, le secteur, le budget, et deux critères indispensables au plus (<svg
+              class="star"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 2.6l2.9 6 6.5.9-4.7 4.6 1.1 6.5L12 17.5l-5.8 3.1 1.1-6.5L2.6 9.5l6.5-.9z"
+              /></svg
+            >).
+          </div>
+          <div class="know">
+            «&nbsp;Depuis mes notes&nbsp;» propose la fiche d’après une photo de vos notes, si votre
+            agence l’a fait ouvrir. Vous validez chaque champ.
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>2</i>Les biens idéaux</div>
+          <div>
+            D’abord ce que l’agence a déjà, puis le marché. Touchez un bien pour sa fiche
+            complète&nbsp;; cochez-en trois au plus, puis «&nbsp;Retenir la sélection&nbsp;».
+          </div>
+          <div class="know">
+            La recherche du marché compte dans le forfait. Un bien déjà reçu, visité ou refusé ne
+            lui est jamais reproposé.
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>3</i>Présenter</div>
+          <div>
+            «&nbsp;Présenter&nbsp;», sur la tablette&nbsp;; ou envoyez-lui le lien de son dossier.
+            Pour chaque bien, il répond&nbsp;: «&nbsp;Je veux le visiter&nbsp;»,
+            «&nbsp;Peut-être&nbsp;» ou «&nbsp;Pas pour moi&nbsp;».
+          </div>
+          <div class="know">
+            Le lien vaut 30&nbsp;jours&nbsp;; il n’a ni compte ni mot de passe à créer.
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>4</i>Les visites</div>
+          <div>
+            Visites&nbsp;› «&nbsp;Confirmer la visite&nbsp;»&nbsp;: le jour, l’heure, et un message
+            prêt. Le bon de visite se signe au doigt. Après la visite, «&nbsp;Visite
+            faite&nbsp;»&nbsp;: son avis et la suite, en deux touchers.
+          </div>
+          <div class="know">
+            Deux messages sont prêts aussitôt&nbsp;: un pour lui, un pour le vendeur quand le bien
+            est à l’agence.
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>5</i>Son suivi</div>
+          <div>
+            Sur sa fiche, un seul endroit&nbsp;: ce qu’il a reçu, visité, refusé, et pourquoi.
+            L’offre d’achat se prépare depuis une visite «&nbsp;Offre envisagée&nbsp;» et se signe
+            au doigt.
+          </div>
+          <div class="know">
+            L’offre d’achat est au comptant pour l’instant. Le vendeur y répond par son propre lien.
+          </div>
+        </div>
+        <div class="step">
+          <div class="name"><i>6</i>La veille</div>
+          <div>
+            Pour un acquéreur «&nbsp;Prêt à visiter&nbsp;», l’outil cherche chaque semaine les biens
+            arrivés sur le marché, et vous les signale dans&nbsp;«&nbsp;Aujourd’hui&nbsp;».
+          </div>
+          <div class="know">
+            Prêt à visiter&nbsp;: un budget, un financement validé, un échange depuis moins
+            de&nbsp;30&nbsp;jours.
+          </div>
+        </div>
+      </div>
+
+      <h2>Prospection <span>pour vos vendeurs comme pour vos acquéreurs</span></h2>
+      <div class="steps">
+        <div class="step">
+          <div class="name">Courriers et passages</div>
+          <div>
+            Les concurrents de vos mandats signés, et les biens repérés pour un acquéreur&nbsp;: le
+            courrier au propriétaire, ou le dossier au confrère quand le bien est en exclusivité.
+            «&nbsp;Préparer tous les courriers&nbsp;», «&nbsp;Imprimer ma tournée&nbsp;».
+          </div>
+          <div class="know">
+            Jamais d’appel à un propriétaire prospecté&nbsp;: un courrier, un passage. «&nbsp;Ne
+            plus solliciter&nbsp;» ferme l’adresse pour toute l’agence.
+          </div>
+        </div>
+      </div>
+
+      <h2>À savoir</h2>
+      <div class="lines">
+        <div class="line key">
+          <div class="name">Les portails</div>
+          <div>
+            Collez l’adresse de l’annonce&nbsp;:
+            <b
+              >SeLoger, Bien’ici, Green-Acres, Maisons et Appartements et Figaro Immobilier se
+              lisent</b
+            >. <b>Belles Demeures et Leboncoin ne se lisent pas</b>&nbsp;: leurs sites interdisent
+            la lecture automatique, le bien se saisit à la main, juste sous le champ. Pour un autre
+            site, l’outil essaie&nbsp;; s’il n’y arrive pas, saisissez le bien à la main.
+          </div>
+        </div>
+        <div class="line">
+          <div class="name">Le forfait du mois</div>
+          <div>
+            Les recherches (concurrents, marché d’un acquéreur, nouveaux venus du Point marché,
+            veille) et la lecture de vos notes comptent dans le forfait de votre agence. Atteint,
+            l’écran dit «&nbsp;Votre forfait du mois est atteint&nbsp;: contactez votre
+            agence&nbsp;»&nbsp;; tout le reste continue de marcher.
+          </div>
+        </div>
+        <div class="line">
+          <div class="name">Le quartier</div>
+          <div>
+            Sur la fiche du bien, «&nbsp;Créer le lien “Vivre ici”&nbsp;». Sur «&nbsp;Avant le
+            rendez-vous&nbsp;», le dossier d’adresse (ventes réelles, urbanisme, risques) est pour
+            vous seul&nbsp;: vous cochez ce que le vendeur verra.
+          </div>
+        </div>
+        <div class="line">
+          <div class="name">Les langues</div>
+          <div>
+            Le vendeur et l’acquéreur lisent leurs écrans et leurs documents en français ou en
+            anglais, selon le réglage du dossier vendeur ou de la fiche acquéreur. Vos écrans
+            restent en français.
+          </div>
+        </div>
+        <div class="line">
+          <div class="name">L’outil n’envoie rien</div>
+          <div>
+            Il prépare le message, le lien ou le document&nbsp;: à vous de l’envoyer, ou de
+            l’imprimer.
+          </div>
+        </div>
+        <div class="line">
+          <div class="name">Qui voit quoi</div>
+          <div>
+            Toute votre agence voit ses dossiers et ses acquéreurs, et elle seule. Le vendeur ne
+            voit jamais votre fourchette, ni l’adresse d’un concurrent, ni l’agence qui le vend.
+          </div>
+        </div>
+      </div>
+
+      <h2>En cas de souci</h2>
+      <ul class="help">
+        <li>
+          <b>L’outil ne voit pas l’extension</b>
+          Elle est installée&nbsp;? Chrome&nbsp;› Extensions&nbsp;› ACM Studio&nbsp;› Détails&nbsp;›
+          Accès aux sites&nbsp;› «&nbsp;Sur tous les sites&nbsp;».
+        </li>
+        <li>
+          <b>Une annonce ne se lit pas</b>
+          Réessayez une fois, puis saisissez le bien à la main&nbsp;: rien n’est perdu.
+        </li>
+        <li>
+          <b>Un message d’erreur inattendu</b>
+          Rechargez la page. S’il revient, écrivez à l’équipe ACM Studio&nbsp;:
+          formation@start-academy.fr.
+        </li>
+      </ul>
+
+      <footer class="foot">
+        <span
+          >ACM Studio est édité par Start Academy · vos données&nbsp;: page
+          «&nbsp;Confidentialité&nbsp;» de l’outil</span
+        >
+        <span>2&nbsp;/&nbsp;2</span>
+      </footer>
+    </section>
+  </body>
+</html>

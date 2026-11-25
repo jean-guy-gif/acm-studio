@@ -2,9 +2,9 @@ name: CI
 
 # 09/11 (décision de Jean-Guy) — une CI allégée : rien sur `essai` (on n'y fusionne que des commits
 # déjà passés sur leur branche), rien quand seuls `docs/`, `missions/` ou des `.md` changent — sauf
-# les deux documents que lisent les tests —, une course remplacée par la suivante sur la même
-# branche, et chaque lundi une course complète sur `main`, comme filet. Les tests SQL vivent dans
-# `sql.yml`, lancés seulement quand `supabase/` change.
+# les documents que lisent les tests (la démo, la fiche de l'extension, le guide de prise en main) —,
+# une course remplacée par la suivante sur la même branche, et chaque lundi une course complète sur
+# `main`, comme filet. Les tests SQL vivent dans `sql.yml`, lancés seulement quand `supabase/` change.
 on:
   push:
     branches-ignore: [essai]
@@ -15,6 +15,7 @@ on:
       - '!**/*.md'
       - 'docs/DEMO.md'
       - 'docs/extension-store.md'
+      - 'docs/guide/**'
   schedule:
     - cron: '17 5 * * 1'
   workflow_dispatch:

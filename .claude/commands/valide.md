@@ -16,11 +16,11 @@ Note chaque étape pour l'atelier : `node atelier/note.mjs --mission $ARGUMENTS 
    relance `npm run typecheck`, `npm run lint` et `npm test` dessus.
 2. Vérifie la CI de la branche. Deux workflows (décision de Jean-Guy, 09/11) : `CI` (`ci.yml`,
    la tâche `checks`) et `CI SQL` (`sql.yml`, la tâche `sql`). Aucun ne part quand un commit ne
-   touche que `docs/`, `missions/` ou des `.md` (sauf `docs/DEMO.md` et `docs/extension-store.md`,
-   que lisent les tests) ; `CI SQL` ne part que si `supabase/` ou `sql.yml` changent.
+   touche que `docs/`, `missions/` ou des `.md` (sauf `docs/DEMO.md`, `docs/extension-store.md` et
+   `docs/guide/`, que lisent les tests) ; `CI SQL` ne part que si `supabase/` ou `sql.yml` changent.
    - **Le commit qui compte**, pour `CI` : le plus récent de
      `git log -1 --format=%H main..<branche> -- . ':!docs' ':!missions' ':!*.md'` et de
-     `git log -1 --format=%H main..<branche> -- docs/DEMO.md docs/extension-store.md` ; pour
+     `git log -1 --format=%H main..<branche> -- docs/DEMO.md docs/extension-store.md docs/guide` ; pour
      `CI SQL` : `git log -1 --format=%H main..<branche> -- supabase .github/workflows/sql.yml`.
    - **La course** :
      `gh run list --branch <branche> --workflow ci.yml -L 1 --json headSha,status,conclusion,databaseId`
