@@ -921,9 +921,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(/\/acquereurs\/nouveau$/);
     const quick = page.getByTestId('buyer-quick-form');
     await expectNoHorizontalScroll(page, 'Saisie rapide (390 × 844)');
-    // Sous 768 px, le menu est en bas, quatre entrées : le champ Nom se voit sans défiler.
-    await expect(sideNav(page).getByRole('link')).toHaveCount(4);
-    await expect(page.getByTestId('shell-menu')).toBeInViewport({ ratio: 1 });
+    // Sous 768 px, le menu du bas n'est que sur les pages principales : « Nouvel acquéreur », page
+    // intérieure, n'a que son lien de retour, et le champ Nom se voit sans défiler.
+    await expect(page.getByTestId('shell-menu')).toBeHidden();
+    await expect(page.getByRole('link', { name: /^←/ }).first()).toBeVisible();
     await expect(quick.locator('input[name="name"]')).toBeInViewport({ ratio: 1 });
     await quick.locator('input[name="name"]').fill(buyerName);
     await quick.locator('input[name="phone"]').fill('06 39 98 90 11');
@@ -972,6 +973,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByTestId('today-line').first()).toBeInViewport({ ratio: 1 });
     await expectNoHorizontalScroll(page, 'Aujourd’hui (390 × 844)');
+    // Sur une page principale, le menu est en bas, quatre entrées, entier dans la fenêtre.
+    await expect(sideNav(page).getByRole('link')).toHaveCount(4);
+    await expect(page.getByTestId('shell-menu')).toBeInViewport({ ratio: 1 });
     await expect(page.getByTestId('account-avatar')).toBeVisible();
     // La feuille du compte, sur téléphone : qui est connecté, et ce que le menu du bas ne montre
     // pas (Prospection, Aide) avec le reste ; Échap la referme, et « Prospection » y mène.

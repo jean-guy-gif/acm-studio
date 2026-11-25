@@ -205,7 +205,9 @@ Ce qui change, en comportement :
 - **Le menu** : Aujourd'hui · Vendeurs · Acquéreurs · Visites, le même aux trois tailles — en bas
   sur téléphone (72 px), en colonne d'icônes sur tablette (88 px, avec Aide en bas), complet sur
   ordinateur (232 px, avec Prospection et Aide, le logo de l'agence en tête). La barre du haut et
-  ☰ disparaissent. La pastille d'« Aujourd'hui » reste, sur l'icône.
+  ☰ disparaissent. La pastille d'« Aujourd'hui » reste, sur l'icône. Sur téléphone, le menu du bas
+  n'est que sur les pages principales ; une page intérieure (une fiche, un dossier, « Nouvel
+  acquéreur ») n'a que son lien de retour, comme sur les maquettes 2, 3 et 4.
 - **Vendeurs** n'a qu'une entrée : Préparation, Live et Suivi restent des pages, jointes par trois
   onglets en tête de chacune de leurs listes (la scène du Live n'est pas touchée).
 - **Le compte** (Mon profil, Administration, Ma démo, Erreurs, Sombre / Clair, Déconnexion) : sa
@@ -237,7 +239,7 @@ Les specs modifiées (un libellé ou un emplacement ; ce qu'elles prouvent ne ch
 | Spec                    | Ce qui a changé                                                                                           |
 | ----------------------- | --------------------------------------------------------------------------------------------------------- |
 | `support.ts`            | le compte s'ouvre par sa carte ou son rond (plus de ☰) ; « Aide » et « Prospection » se prennent au menu quand il les montre |
-| `parcours.spec.ts`      | « Vendeurs » à la place de « Suivi » et de « Live » au menu ; 6 entrées au lieu de 7 ; sur téléphone, le menu du bas à la place de ☰. **Ajouté** : Préparation, Live et Suivi joints par les onglets ; les flèches sautent ce que la feuille cache ; la feuille du compte sur téléphone, et « Prospection » par elle |
+| `parcours.spec.ts`      | « Vendeurs » à la place de « Suivi » et de « Live » au menu ; 6 entrées au lieu de 7 ; sur téléphone, le menu du bas à la place de ☰ (sur une page principale ; sur « Nouvel acquéreur », son lien de retour). **Ajouté** : Préparation, Live et Suivi joints par les onglets ; les flèches sautent ce que la feuille cache ; la feuille du compte sur téléphone, et « Prospection » par elle |
 | `bienvenue.spec.ts`     | « Vendeurs » à la place de « Préparation » ; le titre d'une étape                                         |
 | `demo.spec.ts`          | 6 entrées au lieu de 7                                                                                    |
 | `live-tablette.spec.ts` | 5 entrées au lieu de 7. **Ajouté** : la feuille du compte passe au-dessus de la page, sous une couche plein écran |
