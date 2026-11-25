@@ -3,7 +3,12 @@ import {
   fetchRobotsViaExtension,
 } from '@/features/browser-extension/client';
 import { decideRobotsAllowed } from '@/features/comparable-import/services/robots-decision';
-import type { ComparableImportResult } from '@/features/comparable-import/types';
+import type {
+  ComparableImportResult,
+  ImportFailureReason,
+} from '@/features/comparable-import/types';
+import { readByExtension } from '@/features/comparable-import/utils/extension-hosts';
+import { forbiddenPortalMessage } from '@/features/comparable-import/utils/forbidden-portals';
 import { normalizeListingUrl } from '@/features/comparable-import/utils/normalize-listing-url';
 import {
   isUnreadPortalUrl,
@@ -22,6 +27,23 @@ import {
 // canonical form may well be allowed).
 export const ROBOTS_BLOCKED_MESSAGE =
   'Ce portail refuse cette adresse (pas nécessairement l’annonce). Saisissez le bien à la main ci-dessous.';
+
+// Lancement, mission 11 (suite, demande de Jean-Guy du 25/11) — l'extension n'a pas lu la page d'un
+// portail (absente, endormie, ou sa lecture a échoué) : le serveur a essayé à sa place, mais les
+// portails refusent son adresse (M74), son échec ne dit rien de l'annonce. Jamais « L'annonce
+// semble supprimée » ni « le site a refusé » : l'écran dit l'extension (M105).
+export const EXTENSION_UNREAD_MESSAGE =
+  'L’extension ACM n’a pas pu lire l’annonce : vérifiez qu’elle est installée et activée, puis réessayez. Sinon, saisissez le bien à la main ci-dessous.';
+// Les échecs du serveur qui ne disent rien de l'annonce quand c'est un portail qui répond. Une
+// adresse refusée par le portail (robots.txt), une adresse invalide ou qui n'est pas une annonce
+// gardent leur message.
+const SERVER_BLINDED: ReadonlySet<ImportFailureReason> = new Set([
+  'unavailable',
+  'refused',
+  'network',
+  'timeout',
+  'empty',
+]);
 
 function safeUrl(raw: string): URL | null {
   try {
@@ -50,27 +72,45 @@ export async function importListingFromUrl(opts: {
   if (isUnreadPortalUrl(normalized)) {
     return { ok: false, error: UNREAD_PORTAL_MESSAGE };
   }
+  // Lancement, mission 11 (suite) — un site qui interdit la lecture de ses annonces (Belles
+  // Demeures) : dit tout de suite, sans rien lire ni rien demander.
+  const forbidden = forbiddenPortalMessage(normalized);
+  if (forbidden) {
+    return { ok: false, error: forbidden };
+  }
 
-  if (extensionAvailable && parsed) {
+  // L'extension ne lit que ses portails : ailleurs (le site d'une agence…), elle n'est pas
+  // sollicitée, et le serveur lit le site lui-même.
+  const portal = parsed != null && readByExtension(parsed.hostname);
+  if (extensionAvailable && parsed && portal) {
     const robots = await fetchRobotsViaExtension(new URL('/robots.txt', parsed.origin).toString());
-    if (!decideRobotsAllowed(robots, parsed.pathname + parsed.search)) {
-      return { ok: false, error: ROBOTS_BLOCKED_MESSAGE };
+    // L'extension n'a pas répondu du tout : ce n'est pas un refus du portail (M105).
+    const silent = !robots.ok && robots.unreachable === true;
+    if (!silent) {
+      if (!decideRobotsAllowed(robots, parsed.pathname + parsed.search)) {
+        return { ok: false, error: ROBOTS_BLOCKED_MESSAGE };
+      }
+      const page = await fetchPageViaExtension(normalized);
+      if (page.ok) {
+        // Diagnostic (§2.4): a complete Bien'ici fiche is ~286 000 chars; a shell is
+        // under 50 000. If the parser then finds nothing, this tells which it was.
+        console.info(`[ACM import] page reçue : ${page.size} caractères en ${page.durationMs} ms`);
+        const htmlData = new FormData();
+        htmlData.set('url', page.finalUrl || normalized);
+        htmlData.set('html', page.html);
+        return importHtmlAction(htmlData);
+      }
+      console.warn(`[ACM import] extension : ${page.error}`);
     }
-    const page = await fetchPageViaExtension(normalized);
-    if (page.ok) {
-      // Diagnostic (§2.4): a complete Bien'ici fiche is ~286 000 chars; a shell is
-      // under 50 000. If the parser then finds nothing, this tells which it was.
-      console.info(`[ACM import] page reçue : ${page.size} caractères en ${page.durationMs} ms`);
-      const htmlData = new FormData();
-      htmlData.set('url', page.finalUrl || normalized);
-      htmlData.set('html', page.html);
-      return importHtmlAction(htmlData);
-    }
-    console.warn(`[ACM import] extension : ${page.error}`);
     // fall through to the server attempt
   }
 
   const formData = new FormData();
   formData.set('url', normalized);
-  return importUrlAction(formData);
+  const result = await importUrlAction(formData);
+  // Un portail que l'extension n'a pas lu : l'échec du serveur ne dit rien de l'annonce.
+  if (portal && !result.ok && result.reason && SERVER_BLINDED.has(result.reason)) {
+    return { ok: false, error: EXTENSION_UNREAD_MESSAGE };
+  }
+  return result;
 }
