@@ -89,6 +89,8 @@ describe('le menu de l’application', () => {
     expect(html).toMatch(
       /<nav [^>]*class="grid h-\[72px\] grid-cols-4 [^"]*md:flex[^"]*md:flex-col/,
     );
+    // Dans la colonne, chaque entrée prend toute la largeur : les icônes s'alignent.
+    expect(html).toMatch(/<nav [^>]*class="[^"]*md:items-stretch/);
   });
 
   it('« Vendeurs » surligne Préparation, Live et Suivi', () => {
