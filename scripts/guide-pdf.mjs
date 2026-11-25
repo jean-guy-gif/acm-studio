@@ -1,8 +1,9 @@
 // Lancement, mission 13 — le PDF du guide de prise en main, tiré de son HTML
 // (`docs/guide/guide-de-prise-en-main.html`, la source : on corrige le HTML, puis on relance).
 // Format A4 en millimètres, fonds imprimés, aucune marge : chaque page du HTML est une feuille.
+// Le PDF s'écrit dans `public/guide/` : c'est lui que « Aide » ouvre, et lui qu'on envoie.
 //
-//   npm run guide:pdf                         le PDF, à côté du HTML
+//   npm run guide:pdf                         le PDF
 //   npm run guide:pdf -- --pages <dossier>    en plus, une image par page, pour relire avant d'envoyer
 //
 // Le script s'arrête, sans rien écrire, si une police ne s'est pas chargée ou si le texte d'une page
@@ -15,7 +16,7 @@ import { chromium } from '@playwright/test';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = join(ROOT, 'docs', 'guide', 'guide-de-prise-en-main.html');
-const PDF = join(ROOT, 'docs', 'guide', 'guide-de-prise-en-main.pdf');
+const PDF = join(ROOT, 'public', 'guide', 'guide-de-prise-en-main.pdf');
 
 const at = process.argv.indexOf('--pages');
 const shots = at > 0 ? process.argv[at + 1] : null;
@@ -54,6 +55,7 @@ try {
         await sheets.nth(index).screenshot({ path: join(shots, `guide-page-${index + 1}.png`) });
       }
     }
+    mkdirSync(dirname(PDF), { recursive: true });
     await page.pdf({
       path: PDF,
       width: '210mm',
