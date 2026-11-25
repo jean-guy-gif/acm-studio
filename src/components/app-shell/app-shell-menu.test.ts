@@ -261,6 +261,10 @@ describe('la feuille ouverte du compte', () => {
 // Le cadre aux trois tailles : en bas sur téléphone (remplace M132, la barre du haut et ☰), une
 // colonne d'icônes à partir de 768 px, le menu complet à partir de 1280 px.
 describe('le menu aux trois tailles', () => {
+  beforeEach(() => {
+    nav.pathname = '/builder';
+  });
+
   const shell = () =>
     renderToStaticMarkup(
       createElement(
@@ -278,7 +282,7 @@ describe('le menu aux trois tailles', () => {
 
   it('fixé en bas sur téléphone, en colonne à gauche à partir de 768 px ; plus de ☰', () => {
     const html = shell();
-    const aside = html.match(/<aside data-testid="shell-menu" class="([^"]+)"/)?.[1] ?? '';
+    const aside = html.match(/<aside [^>]*class="([^"]+)"/)?.[1] ?? '';
     expect(aside).toMatch(/^fixed inset-x-0 bottom-0 /);
     expect(aside).toContain('md:sticky');
     expect(aside).toContain('md:h-screen');
@@ -286,6 +290,61 @@ describe('le menu aux trois tailles', () => {
     // Jamais à l'impression.
     expect(aside).toContain('print:hidden');
     expect(html).not.toMatch(/mobile-menu-toggle|shell-menu-panel|mobile-today-count|☰/);
+  });
+
+  // Sur téléphone, le menu du bas n'est que sur les pages principales : une page intérieure n'a que
+  // son lien de retour (maquettes REFONTE-2, 3 et 4), et la place du menu lui est rendue.
+  it('sur téléphone, pas de menu sur une page intérieure ; à partir de 768 px, toujours', () => {
+    const asideOf = (pathname: string) => {
+      nav.pathname = pathname;
+      return shell().match(/<aside [^>]*>/)?.[0] ?? '';
+    };
+    for (const pathname of [
+      '/aujourdhui',
+      '/builder',
+      '/live',
+      '/suivi',
+      '/acquereurs',
+      '/visites',
+    ]) {
+      expect(asideOf(pathname), pathname).toContain('data-shell-menu="main"');
+      expect(asideOf(pathname), pathname).not.toContain('max-md:hidden');
+    }
+    for (const pathname of ['/acquereurs/nouveau', '/acquereurs/abc', '/builder/abc/property']) {
+      const aside = asideOf(pathname);
+      expect(aside, pathname).toContain('data-shell-menu="inner"');
+      expect(aside, pathname).toMatch(/class="max-md:hidden fixed /);
+      // La colonne reste là sur tablette et sur ordinateur.
+      expect(aside, pathname).toContain('md:flex');
+    }
+    // La place du menu est rendue par le même repère (`--shell-bottom`, globals.css).
+    const css = readFileSync(path.resolve('src/app/globals.css'), 'utf8');
+    expect(css).toMatch(/:root:has\(\[data-shell-menu='inner'\]\) \{\s*--shell-bottom: 0px;\s*\}/);
+  });
+
+  // Sans menu, une page intérieure doit offrir son retour : chaque page à plus d'un segment de
+  // l'espace conseiller porte un lien « ← … », ou n'est qu'une redirection.
+  it('chaque page intérieure porte son lien de retour', () => {
+    const pages = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const file = path.join(dir, entry.name);
+        if (entry.isDirectory()) return pages(file);
+        return entry.name === 'page.tsx' ? [file] : [];
+      });
+    const root = path.resolve('src/app/(protected)');
+    const inner = pages(root).filter((file) => {
+      const route = path
+        .relative(root, path.dirname(file))
+        .split(path.sep)
+        .filter((segment) => segment !== '' && !/^\(.*\)$/.test(segment));
+      return route.length > 1;
+    });
+    expect(inner.length).toBeGreaterThan(15);
+    for (const file of inner) {
+      const source = readFileSync(file, 'utf8');
+      const relative = path.relative(process.cwd(), file);
+      expect(/←|redirect\(/.test(source), relative).toBe(true);
+    }
   });
 
   // Sur tablette, la feuille du compte (240 px) déborde de la colonne (88 px) : pendant qu'elle est
@@ -298,7 +357,7 @@ describe('le menu aux trois tailles', () => {
       expect(found, `${file} : ${pattern}`).not.toBeNull();
       return Number(found![1]);
     };
-    const aside = shell().match(/<aside data-testid="shell-menu" class="([^"]+)"/)?.[1] ?? '';
+    const aside = shell().match(/<aside [^>]*class="([^"]+)"/)?.[1] ?? '';
     const whileOpen = Number(/ md:has-\[\[role=menu\]\]:z-\[(\d+)\] /.exec(aside)?.[1]);
     const saveBar = z(
       'src/features/subject-property/components/property-save-bar.tsx',

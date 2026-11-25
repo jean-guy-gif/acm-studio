@@ -59,3 +59,13 @@ compté dans aucune mission) ; à 12 h 23 le relecteur a buté sur la limite d'u
 pèse sur la base de la production (`missions/LIVRAISON.md`). Le soir du 25/11, Jean-Guy a
 avancé la base (« on y va » à 18 h 40) : la suite complète a tourné de 20 h 17 à 20 h 57, sur la
 base d'essai.
+
+| Date  | Mission | Niveau | Durée totale | Dont attente de Jean-Guy | Dont tests |
+| ----- | ------- | ------ | ------------ | ------------------------ | ---------- |
+| 25/11 | La refonte : la mission lue, les huit maquettes relevées, `LANCEMENT.md` (la livraison au 27/11, les six lots, les dix questions) | Sensible | 20 min | 0 | 0 |
+| 25/11 – 26/11 | Refonte, lot A — le socle : le menu aux trois tailles, les onglets de « Vendeurs », le compte, les blocs ; le relecteur une passe (un bloquant levé) ; la suite complète sur le code final (37 sur 37) ; sur l'essai à 0 h 10, attend le « oui » | Sensible | 2 h 50 | 0 | 1 h 35 |
+
+Le soir du 25/11, après le total de 21 h 25 : la refonte, de 21 h 25 à 0 h 20 (3 h 10 d'horloge).
+La suite complète a tourné trois fois pour le lot A (avant la relecture, les specs touchées après,
+puis tout sur le code final, de 23 h 31 à 0 h 07) : le menu change sous toutes les specs.
+

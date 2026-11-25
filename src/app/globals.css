@@ -20,6 +20,11 @@
   --shell-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   --shell-left: 0px;
 }
+/* Sur téléphone, une page intérieure n'a pas le menu du bas (maquettes REFONTE-2, 3 et 4) : sa
+   place est rendue à la page et à ses barres fixées en bas. */
+:root:has([data-shell-menu='inner']) {
+  --shell-bottom: 0px;
+}
 @media (min-width: 48rem) {
   :root {
     --shell-bottom: 0px;

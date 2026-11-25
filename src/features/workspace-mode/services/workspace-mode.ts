@@ -60,6 +60,13 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+// Sur téléphone, le menu du bas n'est que sur les pages principales (maquettes REFONTE-1 et 7) :
+// une page intérieure — une fiche, un dossier, « Nouvel acquéreur », un bien à la fois — n'a que
+// son lien de retour (REFONTE-2, 3 et 4). Une page intérieure : plus d'un segment dans l'adresse.
+export function isInnerPage(pathname: string): boolean {
+  return pathname.split('/').filter((segment) => segment !== '').length > 1;
+}
+
 export function isNavItemActive(item: NavItem, pathname: string): boolean {
   return item.spaces.some((space) => pathname === space || pathname.startsWith(`${space}/`));
 }

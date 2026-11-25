@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   accountMenuFor,
+  isInnerPage,
   isNavItemActive,
   NAV_ITEMS,
   SELLER_TABS,
@@ -48,6 +49,41 @@ describe('le menu de l’application', () => {
         path,
       ).toHaveLength(1);
     }
+  });
+
+  // Sur téléphone, le menu du bas n'est que sur les pages principales (REFONTE-1 et 7) ; une
+  // page intérieure n'a que son lien de retour (REFONTE-2, 3 et 4).
+  it('une page principale : un seul segment ; tout le reste est une page intérieure', () => {
+    for (const path of [
+      '/aujourdhui',
+      '/builder',
+      '/live',
+      '/suivi',
+      '/acquereurs',
+      '/visites',
+      '/prospection',
+      '/admin',
+      '/profil',
+      '/bienvenue',
+      '/ma-demo',
+      '/erreurs',
+      '/',
+    ]) {
+      expect(isInnerPage(path), path).toBe(false);
+    }
+    for (const path of [
+      '/acquereurs/nouveau',
+      '/acquereurs/8f1c',
+      '/acquereurs/8f1c/biens-ideaux',
+      '/builder/new',
+      '/builder/8f1c/property',
+      '/admin/equipe',
+    ]) {
+      expect(isInnerPage(path), path).toBe(true);
+    }
+    // Chaque entrée du menu mène à une page principale : le menu s'y voit.
+    for (const item of NAV_ITEMS) expect(isInnerPage(item.href), item.label).toBe(false);
+    for (const tab of SELLER_TABS) expect(isInnerPage(tab.href), tab.label).toBe(false);
   });
 
   it('les trois espaces du vendeur restent des pages, jointes par leurs onglets', () => {
