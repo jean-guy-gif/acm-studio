@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import {
@@ -28,6 +28,10 @@ const LOST = 'Connexion perdue — réessayez.';
 // « Vivre ici » d'Academia du bien, s'il est collé sur le mandat.
 export function VisitConfirmForm({ visitId }: { visitId: string }) {
   const router = useRouter();
+  // Sur la fiche acquéreur, la prochaine étape porte déjà le seul bouton plein de l'écran (M146,
+  // Lancement 10) : « Préparer le message » y est en contour, comme « Enregistrer le compte rendu »
+  // (Lancement 7). Sur Visites, le formulaire ouvert porte le plein (M147 A).
+  const onBuyerPage = /^\/acquereurs\/[^/]+$/.test(usePathname());
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [day, setDay] = useState('');
@@ -92,7 +96,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
         </label>
         <button
           type="button"
-          className={btnPrimary}
+          className={onBuyerPage ? btnSecondary : btnPrimary}
           disabled={pending}
           onClick={() => confirm()}
           data-testid="visit-confirm-prepare"

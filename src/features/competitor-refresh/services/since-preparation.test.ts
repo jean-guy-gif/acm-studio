@@ -82,4 +82,60 @@ describe('« Depuis la préparation » (mission 152)', () => {
     expect(listingsCheckStale({ ...input, started: true })).toBe(false);
     expect(listingsCheckStale({ ...input, withListing: false })).toBe(false);
   });
+
+  // Lancement, mission 11 — vu sur un vrai dossier : trois annonces importées dix minutes plus tôt,
+  // et « Lancer le Live » disait « non vérifiées depuis plus de 24 h ».
+  describe('une annonce entrée dans le dossier depuis moins de 24 h vient d’être lue', () => {
+    const launch = { isExample: false, started: false, withListing: true, now: NOW };
+    const justNow = '2026-11-11T14:50:00Z';
+    const threeDaysAgo = '2026-11-08T09:00:00Z';
+
+    it('jamais vérifiées, toutes importées à l’instant : aucun rappel', () => {
+      expect(
+        listingsCheckStale({ ...launch, checkedAt: null, importedAt: [justNow, justNow] }),
+      ).toBe(false);
+      expect(sincePreparation([{ ...base, importedAt: justNow }], null, NOW).stale).toBe(false);
+    });
+
+    it('jamais vérifiées, une annonce importée il y a trois jours : le rappel', () => {
+      expect(
+        listingsCheckStale({ ...launch, checkedAt: null, importedAt: [justNow, threeDaysAgo] }),
+      ).toBe(true);
+      expect(
+        sincePreparation(
+          [
+            { ...base, id: 'a', importedAt: justNow },
+            { ...base, id: 'b', importedAt: threeDaysAgo },
+          ],
+          null,
+          NOW,
+        ).stale,
+      ).toBe(true);
+    });
+
+    it('vérifiées il y a plus de 24 h : le rappel, sauf si toutes sont entrées depuis', () => {
+      const old = '2026-11-10T08:00:00Z';
+      expect(listingsCheckStale({ ...launch, checkedAt: old, importedAt: [threeDaysAgo] })).toBe(
+        true,
+      );
+      expect(listingsCheckStale({ ...launch, checkedAt: old, importedAt: [justNow] })).toBe(false);
+    });
+
+    it('vérifiées il y a moins de 24 h : aucun rappel, même pour une annonce ancienne', () => {
+      expect(
+        listingsCheckStale({
+          ...launch,
+          checkedAt: '2026-11-11T10:00:00Z',
+          importedAt: [threeDaysAgo],
+        }),
+      ).toBe(false);
+    });
+
+    it('une date d’entrée inconnue ne rassure pas : le rappel reste', () => {
+      expect(listingsCheckStale({ ...launch, checkedAt: null, importedAt: [justNow, null] })).toBe(
+        true,
+      );
+      expect(listingsCheckStale({ ...launch, checkedAt: null, importedAt: [] })).toBe(true);
+    });
+  });
 });

@@ -1850,8 +1850,29 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // Puis A, et « Suivant » mène à B.
   await openItem('A');
   await expectUnspoken(page, 'Présentation — le bien A');
+  // Lancement, mission 11 — vu sur un vrai dossier : après chaque réponse, les photos du mandat
+  // (des liens signés, refaits à chaque rendu) disparaissaient une à trois secondes devant
+  // l'acquéreur. Ses images ne sont plus remontées : une marque posée avant la réponse est encore
+  // là quand la page a été rendue de nouveau (son adresse signée a changé).
+  const mandatePhotos = page.getByTestId('presentation-item').locator('img');
+  await expect(mandatePhotos.first()).toBeVisible();
+  const photoCount = await mandatePhotos.count();
+  const firstPhoto = await mandatePhotos.first().getAttribute('src');
+  await mandatePhotos.evaluateAll((nodes) =>
+    nodes.forEach((node) => node.setAttribute('data-kept', '1')),
+  );
   await answer('no').click();
   await expect(answer('no')).toHaveAttribute('aria-pressed', 'true');
+  await expect
+    .poll(() => mandatePhotos.first().getAttribute('src'), {
+      message: 'la page est rendue de nouveau après la réponse',
+      timeout: 20_000,
+    })
+    .not.toBe(firstPhoto);
+  await expect(
+    page.getByTestId('presentation-item').locator('img[data-kept="1"]'),
+    'les photos du mandat ne sont pas remontées à la réponse',
+  ).toHaveCount(photoCount);
   await page.getByTestId('presentation-next').click();
   await expect(page.getByTestId('deck-kicker')).toContainText('Bien B');
   // « Terminer » avec B sans réponse : confirmation, et l'on revient.
