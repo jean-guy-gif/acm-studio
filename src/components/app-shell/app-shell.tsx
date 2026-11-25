@@ -56,7 +56,7 @@ export function AppShell({
           demoEntry={demoEntry}
         />
 
-        <main className="min-w-0 flex-1 pb-[var(--shell-bottom)]">
+        <main className="relative min-w-0 flex-1 pb-[var(--shell-bottom)]">
           <PhoneAccount
             profileName={profileName}
             profileEmail={profileEmail}

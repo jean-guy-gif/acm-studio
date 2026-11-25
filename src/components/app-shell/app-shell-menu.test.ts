@@ -343,7 +343,10 @@ describe('le menu aux trois tailles', () => {
         ),
       );
     nav.pathname = '/aujourdhui';
-    expect(phone()).toMatch(/<div class="[^"]*md:hidden" data-testid="phone-account">/);
+    // Posé en haut à droite de la page, sans lui prendre une ligne ; jamais à partir de 768 px.
+    expect(phone()).toMatch(
+      /<div class="absolute top-3 right-4 md:hidden" data-testid="phone-account">/,
+    );
     expect(phone()).toContain('data-testid="account-avatar"');
     for (const pathname of ['/acquereurs', '/builder', '/visites', '/aujourdhui/x']) {
       nav.pathname = pathname;
