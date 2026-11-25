@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { idealPageLayout, type PageEntry } from '@/features/ideal-properties/services/ideal-page';
+import {
+  idealPageLayout,
+  marketBienId,
+  notRepeatedFrom,
+  type PageEntry,
+} from '@/features/ideal-properties/services/ideal-page';
 import type { SelectionItemInput } from '@/features/ideal-properties/services/ideal-selection';
 
 // Essai de Jean-Guy (26/10) — sur Biens idéaux, un même bien n'apparaît qu'une fois.
@@ -73,5 +78,44 @@ describe('Biens idéaux : un bien n’apparaît qu’une fois', () => {
         entry(item('listing', 'https://exemple.invalid/a'), 'https://exemple.invalid/a'),
       ),
     ).toBe(true);
+  });
+});
+
+// Lancement, mission 3 (suite, 25/11) — vu sur un vrai dossier : la recherche du marché rend un
+// bien que la veille a déjà trouvé, sous une AUTRE annonce (le même bien chez le fournisseur).
+describe('Biens idéaux : un bien de la veille ne se répète pas dans le marché', () => {
+  const WATCH_AD = 'https://www.bienici.com/annonce/vente/mouans-sartoux/maison/11pieces/ag-1';
+  const MARKET_AD = 'https://www.bienici.com/annonce/vente/mouans-sartoux/maison/11pieces/ag-2';
+  const watch = [{ url: WATCH_AD, key: 'b3733e06' }];
+
+  it('la même annonce : une seule fois (comme avant)', () => {
+    expect(notRepeatedFrom(watch)({ url: WATCH_AD, key: null })).toBe(false);
+  });
+
+  it('une autre annonce du même bien chez le fournisseur : une seule fois', () => {
+    expect(notRepeatedFrom(watch)({ url: MARKET_AD, key: 'b3733e06' })).toBe(false);
+  });
+
+  it('un autre bien reste dans le marché', () => {
+    expect(notRepeatedFrom(watch)({ url: MARKET_AD, key: '735ba130' })).toBe(true);
+  });
+
+  it('sans identifiant du fournisseur, seule l’annonce compte : deux biens sans identifiant ne se confondent pas', () => {
+    const unknown = [{ url: WATCH_AD, key: null }];
+    expect(notRepeatedFrom(unknown)({ url: MARKET_AD, key: null })).toBe(true);
+    expect(notRepeatedFrom(unknown)({ url: MARKET_AD, key: 'b3733e06' })).toBe(true);
+  });
+
+  it('un bien se compte une fois : par son identifiant chez le fournisseur, sinon par son annonce', () => {
+    expect(marketBienId({ url: WATCH_AD, key: 'b3733e06' })).toBe(
+      marketBienId({ url: MARKET_AD, key: 'b3733e06' }),
+    );
+    expect(marketBienId({ url: WATCH_AD, key: null })).not.toBe(
+      marketBienId({ url: MARKET_AD, key: null }),
+    );
+    // Une annonce ne se confond jamais avec un identifiant.
+    expect(marketBienId({ url: 'b3733e06', key: null })).not.toBe(
+      marketBienId({ url: MARKET_AD, key: 'b3733e06' }),
+    );
   });
 });

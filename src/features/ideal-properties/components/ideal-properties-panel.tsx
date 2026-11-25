@@ -63,7 +63,12 @@ import {
   whySummary,
 } from '@/features/soft-ranking/services/judgments';
 import type { SimpleReason, SoftReasons, SoftRanking } from '@/features/soft-ranking/types';
-import { idealPageLayout, selectionKey } from '@/features/ideal-properties/services/ideal-page';
+import {
+  idealPageLayout,
+  marketBienId,
+  notRepeatedFrom,
+  selectionKey,
+} from '@/features/ideal-properties/services/ideal-page';
 import type { SelectionItemInput } from '@/features/ideal-properties/services/ideal-selection';
 import {
   seenOnLabel,
@@ -604,8 +609,9 @@ export function IdealPropertiesPanel({
   // Mission 151 (partie B) — pendant la recherche et sa lecture, le message d'attente prend la
   // place des résultats (planche 4 b).
   const waiting = searching && softLabels.length > 0 && softOpen;
-  // Un bien de la veille, déjà en tête, ne se répète pas dans les annonces du marché.
-  const watchUrls = new Set(watchEntries.map((entry) => entry.candidate.url));
+  // Un bien de la veille, déjà en tête, ne se répète pas dans les annonces du marché, même rendu
+  // sous une autre annonce (`notRepeatedFrom`).
+  const afterWatch = notRepeatedFrom(watchEntries.map((entry) => entry.candidate));
   // Les annonces du marché (la veille et la recherche, chacune une fois) qu'il a déjà vues.
   const marketSeen = new Map<string, SeenReason>();
   for (const entry of [
@@ -615,7 +621,7 @@ export function IdealPropertiesPanel({
       : []),
   ]) {
     const reason = marketOpen(entry) ? marketSeenReason(entry) : undefined;
-    if (reason) marketSeen.set(entry.candidate.url, reason);
+    if (reason) marketSeen.set(marketBienId(entry.candidate), reason);
   }
   const marketSeenLine = seenLine(countSeen([...marketSeen.values()]));
 
@@ -1083,7 +1089,7 @@ export function IdealPropertiesPanel({
             ) : null}
             {IDEAL_CATEGORIES.map((category) => {
               const entries = market.categorized.byCategory[category].filter(
-                (entry) => showMarket(entry) && !watchUrls.has(entry.candidate.url),
+                (entry) => showMarket(entry) && afterWatch(entry.candidate),
               );
               return (
                 <div
