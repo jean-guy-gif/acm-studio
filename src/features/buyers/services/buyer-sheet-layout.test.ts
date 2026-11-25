@@ -162,6 +162,14 @@ describe('la fiche repliée : les lignes de « Son suivi »', () => {
     expect(suiviLineOpen('refused', { messagesGroup: 'visited' })).toBe(false);
   });
 
+  it('pendant une vente, sa recherche est en pause : « Visites à organiser » reste fermée', () => {
+    expect(suiviLineOpen('to_visit', { messagesGroup: null, sale: true })).toBe(false);
+    expect(suiviLineOpen('to_visit', { messagesGroup: null, sale: false })).toBe(true);
+    // … sauf si l'on vient d'y noter une visite.
+    expect(suiviLineOpen('to_visit', { messagesGroup: 'to_visit', sale: true })).toBe(true);
+    expect(suiviLineOpen('visited', { messagesGroup: 'visited', sale: true })).toBe(true);
+  });
+
   it('une ligne fermée dit l’essentiel : la dernière visite et sa suite', () => {
     expect(
       suiviLineGist({

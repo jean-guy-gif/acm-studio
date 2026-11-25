@@ -401,16 +401,19 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   );
   const readinessFold = (inDossier: boolean) => (
     <details
-      className={inDossier ? 'py-4' : `${card} p-5`}
+      className={inDossier ? 'group/fold py-4' : `${card} group/fold p-5`}
       data-testid="buyer-readiness"
       open={readinessOpen(readiness.state, searching)}
     >
-      <summary className={`cursor-pointer ${foldLine}`}>
+      <summary className={`${foldSummary} ${foldLine}`}>
+        <span aria-hidden className={`${foldChevron} group-open/fold:rotate-90`}>
+          ▸
+        </span>
         {inDossier ? (
           <h3 className={nestedTitle}>Prêt à visiter ?</h3>
         ) : (
           <h2 className={foldTitle}>Prêt à visiter ?</h2>
-        )}{' '}
+        )}
         <span data-testid="buyer-readiness-line">
           ·{' '}
           {readinessLine({
@@ -506,7 +509,11 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           10). Pendant une vente, « Avant le compromis » la suit et « La vente » reste visible. */}
       <div
         className={`grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] ${
-          sale ? 'lg:grid-rows-[auto_1fr] lg:items-start' : 'lg:items-stretch'
+          // Les deux blocs ont la même hauteur ; ses critères dépliés, la prochaine étape garde
+          // la sienne plutôt que de s'étirer à côté d'eux.
+          sale
+            ? 'lg:grid-rows-[auto_1fr] lg:items-start'
+            : 'lg:items-stretch lg:has-[details[open]]:items-start'
         }`}
       >
         {/* Qui il est, ce qu'il cherche, comment le joindre. */}
@@ -867,6 +874,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
         unread={followUpRows == null || visitRead.failed}
         lastVisit={lastVisit}
         messagesGroup={messagesGroup}
+        sale={sale != null}
         budgetMax={buyer.budgetMax}
         visitRows={visitRows}
       >
@@ -1208,9 +1216,12 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           {sale == null && !readinessOutside ? readinessFold(true) : null}
 
           {/* Ce qui s'est passé : lu dans les tables, rien de plus ; replié (Lancement 10). */}
-          <details className="py-4" data-testid="buyer-timeline" open={history.failed}>
-            <summary className={`cursor-pointer ${foldLine}`}>
-              <h3 className={nestedTitle}>Ce qui s’est passé</h3>{' '}
+          <details className="group/fold py-4" data-testid="buyer-timeline" open={history.failed}>
+            <summary className={`${foldSummary} ${foldLine}`}>
+              <span aria-hidden className={`${foldChevron} group-open/fold:rotate-90`}>
+                ▸
+              </span>
+              <h3 className={nestedTitle}>Ce qui s’est passé</h3>
               <span data-testid="buyer-timeline-line">
                 ·{' '}
                 {timelineLine(
