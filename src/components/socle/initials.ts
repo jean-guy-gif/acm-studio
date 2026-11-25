@@ -1,5 +1,5 @@
 // La refonte, lot A — le rond aux initiales d'une personne (maquettes REFONTE-1, 5, 7 et 8) : la
-// première lettre du premier mot et celle du dernier (« M. et Mme Mercier » → MM, « Mme Rossi » →
+// première lettre du premier mot et celle du dernier (« M. et Mme Moreau » → MM, « Mme Rossi » →
 // MR, « Famille Keller » → FK) ; un seul mot : ses deux premières lettres. Les fiches n'ont pas de
 // prénom (M119) : on ne devine rien.
 const letters = (word: string) => word.replace(/[^\p{L}]/gu, '');
