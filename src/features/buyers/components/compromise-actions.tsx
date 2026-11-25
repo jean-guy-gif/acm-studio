@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 
+import { socleBigStep, socleBtnFilledBig, socleStepLink } from '@/components/ui/styles';
 import {
   OfferMessagePanel,
   useOfferMessages,
@@ -26,7 +27,7 @@ export function CompromiseActions({
         type="button"
         onClick={() => messages.prepare('buyer')}
         data-testid="buyer-next-button"
-        className="btn-filled inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 font-semibold text-brand-deep hover:bg-brand-soft"
+        className={`${socleBtnFilledBig} ${socleBigStep}`}
       >
         {notifyLabel}
       </button>
@@ -34,11 +35,11 @@ export function CompromiseActions({
         type="button"
         onClick={() => messages.prepare('notary')}
         data-testid="buyer-next-secondary"
-        className="self-center text-sm text-white underline"
+        className={socleStepLink}
       >
         Transmettre au notaire
       </button>
-      <OfferMessagePanel messages={messages} tone="dark" />
+      <OfferMessagePanel messages={messages} />
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { socleBtnFilledBig } from '@/components/ui/styles';
+
 // Mission 10 bis (Jean-Guy, 25/11 ; maquette `M10bis-fiche-acquereur-repliee.png`) — la fiche
 // acquéreur, repliée. À l'ouverture, trois blocs : qui il est et ce qu'il cherche, la prochaine
 // étape, « Son suivi » ; tout le reste sous un seul « Tout le dossier ». La page est un composant
@@ -80,13 +82,15 @@ describe('la fiche acquéreur, repliée', () => {
   });
 
   it('un seul bouton plein à l’ouverture : la prochaine étape', () => {
-    expect(page.match(/btn-filled/g) ?? []).toHaveLength(1);
+    // La refonte, lot B — le grand bouton plein du socle (il porte le repère `btn-filled`).
+    expect(socleBtnFilledBig).toMatch(/^btn-filled /);
+    expect(page.match(/btn-filled|socleBtnFilled\w*\}/g) ?? []).toHaveLength(1);
     expect(
       page.slice(
         at('data-testid="buyer-next-button"') - 200,
         at('data-testid="buyer-next-button"') + 200,
       ),
-    ).toContain('btn-filled');
+    ).toContain('socleBtnFilledBig');
     // Ni le suivi ni « Tout le dossier » n'en portent.
     expect(read('features', 'buyers', 'components', 'buyer-follow-up.tsx')).not.toContain(
       'btn-filled',

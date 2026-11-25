@@ -2,7 +2,19 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { alertOk, backLink, badgeBrand, btnSecondary, card, link } from '@/components/ui/styles';
+import {
+  alertOk,
+  backLink,
+  badgeBrand,
+  btnSecondary,
+  card,
+  link,
+  socleBigStep,
+  socleBtnFilledBig,
+  socleCardBordered,
+  socleKicker,
+  socleStepLink,
+} from '@/components/ui/styles';
 import { BuyerAnswers } from '@/features/buyer-deck/components/buyer-answers';
 import { BuyerSoftCriteria } from '@/features/buyer-notes/components/buyer-soft-criteria';
 import { VerifyAllBadge } from '@/features/buyer-notes/components/verify-all-badge';
@@ -689,25 +701,28 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             sale ? 'lg:row-span-2' : ''
           }`}
         >
-          {/* UNE prochaine étape, en bloc plein. */}
+          {/* UNE prochaine étape. La refonte, lot B (maquette REFONTE-4) — la carte du socle :
+              blanche, son sur-titre, ce qu'il y a à faire, puis le seul bouton plein de la fiche. */}
           <section
-            className={`flex flex-col gap-3 rounded-2xl bg-brand-deep p-5 text-white ${sale ? '' : 'lg:flex-1'}`}
+            className={`${socleCardBordered} flex flex-col gap-3 p-[18px] ${sale ? '' : 'lg:flex-1'}`}
             data-testid="buyer-next-step"
           >
-            <span className="text-[11px] font-bold tracking-[0.14em] text-white/70 uppercase">
-              Prochaine étape
-            </span>
+            <span className={socleKicker}>Prochaine étape</span>
             {facts.unread ? (
-              <p role="alert" className="text-sm font-semibold text-white">
+              <p role="alert" className="text-sm font-semibold text-red-700 stage:text-red-300">
                 L’avancement de cette fiche n’a pas pu être lu : rechargez la page.
               </p>
             ) : (
               <>
-                <h2 className="font-title text-xl font-bold">{next.title}</h2>
-                <p className="text-sm text-white/85 lg:grow">{next.phrase}</p>
+                <h2 className="text-lg leading-snug font-bold text-brand-darker stage:text-white">
+                  {next.title}
+                </h2>
+                <p className="text-[15px] text-[#5B6380] lg:grow stage:text-white/70">
+                  {next.phrase}
+                </p>
                 {/* Mission 145 — les mandats à lui proposer n'ont pas pu être lus (M98). */}
                 {loopProposals?.failed ? (
-                  <p role="alert" className="text-sm font-semibold text-white">
+                  <p role="alert" className="text-sm font-semibold text-red-700 stage:text-red-300">
                     Les mandats à lui proposer n’ont pas pu être lus : rechargez la page.
                   </p>
                 ) : null}
@@ -721,7 +736,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                     <Link
                       href={next.primary.href}
                       data-testid="buyer-next-button"
-                      className="btn-filled inline-flex items-center justify-center rounded-xl bg-white px-4 py-2.5 font-semibold text-brand-deep hover:bg-brand-soft"
+                      className={`${socleBtnFilledBig} ${socleBigStep}`}
                     >
                       {next.primary.label}
                     </Link>
@@ -729,7 +744,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                       <Link
                         href={next.secondary.href}
                         data-testid="buyer-next-secondary"
-                        className="self-center text-sm text-white underline"
+                        className={socleStepLink}
                       >
                         {next.secondary.label}
                       </Link>
