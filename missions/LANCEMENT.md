@@ -82,9 +82,13 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
     verte.** — **fait le 25/11** : Supabase sauvegarde la base chaque nuit (sans les fichiers du
     stockage, que notre sauvegarde prend : faite et vérifiée par restauration le 25/11) ; journal
     vide depuis le 24/11 à 16 h 33 ; suite complète 37 sur 37
-13. **Livraison.** — à faire
+13. **Livraison.** — **prête le 25/11**, à dire « livrée » après le dernier contrôle du 26/11 au
+    soir : le guide de prise en main pour les conseillers (`public/guide/guide-de-prise-en-main.pdf`,
+    deux pages, validé par Jean-Guy le 25/11 et ouvert depuis « Aide »), la feuille de livraison (`missions/LIVRAISON.md` : les contrôles, ce qui reste
+    éteint, ouvrir une agence, ce qui attend Jean-Guy)
     - Le guide, à la ligne des portails (Jean-Guy, 25/11) : Belles Demeures ne s'aspire pas (son
-      site interdit la lecture de ses annonces) : le bien se saisit à la main.
+      site interdit la lecture de ses annonces) : le bien se saisit à la main. — **fait**, et un
+      test garde la ligne alignée sur le code
 
 ## Chaque soir
 

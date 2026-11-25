@@ -1,6 +1,12 @@
 import { expect, test, type Page } from './test';
 
-import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './support';
+import {
+  demoCredentials,
+  expectOneFilled,
+  login,
+  openSuiviLine,
+  resetDemoByScreen,
+} from './support';
 
 // Mission 153 — le bon de visite et l'offre d'achat hors mandat (planches M153-1 à 3), sur l'URL
 // d'essai avec le compte de l'agence de démonstration. La visite de Mr and Mrs Wilson sur une
@@ -165,10 +171,13 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
     await expect(page.getByTestId('offer-form')).toBeVisible();
     // La fiche acquéreur montre la visite faite, passée en « Offre envisagée ».
     await page.goto(wilsonUrl);
+    // Mission 10 bis — sa visite est sur la ligne « Visités » de son suivi, qu'un toucher ouvre.
+    await openSuiviLine(page, 'visited');
     const onBuyer = page
       .getByTestId('buyer-follow-up')
       .locator('[data-testid="visit-line"][data-state="done"]')
       .filter({ hasText: /66\sm²/ });
+    await expect(onBuyer).toBeVisible();
     await expect(onBuyer.getByTestId('visit-report')).toContainText('Intéressé · Offre envisagée');
     await expect(onBuyer.getByTestId('visit-actions')).toHaveAttribute('data-step', 'offer');
   });

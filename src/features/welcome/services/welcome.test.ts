@@ -20,12 +20,15 @@ import {
 } from '@/features/welcome/services/example-dossier';
 import { isExampleDossier, withoutExamples } from '@/features/welcome/services/example-exclusion';
 import {
+  GUIDE_HREF,
+  GUIDE_LABEL,
   LOCALISATEUR_STORE_URL,
   locatorInstalled,
   WELCOME_STEPS,
   homeHref,
   isChromeBrowser,
 } from '@/features/welcome/services/welcome';
+import { isPublicPath } from '@/lib/supabase/public-paths';
 
 const SRC = join(process.cwd(), 'src');
 const read = (...path: string[]): string => readFileSync(join(SRC, ...path), 'utf8');
@@ -101,6 +104,40 @@ describe('« Bienvenue » (mission 97)', () => {
     expect(read('features', 'workspace-mode', 'services', 'workspace-mode.ts')).toContain(
       "{ href: '/bienvenue', label: 'Aide'",
     );
+  });
+});
+
+// Lancement, mission 13 (demande de Jean-Guy du 25/11) — « Aide » donne le guide de prise en main :
+// un lien vers son PDF, le même que celui qu'on envoie.
+describe('« Aide » donne le guide de prise en main', () => {
+  const page = read('app', '(protected)', 'bienvenue', 'page.tsx');
+
+  it('un lien « Guide de prise en main » vers le PDF, dans un nouvel onglet', () => {
+    expect(GUIDE_LABEL).toBe('Guide de prise en main');
+    expect(GUIDE_HREF).toBe('/guide/guide-de-prise-en-main.pdf');
+    expect(page).toContain('href={GUIDE_HREF}');
+    expect(page).toContain('{GUIDE_LABEL}');
+    expect(page).toMatch(/href=\{GUIDE_HREF\}[\s\S]{0,120}target="_blank"/);
+    // Un lien, jamais un bouton plein de plus (M146).
+    expect(page).not.toMatch(/href=\{GUIDE_HREF\}[\s\S]{0,200}btnPrimary/);
+  });
+
+  it('le PDF est bien là où le lien mène, et c’est un PDF', () => {
+    const pdf = readFileSync(join(process.cwd(), 'public', GUIDE_HREF));
+    expect(pdf.subarray(0, 5).toString('latin1')).toBe('%PDF-');
+    expect(pdf.length).toBeGreaterThan(50_000);
+  });
+
+  it('il se lit connecté seulement : un visiteur sans compte est renvoyé à la connexion', () => {
+    expect(isPublicPath(GUIDE_HREF)).toBe(false);
+    // La garde de session passe sur les PDF : seules les images en sont dispensées.
+    const proxy = read('proxy.ts');
+    expect(proxy).not.toMatch(/\|pdf\b/);
+  });
+
+  it('`npm run guide:pdf` écrit ce fichier-là', () => {
+    const script = readFileSync(join(process.cwd(), 'scripts', 'guide-pdf.mjs'), 'utf8');
+    expect(script).toContain("join(ROOT, 'public', 'guide', 'guide-de-prise-en-main.pdf')");
   });
 });
 

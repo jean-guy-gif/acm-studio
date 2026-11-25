@@ -33,6 +33,12 @@ export function homeHref(ownDossierCount: number, expert = false): string {
   return ownDossierCount === 0 && !expert ? '/bienvenue' : '/aujourdhui';
 }
 
+// Lancement, mission 13 (demande de Jean-Guy du 25/11) — le guide de prise en main, deux pages :
+// le PDF que `npm run guide:pdf` tire de `docs/guide/guide-de-prise-en-main.html`. Il se lit
+// connecté seulement (la garde de session passe sur les PDF).
+export const GUIDE_LABEL = 'Guide de prise en main';
+export const GUIDE_HREF = '/guide/guide-de-prise-en-main.pdf';
+
 // Mission 106 — la page du Localisateur Academia sur le Chrome Web Store : c'est la version
 // distribuée aux conseillers, pont vers ACM compris (jamais le build propre à ACM). Une adresse
 // publique de page ; l'identifiant qui sert à lui parler reste lu dans l'environnement (M75).

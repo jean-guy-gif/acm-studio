@@ -778,14 +778,31 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   sous des annonces différentes d'une recherche à l'autre : ne jamais reconnaître un bien du
   marché par sa seule annonce. Son identifiant (`property.uuid`) est gardé dans le `snapshot`
   d'un bien de sélection, sous `key`, et dans les trouvailles de la veille.
-- 25/11 · Une suite e2e lancée en journée tombe quand le réseau du poste décroche (« La
-  connexion du compte de test a échoué », bouton « Connexion… » resté grisé) : trois épisodes
-  le 25/11 (7 h, 11 h, 13 h). Rejouer la spec seule avant de chercher un défaut.
+- 25/11 · « La connexion du compte de test a échoué » n'est pas toujours le réseau du poste. Lu
+  dans les journaux de Supabase le 25/11 : juste après une remise à zéro de la démo par une spec
+  (environ 450 écritures et 60 photos en 30 secondes), la base met dix à vingt secondes à
+  répondre à TOUT, même à la lecture d'une ligne (14 h 10, 14 h 13, 14 h 51), et une minute et
+  demie à 11 h (`postgrest_logs` : « Timed out acquiring connection from connection pool »). La
+  connexion elle-même avait réussi (`auth_audit_logs`) : c'est la page d'arrivée qui attend,
+  l'écran restant sur « / ». C'est la plus petite base de l'offre Pro (`max_connections` 60,
+  1 Go) sous la charge des tests : rejouer la spec seule, c'est un aléa. Et c'est la base de la
+  production : la suite complète ne tourne que la nuit (règle du 23/11), en journée les seules
+  specs concernées. Pour voir un tel moment : `query_logs`, `edge_logs` par tranches de 5
+  secondes, `response.origin_time` (moyenne, maximum) et le nombre d'écritures. Quand treize specs
+  tombent d'affilée avec le bouton « Connexion… » resté grisé, c'est bien le réseau du poste.
 - 25/11 · Une preuve e2e qui attend « la page est rendue de nouveau » (une adresse signée
   neuve) n'est pas sûre : sans nouveau rendu, elle tombe sans défaut. La rendre conditionnelle,
   et garder la preuve ferme dans un test unitaire.
 - 25/11 · Le relecteur coupé par la limite d'usage du modèle : le relancer aussitôt sur un autre
   modèle (`model`), avec la même consigne, plutôt qu'attendre l'heure de remise à zéro.
+
+- 25/11 · Lancement 13 · Une erreur du journal vient-elle de la production ? Sa `version` est un
+  commit : `git branch -r --contains <version>` ne rend que `origin/essai` pour une ligne de
+  l'essai. Côté hébergeur, `get_runtime_logs` avec `environment: production` et
+  `level: [error, fatal]` sur sept jours donne la liste propre ; les « Invalid Refresh Token »
+  sont des sessions expirées, pas des défauts.
+- 25/11 · Un `-g` de Playwright filtre TOUTES les specs de la commande : jouer à part les specs
+  qu'on veut entières, sinon elles sont ignorées sans un mot (« 1 passed »).
 
 ## La base
 
@@ -1016,6 +1033,15 @@ null; end;` passe toujours, que la fonction refuse ou non (l'échec, lui aussi P
   les mêmes Études avec le compte de démo des tests sur les deux adresses (la base est commune) et
   comparer le texte page à page ; les identifiants se relisent en base après chaque spec, qui remet
   la démo à zéro.
+
+- 25/11 · Lancement 13 · Un document à imprimer (le guide) : le skill `print-html-pdf` demande
+  Playwright pour Python, absent du poste ; le Playwright du dépôt fait le même travail avec les
+  mêmes réglages (format en mm, fonds imprimés, marges à zéro), sans rien installer
+  (`scripts/guide-pdf.mjs`). Les polices embarquées du dépôt se citent par un chemin relatif
+  depuis le HTML ; la sous-police « latin » n'a ni « → » ni « ★ » : « › » et un dessin en SVG.
+  Le texte tient-il dans la page ? Le mesurer (dernier bloc contre le pied de page), une page
+  en `overflow: hidden` coupe sans le dire. Prettier reformate le HTML sans changer le rendu
+  (pages comparées au pixel près).
 
 ## L'atelier et les hooks
 

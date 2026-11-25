@@ -16,10 +16,12 @@ import {
   mainText,
   openAccountMenu,
   openFold,
+  openSuiviLine,
   openToday,
   pagePayload,
   readTestOppositions,
   removeTestOppositions,
+  reveal,
   sideNav,
   TEST_PRICE_DROP,
   uniqueDossierName,
@@ -930,8 +932,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     const buyerUrl = page.url().replace(/\?.*$/, '');
     const buyerId = buyerUrl.split('/').pop() as string;
-    await expect(page.getByTestId('buyer-status-badge')).toHaveText('En recherche');
-    // Pas encore prêt : son financement n'est pas posé. Validé : « Prêt à visiter ».
+    // Mission 10 bis — son statut, en simple badge en tête de fiche.
+    await expect(page.getByTestId('buyer-status-pill')).toHaveText('En recherche');
+    // Pas encore prêt : son financement n'est pas posé, « Prêt à visiter ? » est ouvert sous les
+    // yeux. Validé : « Prêt à visiter », et le bloc se range dans « Tout le dossier ».
     await expect(page.getByTestId('buyer-ready')).toHaveCount(0);
     await page.getByTestId('buyer-financing').getByRole('button', { name: 'Validé' }).click();
     await expect(page.getByTestId('buyer-ready')).toHaveText('Prêt à visiter');
@@ -972,10 +976,15 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
         .locator('label')
         .filter({ has: page.locator('span', { hasText: new RegExp(`^${label}$`) }) })
         .locator('input, select, textarea');
+    // Mission 10 bis — « Modifier sa recherche » n'apparaît qu'une fois, sous ses critères repliés ;
+    // il ouvre le formulaire, en bas de la fiche.
     const searchDetails = page.getByTestId('buyer-form-details');
-    await expect(searchDetails).not.toHaveAttribute('open', '');
-    await searchDetails.getByText('Modifier sa recherche').click();
-    await expect(searchDetails).toHaveAttribute('open', '');
+    await expect(searchDetails).toHaveCount(0);
+    await expect(page.getByText('Modifier sa recherche', { exact: true })).toHaveCount(1);
+    await reveal(page.getByTestId('buyer-edit-search'));
+    await page.getByTestId('buyer-edit-search').click();
+    await expect(page).toHaveURL(/\?modifier=1#recherche$/);
+    await expect(searchDetails).toBeVisible();
     // Les communes dédoublonnées, la fiche relue ; la ★ a mis l'extérieur à « oui ».
     await expect(field('Communes')).toHaveValue('Nice, Cagnes-sur-Mer');
     const typeBox = page.locator('input[name="property_types"][value="apartment"]');
@@ -1018,9 +1027,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // « Rapprocher » : le rapprochement, pré-rempli, trouve le mandat signé d'Antibes…
     // ici celui de ce passage, à Nice (3 pièces, 65 m², 315 000 € convenus : sous le plafond + 5 %).
     await page.goto(buyerUrl);
-    // Lancement, mission 10 — « Rapprocher » est un lien d'« Autres actions », sous la prochaine
-    // étape : « Rapprocher · n correspondances ».
-    await expect(page.getByTestId('buyer-other-actions')).toContainText('Autres actions :');
+    // Lancement, mission 10 — « Rapprocher » est un lien d'« Autres actions » : « Rapprocher · n
+    // correspondances ». Mission 10 bis — dans « Tout le dossier ».
+    await openFold(page, 'buyer-all');
+    await expect(page.getByTestId('buyer-other-actions')).toContainText('Autres actions');
     await expect(page.getByTestId('buyer-matches-link')).toHaveText(
       /^Rapprocher · [1-9]\d* correspondances?$/,
     );
@@ -1115,6 +1125,8 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('ideal-retain')).toBeDisabled();
     await expect(page.getByText(/\bM\d{2,3}\b|règles? du rapprochement/)).toHaveCount(0);
     await page.goto(buyerUrl);
+    // Sa sélection, à présenter : dans « Tout le dossier » (Mission 10 bis).
+    await reveal(page.getByTestId('ideal-selection'));
     await expect(page.getByTestId('ideal-selection')).toContainText(
       'Appartement · 3 pièces · 65 m²',
     );
@@ -1208,6 +1220,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('buyer-timeline')).toContainText('Visite demandée');
     await expect(page.getByTestId('buyer-follow-up')).toContainText('Veut le visiter');
     // Relue en lecture seule : « Terminé le », plus de réponse possible.
+    await reveal(page.getByTestId('present-selection'));
     await page.getByTestId('present-selection').click();
     await expect(page.getByText(/^Terminé le \d{2}\/\d{2}\/\d{4}$/)).toBeVisible();
     await expect(page.getByTestId('presentation-finished')).toContainText(
@@ -1277,12 +1290,16 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       .getByTestId('buyer-follow-up')
       .locator('[data-testid="visit-line"][data-state="done"]');
     await expect(doneOnBuyer).toHaveCount(1);
+    // Mission 10 bis — « Pas pour moi » : sa visite est sur la ligne « Refusés », fermée à
+    // l'ouverture ; un toucher l'ouvre.
+    await openSuiviLine(page, 'refused');
     await expect(doneOnBuyer.getByTestId('visit-report')).toContainText('On continue à chercher');
     await doneOnBuyer.getByTestId('visit-change-open').click();
     const changeOnBuyer = doneOnBuyer.getByTestId('visit-next-step-form');
     await expect(changeOnBuyer.getByTestId('visit-change-second_visit')).toBeVisible();
     await expect(changeOnBuyer.getByTestId('visit-change-offer')).toHaveCount(0);
     await changeOnBuyer.getByRole('button', { name: 'Annuler' }).click();
+    await reveal(page.getByTestId('buyer-dossier'));
     await page.getByTestId('buyer-dossier').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}/dossier$`));
     const dossier = page.getByTestId('buyer-dossier');
@@ -1358,9 +1375,12 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     }
 
     // Le statut, un cran à la fois ; puis « Archiver » : disparue de la liste et de son adresse.
+    // Mission 10 bis — l'un et l'autre dans « Tout le dossier » ; le badge en tête suit.
     await page.goto(buyerUrl);
+    await openFold(page, 'buyer-all');
     await page.getByTestId('buyer-status').getByRole('button', { name: 'En visite' }).click();
     await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
+    await expect(page.getByTestId('buyer-status-pill')).toHaveText('En visite');
     await expect(
       page.getByTestId('buyer-status').getByRole('button', { name: 'A acheté' }),
     ).toBeVisible();

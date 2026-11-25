@@ -30,6 +30,13 @@ commits et des messages, à quelques minutes près.
 | 25/11 | La suite e2e complète du 24/11 au soir, jouée le 25/11 à 7 h (37 sur 37, 13 rejouées) | — | 1 h 10 | 0 | 1 h 10 |
 | 25/11 | Lancement 11 : le parcours sur le compte réel, quatre défauts corrigés | Petit | 1 h 45 | 0 | 40 min |
 | 25/11 | Lancement 12 : sauvegardes, journal d'erreurs, suite de nuit | Petit | 25 min | 0 | 8 min |
+| 25/11 | Les deux restes du test, retirés du compte réel (dossier archivé, visite annulée) | Petit | 15 min | 0 | 0 |
+| 25/11 | Lancement 3 (suite) : « Déjà vus avec lui », un bien reconnu sous une autre annonce, vérifié sur le compte réel | Moyen | 1 h 40 | 0 | 55 min |
+| 25/11 | Lancement 11 (suite) : Belles Demeures, « semble supprimée », la recherche de concurrents sur le compte réel | Petit | 35 min | 0 | 10 min |
+| 25/11 | Lancement 3 (suite) : le doublon de la veille dans « Le marché » | Petit | 15 min | 0 | 5 min |
+| 25/11 | Lancement 13 : le guide de prise en main, la feuille de livraison, les contrôles, la base qui se fige | Petit | 1 h 10 | 0 | 10 min |
+| 25/11 | La suite e2e complète du 25/11, jouée à 14 h (37 sur 37, 4 rejouées) | — | 1 h 00 | 0 | 1 h 00 |
+| 25/11 | **Total de la journée (neuf lignes ; 8 h d'horloge, de 7 h à 15 h, la suite de l'après-midi en même temps que la mission 13)** | | **8 h 15** | 0 | 4 h 20 |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,
@@ -37,3 +44,8 @@ de 20 h 15 à 22 h : les deux dernières missions ont tourné en même temps.
 
 Le 24/11, la session s'est arrêtée vers 16 h 45, après la mise en production de la mission 10 :
 la suite e2e complète du soir et le point du soir sont partis le 25/11 à 7 h.
+
+Le 25/11, la session s'est arrêtée de 11 h 20 à 11 h 57, relancée par Jean-Guy (ce temps n'est
+compté dans aucune mission) ; à 12 h 23 le relecteur a buté sur la limite d'usage du modèle et a
+été relancé sur un autre. La suite complète a tourné à 14 h, pas la nuit : c'était à tort, elle
+pèse sur la base de la production (`missions/LIVRAISON.md`).

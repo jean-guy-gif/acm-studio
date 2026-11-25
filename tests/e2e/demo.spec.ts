@@ -20,6 +20,7 @@ import {
   removeDemoRunDossiers,
   resetDemoByScreen,
   sideNav,
+  unfoldBuyerSheet,
   uniqueDossierName,
   withoutSpaces,
 } from './support';
@@ -1413,8 +1414,19 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
   await expectOneFilled(page, 'Fiche acquéreur');
   const kellerUrl = new URL(page.url()).pathname;
-  // Mission 130 B — en tête : ses mots, ses critères (★ indispensables), son téléphone.
+  // Mission 10 bis — la fiche est repliée : pendant la vente, on voit qui il est, la prochaine
+  // étape, « Avant le compromis », « La vente » et son suivi ; le reste est sous « Tout le
+  // dossier », replié comme ses critères.
   await expect(page.getByTestId('buyer-words')).toBeVisible();
+  await expect(page.getByTestId('buyer-criteria')).toBeHidden();
+  await expect(page.getByTestId('buyer-all')).not.toHaveAttribute('open', '');
+  await expect(page.getByTestId('buyer-steps')).toBeHidden();
+  await expect(page.getByTestId('buyer-sale')).toBeVisible();
+  await expect(page.getByTestId('buyer-before-compromise')).toBeVisible();
+  // La spec déplie tout, comme le conseiller, avant de lire ce que les plis contiennent.
+  await unfoldBuyerSheet(page);
+  await expectOneFilled(page, 'Fiche acquéreur, tout déplié');
+  // Mission 130 B — ses mots, ses critères (★ indispensables), son téléphone.
   await expect(page.getByTestId('buyer-criteria')).toContainText('★');
   // Mission 143 (B1, maquette AUDIT-keller.png) — cinq étapes à l'état le plus avancé : l'offre
   // acceptée coche la sélection, la présentation et la visite ; le compromis est à lancer.
@@ -1702,7 +1714,9 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   }
   await page.goto('/acquereurs');
   await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
-  // Lancement, mission 6 — ses réponses se lisent dans « Son suivi », un bien par ligne.
+  // Lancement, mission 6 — ses réponses se lisent dans « Son suivi », un bien par ligne (Mission
+  // 10 bis : ses lignes dépliées).
+  await unfoldBuyerSheet(page);
   await expect(page.getByTestId('buyer-follow-up')).toContainText('depuis le lien');
   await expect(page.getByTestId('buyer-follow-up')).toContainText('Pas pour lui : Le prix');
   // Mission 120 B — A et B « Je veux le visiter » sur le lien : aucun « Peut-être » ici.
@@ -1931,6 +1945,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   // présentation, après celle du lien) ; mission 135 — plus les deux refus « Le prix » semés sur
   // une sélection plus ancienne.
   const answers = page.getByTestId('buyer-follow-up');
+  await unfoldBuyerSheet(page);
   await expect(answers.getByTestId('buyer-follow-up-item')).toHaveCount(5);
   await expect(page.getByTestId('buyer-answer')).toHaveCount(0);
   await expect(answers).toContainText('Veut le visiter');

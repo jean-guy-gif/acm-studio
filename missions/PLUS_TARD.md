@@ -199,3 +199,38 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   - la recherche de concurrents sur un bien sans adresse dit « Secteur non utilisé : la fiche du
     bien vendeur n'a pas d'adresse » et « 2 biens neufs non proposés » : deux bandeaux jaunes l'un
     sous l'autre, avant le premier concurrent.
+- 25/11 · Lancement 13 · Notés en préparant la livraison :
+  - le guide de prise en main n'est pas ouvert depuis l'outil : un lien depuis « Aide » le
+    donnerait à chaque conseiller sans envoi (à décider par Jean-Guy) ;
+  - seule la ligne des portails et le message du forfait du guide sont gardés par un test ; garder
+    aussi les mots des boutons qu'il cite ferait échouer la CI à chaque libellé changé : une règle
+    nouvelle, à décider par Jean-Guy ;
+  - `docs/ETAT_DU_PRODUIT.md` a été relevé le 6 octobre : il est à refaire ;
+  - sur l'essai, deux fois en deux jours pendant les tests (24/11 à 16 h 33, 25/11 à 12 h 45),
+    « Aujourd'hui » de la démo n'a pas pu lire la liste « Ne plus solliciter », et une page de
+    dossier a perdu sa connexion à la base une fois (25/11 à 12 h 55, « other side closed ») ; la
+    cause de l'échec de lecture n'entre pas au journal (`get-oppositions.ts` ne garde que son
+    message) : la journaliser dirait si c'est le réseau ou la base. Jamais vu en production ;
+  - le journal d'erreurs et les erreurs de l'hébergeur mêlent l'essai et la production (base et
+    projet partagés) : une colonne « essai / production » sur `/erreurs` éviterait de chercher le
+    commit de chaque ligne.
+- 25/11 · Lancement 13 · La base se fige sous la charge des tests (lu dans les journaux de Supabase,
+  `edge_logs` et `postgrest_logs`) : dix à vingt secondes le 25/11 à 14 h 10, 14 h 13 et 14 h 51,
+  une minute et demie à 11 h (« Timed out acquiring connection from connection pool », réponses
+  504 et 500), et quatre à dix fois par heure de tests la veille. Chaque fois juste après une
+  remise à zéro de la démo par une spec : douze dossiers créés en deux groupes de six en même
+  temps (M155), environ 450 écritures et 60 photos en 30 secondes, puis les pages qui se
+  réaffichent. La base est la plus petite de l'offre Pro (1 Go de mémoire, 60 connexions) et elle
+  est commune à la production, à l'essai et à la démo. Rien la nuit ni en usage normal d'un seul
+  compte ; mais un closer qui remet sa démo à zéro, ou plusieurs conseillers ensemble sur des
+  pages lourdes, feraient attendre tout le monde. À décider par Jean-Guy (des coûts) : une base
+  plus puissante ; la base d'essai séparée (`docs/PASSAGE_PAYANT.md`, étapes 3 à 7). Dans le
+  code, à mesurer : créer les dossiers de la démo un par un ; faire lire moins aux pages lourdes
+  — « Aujourd'hui », la liste des dossiers : plusieurs centaines de lectures par affichage sur un
+  vrai compte (23 dossiers, 153 concurrents), dont une lecture des concurrents par dossier ; la
+  règle « déjà vu » y lit sept tables deux fois (Lancement 3).
+- 25/11 · Lancement 13 · La connexion des specs e2e attend désormais 45 secondes au lieu de 20
+  (`tests/e2e/support.ts`) : cela évite une spec tombée quand la base se fige après une remise à
+  zéro, pas le figement lui-même ; une action faite pendant ce moment peut encore tomber (vu une
+  fois : « Un incident est survenu » au changement de langue, vert au rejeu).
+
