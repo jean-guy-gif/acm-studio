@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  candidateTarget,
   contactedOf,
   countSeen,
   currentSeenLabel,
@@ -377,5 +378,70 @@ describe('la sélection lui est-elle parvenue ?', () => {
       ],
     });
     expect(proposed.get('s1')).toBe('2026-11-20T10:00:00Z');
+  });
+});
+
+// Relecture du 25/11 — une réponse de l'acquéreur dit qu'il a reçu la sélection ; une visite demandée
+// par le conseiller seul, non.
+describe('reçue par une réponse', () => {
+  it('une réponse sur l’un de ses biens : la sélection lui est parvenue, à cette date', () => {
+    const received = receivedSelections({
+      ...base,
+      responses: [
+        { selection_item_id: 'i2', answer: 'maybe', answered_at: '2026-11-12T09:00:00Z' },
+      ],
+    });
+    expect(received.get('s1')).toBe('2026-11-12T09:00:00Z');
+  });
+
+  it('ses autres biens sont envoyés, eux aussi', () => {
+    const facts = factsOf({
+      ...base,
+      responses: [{ selection_item_id: 'i1', answer: 'no', answered_at: '2026-11-12T09:00:00Z' }],
+    });
+    expect(facts['project:p1']).toBe('refused');
+    expect(Object.values(facts).filter((reason) => reason === 'sent')).toHaveLength(2);
+  });
+});
+
+describe('la raison la plus forte, et la cible d’une annonce', () => {
+  it('un bien qui en rappelle deux : écarté l’emporte sur envoyé, refusé sur visité', () => {
+    const like = { city: 'Vence', rooms: 5, surface: 135, price: 713_000 };
+    const seen = seenMatcher(
+      [
+        { key: 'listing:a', reason: 'sent' },
+        { key: 'listing:b', reason: 'dismissed' },
+      ],
+      [
+        { key: 'listing:a', propertyId: 'se-1', like },
+        { key: 'listing:b', propertyId: null, like },
+      ],
+    );
+    expect(seen({ key: 'listing:autre', propertyId: 'se-1', like })).toBe('dismissed');
+  });
+
+  it('une annonce de la recherche : son identifiant chez le fournisseur et sa ressemblance', () => {
+    expect(
+      candidateTarget('listing:seloger:X', {
+        key: 'se-735',
+        city: 'Mouans-Sartoux',
+        roomsCount: 6,
+        surfaceArea: 257,
+        price: 1_698_000,
+      }),
+    ).toEqual({
+      key: 'listing:seloger:X',
+      propertyId: 'se-735',
+      like: { city: 'Mouans-Sartoux', rooms: 6, surface: 257, price: 1_698_000 },
+    });
+    expect(
+      candidateTarget('listing:x', {
+        key: null,
+        city: null,
+        roomsCount: 6,
+        surfaceArea: 257,
+        price: 1,
+      }),
+    ).toEqual({ key: 'listing:x', propertyId: null, like: null });
   });
 });

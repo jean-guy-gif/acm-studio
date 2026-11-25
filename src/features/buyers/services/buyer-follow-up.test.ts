@@ -438,7 +438,7 @@ describe('« Déjà vus avec lui »', () => {
     expect(seenWithHim(buyerFollowUp(shared), [], NOW)[0].mention).toBe('Envoyé hier, par le lien');
   });
 
-  it('refusé après la visite : la mention le dit', () => {
+  it('refusé après la visite : la mention dit ce qui l’a gêné (M139)', () => {
     const refused = {
       ...rows,
       visits: [
@@ -449,11 +449,29 @@ describe('« Déjà vus avec lui »', () => {
         }),
       ],
     };
-    expect(
-      seenWithHim(buyerFollowUp(refused), refused.visits, NOW).find((line) =>
-        line.label.endsWith('p1'),
-      )?.mention,
-    ).toBe('Refusé après la visite');
+    const mention = (disliked: string[]) =>
+      seenWithHim(
+        buyerFollowUp(refused),
+        refused.visits.map((one) => ({ ...one, disliked })),
+        NOW,
+      ).find((line) => line.label.endsWith('p1'))?.mention;
+    expect(mention(['price', 'district'])).toBe('Refusé après la visite : le quartier, le prix');
+    expect(mention([])).toBe('Refusé après la visite');
+  });
+
+  it('une réponse sur le lien, sans partage noté : ses autres biens lui sont parvenus aussi', () => {
+    const answered = {
+      ...base,
+      selections: [{ id: 's1', presented_at: null }],
+      responses: [answer('i2', 'maybe', '2026-11-20T08:00:00Z', { answered_during: 'dossier' })],
+      dismissals: [],
+      visits: [],
+    };
+    const list = seenWithHim(buyerFollowUp(answered), [], NOW);
+    expect(list.map((line) => line.label.slice(-2)).sort()).toEqual(['p1', 'p2', 'p3', 'p4']);
+    expect(list.find((line) => line.label.endsWith('p1'))?.mention).toBe(
+      'Envoyé il y a 4 jours, par le lien',
+    );
   });
 
   it('une visite à organiser : dite avec la présentation', () => {

@@ -105,18 +105,24 @@ export async function readSeenProperties(
   ) {
     return null;
   }
-  // L'annonce des concurrents d'une sélection : un même bien a une seule clé, d'où qu'il vienne.
-  // Lue seulement s'il y en a ; jamais pour proposer un concurrent (M145).
-  const comparables = items.data.some((row) => row.source === 'competitor')
-    ? await readPages((from, to) =>
-        supabase
-          .from('comparables')
-          .select('id, listing_url, city, rooms_count, surface_area, price')
-          .eq('agency_id', agencyId)
-          .order('id')
-          .range(from, to),
-      )
-    : { data: [], error: false };
+  // L'annonce des concurrents d'une sélection : un même bien a une seule clé, d'où qu'il vienne ;
+  // et ce qui le fait reconnaître sous une autre annonce. Les seuls concurrents des sélections, lus
+  // seulement s'il y en a ; jamais pour proposer un concurrent (M145).
+  const competitorIds = [
+    ...new Set(items.data.filter((row) => row.source === 'competitor').map((row) => row.reference)),
+  ];
+  const comparables =
+    competitorIds.length > 0
+      ? await readPages((from, to) =>
+          supabase
+            .from('comparables')
+            .select('id, listing_url, city, rooms_count, surface_area, price')
+            .eq('agency_id', agencyId)
+            .in('id', competitorIds)
+            .order('id')
+            .range(from, to),
+        )
+      : { data: [], error: false };
   if (comparables.error) return null;
   const competitorUrls = new Map(
     comparables.data.flatMap((row) =>
@@ -156,6 +162,7 @@ export async function readSeenProperties(
     shares: shares.data,
     proposals: proposals.data,
     items: itemRows,
+    responses: responses.data,
   });
   const marks = seenMarksOf({
     selections: selections.data,

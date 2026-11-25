@@ -147,7 +147,11 @@ export default async function IdealPropertiesPage({ params }: Props) {
               outcome: line.outcome,
             })),
           }),
-          ownVisits,
+          ownVisits.map((line) => ({
+            id: line.id,
+            visitedAt: line.visitedAt,
+            disliked: line.report?.disliked ?? [],
+          })),
           // Un bien de la sélection en cours a déjà sa ligne dans le bandeau.
         ).filter((line) => !currentKeys.has(line.key))
       : null;
@@ -229,9 +233,7 @@ export default async function IdealPropertiesPage({ params }: Props) {
             ? seenFacts.filter((fact) => fact.reason === 'dismissed').map((fact) => fact.key)
             : null
         }
-        seen={(seenFacts ?? []).flatMap((fact) =>
-          fact.reason === 'dismissed' ? [] : [{ key: fact.key, reason: fact.reason }],
-        )}
+        seen={seenFacts ?? []}
         currentSeen={currentSeen}
         seenMarks={seenRead ? seenRead.marks(buyer.id) : []}
         seenList={seenList}
