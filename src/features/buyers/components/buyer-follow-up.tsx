@@ -40,11 +40,19 @@ const TONES: Record<FollowUpTone, string> = {
   plain: 'bg-zinc-100 text-zinc-700',
 };
 
-const countBadge =
-  'min-w-7 rounded-full bg-sky-100 px-2 py-0.5 text-center text-xs font-bold text-sky-900';
-const countBadgeEmpty =
-  'min-w-7 rounded-full bg-zinc-100 px-2 py-0.5 text-center text-xs font-bold text-zinc-500 stage:bg-white/10 stage:text-white/50';
 const chevron = 'w-3 shrink-0 text-xs';
+
+// La refonte, lot B (maquette REFONTE-4) — « puis trois chiffres » : chaque ligne du suivi est une
+// tuile du socle, son nombre en grand, ce qu'il compte dessous. Une tuile se touche pour s'ouvrir :
+// elle prend alors toute la largeur, ses biens dessous (Mission 10 bis : le détail d'une visite
+// n'apparaît qu'une fois sa ligne ouverte). « Visites à organiser », quand il y en a, a sa ligne
+// entière au-dessus des trois.
+const tile =
+  'min-w-0 rounded-2xl border border-[#E3E6F0] bg-white stage:border-white/10 stage:bg-white/5';
+const tileHead = 'relative flex flex-col gap-0.5 px-3 py-3.5 xl:px-[18px] xl:py-4';
+const tileCount = 'text-[26px] leading-tight font-extrabold xl:text-[28px]';
+const tileLabel = 'font-sans text-sm font-normal text-[#5B6380] xl:text-[15px] stage:text-white/60';
+const tileGist = 'text-xs text-[#5B6380] stage:text-white/60';
 
 function Entry({
   entry,
@@ -224,81 +232,82 @@ export function BuyerFollowUp({
           Son suivi n’a pas pu être lu en entier : rechargez la page.
         </p>
       ) : null}
-      {suiviLineGroups(of('to_visit').length).map((group) => {
-        const list = of(group);
-        const gist = suiviLineGist({
-          group,
-          count: list.length,
-          pills: list.map((entry) => followUpPill(entry).text),
-          lastVisit,
-        });
-        // Une ligne sans bien ne s'ouvre pas : elle dit « aucun », en gris. Sauf si le suivi n'a
-        // pas pu être lu en entier : on ne dit jamais « aucun » sur une lecture en échec (M98).
-        if (list.length === 0) {
-          if (unread) return null;
+      <div className="grid grid-cols-3 gap-2.5 pb-3 xl:gap-3.5" data-testid="buyer-follow-up-tiles">
+        {suiviLineGroups(of('to_visit').length).map((group) => {
+          const list = of(group);
+          const gist = suiviLineGist({
+            group,
+            count: list.length,
+            pills: list.map((entry) => followUpPill(entry).text),
+            lastVisit,
+          });
+          const wide = group === 'to_visit' ? 'col-span-3' : '';
+          // Une tuile sans bien ne s'ouvre pas : elle dit « aucun », en gris. Sauf si le suivi n'a
+          // pas pu être lu en entier : on ne dit jamais « aucun » sur une lecture en échec (M98).
+          if (list.length === 0) {
+            if (unread) return null;
+            return (
+              <div
+                key={group}
+                className={`${tile} ${tileHead} ${wide}`}
+                data-testid="buyer-follow-up-group"
+                data-group={group}
+                data-empty="true"
+              >
+                <span
+                  className={`${tileCount} text-zinc-500 stage:text-white/50`}
+                  data-testid="buyer-follow-up-count"
+                >
+                  0
+                </span>
+                <h3 className={tileLabel}>{FOLLOW_UP_GROUP_TITLES[group]}</h3>
+                <span className={tileGist}>{gist}</span>
+              </div>
+            );
+          }
           return (
-            <div
-              key={group}
-              className="flex items-center gap-3 border-t border-zinc-100 px-1 py-2.5 stage:border-white/10"
+            <details
+              key={group === messagesGroup && messagesKey ? `${group}:${messagesKey}` : group}
+              className={`group/line ${tile} ${wide} open:col-span-3`}
               data-testid="buyer-follow-up-group"
               data-group={group}
-              data-empty="true"
+              open={suiviLineOpen({
+                messages: group === messagesGroup,
+                pendingVisit:
+                  group === 'to_visit' ||
+                  list.some((entry) => entry.visitIds.some((id) => pending.has(id))),
+                sale,
+              })}
             >
-              <span aria-hidden className={`${chevron} text-zinc-300`}>
-                ▸
-              </span>
-              <h3 className="font-title text-base font-bold text-zinc-500 sm:w-52 stage:text-white/50">
-                {FOLLOW_UP_GROUP_TITLES[group]}
-              </h3>
-              <span className={countBadgeEmpty} data-testid="buyer-follow-up-count">
-                0
-              </span>
-              <span className="text-sm text-zinc-500 stage:text-white/50">{gist}</span>
-            </div>
-          );
-        }
-        return (
-          <details
-            key={group === messagesGroup && messagesKey ? `${group}:${messagesKey}` : group}
-            className="group/line border-t border-zinc-100 stage:border-white/10"
-            data-testid="buyer-follow-up-group"
-            data-group={group}
-            open={suiviLineOpen({
-              messages: group === messagesGroup,
-              pendingVisit:
-                group === 'to_visit' ||
-                list.some((entry) => entry.visitIds.some((id) => pending.has(id))),
-              sale,
-            })}
-          >
-            <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg px-1 py-2.5 marker:hidden hover:bg-zinc-50 stage:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
-              <span
-                aria-hidden
-                className={`${chevron} text-brand-deep transition-transform group-open/line:rotate-90 stage:text-brand`}
+              <summary
+                className={`${tileHead} cursor-pointer list-none rounded-2xl marker:hidden hover:bg-[#F4F5FA] stage:hover:bg-white/5 [&::-webkit-details-marker]:hidden`}
               >
-                ▸
-              </span>
-              <h3 className="font-title text-base font-bold text-zinc-900 sm:w-52 stage:text-white">
-                {FOLLOW_UP_GROUP_TITLES[group]}
-              </h3>
-              <span className={countBadge} data-testid="buyer-follow-up-count">
-                {list.length}
-              </span>
-              {gist ? (
                 <span
-                  className="basis-full pl-6 text-sm text-zinc-600 sm:basis-auto sm:pl-0 stage:text-white/70"
-                  data-testid="buyer-follow-up-gist"
+                  aria-hidden
+                  className={`${chevron} absolute top-3.5 right-3 text-brand-deep transition-transform group-open/line:rotate-90 stage:text-brand`}
                 >
-                  {gist}
+                  ▸
                 </span>
-              ) : null}
-            </summary>
-            <div className="pt-1 pb-3 sm:pl-7">
-              <Entries list={list} visitRows={visitRows} budgetMax={budgetMax} now={now} />
-            </div>
-          </details>
-        );
-      })}
+                <span
+                  className={`${tileCount} text-brand-darker stage:text-white`}
+                  data-testid="buyer-follow-up-count"
+                >
+                  {list.length}
+                </span>
+                <h3 className={tileLabel}>{FOLLOW_UP_GROUP_TITLES[group]}</h3>
+                {gist ? (
+                  <span className={tileGist} data-testid="buyer-follow-up-gist">
+                    {gist}
+                  </span>
+                ) : null}
+              </summary>
+              <div className="border-t border-[#E3E6F0] px-3 pt-3 pb-3 xl:px-[18px] stage:border-white/10">
+                <Entries list={list} visitRows={visitRows} budgetMax={budgetMax} now={now} />
+              </div>
+            </details>
+          );
+        })}
+      </div>
       {children}
     </section>
   );

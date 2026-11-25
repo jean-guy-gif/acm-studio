@@ -168,6 +168,10 @@ export const socleBtnQuietBig =
 
 export const socleBigStep = 'h-[54px] xl:h-14';
 
+// Le lien sous le bouton d'une prochaine étape (« Voir les 3 biens suivants ») : 44 px, centré.
+export const socleStepLink =
+  'flex h-11 items-center justify-center text-center text-[15px] font-bold text-brand-deep hover:text-brand-darker stage:text-brand stage:hover:text-white';
+
 export const socleBigPair = 'h-[58px] xl:h-14';
 
 // La carte : blanche, coins de 20 px. Avec une ombre légère (téléphone) ou un filet (le détail).

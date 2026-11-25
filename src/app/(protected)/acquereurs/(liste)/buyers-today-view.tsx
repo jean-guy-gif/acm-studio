@@ -76,6 +76,9 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
     read.buyers.find((buyer) => buyer.id === item.buyerId) ?? null;
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
   const unread = today.failed.length > 0;
+  // Un seul bouton plein : celui de la première carte qui n'a qu'un geste (la réponse du vendeur à
+  // une offre en propose plusieurs, tous en contour, comme sur « Aujourd'hui »).
+  const lead = items.findIndex((item) => item.task.kind !== 'offer_answer');
 
   return (
     <div
@@ -140,7 +143,7 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
                   tone={item.tone}
                   href={`/acquereurs/${item.buyerId}`}
                   action={
-                    <TaskAction task={item.task} today={today} day={day} primary={index === 0} />
+                    <TaskAction task={item.task} today={today} day={day} primary={index === lead} />
                   }
                 />
               </li>
@@ -177,7 +180,7 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
 
       <section
         aria-label={selected ? selected.name : 'Détail'}
-        className="hidden min-w-0 flex-col gap-[18px] md:flex md:px-7 md:py-6 xl:px-10 xl:py-8"
+        className="hidden min-w-0 flex-col gap-[18px] md:sticky md:top-0 md:flex md:max-h-screen md:self-start md:overflow-y-auto md:px-7 md:py-6 xl:px-10 xl:py-8"
         data-testid="buyers-today-detail"
       >
         {selected ? (
