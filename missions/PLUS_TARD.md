@@ -236,8 +236,8 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 25/11 · Base d'essai · Après la séparation, restent à faire plus tard :
   - les prévisualisations des autres branches lisent encore la base de la production (les trois
     entrées communes de Vercel) : les passer sur la base d'essai demande de modifier ces entrées,
-    valeur comprise pour la clé secrète ; d'ici là, aucune spec sur une prévisualisation (question
-    posée à Jean-Guy, `missions/BASE_JEUDI_MATIN.md`, « À trancher ») ;
+    valeur comprise pour la clé secrète ; d'ici là, aucune spec sur une prévisualisation (confirmé
+    par Jean-Guy le 25/11 au soir : les specs ne se jouent que sur l'essai) ;
   - l'agence des tests (vide) et l'agence de démonstration du compte de test (douze dossiers)
     restent dans la production — à ne pas confondre avec l'agence de démonstration des closers,
     qui porte le même nom et ne change pas : leur retrait est une suppression de données, par la
@@ -265,3 +265,16 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     locale donne encore ces droits d'office. Proposition, à valider par Jean-Guy (pas de règle
     nouvelle sans lui) : le gardien-sql le vérifie à chaque migration.
 
+- 25/11 · Mission 10 bis (la fiche acquéreur repliée) · Notés à la relecture et à l'écran, sans les
+  corriger :
+  - pendant une vente, « la rouvrir » ouvre « Tout le dossier » sur le statut ; si le conseiller
+    referme le pli à la main, un second toucher sur le même lien ne le rouvre pas (l'adresse ne
+    change pas) ;
+  - les titres des plis (« Ses critères et ce qui compte pour eux », « Tout le dossier », les
+    lignes du suivi) sont dans la ligne qu'on touche : à écouter avec un lecteur d'écran ;
+  - dans « Tout le dossier », « Sa sélection » garde sa carte : une carte dans une carte ;
+  - un acquéreur pas encore prêt montre « Prêt à visiter ? » ouvert, avec ses quatre boutons : le
+    critère « trois boutons au plus » ne tient que pour un acquéreur prêt (gardé ainsi par
+    Jean-Guy, 25/11 au soir) ;
+  - « Tout le dossier » voisine avec « Dossier acquéreur et lien » : deux notions, un même mot
+    (les mots de la fiche sont ceux de Jean-Guy).

@@ -6,6 +6,18 @@ avant ; ses gestes donnés un par un, Supabase puis Vercel, dans l'ordre ; aucun
 l'environnement Production ne change ; le changement de taille à un moment où personne n'est
 connecté, avec la durée d'indisponibilité. D'ici là, aucune spec en journée sur la base commune.
 
+**Avancé au mercredi 25/11 au soir** par Jean-Guy (« changement de programme : on continue ce
+soir », « on y va ») : la base se sépare le soir même, puis les specs en attente, la mission
+10 bis en production, et la suite complète la nuit, sur la base d'essai. Sa règle de midi, dite
+une heure plus tôt, est levée. Le titre garde le jour prévu au départ.
+
+**Fait le 25/11 au soir.** Sauvegarde vérifiée à 18 h 50 ; la taille « Small » à 19 h 06 (la base
+indisponible de 19 h 06 min 30 s à 19 h 08 min 25 s, 90 connexions ensuite) ; la base
+`acm-studio-essai` construite à 19 h 30 (même structure, mêmes droits que la production) ; les
+trois variables de Vercel ajoutées, les entrées communes intactes ; la preuve à 19 h 45 (l'essai
+parle à la base d'essai) ; puis la bascule des tests. Le détail est dans `docs/DECISIONS.md`. Ce
+qui suit est le pas-à-pas tel qu'il a été suivi.
+
 Niveau Sensible. Compter une heure, d'une traite, le matin. Pas entre 3 h 15 et 5 h 45 : ce sont
 les heures des tâches de nuit (la veille des acquéreurs, les purges) et de la sauvegarde de
 Supabase.
@@ -38,8 +50,15 @@ confondre) et `acm-studio-essai` (à créer jeudi).
    7 profils, 24 acquéreurs, 268 concurrents, 1 062 fichiers ; 53 tables, 58 politiques,
    69 fonctions, 38 déclencheurs, 171 index, 5 tâches de nuit ; et ses droits : 639 sur les tables,
    27 sur des colonnes, 115 sur les fonctions).
-3. « Personne n'est connecté » : la dernière activité d'un vrai compte, lue dans les journaux de
-   la base. Claude Code la donne, et Jean-Guy décide du moment.
+3. « Personne n'est connecté » : `npm run base:qui`, en lecture seule — par agence, la dernière
+   activité de session des vrais comptes (les comptes de test écartés ; ni nom ni adresse e-mail).
+   Une activité de moins d'une heure veut dire « peut-être connecté », un onglet resté ouvert
+   compte aussi. Claude Code la donne, et Jean-Guy décide du moment. Le 25/11 à 18 h 20 : aucune
+   session active depuis une heure.
+4. La liste des variables de Vercel, relue avant tout geste — leurs noms, leurs cibles, leur
+   branche et leurs dates, jamais leurs valeurs : le 25/11, 23 entrées ; les trois de la base sont
+   communes à « Production » et « Preview », modifiées pour la dernière fois le 15/09/2026 (les
+   deux premières) et le 06/10/2026 (la clé du serveur). C'est le relevé de référence du geste 3.
 
 ## Geste 1 — Supabase : la taille de la base actuelle
 
@@ -180,33 +199,32 @@ Puis Claude Code redéploie l'essai (un envoi sur la branche `essai`), sans gest
 2. La bascule (`TESTS_ON_SEPARATE_BASE`) : la référence de la base d'essai devient obligatoire
    pour les tests — sans elle, ils s'arrêtent au lieu de retomber sur la production — et les specs
    ne se jouent plus que sur l'essai (`acm-studio-essai.vercel.app`) : ailleurs, la configuration
-   des tests refuse de démarrer (« À trancher », question 1).
+   des tests refuse de démarrer (tranché par Jean-Guy, plus bas).
 3. Les specs en attente : « Aide » et le guide, puis les dix specs de la fiche acquéreur repliée
    (Mission 10 bis), qui part ensuite en production — après une seconde relecture de la liste des
-   variables de Vercel, juste avant ce déploiement.
-4. La suite complète, selon la réponse de Jean-Guy (« À trancher », question 3).
+   variables de Vercel, juste avant ce déploiement. Ses specs ne se jouent jamais sur la base
+   de la production.
+4. La suite complète, sur la base d'essai : la nuit du 25/11, après la mission 10 bis (ordre de
+   Jean-Guy du soir même).
 5. Le comptage de la production, refait : il n'a pas bougé.
 6. `docs/DECISIONS.md` et `docs/PASSAGE_PAYANT.md` : la base n'est plus commune à la production et
    à l'essai. `CLAUDE.md` le dit encore (« La base Supabase est partagée entre la production,
    l'essai et les prévisualisations ») : la phrase est à Jean-Guy, Claude Code la lui propose.
 
-## À trancher par Jean-Guy, avant la bascule
+## Tranché par Jean-Guy, le 25/11 au soir
 
-Chaque question a sa réponse par défaut ; sans autre mot de Jean-Guy, Claude Code avance avec elle.
-
-1. **Où se jouent les specs d'une mission.** Les prévisualisations des autres branches (celles des
-   missions) liront encore la base de la production, par les trois entrées communes. Sa règle du
-   23/11 dit : « le chef teste sur sa branche, en local ou sur la prévisualisation Vercel de la
-   branche ». Par défaut : les specs ne se jouent plus que sur l'essai (la configuration des tests
-   refuse toute autre adresse), une mission s'y teste en la fusionnant dans `essai`, une à la
-   fois ; regarder une prévisualisation dans un navigateur reste permis. L'autre voie : passer
-   toutes les prévisualisations sur la base d'essai, ce qui demande de modifier les trois entrées
-   communes, donc de toucher à une entrée de Production.
-2. **Où se joue une migration.** Par défaut : le chef la joue d'abord sur la base d'essai (le
-   gardien-sql la relit avant, comme aujourd'hui), puis Jean-Guy l'applique lui-même à la
+1. **Où se jouent les specs d'une mission.** Après la séparation, sur l'essai seulement (la
+   configuration des tests refuse toute autre adresse) : une mission s'y teste en la fusionnant
+   dans `essai`, une à la fois. Cela précise sa règle du 23/11 (« en local ou sur la
+   prévisualisation Vercel de la branche ») pour les specs ; regarder une prévisualisation dans un
+   navigateur reste permis. Les prévisualisations des autres branches lisent encore la base de la
+   production, par les trois entrées communes : aucune spec n'y tourne.
+2. **Où se joue une migration.** Le chef la joue d'abord sur la base d'essai, sans geste de
+   Jean-Guy (le gardien-sql la relit avant, comme aujourd'hui). Jean-Guy ne l'applique qu'à la
    production, après sauvegarde et comptage, comme aujourd'hui.
-3. **La suite complète de ce jeudi.** La règle du 23/11 la veut la nuit. Par défaut : une fois, de
-   jour, sur la base d'essai, pour le contrôle d'avant la livraison ; ensuite, la nuit comme avant.
+3. **La suite complète.** Sur la base d'essai, elle ne pèse plus sur la production. Le 25/11,
+   elle tourne la nuit même, après la mission 10 bis (ordre de Jean-Guy) ; ensuite, la nuit comme
+   avant.
 
 ## Ce qui reste comme avant
 

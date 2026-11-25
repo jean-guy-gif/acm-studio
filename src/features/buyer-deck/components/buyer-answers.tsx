@@ -27,20 +27,33 @@ export type BuyerAnswerView = ItemResponse & {
 // Mission 122 — « Ce qu'il a répondu », sur la fiche : chaque réponse, datée, avec ses raisons et
 // le moment où il l'a donnée ; et quand une même raison revient sur deux biens, une suggestion que
 // le conseiller accepte ou ignore. Rien ne se modifie seul (décision de Jean-Guy, 25/10).
+//
+// Mission 10 bis — `bare` : sur la fiche repliée, les suggestions se lisent dans la carte de « Son
+// suivi », sous ses lignes, sans carte à elles.
 export function BuyerAnswers({
   buyerId,
   answers,
   suggestions,
+  bare = false,
 }: {
   buyerId: string;
   answers: BuyerAnswerView[];
   suggestions: AnswerSuggestion[];
+  bare?: boolean;
 }) {
+  const title = answers.length > 0 ? 'Ce qu’il a répondu' : 'Ce que ses refus suggèrent';
   return (
-    <section className={`${card} flex flex-col gap-4 p-5`} data-testid="buyer-answers">
-      <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-        {answers.length > 0 ? 'Ce qu’il a répondu' : 'Ce que ses refus suggèrent'}
-      </h2>
+    <section
+      className={bare ? 'flex flex-col gap-3' : `${card} flex flex-col gap-4 p-5`}
+      data-testid="buyer-answers"
+    >
+      {bare ? (
+        <h3 className="font-title text-base font-bold text-zinc-900 stage:text-white">{title}</h3>
+      ) : (
+        <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
+          {title}
+        </h2>
+      )}
       {suggestions.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {suggestions.map((suggestion) => (

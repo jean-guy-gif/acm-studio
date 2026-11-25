@@ -819,6 +819,12 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 25/11 · Mission 10 bis · Un `<details open={…}>` rendu par le serveur : React ne touche
   l'attribut que si la valeur change. Un pli ouvert à la main reste ouvert après une action qui
   rafraîchit la page ; pour le rouvrir (ou le refermer) de force, changer sa `key`.
+- 25/11 · Sur la base d'essai (vide, « Micro »), les specs vont plus vite que sur la base commune :
+  `demo` 6,3 min (8 à 9 avant), `parcours` 3,2 min, les huit parcours de `presentation-directe`
+  6,2 min. La première remise à zéro part d'une démo vide (« Préparer ma démo »), que l'aide
+  `resetDemoByScreen` sait faire. Les dix specs adaptées à la fiche repliée sans pouvoir les jouer
+  sont passées du premier coup : deux contrôles à froid avaient précédé (aucun repère lu par une
+  spec n'avait disparu du code, aucun texte retiré n'était encore attendu).
 
 ## La base
 
@@ -992,6 +998,20 @@ privileges for role postgres grant execute on functions to public` (sans schéma
   réglage d'origine de Postgres et supprime la ligne du catalogue : prouvé sur la base locale,
   dans une transaction annulée (`docker exec -i supabase_db_acm-studio psql …`, `begin` …
   `rollback`). Pour lire une page publique sans outil de lecture : l'agent `web-fetch`.
+
+- 25/11 · Base d'essai, le soir même · Le projet neuf était réglé comme la production (les 36
+  droits donnés d'office présents, aucun droit global retiré, pas de RLS automatique) : le regarder
+  en lecture seule avant de construire a évité toute surprise. `db push --remote=<référence>` n'a
+  pas demandé le mot de passe de la base ; la CLI écrit alors « Target: project … (not the linked
+  project) ». Les nouvelles clés (« Publishable », « Secret ») marchent telles quelles avec
+  `@supabase/ssr` 0.12 et `supabase-js` 2.110 : connexion, `getClaims`, lectures, client du serveur.
+
+- 25/11 · Base d'essai, le soir même · Passer de « Micro » à « Small » : 1 min 55 d'arrêt mesuré
+  (19 h 06 min 30 s → 19 h 08 min 25 s), `max_connections` de 60 à 90. La sonde
+  (`npm run base:sonde`) tourne en tâche de fond pendant le geste de Jean-Guy et se lit à son
+  « ok ». Une longue réponse d'outil qui porte des valeurs (la liste des variables de Vercel) se
+  fait lire par un agent qui ne rend que les colonnes utiles : la preuve reste vérifiable
+  (identifiants et dates recopiés) et rien de sensible n'entre dans le fil.
 
 ## Les rendus
 

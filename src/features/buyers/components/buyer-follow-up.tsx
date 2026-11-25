@@ -2,14 +2,19 @@ import type { ReactNode } from 'react';
 
 import { card } from '@/components/ui/styles';
 import {
-  FOLLOW_UP_GROUPS,
   FOLLOW_UP_GROUP_TITLES,
   followUpFacts,
   followUpOrigin,
   followUpPill,
   type FollowUpEntry,
+  type FollowUpGroup,
   type FollowUpTone,
 } from '@/features/buyers/services/buyer-follow-up';
+import {
+  suiviLineGist,
+  suiviLineGroups,
+  suiviLineOpen,
+} from '@/features/buyers/services/buyer-sheet-layout';
 import { PropertySheetButton } from '@/features/property-sheet/components/property-sheet-button';
 import { formatEuro } from '@/lib/format';
 
@@ -19,6 +24,13 @@ import { formatEuro } from '@/lib/format';
 // rangé par ce qu'il en a dit (`buyerFollowUp`). Les gestes d'une visite (confirmer, visite faite,
 // changer la suite) restent sur la ligne du bien : `visitRows` porte la ligne de chaque visite,
 // telle que la page Visites la montre. Aucun bouton plein (M146).
+//
+// Mission 10 bis (Jean-Guy, 25/11 ; maquette `M10bis-fiche-acquereur-repliee.png`) — sur le modèle
+// de la carte du Suivi vendeur : trois lignes avec leur nombre (visités, envoyés en attente,
+// refusés), fermées à l'ouverture de la fiche ; chacune s'ouvre d'un toucher, et le détail d'une
+// visite n'apparaît qu'alors. « Visites à organiser » : une quatrième ligne, seulement quand il y
+// en a une, ouverte d'elle-même (c'est là qu'on confirme la visite). Ce que le conseiller a écarté
+// pour lui se lit dans « Tout le dossier » (`BuyerDismissed`).
 const TONES: Record<FollowUpTone, string> = {
   ok: 'bg-emerald-50 text-emerald-800',
   now: 'bg-sky-100 text-sky-900',
@@ -28,10 +40,11 @@ const TONES: Record<FollowUpTone, string> = {
   plain: 'bg-zinc-100 text-zinc-700',
 };
 
-const groupTitle =
-  'flex items-center gap-2 text-xs font-extrabold tracking-widest text-brand-deep uppercase stage:text-brand';
 const countBadge =
-  'rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-bold tracking-normal text-sky-900';
+  'min-w-7 rounded-full bg-sky-100 px-2 py-0.5 text-center text-xs font-bold text-sky-900';
+const countBadgeEmpty =
+  'min-w-7 rounded-full bg-zinc-100 px-2 py-0.5 text-center text-xs font-bold text-zinc-500 stage:bg-white/10 stage:text-white/50';
+const chevron = 'w-3 shrink-0 text-xs';
 
 function Entry({
   entry,
@@ -120,14 +133,45 @@ function Entry({
   );
 }
 
+function Entries({
+  list,
+  visitRows,
+  budgetMax,
+  now,
+}: {
+  list: FollowUpEntry[];
+  visitRows: Record<string, ReactNode>;
+  budgetMax: number | null;
+  now: Date;
+}) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {list.map((entry) => (
+        <Entry
+          key={`${entry.key}:${entry.group}`}
+          entry={entry}
+          visitRows={visitRows}
+          budgetMax={budgetMax}
+          now={now}
+        />
+      ))}
+    </ul>
+  );
+}
+
 export function BuyerFollowUp({
   entries,
   summary,
   visitRows,
   unread,
-  links = null,
+  lastVisit = null,
+  messagesGroup = null,
+  messagesKey = null,
+  pendingVisitIds = [],
+  sale = false,
   budgetMax = null,
   now = new Date(),
+  children = null,
 }: {
   entries: FollowUpEntry[];
   // « 5 biens envoyés · 1 visité · 1 visite à organiser · 1 refusé · 2 écartés pour lui ».
@@ -135,87 +179,175 @@ export function BuyerFollowUp({
   visitRows: Record<string, ReactNode>;
   // Une lecture a échoué : l'écran le dit, jamais « rien d'envoyé » (M98).
   unread: boolean;
-  // Lancement, mission 10 — une fois sa sélection envoyée, ses liens (« Changer la sélection »,
-  // « Dossier acquéreur et lien ») se rangent ici : ses biens ne sont plus écrits ailleurs.
-  links?: ReactNode;
+  // Sa visite faite la plus récente parmi les biens visités : le jour, déjà dit en mots, et sa
+  // suite. La ligne fermée « Visités » la dit.
+  lastVisit?: { day: string; outcome: string } | null;
+  // Le groupe du bien dont on vient de noter la visite (`?messages=`) : sa ligne s'ouvre seule.
+  messagesGroup?: FollowUpGroup | null;
+  // Cette visite : une seconde visite notée dans la même ligne la rouvre, même refermée à la main.
+  messagesKey?: string | null;
+  // Ses visites à organiser : la ligne qui en porte une s'ouvre seule, quel que soit son groupe (un
+  // bien refusé peut garder une visite demandée).
+  pendingVisitIds?: readonly string[];
+  // Une vente est en cours : sa recherche est en pause, « Visites à organiser » reste fermée.
+  sale?: boolean;
   budgetMax?: number | null;
   now?: Date;
+  // Sous les lignes : ce que ses refus suggèrent, quand il y a une suggestion à accepter ou ignorer.
+  children?: ReactNode;
 }) {
-  if (entries.length === 0 && !unread) return null;
+  // Sans rien d'envoyé ni échec ni suggestion à lire : pas de bloc.
+  if (entries.length === 0 && !unread && !children) return null;
+  const of = (group: FollowUpGroup) => entries.filter((entry) => entry.group === group);
+  const pending = new Set(pendingVisitIds);
   return (
     <section
       id="suivi"
-      className={`${card} flex scroll-mt-6 flex-col gap-4 p-5`}
+      className={`${card} flex scroll-mt-6 flex-col px-5 pt-4 pb-2`}
       data-testid="buyer-follow-up"
     >
-      <div className="flex flex-wrap items-start justify-between gap-x-5 gap-y-2">
-        <div className="flex flex-col gap-0.5">
-          <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
-            Son suivi
-          </h2>
-          {summary ? (
-            <p
-              className="text-sm text-zinc-600 stage:text-white/70"
-              data-testid="buyer-follow-up-summary"
-            >
-              {summary}
-            </p>
-          ) : null}
-        </div>
-        {links ? (
-          <div className="flex flex-wrap gap-x-5 gap-y-1" data-testid="buyer-follow-up-links">
-            {links}
-          </div>
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 pb-2">
+        <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+          Son suivi
+        </h2>
+        {summary ? (
+          <p
+            className="text-sm text-zinc-600 stage:text-white/70"
+            data-testid="buyer-follow-up-summary"
+          >
+            {summary}
+          </p>
         ) : null}
       </div>
       {unread ? (
-        <p role="alert" className="text-sm font-semibold text-red-700">
+        <p role="alert" className="pb-2 text-sm font-semibold text-red-700">
           Son suivi n’a pas pu être lu en entier : rechargez la page.
         </p>
       ) : null}
-      {FOLLOW_UP_GROUPS.map((group) => {
-        const list = entries.filter((entry) => entry.group === group);
-        if (list.length === 0) return null;
-        const rows = (
-          <ul className="flex flex-col gap-2">
-            {list.map((entry) => (
-              <Entry
-                key={`${entry.key}:${entry.group}`}
-                entry={entry}
-                visitRows={visitRows}
-                budgetMax={budgetMax}
-                now={now}
-              />
-            ))}
-          </ul>
-        );
-        // Ce que le conseiller a écarté pour lui : replié, il ne lui en a pas parlé.
-        return group === 'dismissed' ? (
+      {suiviLineGroups(of('to_visit').length).map((group) => {
+        const list = of(group);
+        const gist = suiviLineGist({
+          group,
+          count: list.length,
+          pills: list.map((entry) => followUpPill(entry).text),
+          lastVisit,
+        });
+        // Une ligne sans bien ne s'ouvre pas : elle dit « aucun », en gris. Sauf si le suivi n'a
+        // pas pu être lu en entier : on ne dit jamais « aucun » sur une lecture en échec (M98).
+        if (list.length === 0) {
+          if (unread) return null;
+          return (
+            <div
+              key={group}
+              className="flex items-center gap-3 border-t border-zinc-100 px-1 py-2.5 stage:border-white/10"
+              data-testid="buyer-follow-up-group"
+              data-group={group}
+              data-empty="true"
+            >
+              <span aria-hidden className={`${chevron} text-zinc-300`}>
+                ▸
+              </span>
+              <h3 className="font-title text-base font-bold text-zinc-500 sm:w-52 stage:text-white/50">
+                {FOLLOW_UP_GROUP_TITLES[group]}
+              </h3>
+              <span className={countBadgeEmpty} data-testid="buyer-follow-up-count">
+                0
+              </span>
+              <span className="text-sm text-zinc-500 stage:text-white/50">{gist}</span>
+            </div>
+          );
+        }
+        return (
           <details
-            key={group}
-            className="flex flex-col gap-2"
+            key={group === messagesGroup && messagesKey ? `${group}:${messagesKey}` : group}
+            className="group/line border-t border-zinc-100 stage:border-white/10"
             data-testid="buyer-follow-up-group"
             data-group={group}
+            open={suiviLineOpen({
+              messages: group === messagesGroup,
+              pendingVisit:
+                group === 'to_visit' ||
+                list.some((entry) => entry.visitIds.some((id) => pending.has(id))),
+              sale,
+            })}
           >
-            <summary className={`${groupTitle} cursor-pointer`}>
-              {FOLLOW_UP_GROUP_TITLES[group]} <span className={countBadge}>{list.length}</span>
+            <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg px-1 py-2.5 marker:hidden hover:bg-zinc-50 stage:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+              <span
+                aria-hidden
+                className={`${chevron} text-brand-deep transition-transform group-open/line:rotate-90 stage:text-brand`}
+              >
+                ▸
+              </span>
+              <h3 className="font-title text-base font-bold text-zinc-900 sm:w-52 stage:text-white">
+                {FOLLOW_UP_GROUP_TITLES[group]}
+              </h3>
+              <span className={countBadge} data-testid="buyer-follow-up-count">
+                {list.length}
+              </span>
+              {gist ? (
+                <span
+                  className="basis-full pl-6 text-sm text-zinc-600 sm:basis-auto sm:pl-0 stage:text-white/70"
+                  data-testid="buyer-follow-up-gist"
+                >
+                  {gist}
+                </span>
+              ) : null}
             </summary>
-            <div className="mt-2">{rows}</div>
+            <div className="pt-1 pb-3 sm:pl-7">
+              <Entries list={list} visitRows={visitRows} budgetMax={budgetMax} now={now} />
+            </div>
           </details>
-        ) : (
-          <div
-            key={group}
-            className="flex flex-col gap-2"
-            data-testid="buyer-follow-up-group"
-            data-group={group}
-          >
-            <h3 className={groupTitle}>
-              {FOLLOW_UP_GROUP_TITLES[group]} <span className={countBadge}>{list.length}</span>
-            </h3>
-            {rows}
-          </div>
         );
       })}
+      {children}
     </section>
+  );
+}
+
+// Mission 10 bis — ce que le conseiller a écarté pour lui, sans lui en parler : dans « Tout le
+// dossier », replié comme avant (Lancement 6).
+export function BuyerDismissed({
+  entries,
+  visitRows,
+  open = false,
+  budgetMax = null,
+  now = new Date(),
+  titleClassName,
+  lineClassName,
+}: {
+  entries: FollowUpEntry[];
+  visitRows: Record<string, ReactNode>;
+  // Ouvert de lui-même quand un bien écarté garde une visite à organiser.
+  open?: boolean;
+  budgetMax?: number | null;
+  now?: Date;
+  titleClassName: string;
+  lineClassName: string;
+}) {
+  const list = entries.filter((entry) => entry.group === 'dismissed');
+  if (list.length === 0) return null;
+  return (
+    <details
+      className="group/fold"
+      data-testid="buyer-follow-up-group"
+      data-group="dismissed"
+      open={open}
+    >
+      <summary
+        className={`flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-0.5 marker:hidden [&::-webkit-details-marker]:hidden ${lineClassName}`}
+      >
+        <span
+          aria-hidden
+          className={`${chevron} text-brand-deep transition-transform group-open/fold:rotate-90 stage:text-brand`}
+        >
+          ▸
+        </span>
+        <h3 className={titleClassName}>{FOLLOW_UP_GROUP_TITLES.dismissed}</h3>
+        <span data-testid="buyer-follow-up-count">· {list.length}</span>
+      </summary>
+      <div className="mt-3">
+        <Entries list={list} visitRows={visitRows} budgetMax={budgetMax} now={now} />
+      </div>
+    </details>
   );
 }

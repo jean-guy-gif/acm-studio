@@ -1,6 +1,6 @@
 import { expect, test } from './test';
 
-import { demoCredentials, login, resetDemoByScreen } from './support';
+import { demoCredentials, login, openFold, resetDemoByScreen } from './support';
 
 // Lancement, mission 2 (24/11) — « après trois visites, l'outil ne suppose plus une offre. Sans
 // offre formulée, l'acquéreur reste en recherche et je continue à lui envoyer des biens. »
@@ -23,8 +23,11 @@ test('une visite faite ne suppose pas une offre', async ({ page }) => {
   await page.getByRole('link', { name: 'M. et Mme Rossi', exact: true }).first().click();
   await expect(page.getByTestId('buyer-name')).toHaveText('M. et Mme Rossi');
 
+  // Mission 10 bis — ses cinq étapes sont dans « Tout le dossier », qu'un toucher ouvre.
+  await openFold(page, 'buyer-all');
   const steps = page.getByTestId('buyer-step');
   await expect(steps).toHaveCount(5);
+  await expect(steps.first()).toBeVisible();
   // La visite est faite ; l'offre n'est ni faite, ni l'étape du jour, ni « à faire ».
   await expect(page.locator('[data-testid="buyer-step"][data-step="visit"]')).toHaveAttribute(
     'data-status',

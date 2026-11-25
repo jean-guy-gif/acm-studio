@@ -34,7 +34,8 @@
     "guide:pdf": "node scripts/guide-pdf.mjs",
     "essai:preparer": "node scripts/essai-preparer.mjs",
     "essai:preuve": "node scripts/essai-preuve.mjs",
-    "base:sonde": "node scripts/base-sonde.mjs"
+    "base:sonde": "node scripts/base-sonde.mjs",
+    "base:qui": "node scripts/base-qui.mjs"
   },
   "dependencies": {
     "@anthropic-ai/bedrock-sdk": "0.36.0",

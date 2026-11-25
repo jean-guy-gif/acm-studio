@@ -68,11 +68,12 @@ agences.
   - deux classements par l'IA comptés au pire en novembre, 1,29 € en tout (correctif du 24/11) ;
   - un dossier conclu ne se supprime pas depuis l'écran, et une visite faite d'un acquéreur archivé
     reste comptée dans le Suivi (Lancement 11).
-- **Avant d'ouvrir d'autres agences : la base.** Décidé par Jean-Guy le 25/11 : la base d'essai
-  séparée et la taille juste au-dessus (« Small »), le jeudi 26/11 au matin
-  (`missions/BASE_JEUDI_MATIN.md`, ses gestes un par un). C'est le seul point de cette feuille
-  qui touche la production. La production, l'essai, les tests et la démo écrivent dans la même base, et cette
-  base est la plus petite de l'offre Pro (1 Go de mémoire, 60 connexions). Lu dans ses journaux le
+- **Avant d'ouvrir d'autres agences : la base. Fait le 25/11 au soir.** Décidé par Jean-Guy le
+  25/11 et fait le soir même, sur ses gestes (`missions/BASE_JEUDI_MATIN.md`) : la base de la
+  production est en « Small » (2 Go, 90 connexions ; un peu moins de deux minutes d'arrêt,
+  mesurées), et la base d'essai est séparée : les tests et leur démo n'écrivent plus dans la base
+  de la production. Ce qui suit dit pourquoi. Avant, la production, l'essai, les tests et la démo
+  écrivaient dans la même base, la plus petite de l'offre Pro (1 Go de mémoire, 60 connexions). Lu dans ses journaux le
   25/11 : pendant les suites de tests, elle s'est figée plusieurs fois, dix à vingt secondes à
   14 h 10, 14 h 13 et 14 h 51, et une minute et demie à 11 h (« plus de connexion libre », des
   réponses en erreur). Chaque fois juste après une remise à zéro de la démo par les tests, qui
