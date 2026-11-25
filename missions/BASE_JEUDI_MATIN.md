@@ -38,8 +38,11 @@ confondre) et `acm-studio-essai` (à créer jeudi).
    7 profils, 24 acquéreurs, 268 concurrents, 1 062 fichiers ; 53 tables, 58 politiques,
    69 fonctions, 38 déclencheurs, 171 index, 5 tâches de nuit ; et ses droits : 639 sur les tables,
    27 sur des colonnes, 115 sur les fonctions).
-3. « Personne n'est connecté » : la dernière activité d'un vrai compte, lue dans les journaux de
-   la base. Claude Code la donne, et Jean-Guy décide du moment.
+3. « Personne n'est connecté » : `npm run base:qui`, en lecture seule — par agence, la dernière
+   activité de session des vrais comptes (les comptes de test écartés ; ni nom ni adresse e-mail).
+   Une activité de moins d'une heure veut dire « peut-être connecté », un onglet resté ouvert
+   compte aussi. Claude Code la donne, et Jean-Guy décide du moment. Le 25/11 à 18 h 20 : aucune
+   session active depuis une heure.
 4. La liste des variables de Vercel, relue avant tout geste — leurs noms, leurs cibles, leur
    branche et leurs dates, jamais leurs valeurs : le 25/11, 23 entrées ; les trois de la base sont
    communes à « Production » et « Preview », modifiées pour la dernière fois le 15/09/2026 (les
