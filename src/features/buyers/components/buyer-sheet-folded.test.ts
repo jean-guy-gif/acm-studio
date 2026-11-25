@@ -131,9 +131,13 @@ describe('la fiche acquéreur, repliée', () => {
   it('« Tout le dossier » est replié ; il s’ouvre quand on y mène ou qu’une lecture y a échoué', () => {
     const inside = dossier();
     expect(inside).toContain('<summary');
-    expect(inside).toContain('open={dossierOpen({');
-    expect(inside).toContain("asked: dossier === '1'");
+    expect(inside).toContain('open={everythingOpen({');
+    expect(inside).toContain("asked: tout === '1'");
     expect(inside).toContain('history.failed');
+    // « Sa sélection », gardée parce que le suivi n'a pas pu être lu (Lancement 10), ne reste pas
+    // sous un pli fermé ; ni une visite à organiser rangée ici.
+    expect(inside).toContain('(showSelection && suiviUnread)');
+    expect(inside).toContain('pendingVisit: dismissedPending');
     // Là où l'on rouvre sa recherche pendant une vente : « Tout le dossier », sur son statut.
     expect(page).toContain('href={statusHref(buyer.id)}');
   });
@@ -152,10 +156,17 @@ describe('la fiche acquéreur, repliée', () => {
     expect(before).toContain('data-testid="buyer-sale"');
   });
 
-  it('le formulaire de sa recherche ne s’écrit que sur demande', () => {
+  it('le formulaire de sa recherche ne s’écrit que sur demande, dans un pli qui garde la saisie', () => {
     const form = page.slice(at("{modifier === '1' ? ("));
     expect(form).toContain('data-testid="buyer-form-details"');
+    expect(form).toContain('<details');
     expect(form).toContain('<BuyerForm');
     expect(page.match(/<BuyerForm/g) ?? []).toHaveLength(1);
+  });
+
+  it('le mot « dossier » ne nomme rien dans le code de la fiche repliée (CLAUDE.md, vocabulaire)', () => {
+    const layout = read('features', 'buyers', 'services', 'buyer-sheet-layout.ts');
+    expect(layout).not.toMatch(/\bdossier(Line|Open)\b/);
+    expect(page).not.toMatch(/[?&]dossier=1|id="dossier"|\bdossier ===/);
   });
 });

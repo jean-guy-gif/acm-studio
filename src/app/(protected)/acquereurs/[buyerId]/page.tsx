@@ -35,8 +35,8 @@ import {
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { BuyerDismissed, BuyerFollowUp } from '@/features/buyers/components/buyer-follow-up';
 import {
-  dossierLine,
-  dossierOpen,
+  everythingLine,
+  everythingOpen,
   editSearchHref,
   otherActions,
   readinessLine,
@@ -108,7 +108,7 @@ type BuyerPageProps = {
     // Lancement, mission 7 — juste après « Visite faite » sur la fiche : ses messages ouverts.
     messages?: string;
     // Mission 10 bis — « Tout le dossier », ouvert : là où l'on change son statut.
-    dossier?: string;
+    tout?: string;
   }>;
 };
 
@@ -145,8 +145,9 @@ const SOURCE_BADGE: Record<string, { label: string; className: string }> = {
 // dossier ». Affichage seulement : aucune fonction retirée, aucune règle changée. Un pli s'ouvre
 // seul quand il faut agir dedans (`buyer-sheet-layout.ts`).
 export default async function BuyerPage({ params, searchParams }: BuyerPageProps) {
-  const [{ buyerId }, { enregistre, modifier, rapide, ajuste, messages, dossier }] =
-    await Promise.all([params, searchParams]);
+  const [{ buyerId }, { enregistre, modifier, rapide, ajuste, messages, tout }] = await Promise.all(
+    [params, searchParams],
+  );
   const buyer = await getBuyer(buyerId);
   if (!buyer) notFound();
   // Lancement, mission 6 — la lecture des visites dit son échec : « Son suivi » ne range jamais
@@ -387,6 +388,18 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const messagesGroup = messages
     ? (followUp.find((entry) => entry.visitIds.includes(messages))?.group ?? null)
     : null;
+  // Ses visites à organiser : la ligne qui en porte une s'ouvre seule — « Visites à organiser »,
+  // mais aussi celle d'un bien refusé, ou écarté pour lui, qui garde une visite demandée.
+  const pendingVisitIds = visits.map((line) => line.id);
+  const dismissedPending =
+    sale == null &&
+    followUp.some(
+      (entry) =>
+        entry.group === 'dismissed' && entry.visitIds.some((id) => pendingVisitIds.includes(id)),
+    );
+  // Le suivi n'a pas pu être lu en entier (M98) : rien de ce qu'il devait montrer ne reste sous un
+  // pli fermé — ni « Sa sélection », gardée pour cela (Lancement 10).
+  const suiviUnread = followUpRows == null || visitRead.failed;
   const visitRows = Object.fromEntries(
     ownVisits.map((line) => [
       line.id,
@@ -871,9 +884,11 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       <BuyerFollowUp
         entries={followUp}
         summary={followUpSummary(followUp, visits.length)}
-        unread={followUpRows == null || visitRead.failed}
+        unread={suiviUnread}
         lastVisit={lastVisit}
         messagesGroup={messagesGroup}
+        messagesKey={messages ?? null}
+        pendingVisitIds={pendingVisitIds}
         sale={sale != null}
         budgetMax={buyer.budgetMax}
         visitRows={visitRows}
@@ -917,17 +932,19 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
 
       {/* Mission 10 bis — « Tout le dossier », replié : tout le reste de la fiche, rien de retiré. */}
       <details
-        id="dossier"
+        id="tout"
         className={`${card} group/all scroll-mt-6`}
         data-testid="buyer-all"
-        open={dossierOpen({
-          asked: dossier === '1',
+        open={everythingOpen({
+          asked: tout === '1',
           // Une lecture en échec ne reste jamais sous un pli fermé (M98).
           unread:
             history.failed ||
             signedVouchers == null ||
             signedOffers == null ||
-            others.some((action) => action.unread),
+            others.some((action) => action.unread) ||
+            (showSelection && suiviUnread),
+          pendingVisit: dismissedPending,
         })}
       >
         <summary className={`${foldSummary} px-5 py-4`}>
@@ -938,7 +955,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             Tout le dossier
           </h2>
           <span className={foldLine} data-testid="buyer-all-line">
-            {dossierLine({
+            {everythingLine({
               selection: showSelection,
               vouchers: vouchersShown,
               offers: offersShown,
@@ -1206,6 +1223,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               <BuyerDismissed
                 entries={followUp}
                 visitRows={visitRows}
+                open={dismissedPending}
                 budgetMax={buyer.budgetMax}
                 titleClassName={nestedTitle}
                 lineClassName={foldLine}
@@ -1270,21 +1288,26 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       </details>
 
       {/* La recherche se modifie sur demande : « Modifier sa recherche », sous ses critères, ouvre
-          le formulaire ici. */}
+          le formulaire ici. Un pli, pour le refermer sans perdre une saisie en cours. */}
       {modifier === '1' ? (
-        <section id="recherche" className="scroll-mt-6" data-testid="buyer-form-details">
-          <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <details
+          id="recherche"
+          className="group/fold scroll-mt-6"
+          data-testid="buyer-form-details"
+          open
+        >
+          <summary className={foldSummary}>
+            <span aria-hidden className={`${foldChevron} group-open/fold:rotate-90`}>
+              ▸
+            </span>
             <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
               Sa recherche
             </h2>
-            <Link href={`/acquereurs/${buyer.id}`} className={`${link} text-sm underline`}>
-              Fermer
-            </Link>
-          </div>
+          </summary>
           <div className="mt-5 max-w-3xl">
             <BuyerForm buyer={buyer} />
           </div>
-        </section>
+        </details>
       ) : null}
     </div>
   );

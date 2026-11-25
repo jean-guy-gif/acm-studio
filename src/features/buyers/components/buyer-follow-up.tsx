@@ -166,6 +166,8 @@ export function BuyerFollowUp({
   unread,
   lastVisit = null,
   messagesGroup = null,
+  messagesKey = null,
+  pendingVisitIds = [],
   sale = false,
   budgetMax = null,
   now = new Date(),
@@ -182,6 +184,11 @@ export function BuyerFollowUp({
   lastVisit?: { day: string; outcome: string } | null;
   // Le groupe du bien dont on vient de noter la visite (`?messages=`) : sa ligne s'ouvre seule.
   messagesGroup?: FollowUpGroup | null;
+  // Cette visite : une seconde visite notée dans la même ligne la rouvre, même refermée à la main.
+  messagesKey?: string | null;
+  // Ses visites à organiser : la ligne qui en porte une s'ouvre seule, quel que soit son groupe (un
+  // bien refusé peut garder une visite demandée).
+  pendingVisitIds?: readonly string[];
   // Une vente est en cours : sa recherche est en pause, « Visites à organiser » reste fermée.
   sale?: boolean;
   budgetMax?: number | null;
@@ -189,8 +196,10 @@ export function BuyerFollowUp({
   // Sous les lignes : ce que ses refus suggèrent, quand il y a une suggestion à accepter ou ignorer.
   children?: ReactNode;
 }) {
-  if (entries.length === 0 && !unread) return null;
+  // Sans rien d'envoyé ni échec ni suggestion à lire : pas de bloc.
+  if (entries.length === 0 && !unread && !children) return null;
   const of = (group: FollowUpGroup) => entries.filter((entry) => entry.group === group);
+  const pending = new Set(pendingVisitIds);
   return (
     <section
       id="suivi"
@@ -223,8 +232,10 @@ export function BuyerFollowUp({
           pills: list.map((entry) => followUpPill(entry).text),
           lastVisit,
         });
-        // Une ligne sans bien ne s'ouvre pas : elle dit « aucun », en gris.
+        // Une ligne sans bien ne s'ouvre pas : elle dit « aucun », en gris. Sauf si le suivi n'a
+        // pas pu être lu en entier : on ne dit jamais « aucun » sur une lecture en échec (M98).
         if (list.length === 0) {
+          if (unread) return null;
           return (
             <div
               key={group}
@@ -248,11 +259,17 @@ export function BuyerFollowUp({
         }
         return (
           <details
-            key={group}
+            key={group === messagesGroup && messagesKey ? `${group}:${messagesKey}` : group}
             className="group/line border-t border-zinc-100 stage:border-white/10"
             data-testid="buyer-follow-up-group"
             data-group={group}
-            open={suiviLineOpen(group, { messagesGroup, sale })}
+            open={suiviLineOpen({
+              messages: group === messagesGroup,
+              pendingVisit:
+                group === 'to_visit' ||
+                list.some((entry) => entry.visitIds.some((id) => pending.has(id))),
+              sale,
+            })}
           >
             <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg px-1 py-2.5 marker:hidden hover:bg-zinc-50 stage:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
               <span
@@ -292,6 +309,7 @@ export function BuyerFollowUp({
 export function BuyerDismissed({
   entries,
   visitRows,
+  open = false,
   budgetMax = null,
   now = new Date(),
   titleClassName,
@@ -299,6 +317,8 @@ export function BuyerDismissed({
 }: {
   entries: FollowUpEntry[];
   visitRows: Record<string, ReactNode>;
+  // Ouvert de lui-même quand un bien écarté garde une visite à organiser.
+  open?: boolean;
   budgetMax?: number | null;
   now?: Date;
   titleClassName: string;
@@ -307,7 +327,12 @@ export function BuyerDismissed({
   const list = entries.filter((entry) => entry.group === 'dismissed');
   if (list.length === 0) return null;
   return (
-    <details className="group/fold" data-testid="buyer-follow-up-group" data-group="dismissed">
+    <details
+      className="group/fold"
+      data-testid="buyer-follow-up-group"
+      data-group="dismissed"
+      open={open}
+    >
       <summary
         className={`flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-0.5 marker:hidden [&::-webkit-details-marker]:hidden ${lineClassName}`}
       >

@@ -209,6 +209,10 @@ test('son suivi : un bien par ligne, ce qu’il en a dit, ses visites', async ({
   // Lancement, mission 7 — le compte rendu en trente secondes, sans quitter la fiche : la deuxième
   // visite, « Visite faite », son avis, la suite, « Enregistrer » — trois touchers ; ses messages
   // s'ouvrent sur place, et « Son suivi » la range aussitôt sous « Visités ».
+  // « Visités », ouverte plus haut par la spec, est refermée à la main : c'est la fiche qui la
+  // rouvrira, pour les messages de la visite notée.
+  await group('visited').locator('xpath=./summary').click();
+  await expect(group('visited')).not.toHaveAttribute('open', '');
   await toVisit.getByRole('button', { name: 'Visite faite' }).first().click();
   const doneForm = page.getByTestId('visit-done-form');
   await expect(doneForm.getByTestId('visit-liked-light')).toHaveCount(0);

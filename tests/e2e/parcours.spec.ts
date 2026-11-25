@@ -960,10 +960,18 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     // « J'ai eu l'acquéreur aujourd'hui » : il redevient prêt, la tâche s'en va.
     await page.goto(buyerUrl);
+    // « À recontacter » : « Prêt à visiter ? » est ouvert sous les yeux, hors de « Tout le
+    // dossier » (Mission 10 bis).
+    await expect(page.getByTestId('buyer-readiness')).toHaveAttribute('open', '');
+    await expect(page.getByTestId('buyer-all').getByTestId('buyer-readiness')).toHaveCount(0);
     await page.getByTestId('buyer-contacted').click();
-    await openFold(page, 'buyer-readiness');
-    await expect(page.getByTestId('buyer-contacted')).toHaveText('Contact noté aujourd’hui ✓');
+    // Prêt : le badge le dit, et le bloc se range dans « Tout le dossier », où le contact noté se
+    // relit.
     await expect(page.getByTestId('buyer-ready')).toHaveText('Prêt à visiter');
+    await expect(page.getByTestId('buyer-all').getByTestId('buyer-readiness')).toHaveCount(1);
+    await openFold(page, 'buyer-readiness');
+    await expect(page.getByTestId('buyer-contacted')).toBeVisible();
+    await expect(page.getByTestId('buyer-contacted')).toHaveText('Contact noté aujourd’hui ✓');
     await openToday(page);
     await expect(page.getByTestId('today-page')).not.toContainText(
       `Reprendre contact avec ${buyerName}`,
@@ -1076,7 +1084,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.goto(buyerUrl);
     // Mission 130 B — la fiche : ses quatre étapes, UNE prochaine étape, ce qui s'est passé.
     // Mission 143 (B1) — cinq étapes : Sélection → Présentée → Visite → Offre → Compromis.
+    // Mission 10 bis — dans « Tout le dossier », qu'un toucher ouvre.
+    await openFold(page, 'buyer-all');
     await expect(page.getByTestId('buyer-step')).toHaveCount(5);
+    await expect(page.getByTestId('buyer-step').first()).toBeVisible();
     // Mission 145 (partie A, I2) — prêt à visiter, il correspond au mandat signé de ce passage :
     // sa prochaine étape est de le lui proposer ; « Trouver d'autres biens » mène aux biens idéaux.
     await expect(page.getByTestId('buyer-next-step')).toContainText(
@@ -1209,6 +1220,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.getByTestId('presentation-finish').click();
     await expect(page).toHaveURL(new RegExp(`${buyerUrl}$`));
+    // Sa sélection est présentée : ses liens sont dans « Tout le dossier », avec ses étapes.
+    await openFold(page, 'buyer-all');
+    await expect(page.getByTestId('present-selection')).toBeVisible();
     await expect(page.getByTestId('present-selection')).toHaveText('Revoir la présentation');
     await expect(page.getByTestId('deck-prepare')).toHaveCount(0);
     await expect(page.locator('[data-testid="buyer-step"][data-step="present"]')).toHaveAttribute(
