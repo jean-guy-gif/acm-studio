@@ -1,4 +1,7 @@
-# Lancement — livraison du produit le jeudi 26 novembre 2026 au soir
+# Lancement — livraison du produit le vendredi 27 novembre 2026 au soir
+
+Prévue le jeudi 26/11 au soir ; repoussée au vendredi 27/11 au soir par Jean-Guy le 25/11 au soir,
+avec la refonte de l'expérience (dernière section de cette page).
 
 La liste de Jean-Guy (23/11 au soir). On s'en tient à elle : tout le reste va dans
 `missions/PLUS_TARD.md`. Tout se fait et se vérifie sur le compte normal de Jean-Guy ; la démo est
@@ -82,8 +85,8 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
     verte.** — **fait le 25/11** : Supabase sauvegarde la base chaque nuit (sans les fichiers du
     stockage, que notre sauvegarde prend : faite et vérifiée par restauration le 25/11) ; journal
     vide depuis le 24/11 à 16 h 33 ; suite complète 37 sur 37
-13. **Livraison.** — **prête le 25/11**, à dire « livrée » après le dernier contrôle du 26/11 au
-    soir : le guide de prise en main pour les conseillers (`public/guide/guide-de-prise-en-main.pdf`,
+13. **Livraison.** — **prête le 25/11**, à dire « livrée » après le dernier contrôle du vendredi
+    27/11 au soir (le mot de Jean-Guy : « livraison ») : le guide de prise en main pour les conseillers (`public/guide/guide-de-prise-en-main.pdf`,
     deux pages, validé par Jean-Guy le 25/11 et ouvert depuis « Aide »), la feuille de livraison (`missions/LIVRAISON.md` : les contrôles, ce qui reste
     éteint, ouvrir une agence, ce qui attend Jean-Guy)
     - Le guide, à la ligne des portails (Jean-Guy, 25/11) : Belles Demeures ne s'aspire pas (son
@@ -103,6 +106,50 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
 - **La base** : une base d'essai séparée et la taille au-dessus. — **fait le 25/11 au soir**, sur
   les gestes de Jean-Guy (`missions/BASE_JEUDI_MATIN.md`) : moins de deux minutes d'arrêt, la
   production intacte, l'essai et les tests sur leur propre base.
+
+## La refonte de l'expérience (mission de Jean-Guy, 25/11 au soir)
+
+Acheteur puis vendeur, sur téléphone, tablette et ordinateur. Niveau Sensible. Les maquettes :
+`missions/maquettes/REFONTE-1` à `REFONTE-8` (.html), référence exacte des tailles, des couleurs,
+des textes et des dispositions ; les photos sont celles de `public/demo/photos`.
+
+Ses six règles :
+
+1. « À faire aujourd'hui » en tête de Acquéreurs et de Vendeurs : une carte par personne, avec ce
+   qu'il y a à faire et son bouton.
+2. Un seul bouton plein par écran ; les autres sont en contour.
+3. Une « prochaine étape » par fiche et par dossier, puis trois chiffres, puis « Tout le dossier ».
+4. Acquéreur : un bien à la fois, « Écarter » ou « Proposer », avec « Pourquoi celui-ci pour eux »
+   dans ses mots. Jamais de pourcentage : « 8 critères sur 8 ».
+5. Nouvel acquéreur : une phrase écrite ou dictée, puis « Ce que j'ai compris » en pastilles à
+   corriger, en réutilisant la lecture des notes de la mission 8.
+6. Les mêmes blocs aux trois tailles : téléphone = une colonne et menu en bas ; tablette = menu en
+   icônes, liste, détail ; ordinateur = menu complet, liste, détail, sans changer de page.
+
+Ce qu'on ne touche pas : le Live, les documents et PDF, le bon de visite, l'offre, les liens
+publics, la base (aucune migration), les règles métier. C'est une nouvelle présentation des mêmes
+données et des mêmes actions.
+
+Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Jean-Guy) :
+
+| Lot | Contenu                                                                                           | Maquettes       | Durée prévue | État    |
+| --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
+| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | à faire |
+| B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | à faire |
+| C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | à faire |
+| D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | à faire |
+| E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | à faire |
+| F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | à faire |
+
+Pour chaque lot : sur l'essai, ses specs vertes, trois captures (téléphone, tablette, ordinateur)
+dans `missions/maquettes/`, puis l'adresse à ouvrir sur l'essai. Rien ne va sur `main` sans le
+« oui » de Jean-Guy, lot par lot. Une spec ne change que pour un libellé ou un emplacement, jamais
+pour ce qu'elle prouve ; les specs modifiées lui sont listées.
+
+Le calendrier (son message du 25/11 au soir) : jeudi 26/11, les lots A à E, un par un ; vendredi
+27/11 au matin, le lot F, puis ses remarques de jeudi ; vendredi à 14 h, gel — plus aucune
+nouveauté, la suite complète sur l'essai, le parcours complet joué aux trois tailles sur le compte
+normal, le journal d'erreurs ; vendredi soir, son mot « livraison ».
 
 ## Chaque soir
 

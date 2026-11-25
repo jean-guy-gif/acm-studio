@@ -1,4 +1,7 @@
-# Livraison — jeudi 26 novembre 2026
+# Livraison — vendredi 27 novembre 2026
+
+Prévue le jeudi 26/11 ; repoussée au vendredi 27/11 au soir par Jean-Guy le 25/11 au soir, avec
+la refonte de l'expérience (`missions/LANCEMENT.md`).
 
 La liste du lancement (`missions/LANCEMENT.md`) est faite : ses douze premières missions sont en
 production. Cette feuille dit ce qui part, où en est la production, ce qui reste éteint exprès, et
@@ -17,7 +20,7 @@ ce que Jean-Guy a à faire lui-même.
 
 ## Les contrôles
 
-Faits le mercredi 25/11 ; ceux marqués ↻ se refont le jeudi 26/11 au soir, avant de dire « livré ».
+Faits le mercredi 25/11 ; ceux marqués ↻ se refont le vendredi 27/11, après le gel de 14 h, avant de dire « livré ».
 
 | Contrôle                                              | Résultat le 25/11                                                                                                                                         |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
