@@ -55,3 +55,21 @@ export function idealPageLayout({
       !inBanner.has(selectionKey(entry.item)) && !sameListing(entry, agencyListings),
   };
 }
+
+// Lancement, mission 3 (suite, 25/11) — vu sur un vrai dossier : le fournisseur de la recherche
+// rend un même bien sous des annonces différentes. Un bien que la veille a déjà trouvé est en
+// tête, sous « Nouveau cette semaine » : il ne se répète pas dans les annonces du marché, ni par
+// son annonce, ni par son identifiant chez le fournisseur (`key`). Sans identifiant, seule
+// l'annonce compte : deux biens sans identifiant ne se confondent jamais.
+export type MarketBien = { url: string; key: string | null };
+
+export function notRepeatedFrom(first: readonly MarketBien[]): (bien: MarketBien) => boolean {
+  const urls = new Set(first.map((bien) => bien.url));
+  const keys = new Set(first.map((bien) => bien.key).filter((key): key is string => key != null));
+  return (bien) => !urls.has(bien.url) && !(bien.key != null && keys.has(bien.key));
+}
+
+// Ce qui fait UN bien dans un compte (« 2 biens retirés ») : son identifiant chez le fournisseur,
+// sinon son annonce.
+export const marketBienId = (bien: MarketBien): string =>
+  bien.key != null ? `bien:${bien.key}` : `annonce:${bien.url}`;
