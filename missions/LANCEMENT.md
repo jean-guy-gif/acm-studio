@@ -90,7 +90,21 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
       site interdit la lecture de ses annonces) : le bien se saisit à la main. — **fait**, et un
       test garde la ligne alignée sur le code
 
+## Ajouté le 25/11 par Jean-Guy
+
+- **Le lien « Guide de prise en main » dans « Aide »**, vers le PDF. — **fait le 25/11**, vu dans
+  un vrai navigateur en production ; sa spec se jouera sur la base d'essai.
+- **Mission 10 bis : la fiche acquéreur, repliée** (affichage seulement : trois blocs à
+  l'ouverture, le reste sous « Tout le dossier »). — maquette validée par Jean-Guy le 25/11
+  (`maquettes/M10bis-fiche-acquereur-repliee.png`), **codée et relue le 25/11**, vue sur l'essai
+  (`maquettes/M10bis-apres-*.png`) ; **production jeudi 26/11 au matin**, après ses dix specs
+  sur la base d'essai (ordre de Jean-Guy : « pas ce soir »).
+- **La base** : une base d'essai séparée et la taille au-dessus, **jeudi 26/11 au matin**
+  (`missions/BASE_JEUDI_MATIN.md`). D'ici là, aucune spec en journée sur la base commune.
+
 ## Chaque soir
 
 La suite e2e complète, lancée par le chef en fin de journée (accord de Jean-Guy, 23/11), puis le
-point du soir en dix lignes.
+point du soir en dix lignes. Le 25/11 au soir, elle n'est pas lancée : elle pèse sur la base de la
+production tant que la base est commune (un rendez-vous du soir en souffrirait) ; elle se joue
+jeudi sur la base d'essai, une fois la séparation faite.
