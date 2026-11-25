@@ -98,7 +98,9 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
   l'ouverture, le reste sous « Tout le dossier »). — maquette validée par Jean-Guy le 25/11
   (`maquettes/M10bis-fiche-acquereur-repliee.png`), **codée et relue le 25/11**, vue sur l'essai
   (`maquettes/M10bis-apres-*.png`) ; **production jeudi 26/11 au matin**, après ses dix specs
-  sur la base d'essai (ordre de Jean-Guy : « pas ce soir »).
+  sur la base d'essai (ordre de Jean-Guy : « pas ce soir »). Sa règle du 25/11 au soir : si la
+  base n'est pas séparée à midi, la 10 bis ne retarde pas la livraison ; elle reste sur sa
+  branche et part après, quand ses specs pourront tourner sans toucher la production.
 - **La base** : une base d'essai séparée et la taille au-dessus, **jeudi 26/11 au matin**
   (`missions/BASE_JEUDI_MATIN.md`). D'ici là, aucune spec en journée sur la base commune.
 
