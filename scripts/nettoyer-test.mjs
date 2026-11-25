@@ -14,6 +14,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { testDatabaseArg } from './base-des-tests.mjs';
+
 const REPO_ROOT = resolve(import.meta.dirname, '..');
 const TEST_AGENCY_PREFIX = 'TEST AUTOMATIQUE';
 
@@ -108,9 +110,18 @@ function testEmail() {
 }
 
 // La CLI Supabase épinglée, comme pour la sauvegarde (`scripts/sauvegarde-commun.mjs`, 05/11) :
-// `--remote` sur le projet lié, une sortie JSON — un tableau (`--agent no`), ou un objet `{ rows }`
-// en mode agent. La sortie n'est jamais affichée telle quelle. Lecture seule, sauf `write`.
+// une sortie JSON — un tableau (`--agent no`), ou un objet `{ rows }` en mode agent. La sortie
+// n'est jamais affichée telle quelle. Lecture seule, sauf `write`. La base visée est celle des
+// tests (`scripts/base-des-tests.mjs`) : la base d'essai dès que sa référence est posée, jamais
+// celle de la production.
 const SUPABASE_CLI = ['--yes', 'supabase@3.0.0'];
+let TEST_DATABASE;
+try {
+  TEST_DATABASE = testDatabaseArg();
+} catch (error) {
+  console.error(`\n✖ ${error instanceof Error ? error.message : String(error)}\n`);
+  process.exit(1);
+}
 function query(sql, { write = false } = {}) {
   let out;
   try {
@@ -120,7 +131,7 @@ function query(sql, { write = false } = {}) {
         ...SUPABASE_CLI,
         'db',
         'query',
-        '--remote',
+        TEST_DATABASE,
         ...(write ? ['--yes'] : ['--read-only']),
         '--output-format',
         'json',

@@ -31,7 +31,10 @@
     "atelier": "node atelier/serveur.mjs --ouvrir",
     "cle-adresse": "node --experimental-strip-types --no-warnings scripts/cle-adresse.mjs",
     "demo:fiches": "node --experimental-strip-types --no-warnings scripts/demo-fiches.mjs",
-    "guide:pdf": "node scripts/guide-pdf.mjs"
+    "guide:pdf": "node scripts/guide-pdf.mjs",
+    "essai:preparer": "node scripts/essai-preparer.mjs",
+    "essai:preuve": "node scripts/essai-preuve.mjs",
+    "base:sonde": "node scripts/base-sonde.mjs"
   },
   "dependencies": {
     "@anthropic-ai/bedrock-sdk": "0.36.0",

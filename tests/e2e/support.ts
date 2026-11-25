@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 
 import { expect, type Locator, type Page } from '@playwright/test';
 
+import { testDatabaseArg } from '../../scripts/base-des-tests.mjs';
+
 // Mission 66 — outils du parcours de bout en bout. Rien ici ne touche la base
 // directement : tout passe par l'écran, comme le ferait le conseiller. Exceptions, écrites
 // avec leur raison : `removeTestOppositions` (mission 98) et `ageTestFollowUp` (mission 96)
@@ -412,14 +414,16 @@ export const TEST_OPPOSITION_STREET = 'rue du refus automatique';
 
 // La CLI Supabase des e2e, épinglée comme celle de la sauvegarde (`scripts/sauvegarde-commun.mjs`,
 // 05/11 : la CLI 3.0.0 remplace `--linked` par `--remote`) : sortie JSON, lecture seule sauf
-// `write`, qui confirme d'avance l'écriture sur le projet lié (`--yes`).
+// `write`, qui confirme d'avance l'écriture (`--yes`). La base visée est celle des tests
+// (`scripts/base-des-tests.mjs`) : la base d'essai dès que sa référence est posée dans
+// `.env.e2e.local`, jamais celle de la production.
 const SUPABASE_CLI = ['--yes', 'supabase@3.0.0'];
 function supabaseQueryArgs(sql: string, { write }: { write: boolean }): string[] {
   return [
     ...SUPABASE_CLI,
     'db',
     'query',
-    '--remote',
+    testDatabaseArg(),
     ...(write ? ['--yes'] : ['--read-only']),
     '--output-format',
     'json',
