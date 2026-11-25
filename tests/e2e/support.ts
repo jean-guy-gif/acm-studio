@@ -192,8 +192,12 @@ export async function login(page: Page, credentials?: Credentials): Promise<void
   // Mission 100 — l'agence de test est vidée à la fin de chaque passage : un conseiller sans
   // dossier arrive sur « Bienvenue » (M97), avec des dossiers sur « Aujourd'hui » (M145). Les
   // parcours partent tous de la liste des dossiers.
+  // 25/11 — juste après une remise à zéro de la démo, la base met dix à quinze secondes à répondre
+  // (lu dans ses journaux) : la page d'arrivée attend, la connexion a pourtant réussi. 45 secondes,
+  // pour qu'un tel moment ne fasse plus tomber la spec qui suit.
   await expect(page, 'La connexion du compte de test a échoué').toHaveURL(
     /\/(aujourdhui|bienvenue)$/,
+    { timeout: 45_000 },
   );
   if (!/\/builder$/.test(page.url())) {
     await page.goto('/builder');
