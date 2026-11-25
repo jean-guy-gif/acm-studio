@@ -1,13 +1,22 @@
 # Sauvegarde de la base
 
-**Quand** : avant chaque migration, et une fois par semaine pendant la bêta — `npm run sauvegarde`,
-puis `npm run sauvegarde:verifier`, qui doit finir par « Vérification réussie ».
+**Deux sauvegardes, qui ne couvrent pas la même chose** (vérifié le 25/11/2026) :
+
+- **Celle de Supabase, chaque nuit** : depuis le passage à l'offre Pro (23/11/2026), la base est
+  sauvegardée tous les jours vers 4 h 30 UTC, et gardée sept jours. Vu le 25/11 dans la console
+  (Database → Backups → Scheduled backups) : une sauvegarde par jour du 18 au 25/11. **Elle ne
+  contient pas les fichiers du stockage** (photos des biens, logos, signatures des bons de visite
+  et des offres) : la console le dit, « Storage objects are not included ».
+- **La nôtre, à la main** : `npm run sauvegarde`, puis `npm run sauvegarde:verifier`, qui doit
+  finir par « Vérification réussie ». Elle prend la base ET les fichiers du stockage. Avant chaque
+  migration, et une fois par semaine : c'est la seule copie des fichiers.
 
 **Où** : dans `~/acm-studio-sauvegardes/`, un dossier par date (`2026-10-12_0900`), hors du dépôt
 et jamais commité : il contient les données des vendeurs et des jetons de connexion.
 
-**La vraie solution** : l'offre payante de Supabase, avec ses sauvegardes quotidiennes
-automatiques. Elle n'est pas activée ; cette sauvegarde à la main en tient lieu pendant la bêta.
+**Restaurer une sauvegarde de Supabase** se fait depuis la console (« Restore ») et remplace la
+base en ligne : jamais sans Jean-Guy, jamais pour « essayer ». Elle n'a pas été essayée : la
+restauration vérifiée est celle de notre sauvegarde, dans une base locale à part.
 
 ## Ce que font les deux commandes
 
