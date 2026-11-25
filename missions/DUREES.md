@@ -39,7 +39,11 @@ commits et des messages, à quelques minutes près.
 | 25/11 | Lancement 13 (suite) : le lien « Guide de prise en main » dans « Aide » | Petit | 20 min | 0 | 0 |
 | 25/11 | Mission 10 bis : la fiche acquéreur repliée — la maquette, l'« ok » de Jean-Guy, le code, le relecteur une passe, vue sur l'essai ; ses dix specs se jouent jeudi sur la base d'essai, puis la production | Moyen | 1 h 40 | 25 min | 10 min |
 | 25/11 | La base d'essai séparée : l'outillage, le déroulé de jeudi matin, deux relectures, la preuve et la sonde | Sensible | 2 h 20 | 0 | 15 min |
-| 25/11 | **Total de la journée à 18 h 30 (douze lignes ; 11 h 30 d'horloge, de 7 h à 18 h 30 ; la 10 bis et la base ont tourné en même temps de 16 h 35 à 17 h 40)** | | **12 h 35** | 1 h 25 | 4 h 45 |
+| 25/11 | La base d'essai séparée, le soir même (« on y va » de Jean-Guy à 18 h 40) : la sauvegarde vérifiée, ses trois gestes, la preuve | Sensible | 1 h 00 | 40 min | 5 min |
+| 25/11 | Les specs de « Aide » et les dix de la fiche acquéreur, sur la base d'essai (18 parcours, verts du premier coup) | — | 25 min | 0 | 22 min |
+| 25/11 | Mission 10 bis en production : la seconde relecture de Vercel, la fusion, la mesure et la capture sur la fiche des Mercier | Moyen | 20 min | 0 | 0 |
+| 25/11 | La suite e2e complète du 25/11 au soir, sur la base d'essai (37 sur 37, un aléa rejoué) | — | 40 min | 0 | 40 min |
+| 25/11 | **Total de la journée à 21 h 10 (seize lignes ; 14 h d'horloge, de 7 h à 21 h 10 ; la 10 bis et la base ont tourné en même temps de 16 h 35 à 17 h 40)** | | **15 h 00** | 2 h 05 | 5 h 52 |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,
@@ -51,6 +55,6 @@ la suite e2e complète du soir et le point du soir sont partis le 25/11 à 7 h.
 Le 25/11, la session s'est arrêtée de 11 h 20 à 11 h 57, relancée par Jean-Guy (ce temps n'est
 compté dans aucune mission) ; à 12 h 23 le relecteur a buté sur la limite d'usage du modèle et a
 été relancé sur un autre. La suite complète a tourné à 14 h, pas la nuit : c'était à tort, elle
-pèse sur la base de la production (`missions/LIVRAISON.md`). Le soir du 25/11, elle n'est pas
-lancée : tant que la base est commune, elle pèserait sur un rendez-vous du soir ; elle se joue
-jeudi sur la base d'essai.
+pèse sur la base de la production (`missions/LIVRAISON.md`). Le soir du 25/11, Jean-Guy a
+avancé la base (« on y va » à 18 h 40) : la suite complète a tourné de 20 h 17 à 20 h 57, sur la
+base d'essai.

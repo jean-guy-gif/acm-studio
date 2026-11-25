@@ -95,18 +95,16 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
 - **Le lien « Guide de prise en main » dans « Aide »**, vers le PDF. — **fait le 25/11**, vu dans
   un vrai navigateur en production ; sa spec se jouera sur la base d'essai.
 - **Mission 10 bis : la fiche acquéreur, repliée** (affichage seulement : trois blocs à
-  l'ouverture, le reste sous « Tout le dossier »). — maquette validée par Jean-Guy le 25/11
-  (`maquettes/M10bis-fiche-acquereur-repliee.png`), **codée et relue le 25/11**, vue sur l'essai
-  (`maquettes/M10bis-apres-*.png`) ; **production jeudi 26/11 au matin**, après ses dix specs
-  sur la base d'essai (ordre de Jean-Guy : « pas ce soir »). **Avancée au 25/11 au soir** par
-  Jean-Guy, avec la base : en production dès ses specs vertes sur la base d'essai.
-- **La base** : une base d'essai séparée et la taille au-dessus, prévues le jeudi 26/11 au matin
-  (`missions/BASE_JEUDI_MATIN.md`), **avancées au mercredi 25/11 au soir** par Jean-Guy (« on y
-  va »). Aucune spec sur la base commune d'ici la séparation.
+  l'ouverture, le reste sous « Tout le dossier »). — **fait le 25/11 au soir** : maquette validée
+  par Jean-Guy (`maquettes/M10bis-fiche-acquereur-repliee.png`), codée et relue, ses dix specs
+  vertes sur la base d'essai, **en production à 20 h 10**. Mesurée sur la fiche de M. et Mme
+  Mercier : 624 px pour un écran de 771, 2 boutons (`maquettes/M10bis-production-fiche-mercier.png`).
+- **La base** : une base d'essai séparée et la taille au-dessus. — **fait le 25/11 au soir**, sur
+  les gestes de Jean-Guy (`missions/BASE_JEUDI_MATIN.md`) : moins de deux minutes d'arrêt, la
+  production intacte, l'essai et les tests sur leur propre base.
 
 ## Chaque soir
 
 La suite e2e complète, lancée par le chef en fin de journée (accord de Jean-Guy, 23/11), puis le
-point du soir en dix lignes. Le 25/11, elle se joue la nuit même sur la base d'essai, une fois la
-séparation faite (ordre de Jean-Guy) : sur la base commune, elle pèserait sur un rendez-vous du
-soir.
+point du soir en dix lignes. Depuis le 25/11 au soir, elle tourne sur la base d'essai : elle ne
+pèse plus sur la production. Le 25/11 : de 20 h 17 à 20 h 57, 37 parcours sur 37, un aléa.

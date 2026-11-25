@@ -825,6 +825,19 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   `resetDemoByScreen` sait faire. Les dix specs adaptées à la fiche repliée sans pouvoir les jouer
   sont passées du premier coup : deux contrôles à froid avaient précédé (aucun repère lu par une
   spec n'avait disparu du code, aucun texte retiré n'était encore attendu).
+- 25/11 · La suite complète au premier plan, par tranches (un appel de terminal est borné à dix
+  minutes) : onze tranches de trois à six minutes, 40 minutes en tout sur la base d'essai.
+  `langue-du-vendeur` reste un aléa, base d'essai comprise (le passage du Live en anglais par
+  « Réglages ») : vert au rejeu.
+- 25/11 · Dans le Chrome de Jean-Guy, `resize_window` ne prend effet qu'après quelques secondes,
+  et pas sur un onglet neuf (page interne du navigateur) : ouvrir d'abord la page, redimensionner,
+  attendre, puis relire `window.innerWidth` et `innerHeight` avant toute mesure ou capture ; la
+  hauteur demandée est celle de la fenêtre, barres comprises (65 px de moins pour la page). Une
+  capture prise « réduite » s'enregistre réduite : pour un fichier, la prendre à l'échelle 1.
+- 25/11 · Capturer une vraie fiche pour le dépôt (celle des Mercier) : flouter AVANT de capturer —
+  une feuille de style glissée dans la page, retirée ensuite — le téléphone, la phrase de la
+  recherche et ce qui parle d'une autre personne, puis couper le menu (`sips -c … --cropOffset`) ;
+  mesurer par des nombres (hauteurs, comptes, repères), jamais en relevant le texte de la fiche.
 
 ## La base
 

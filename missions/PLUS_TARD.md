@@ -278,3 +278,8 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     Jean-Guy, 25/11 au soir) ;
   - « Tout le dossier » voisine avec « Dossier acquéreur et lien » : deux notions, un même mot
     (les mots de la fiche sont ceux de Jean-Guy).
+- 25/11 · Base d'essai, le soir même · Restent, sans urgence : `langue-du-vendeur` est encore un
+  aléa sur la base d'essai (le passage du Live en anglais par « Réglages », vert au rejeu) : ce
+  n'était donc pas la base commune ; la phrase de `CLAUDE.md` sur la base partagée et celle sur
+  la prévisualisation de la branche sont à Jean-Guy (proposées le 25/11 au soir) ; les deux
+  agences des tests restées dans la production n'y servent plus (leur retrait : sa décision).
