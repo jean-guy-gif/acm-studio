@@ -9,11 +9,12 @@ l'organisation Supabase est en offre Pro**.
 > restent à faire. L'étape 2 est faite ; vérifiez le plafond de dépense (« Spend cap ») et les
 > sauvegardes quotidiennes.
 >
-> **État au 25/11/2026** : la base d'essai séparée est décidée par Jean-Guy pour le jeudi 26/11 au
-> matin, avec la base de la production à la taille au-dessus (« Small »). Le déroulé à jour, geste
-> par geste, est dans `missions/BASE_JEUDI_MATIN.md` : il remplace les étapes 3 à 5 ci-dessous
-> (les variables de Vercel s'ajoutent pour la branche `essai`, les entrées communes ne se
-> modifient pas ; les tests visent la base d'essai par sa référence, `E2E_SUPABASE_REF`).
+> **État au 25/11/2026, au soir** : c'est fait. La base de la production est à la taille au-dessus
+> (« Small ») et la base d'essai est séparée (le projet `acm-studio-essai`). Le déroulé suivi,
+> geste par geste, est dans `missions/BASE_JEUDI_MATIN.md` : il a remplacé les étapes 3 à 5
+> ci-dessous (les variables de Vercel se sont ajoutées pour la branche `essai`, les entrées
+> communes ne sont pas modifiées ; les tests visent la base d'essai par sa référence,
+> `E2E_SUPABASE_REF`). Reste de ce document : Vercel Pro (étape 6), non décidé.
 
 ## La coupure du 23/11/2026 : ce qui s'est passé
 
