@@ -865,6 +865,22 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     ]) {
       await expect(nav.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
+    // « Vendeurs » tient Préparation, Live et Suivi : ils se rejoignent par ses trois onglets, en
+    // tête de chacune de leurs listes, et le menu garde « Vendeurs » surligné.
+    await nav.getByRole('link', { name: /^Vendeurs/ }).click();
+    await expect(page).toHaveURL(/\/builder$/);
+    const tabs = page.getByTestId('seller-tabs');
+    for (const [label, url] of [
+      ['Suivi', /\/suivi$/],
+      ['Live', /\/live$/],
+      ['Préparation', /\/builder$/],
+    ] as const) {
+      await tabs.getByRole('link', { name: label, exact: true }).click();
+      await expect(page).toHaveURL(url);
+      await expect(tabs.getByRole('link')).toHaveText(['Préparation', 'Live', 'Suivi']);
+      await expect(tabs.locator('[aria-current="page"]')).toHaveText(label);
+      await expect(nav.locator('[aria-current="page"]')).toHaveText(/^Vendeurs/);
+    }
     await nav.getByRole('link', { name: /^Acquéreurs/ }).click();
     await expect(page).toHaveURL(/\/acquereurs$/);
     // Mission 125 — le reste est derrière la carte du conseiller, qui se ferme par Échap et par un
@@ -879,6 +895,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(accountMenu.getByRole('menuitem').first()).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(accountMenu.getByRole('menuitem', { name: /^Administration/ })).toBeFocused();
+    // Sur ordinateur, Prospection et Aide sont au menu : la feuille ne les montre pas, et les
+    // flèches les sautent — après Administration, « Sombre ».
+    await expect(accountMenu.getByRole('menuitem', { name: /^(Prospection|Aide)/ })).toHaveCount(0);
+    await page.keyboard.press('ArrowDown');
+    await expect(accountMenu.getByRole('menuitem', { name: /^Sombre/ })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(accountMenu).toHaveCount(0);
     await expect(page.getByTestId('account-card')).toBeFocused();
@@ -952,6 +973,27 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('today-line').first()).toBeInViewport({ ratio: 1 });
     await expectNoHorizontalScroll(page, 'Aujourd’hui (390 × 844)');
     await expect(page.getByTestId('account-avatar')).toBeVisible();
+    // La feuille du compte, sur téléphone : qui est connecté, et ce que le menu du bas ne montre
+    // pas (Prospection, Aide) avec le reste ; Échap la referme, et « Prospection » y mène.
+    const phoneSheet = await openAccountMenu(page);
+    await expect(phoneSheet.getByTestId('account-identity')).toBeVisible();
+    for (const label of [
+      'Mon profil',
+      'Administration',
+      'Prospection',
+      'Aide',
+      'Sombre',
+      'Déconnexion',
+    ]) {
+      await expect(
+        phoneSheet.getByRole('menuitem', { name: new RegExp(`^${label}`) }),
+      ).toBeVisible();
+    }
+    await expect(phoneSheet).toBeInViewport({ ratio: 1 });
+    await page.keyboard.press('Escape');
+    await expect(phoneSheet).toHaveCount(0);
+    await goViaAccountMenu(page, 'Prospection');
+    await expect(page).toHaveURL(/\/prospection$/);
     await sideNav(page)
       .getByRole('link', { name: /^Vendeurs/ })
       .click();

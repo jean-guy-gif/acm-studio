@@ -29,7 +29,8 @@ const entry =
 // La refonte, lot A — le même compte aux trois tailles : sa carte en bas du menu sur ordinateur, un
 // rond aux initiales en bas de la colonne d'icônes sur tablette (`variant="menu"`), et un rond en
 // haut d'« Aujourd'hui » sur téléphone (`variant="avatar"`). La feuille porte aussi ce que le menu
-// ne montre pas à cette taille : Prospection sous 1280 px, Aide sous 768 px.
+// ne montre pas à cette taille : Prospection sous 1280 px, Aide sous 768 px ; et, là où le bouton
+// n'est qu'un rond, qui est connecté.
 export function AccountMenu({
   profileName,
   profileEmail,
@@ -173,6 +174,12 @@ export function AccountMenu({
               : 'bottom-full left-0 mb-2 xl:right-0 xl:w-auto'
           }`}
         >
+          <AccountIdentity
+            profileName={profileName}
+            profileEmail={profileEmail}
+            agencyName={agencyName}
+            variant={variant}
+          />
           <AccountMenuEntries
             links={links}
             pathname={pathname}
@@ -187,6 +194,37 @@ export function AccountMenu({
           />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// Qui est connecté, en tête de la feuille : son nom, son e-mail, son agence (M125). Là où le
+// bouton n'est qu'un rond aux initiales — sur téléphone et sur tablette ; sur ordinateur, la carte
+// le dit déjà. Ce n'est pas une entrée du menu.
+export function AccountIdentity({
+  profileName,
+  profileEmail,
+  agencyName,
+  variant,
+}: {
+  profileName: string;
+  profileEmail: string;
+  agencyName: string;
+  variant: 'menu' | 'avatar';
+}) {
+  return (
+    <div
+      role="none"
+      data-testid="account-identity"
+      className={`mb-1 flex flex-col gap-0.5 border-b border-zinc-100 px-3 pt-1.5 pb-2.5 stage:border-white/10 ${
+        variant === 'menu' ? 'xl:hidden' : ''
+      }`}
+    >
+      <span className="truncate text-sm font-semibold text-zinc-800 stage:text-white">
+        {profileName}
+      </span>
+      <span className="truncate text-xs text-zinc-500 stage:text-white/50">{profileEmail}</span>
+      <span className="truncate text-xs text-zinc-500 stage:text-white/40">{agencyName}</span>
     </div>
   );
 }

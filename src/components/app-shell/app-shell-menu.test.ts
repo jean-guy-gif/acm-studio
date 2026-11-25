@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,9 +11,10 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
-const { AccountMenu, AccountMenuEntries, ACCOUNT_MENU_LABEL } =
+const { AccountIdentity, AccountMenu, AccountMenuEntries, ACCOUNT_MENU_LABEL } =
   await import('@/components/app-shell/account-menu');
-const { accountMenuFor } = await import('@/features/workspace-mode/services/workspace-mode');
+const { accountMenuFor, NAV_ITEMS, SELLER_TABS } =
+  await import('@/features/workspace-mode/services/workspace-mode');
 const { SidebarNav } = await import('@/components/app-shell/sidebar-nav');
 const { ShellSidebar } = await import('@/components/app-shell/shell-sidebar');
 const { PhoneAccount } = await import('@/components/app-shell/phone-account');
@@ -154,6 +158,23 @@ describe('le compte du conseiller', () => {
     expect(html).not.toContain('carl@example.org');
   });
 
+  // Sur téléphone et sur tablette, le bouton n'est qu'un rond : la feuille dit qui est connecté
+  // (M125 : nom, e-mail, agence) ; sur ordinateur, la carte le dit déjà.
+  it('la feuille dit qui est connecté, là où le bouton n’est qu’un rond', () => {
+    const identity = (variant: 'menu' | 'avatar') =>
+      renderToStaticMarkup(createElement(AccountIdentity, { ...account, variant }));
+    for (const variant of ['menu', 'avatar'] as const) {
+      const html = identity(variant);
+      for (const text of ['Carl Conseiller', 'carl@example.org', 'Agence Test']) {
+        expect(html, variant).toContain(text);
+      }
+      // Ce n'est pas une entrée du menu : ni lien, ni bouton, hors du parcours au clavier.
+      expect(html, variant).not.toMatch(/role="menuitem"|<a |<button/);
+    }
+    expect(identity('menu')).toMatch(/class="[^"]*xl:hidden/);
+    expect(identity('avatar')).not.toMatch(/hidden/);
+  });
+
   it('la pastille des erreurs : pour un opérateur, et seulement s’il y en a', () => {
     expect(card()).not.toContain('account-errors-badge');
     expect(card({ errorsBadge: { count: 0, label: '0 erreur depuis hier' } })).not.toContain(
@@ -210,12 +231,29 @@ describe('la feuille ouverte du compte', () => {
     for (const label of ['Sombre', 'Déconnexion']) expect(html).toContain(label);
   });
 
-  it('Prospection s’efface à partir de 1280 px, Aide à partir de 768 px : le menu les montre', () => {
-    const html = entries(false, null);
-    expect(anchor(html, '/prospection')).toContain('xl:hidden');
-    expect(anchor(html, '/bienvenue')).toContain('md:hidden');
-    for (const href of ['/profil', '/admin']) {
-      expect(anchor(html, href), href).not.toMatch(/md:hidden|xl:hidden/);
+  // À chaque taille, une entrée se voit au menu OU dans la feuille : jamais aux deux, jamais à
+  // aucun. Parcourt tout le menu, pas seulement Prospection et Aide.
+  it('la feuille cache une entrée à la taille exacte où le menu la montre', () => {
+    const sheet = entries(true, { count: 0, label: '0 erreur depuis hier' });
+    const menu = renderToStaticMarkup(createElement(SidebarNav));
+    const shownFrom = {
+      phone: /class="flex /,
+      tablet: /class="hidden md:flex /,
+      desktop: /class="hidden xl:flex /,
+    };
+    const hiddenFrom = { tablet: 'md:hidden', desktop: 'xl:hidden' };
+    for (const item of NAV_ITEMS) {
+      expect(anchor(menu, item.href), item.label).toMatch(shownFrom[item.from]);
+      if (item.from === 'phone') {
+        expect(links(sheet), item.label).not.toContain(item.href);
+      } else {
+        expect(anchor(sheet, item.href), item.label).toContain(hiddenFrom[item.from]);
+        const other = item.from === 'tablet' ? 'xl:hidden' : 'md:hidden';
+        expect(anchor(sheet, item.href), item.label).not.toContain(other);
+      }
+    }
+    for (const href of ['/profil', '/admin', '/erreurs']) {
+      expect(anchor(sheet, href), href).not.toMatch(/md:hidden|xl:hidden/);
     }
   });
 });
@@ -248,6 +286,37 @@ describe('le menu aux trois tailles', () => {
     // Jamais à l'impression.
     expect(aside).toContain('print:hidden');
     expect(html).not.toMatch(/mobile-menu-toggle|shell-menu-panel|mobile-today-count|☰/);
+  });
+
+  // Sur tablette, la feuille du compte (240 px) déborde de la colonne (88 px) : pendant qu'elle est
+  // ouverte, la colonne passe au-dessus de la page et de sa barre « Enregistrer », et reste sous
+  // les couches plein écran. Fermée, elle garde son rang : le menu « … » d'une carte de gauche
+  // (z-40) se pose sur elle, jamais dessous.
+  it('feuille ouverte, la colonne est au-dessus de la page, sous les couches plein écran', () => {
+    const z = (file: string, pattern: RegExp): number => {
+      const found = pattern.exec(readFileSync(path.resolve(file), 'utf8'));
+      expect(found, `${file} : ${pattern}`).not.toBeNull();
+      return Number(found![1]);
+    };
+    const aside = shell().match(/<aside data-testid="shell-menu" class="([^"]+)"/)?.[1] ?? '';
+    const whileOpen = Number(/ md:has-\[\[role=menu\]\]:z-\[(\d+)\] /.exec(aside)?.[1]);
+    const saveBar = z(
+      'src/features/subject-property/components/property-save-bar.tsx',
+      /fixed [^"]*bottom-\[var\(--shell-bottom\)\][^"]* z-(\d+)/,
+    );
+    const dialog = z('src/components/ui/confirm-dialog.tsx', /fixed inset-0 z-(\d+)/);
+    const sheet = z(
+      'src/features/property-sheet/components/property-sheet-view.tsx',
+      /fixed inset-0 z-(\d+)/,
+    );
+    expect(whileOpen).toBeGreaterThan(saveBar);
+    expect(whileOpen).toBeLessThan(dialog);
+    expect(whileOpen).toBeLessThan(sheet);
+    // Fermée : aucun rang forcé à partir de 768 px.
+    expect(aside).toContain(' md:z-auto ');
+    expect(aside).not.toMatch(/ md:z-\[?\d/);
+    // La feuille est bien ce qui porte `role="menu"` dans la colonne — et rien d'autre.
+    expect(shell()).not.toContain('role="menu"');
   });
 
   it('le logo de l’agence sur ordinateur seulement ; le compte à partir de 768 px', () => {
@@ -283,7 +352,67 @@ describe('le menu aux trois tailles', () => {
   });
 });
 
+// Sur téléphone, le menu est fixé en bas : une barre fixée en bas d'un écran du cadre se pose
+// au-dessus de lui (`--shell-bottom`), jamais dessus. Les écrans hors du cadre (le Live, la
+// présentation plein cadre, les liens publics) n'ont pas de menu : ils sont nommés ici.
+describe('rien ne se pose sur le menu du bas', () => {
+  const OUTSIDE_THE_SHELL = [
+    'src/components/app-shell/shell-sidebar.tsx', // le menu lui-même
+    'src/features/live-seller/components/live-comparative-shell.tsx', // la scène du Live
+    'src/features/buyer-deck/components/deck-presentation.tsx', // la présentation plein cadre
+    'src/features/buyer-dossier/components/dossier-phone-deck.tsx', // le lien du dossier acquéreur
+    'src/features/market-update/components/market-update-download-button.tsx', // lien public
+  ];
+  const files = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) return files(file);
+      return /\.tsx$/.test(entry.name) && !/\.test\.tsx$/.test(entry.name) ? [file] : [];
+    });
+  // Une chaîne de classes « fixed » ou « sticky » accrochée en bas, hors couche plein écran.
+  const bottomBars = (source: string): string[] =>
+    [...source.matchAll(/["'`]([^"'`\n]*\b(?:fixed|sticky)\b[^"'`\n]*)["'`]/g)]
+      .map((match) => match[1]!)
+      .filter((classes) => /(^| )bottom-/.test(classes) && !/(^| )inset-0( |$)/.test(classes));
+
+  it('chaque barre fixée en bas tient compte du menu, ou vit hors du cadre', () => {
+    const found: string[] = [];
+    for (const file of files(path.resolve('src'))) {
+      const relative = path.relative(process.cwd(), file);
+      for (const classes of bottomBars(readFileSync(file, 'utf8'))) {
+        found.push(relative);
+        if (OUTSIDE_THE_SHELL.includes(relative)) continue;
+        expect(classes, relative).toContain('var(--shell-bottom)');
+      }
+    }
+    // Le balayage voit bien les barres connues : sinon il ne garderait rien.
+    for (const known of [
+      'src/features/subject-property/components/property-save-bar.tsx',
+      'src/features/buyer-notes/components/notes-flow.tsx',
+      'src/features/prospecting/components/opposition-notice.tsx',
+      ...OUTSIDE_THE_SHELL,
+    ]) {
+      expect(found, known).toContain(known);
+    }
+  });
+});
+
 describe('les onglets du vendeur', () => {
+  // « Live » et « Suivi » ne sont plus au menu : leurs listes ne se rejoignent que par ces onglets.
+  it('chacune des trois listes porte les onglets, sur le sien', () => {
+    const pages: Record<(typeof SELLER_TABS)[number]['href'], string> = {
+      '/builder': 'src/app/(protected)/builder/(liste)/page.tsx',
+      '/live': 'src/app/(protected)/live/page.tsx',
+      '/suivi': 'src/app/(protected)/suivi/page.tsx',
+    };
+    expect(Object.keys(pages).sort()).toEqual(SELLER_TABS.map((tab) => tab.href).sort());
+    for (const tab of SELLER_TABS) {
+      const source = readFileSync(path.resolve(pages[tab.href]), 'utf8');
+      expect(source, tab.label).toContain(`<SellerTabs current="${tab.href}" />`);
+      expect(source.match(/<SellerTabs /g), tab.label).toHaveLength(1);
+    }
+  });
+
   it('Préparation · Live · Suivi, des liens ; l’onglet de la page est dit', () => {
     for (const current of ['/builder', '/live', '/suivi'] as const) {
       const html = renderToStaticMarkup(createElement(SellerTabs, { current }));

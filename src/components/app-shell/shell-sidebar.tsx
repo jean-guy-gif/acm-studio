@@ -9,6 +9,12 @@ import { AppLogo } from '@/components/theme/app-logo';
 // sur tablette, une colonne d'icônes de 88 px ; sur ordinateur, le menu complet de 232 px, le
 // logo de l'agence en tête. Le compte du conseiller (M125) est en bas de la colonne : un rond aux
 // initiales sur tablette, sa carte sur ordinateur ; sur téléphone, il est en haut d'« Aujourd'hui ».
+//
+// Sur tablette, la feuille du compte (240 px) déborde de la colonne (88 px). La colonne passe donc
+// AU-DESSUS de la page pendant que la feuille est ouverte, et seulement alors
+// (`md:has-[[role=menu]]:z-[45]`) : elle recouvre le contenu et la barre « Enregistrer » (z-40), et
+// reste sous les couches plein écran (confirmation, fiche d'un bien : z-50). Fermée, la colonne
+// garde son rang : le menu « … » d'une carte de gauche se pose sur elle, jamais dessous.
 export function ShellSidebar({
   profileName,
   profileEmail,
@@ -31,7 +37,7 @@ export function ShellSidebar({
   return (
     <aside
       data-testid="shell-menu"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E3E6F0] bg-white pb-[env(safe-area-inset-bottom)] md:sticky md:inset-x-auto md:top-0 md:bottom-auto md:z-auto md:flex md:h-screen md:w-[var(--shell-left)] md:shrink-0 md:flex-col md:gap-4 md:border-t-0 md:border-r md:px-2 md:py-5 xl:px-4 xl:py-7 print:hidden stage:border-white/10 stage:bg-[#0b2233]"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E3E6F0] bg-white pb-[env(safe-area-inset-bottom)] md:sticky md:inset-x-auto md:top-0 md:bottom-auto md:z-auto md:flex md:h-screen md:w-[var(--shell-left)] md:shrink-0 md:flex-col md:gap-4 md:border-t-0 md:border-r md:px-2 md:py-5 xl:px-4 xl:py-7 md:has-[[role=menu]]:z-[45] print:hidden stage:border-white/10 stage:bg-[#0b2233]"
     >
       <div className="hidden px-3 pb-2 xl:block">
         <AppLogo

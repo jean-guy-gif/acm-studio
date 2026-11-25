@@ -83,18 +83,38 @@ describe('la feuille du compte', () => {
     ]);
   });
 
-  it('Prospection et Aide n’y sont que là où le menu ne les montre pas', () => {
-    const byHref = new Map(accountMenuFor({ demo: true, operator: true }).map((l) => [l.href, l]));
-    // Prospection : au menu à partir de 1280 px, donc dans la feuille en dessous.
-    expect(byHref.get('/prospection')?.until).toBe('desktop');
-    expect(NAV_ITEMS.find((item) => item.href === '/prospection')?.from).toBe('desktop');
-    // Aide : au menu à partir de 768 px, donc dans la feuille en dessous.
-    expect(byHref.get('/bienvenue')?.until).toBe('tablet');
-    expect(NAV_ITEMS.find((item) => item.href === '/bienvenue')?.from).toBe('tablet');
-    // Le reste n'est jamais au menu : toujours dans la feuille.
-    for (const href of ['/profil', '/admin', '/ma-demo', '/erreurs']) {
-      expect(byHref.get(href)?.until, href).toBeUndefined();
-      expect(NAV_ITEMS.map((item) => item.href)).not.toContain(href);
+  // À chaque taille, une entrée est SOIT au menu, SOIT dans la feuille : jamais absente des deux,
+  // jamais dans les deux. Parcourt le menu entier : une entrée ajoutée demain y passe aussi.
+  it('ce que le menu ne montre pas à une taille est dans la feuille, jusqu’à cette taille', () => {
+    for (const [demo, operator] of [
+      [false, false],
+      [true, true],
+    ] as const) {
+      const byHref = new Map(accountMenuFor({ demo, operator }).map((l) => [l.href, l]));
+      for (const item of NAV_ITEMS) {
+        if (item.from === 'phone') {
+          // Au menu partout : jamais dans la feuille.
+          expect(byHref.has(item.href), item.label).toBe(false);
+        } else {
+          // Au menu à partir de `from` : dans la feuille en dessous, sous le même nom.
+          expect(byHref.get(item.href), item.label).toEqual({
+            href: item.href,
+            label: item.label,
+            until: item.from,
+          });
+        }
+      }
+      // Le reste n'est jamais au menu : toujours dans la feuille.
+      const menu = NAV_ITEMS.map((item) => item.href);
+      for (const link of byHref.values()) {
+        if (!menu.includes(link.href)) expect(link.until, link.label).toBeUndefined();
+      }
     }
+    // Aujourd'hui : Prospection sous 1280 px, Aide sous 768 px.
+    const today = accountMenuFor({ demo: false, operator: false });
+    expect(today.filter((link) => link.until).map((link) => [link.label, link.until])).toEqual([
+      ['Prospection', 'desktop'],
+      ['Aide', 'tablet'],
+    ]);
   });
 });

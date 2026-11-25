@@ -2,9 +2,14 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { initialsOf, initialsTint, INITIALS_TINTS } from '@/components/socle/initials';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+import { initialsOf } from '@/components/socle/initials';
+import { soclePreviewOpen } from '@/components/socle/preview-open';
 import { StatTiles } from '@/components/socle/stat-tiles';
-import { PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
+import { PersonMark, PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
+import { MARK_TONES, TEXT_TONES } from '@/components/socle/tone';
 import {
   btnPrimary,
   btnSecondary,
@@ -14,9 +19,13 @@ import {
   pillGreen,
   pillNeutral,
   pillOrange,
+  socleBigPair,
+  socleBigStep,
   socleBtnFilled,
+  socleBtnFilledBig,
   socleBtnOutline,
   socleBtnQuiet,
+  socleBtnQuietBig,
 } from '@/components/ui/styles';
 
 // La refonte, lot A — les blocs du socle (maquettes REFONTE-1 à 8).
@@ -31,12 +40,33 @@ describe('le rond aux initiales', () => {
     expect(initialsOf('  ')).toBe('?');
   });
 
-  it('une teinte par personne, toujours la même, parmi trois', () => {
-    expect(INITIALS_TINTS).toHaveLength(3);
-    expect(initialsTint('Mme Rossi')).toBe(initialsTint('Mme Rossi'));
-    expect(INITIALS_TINTS).toContain(initialsTint('M. et Mme Moreau'));
-    // La teinte n'est pas une couleur de sens : ni rouge, ni alerte.
-    for (const tint of INITIALS_TINTS) expect(tint).not.toMatch(/red|amber/);
+  // Sur les maquettes, l'orange va avec « Financement à valider » et « 2 prix ont changé », le vert
+  // avec « Veut visiter » et « Mandat signé » : une couleur de sens ne se tire pas au sort.
+  it('la teinte suit ce qu’il y a à faire, jamais le nom', () => {
+    const mark = (name: string, tone?: 'plain' | 'watch' | 'good') =>
+      renderToStaticMarkup(createElement(PersonMark, { name, tone }));
+    const classOf = (html: string) => /class="([^"]*)"/.exec(html)?.[1];
+
+    // Deux personnes, la même tâche : la même teinte.
+    expect(classOf(mark('Mme Rossi', 'watch'))).toBe(classOf(mark('M. Fontaine', 'watch')));
+    // La même personne, deux tâches : deux teintes.
+    expect(classOf(mark('Mme Rossi', 'watch'))).not.toBe(classOf(mark('Mme Rossi', 'good')));
+    // Sans rien dire : la couleur de l'agence, pour tout le monde.
+    for (const name of ['Mme Rossi', 'M. Fontaine', 'Famille Keller', 'M. et Mme Moreau']) {
+      expect(classOf(mark(name))).toBe(classOf(mark('Mme Rossi', 'plain')));
+      expect(mark(name)).toContain(MARK_TONES.plain);
+    }
+    expect(mark('Mme Rossi', 'watch')).toContain(MARK_TONES.watch);
+    expect(mark('Mme Rossi', 'good')).toContain(MARK_TONES.good);
+  });
+
+  it('trois teintes : la couleur de l’agence, un vert, un orange ; jamais de rouge', () => {
+    for (const tones of [MARK_TONES, TEXT_TONES]) {
+      expect(Object.keys(tones).sort()).toEqual(['good', 'plain', 'watch']);
+      expect(tones.plain).toContain('brand');
+      expect(new Set(Object.values(tones)).size).toBe(3);
+      for (const tone of Object.values(tones)) expect(tone).not.toMatch(/red|#26327F/i);
+    }
   });
 });
 
@@ -55,6 +85,19 @@ describe('les boutons du socle', () => {
       expect(button).not.toMatch(/#26327F/i);
     }
     expect(socleBtnOutline).toContain('border-[1.5px]');
+  });
+
+  it('les grands boutons d’une décision : coins de 16 px, la hauteur donnée par l’écran', () => {
+    expect(socleBtnFilledBig).toMatch(/^btn-filled /);
+    expect(socleBtnQuietBig).not.toContain('btn-filled');
+    for (const button of [socleBtnFilledBig, socleBtnQuietBig]) {
+      expect(button).toContain('rounded-2xl');
+      expect(button).toContain('text-[17px]');
+      // Aucune hauteur dans le jeton : deux hauteurs sur le même bouton se contrediraient.
+      expect(button).not.toMatch(/(^| )h-/);
+    }
+    expect(socleBigStep).toBe('h-[54px] xl:h-14');
+    expect(socleBigPair).toBe('h-[58px] xl:h-14');
   });
 
   it('les boutons d’avant ne changent pas : le Live, les documents et les liens publics les lisent', () => {
@@ -89,6 +132,21 @@ describe('la carte « à faire »', () => {
     expect(html.match(/btn-filled/g)).toHaveLength(1);
   });
 
+  it('la carte prend la teinte de sa tâche', () => {
+    const card = (tone?: 'watch' | 'good') =>
+      renderToStaticMarkup(
+        createElement(TaskCard, {
+          name: 'M. Fontaine',
+          task: 'Financement à valider avant de visiter',
+          tone,
+          action: createElement('a', { href: '/x', className: socleBtnOutline }, 'L’appeler'),
+        }),
+      );
+    expect(card('watch')).toContain(MARK_TONES.watch);
+    expect(card('watch')).not.toContain(MARK_TONES.good);
+    expect(card()).toContain(MARK_TONES.plain);
+  });
+
   it('en ligne dans la colonne : un lien ; la personne ouverte à droite est dite', () => {
     const row = (selected: boolean) =>
       renderToStaticMarkup(
@@ -96,9 +154,11 @@ describe('la carte « à faire »', () => {
           href: '/acquereurs/1',
           name: 'Mme Rossi',
           task: 'Veut visiter la maison de Mougins',
+          tone: 'good',
           selected,
         }),
       );
+    expect(row(true)).toContain(MARK_TONES.good);
     expect(row(true)).toMatch(
       /<a [^>]*aria-current="true"[^>]*href="\/acquereurs\/1"|<a [^>]*href="\/acquereurs\/1"[^>]*aria-current="true"/,
     );
@@ -137,5 +197,24 @@ describe('les tuiles de chiffres', () => {
       expect(html).toContain(text);
     }
     expect(html).toMatch(/>6<\/span>[\s\S]*>2<\/span>[\s\S]*>5<\/span>/);
+  });
+});
+
+describe('l’aperçu du socle', () => {
+  it('ouvert sur l’essai et en local ; un environnement qui ne se dit pas reste fermé', () => {
+    expect(soclePreviewOpen({ VERCEL_ENV: 'preview', NODE_ENV: 'production' })).toBe(true);
+    expect(soclePreviewOpen({ NODE_ENV: 'development' })).toBe(true);
+    expect(soclePreviewOpen({ VERCEL_ENV: 'production', NODE_ENV: 'production' })).toBe(false);
+    expect(soclePreviewOpen({ NODE_ENV: 'production' })).toBe(false);
+    expect(soclePreviewOpen({ VERCEL_ENV: 'development', NODE_ENV: 'production' })).toBe(false);
+    expect(soclePreviewOpen({})).toBe(false);
+  });
+
+  it('la page se garde par cette règle, avant de rendre quoi que ce soit', () => {
+    const page = readFileSync(path.resolve('src/app/(protected)/socle/page.tsx'), 'utf8');
+    const guard = page.indexOf('if (!soclePreviewOpen()) notFound();');
+    expect(guard).toBeGreaterThan(0);
+    expect(guard).toBeLessThan(page.indexOf('return ('));
+    expect(page).not.toContain('process.env');
   });
 });

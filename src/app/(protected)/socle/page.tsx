@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 
+import { soclePreviewOpen } from '@/components/socle/preview-open';
 import { StatTiles } from '@/components/socle/stat-tiles';
 import { PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
 import {
@@ -9,9 +10,13 @@ import {
   pillGreen,
   pillNeutral,
   pillOrange,
+  socleBigPair,
+  socleBigStep,
   socleBtnFilled,
+  socleBtnFilledBig,
   socleBtnOutline,
   socleBtnQuiet,
+  socleBtnQuietBig,
   socleCardBordered,
   socleKicker,
   socleSubtitle,
@@ -20,14 +25,16 @@ import {
 
 // La refonte, lot A — l'aperçu des blocs du socle, avec les exemples des maquettes. Il sert à juger
 // le lot A sur l'essai, aux trois tailles, avant que les lots B à F ne se servent de ces blocs.
-// Introuvable en production ; la page est retirée à la fin de la refonte (lot F).
+// Ouvert sur l'essai et en local seulement (`soclePreviewOpen`), introuvable ailleurs ; la page est
+// retirée à la fin de la refonte (lot F). C'est un catalogue : chaque bloc s'y montre comme dans
+// son écran, où il n'y a jamais qu'un seul bouton plein.
 export const metadata = { title: 'Le socle — ACM Studio' };
 
 const block = 'flex flex-col gap-3';
 const blockTitle = 'text-[17px] font-extrabold text-brand-darker stage:text-white';
 
 export default function SoclePreviewPage() {
-  if (process.env.VERCEL_ENV === 'production') notFound();
+  if (!soclePreviewOpen()) notFound();
 
   return (
     <div className="flex max-w-3xl flex-col gap-8" data-testid="socle-preview">
@@ -58,6 +65,7 @@ export default function SoclePreviewPage() {
           <TaskCard
             name="Mme Rossi"
             task="Veut visiter la maison de Mougins"
+            tone="good"
             action={
               <button type="button" className={socleBtnOutline}>
                 Proposer un créneau
@@ -67,6 +75,7 @@ export default function SoclePreviewPage() {
           <TaskCard
             name="M. Fontaine"
             task="Financement à valider avant de visiter"
+            tone="watch"
             action={
               <button type="button" className={socleBtnOutline}>
                 L’appeler
@@ -83,7 +92,8 @@ export default function SoclePreviewPage() {
           <PersonRow
             href="/socle"
             name="M. et Mme Garnier"
-            task="2 prix ont changé depuis votre préparation"
+            task="Rendez-vous demain · 2 prix ont changé"
+            tone="watch"
             selected
           />
           <PersonRow href="/socle" name="M. Lambert" task="Un concurrent a baissé de 20 000 €" />
@@ -101,7 +111,12 @@ export default function SoclePreviewPage() {
               2 annonces concurrentes ont changé de prix depuis votre préparation.
             </p>
           </div>
-          <span className={`${socleBtnOutline} md:w-60 md:flex-none`}>Vérifier les annonces</span>
+          <button
+            type="button"
+            className={`${socleBtnFilledBig} ${socleBigStep} md:w-60 md:flex-none`}
+          >
+            Vérifier les annonces
+          </button>
         </div>
         <StatTiles
           tiles={[
@@ -110,6 +125,18 @@ export default function SoclePreviewPage() {
             { value: 5, label: 'Acquéreurs prêts à visiter', tone: 'good' },
           ]}
         />
+      </section>
+
+      <section className={block}>
+        <h2 className={blockTitle}>Un bien à la fois : « Écarter » ou « Proposer »</h2>
+        <div className="grid grid-cols-2 gap-3 md:max-w-md">
+          <button type="button" className={`${socleBtnQuietBig} ${socleBigPair}`}>
+            Écarter
+          </button>
+          <button type="button" className={`${socleBtnFilledBig} ${socleBigPair}`}>
+            Proposer
+          </button>
+        </div>
       </section>
 
       <section className={block}>

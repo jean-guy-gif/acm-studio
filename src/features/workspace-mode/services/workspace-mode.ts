@@ -77,10 +77,14 @@ export const SELLER_TABS: SellerTab[] = [
 // Mission 125 — tout ce qui n'est pas le travail passe derrière le compte du conseiller (décision de
 // Jean-Guy, 25/10) : Mon profil, Administration, Ma démo pour l'agence de démonstration seulement
 // (M114), Erreurs pour un opérateur seulement (M100). La refonte y range aussi ce que le menu ne
-// montre pas à cette taille : Prospection sous 1280 px, Aide sous 768 px (`until`). Les adresses ne
-// changent pas ; aucun droit ne change : chaque page se garde seule. Sombre / Clair et Déconnexion,
-// des gestes, sont ajoutés par la feuille.
+// montre pas à cette taille (`until`) : Prospection sous 1280 px, Aide sous 768 px — lus dans
+// `NAV_ITEMS`, pour qu'aucune entrée du menu ne soit absente à une taille ET oubliée ici. Les
+// adresses ne changent pas ; aucun droit ne change : chaque page se garde seule. Sombre / Clair et
+// Déconnexion, des gestes, sont ajoutés par la feuille.
 export type AccountLink = { href: string; label: string; until?: 'tablet' | 'desktop' };
+
+const shownLater = (item: NavItem): item is NavItem & { from: 'tablet' | 'desktop' } =>
+  item.from !== 'phone';
 
 export function accountMenuFor({
   demo,
@@ -92,8 +96,11 @@ export function accountMenuFor({
   return [
     { href: '/profil', label: 'Mon profil' },
     { href: '/admin', label: 'Administration' },
-    { href: '/prospection', label: 'Prospection', until: 'desktop' },
-    { href: '/bienvenue', label: 'Aide', until: 'tablet' },
+    ...NAV_ITEMS.filter(shownLater).map((item) => ({
+      href: item.href,
+      label: item.label,
+      until: item.from,
+    })),
     ...(demo ? [{ href: '/ma-demo', label: 'Ma démo' }] : []),
     ...(operator ? [{ href: '/erreurs', label: 'Erreurs' }] : []),
   ];

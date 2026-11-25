@@ -38,7 +38,7 @@ export function OppositionNotice() {
     <p
       role="status"
       data-testid="opposition-notice"
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto w-fit max-w-full rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 shadow-lg print:hidden"
+      className="fixed inset-x-4 bottom-[calc(var(--shell-bottom)+1rem)] z-50 mx-auto w-fit max-w-full rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-900 shadow-lg print:hidden"
     >
       {OPPOSITION_RECORDED_MESSAGE}
     </p>
