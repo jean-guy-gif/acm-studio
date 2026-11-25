@@ -130,11 +130,12 @@ export function suiviLineGroups(toVisit: number): SuiviLine[] {
 
 // Une ligne est fermée à l'ouverture de la fiche. S'ouvrent seules celles où il faut agir : la
 // visite à organiser (c'est là qu'on la confirme), et la ligne de la visite dont on vient de noter
-// le compte rendu (ses messages y sont prêts, Lancement 7).
+// le compte rendu (ses messages y sont prêts, Lancement 7). Pendant une vente, sa recherche est en
+// pause (M143) : « Visites à organiser » reste fermée, avec son nombre — on y agit d'un toucher.
 export const suiviLineOpen = (
   group: SuiviLine,
-  input: { messagesGroup: FollowUpGroup | null },
-): boolean => group === 'to_visit' || group === input.messagesGroup;
+  input: { messagesGroup: FollowUpGroup | null; sale?: boolean },
+): boolean => group === input.messagesGroup || (group === 'to_visit' && !input.sale);
 
 const lowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1);
 

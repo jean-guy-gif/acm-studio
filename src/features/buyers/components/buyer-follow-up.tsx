@@ -166,6 +166,7 @@ export function BuyerFollowUp({
   unread,
   lastVisit = null,
   messagesGroup = null,
+  sale = false,
   budgetMax = null,
   now = new Date(),
   children = null,
@@ -181,6 +182,8 @@ export function BuyerFollowUp({
   lastVisit?: { day: string; outcome: string } | null;
   // Le groupe du bien dont on vient de noter la visite (`?messages=`) : sa ligne s'ouvre seule.
   messagesGroup?: FollowUpGroup | null;
+  // Une vente est en cours : sa recherche est en pause, « Visites à organiser » reste fermée.
+  sale?: boolean;
   budgetMax?: number | null;
   now?: Date;
   // Sous les lignes : ce que ses refus suggèrent, quand il y a une suggestion à accepter ou ignorer.
@@ -249,7 +252,7 @@ export function BuyerFollowUp({
             className="group/line border-t border-zinc-100 stage:border-white/10"
             data-testid="buyer-follow-up-group"
             data-group={group}
-            open={suiviLineOpen(group, { messagesGroup })}
+            open={suiviLineOpen(group, { messagesGroup, sale })}
           >
             <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg px-1 py-2.5 marker:hidden hover:bg-zinc-50 stage:hover:bg-white/5 [&::-webkit-details-marker]:hidden">
               <span
@@ -304,9 +307,17 @@ export function BuyerDismissed({
   const list = entries.filter((entry) => entry.group === 'dismissed');
   if (list.length === 0) return null;
   return (
-    <details data-testid="buyer-follow-up-group" data-group="dismissed">
-      <summary className={`cursor-pointer ${lineClassName}`}>
-        <h3 className={titleClassName}>{FOLLOW_UP_GROUP_TITLES.dismissed}</h3>{' '}
+    <details className="group/fold" data-testid="buyer-follow-up-group" data-group="dismissed">
+      <summary
+        className={`flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-0.5 marker:hidden [&::-webkit-details-marker]:hidden ${lineClassName}`}
+      >
+        <span
+          aria-hidden
+          className={`${chevron} text-brand-deep transition-transform group-open/fold:rotate-90 stage:text-brand`}
+        >
+          ▸
+        </span>
+        <h3 className={titleClassName}>{FOLLOW_UP_GROUP_TITLES.dismissed}</h3>
         <span data-testid="buyer-follow-up-count">· {list.length}</span>
       </summary>
       <div className="mt-3">
