@@ -93,7 +93,8 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
 ## Ajouté le 25/11 par Jean-Guy
 
 - **Le lien « Guide de prise en main » dans « Aide »**, vers le PDF. — **fait le 25/11**, vu dans
-  un vrai navigateur en production ; sa spec se jouera sur la base d'essai.
+  un vrai navigateur en production ; la spec de « Aide » le prouve depuis le 25/11 au soir, sur la
+  base d'essai.
 - **Mission 10 bis : la fiche acquéreur, repliée** (affichage seulement : trois blocs à
   l'ouverture, le reste sous « Tout le dossier »). — **fait le 25/11 au soir** : maquette validée
   par Jean-Guy (`maquettes/M10bis-fiche-acquereur-repliee.png`), codée et relue, ses dix specs
