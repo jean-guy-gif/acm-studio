@@ -838,6 +838,35 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   une feuille de style glissée dans la page, retirée ensuite — le téléphone, la phrase de la
   recherche et ce qui parle d'une autre personne, puis couper le menu (`sips -c … --cropOffset`) ;
   mesurer par des nombres (hauteurs, comptes, repères), jamais en relevant le texte de la fiche.
+- 26/11 · Refonte, lot A · Une colonne `sticky` est un monde à part : la feuille qui en déborde
+  (`z-50`) y reste enfermée, et tout élément positionné de la page, venu après dans le document,
+  se peint dessus — photos (`relative`), barre « Enregistrer » (`z-40`). Le défaut ne se voyait
+  sur aucune page vide ni à la largeur de l'ordinateur : il a fallu une page avec des photos sous
+  la feuille. Remède : donner son rang à la colonne seulement pendant que la feuille est ouverte
+  (`md:has-[[role=menu]]:z-[45]`) — un rang permanent aurait fait passer sous elle les menus
+  « … » des cartes de gauche.
+- 26/11 · Refonte, lot A · Une preuve se joue d'abord ROUGE : la première version de la spec de
+  tablette, écrite pour le bloquant, passait sur le code d'avant la correction (sur la fiche du
+  bien, la barre « Enregistrer » ne touche pas la feuille : 13 px d'écart mesurés). Une sonde
+  posée dans la page au rang de son contenu (`position:fixed; inset:0; z-index:40`), puis
+  `elementFromPoint` sur trois points de chaque entrée, ne dépend plus de ce que la page montre
+  ce jour-là : rouge avant, verte après.
+- 26/11 · Refonte, lot A · Le menu change sous toutes les specs (elles passent par le compte du
+  conseiller pour remettre la démo à zéro) : la suite complète, 37 parcours, en sept tranches de
+  4 à 6 minutes, 36 minutes sur la base d'essai ; trois passages dans la soirée (avant la
+  relecture, les specs touchées après, puis tout sur le code final), aucun aléa.
+- 26/11 · Refonte, lot A · Une seule navigation dans le document, rendue autrement par le CSS aux
+  trois tailles (`flex`, `hidden md:flex`, `hidden xl:flex`), garde un seul repère par entrée :
+  les specs comptent les liens visibles (`getByRole` ignore ce qui est caché). Deux menus (un par
+  taille) auraient doublé les repères et cassé le mode strict de Playwright.
+- 26/11 · Refonte, lot A · Capturer une page entière avec un menu fixé en bas : agrandir la
+  fenêtre à la hauteur du document, puis une capture ordinaire — `fullPage` laisse la barre fixée
+  au milieu de l'image. Pour montrer un écran à la charte d'une autre agence sans toucher aux
+  données : poser dans la page les jetons que l'application poserait (`--color-brand…`,
+  `--font-sans`), lus en base, et le dire dans le nom du fichier.
+- 26/11 · Refonte, lot A · Un test qui lit le texte d'un fichier source casse au premier
+  remaniement (`welcome.test.ts` cherchait `{ href: '/bienvenue', label: 'Aide'` dans le
+  service) : prouver le comportement (`NAV_ITEMS`, `accountMenuFor`), pas l'écriture.
 
 ## La base
 

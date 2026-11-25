@@ -284,3 +284,21 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   retombe, la cause se cherche avant toute correction — l'aléa n'était pas la base commune. Les
   deux agences des tests restées dans la production n'y servent plus (leur retrait : sa
   décision). Les anciennes clés de Supabase de la production : après la livraison, pas avant.
+- 26/11 · Refonte, lot A · Notés par le relecteur ou vus en route, sans les corriger :
+  - les titres des maquettes sont en gras 800 ; les polices de charte ne déclarent que 400 à 700
+    (700 s'affiche à la place). Mesuré le 26/11 : les fichiers de Nunito Sans, Montserrat, Source
+    Sans, Work Sans et Inter portent pourtant le gras jusqu'à 900 (il suffirait de le déclarer,
+    sans rien télécharger) ; Rajdhani et Poppins non. Mais le déclarer changerait aussi les
+    courriers de prospection, qui écrivent déjà `font-extrabold` (`document-styles.ts`) : à
+    décider avec Jean-Guy, hors de la refonte ;
+  - les initiales du rond commencent presque toutes par « M » (la civilité) : la fiche n'a pas
+    de prénom (M119) ; séparer le nom du dossier et l'identité est déjà dans `docs/IDEES.md` ;
+  - sur téléphone, le compte ne s'ouvre que depuis « Aujourd'hui », et la pastille des erreurs
+    d'un opérateur ne se voit que là ;
+  - l'aide des specs `openAccountMenu` change de page sans le dire sur téléphone (elle va à
+    « Aujourd'hui ») ;
+  - sur l'essai, l'agence de démonstration des tests garde la charte par défaut (bleu pétrole,
+    Montserrat) : les écrans n'y ont pas le bleu nuit des maquettes, qui est la charte de
+    l'agence de Jean-Guy. Lui donner cette charte demanderait de rejouer la suite (des specs
+    peuvent lire une couleur) : à faire seulement s'il le demande.
+
