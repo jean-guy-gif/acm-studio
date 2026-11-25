@@ -48,6 +48,17 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
         'Facultatif : Localisateur Academia',
       );
 
+      // Lancement, mission 13 — le guide de prise en main : un lien vers le PDF, ouvert dans un
+      // nouvel onglet ; le PDF se lit connecté (la garde de session passe sur les PDF).
+      const guide = page.getByTestId('welcome-guide');
+      await expect(guide).toBeVisible();
+      await expect(guide).toContainText('Guide de prise en main');
+      await expect(guide).toHaveAttribute('href', '/guide/guide-de-prise-en-main.pdf');
+      await expect(guide).toHaveAttribute('target', '_blank');
+      const pdf = await page.request.get('/guide/guide-de-prise-en-main.pdf');
+      expect(pdf.status()).toBe(200);
+      expect(pdf.headers()['content-type']).toContain('application/pdf');
+
       // Les 4 étapes.
       for (const step of [
         'Le bien du vendeur',
