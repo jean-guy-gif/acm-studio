@@ -98,15 +98,15 @@ L'état de chaque mission se tient ici : à faire, en cours, fait (avec la date)
   l'ouverture, le reste sous « Tout le dossier »). — maquette validée par Jean-Guy le 25/11
   (`maquettes/M10bis-fiche-acquereur-repliee.png`), **codée et relue le 25/11**, vue sur l'essai
   (`maquettes/M10bis-apres-*.png`) ; **production jeudi 26/11 au matin**, après ses dix specs
-  sur la base d'essai (ordre de Jean-Guy : « pas ce soir »). Sa règle du 25/11 au soir : si la
-  base n'est pas séparée à midi, la 10 bis ne retarde pas la livraison ; elle reste sur sa
-  branche et part après, quand ses specs pourront tourner sans toucher la production.
-- **La base** : une base d'essai séparée et la taille au-dessus, **jeudi 26/11 au matin**
-  (`missions/BASE_JEUDI_MATIN.md`). D'ici là, aucune spec en journée sur la base commune.
+  sur la base d'essai (ordre de Jean-Guy : « pas ce soir »). **Avancée au 25/11 au soir** par
+  Jean-Guy, avec la base : en production dès ses specs vertes sur la base d'essai.
+- **La base** : une base d'essai séparée et la taille au-dessus, prévues le jeudi 26/11 au matin
+  (`missions/BASE_JEUDI_MATIN.md`), **avancées au mercredi 25/11 au soir** par Jean-Guy (« on y
+  va »). Aucune spec sur la base commune d'ici la séparation.
 
 ## Chaque soir
 
 La suite e2e complète, lancée par le chef en fin de journée (accord de Jean-Guy, 23/11), puis le
-point du soir en dix lignes. Le 25/11 au soir, elle n'est pas lancée : elle pèse sur la base de la
-production tant que la base est commune (un rendez-vous du soir en souffrirait) ; elle se joue
-jeudi sur la base d'essai, une fois la séparation faite.
+point du soir en dix lignes. Le 25/11, elle se joue la nuit même sur la base d'essai, une fois la
+séparation faite (ordre de Jean-Guy) : sur la base commune, elle pèserait sur un rendez-vous du
+soir.

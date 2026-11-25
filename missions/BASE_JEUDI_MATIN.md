@@ -6,9 +6,10 @@ avant ; ses gestes donnés un par un, Supabase puis Vercel, dans l'ordre ; aucun
 l'environnement Production ne change ; le changement de taille à un moment où personne n'est
 connecté, avec la durée d'indisponibilité. D'ici là, aucune spec en journée sur la base commune.
 
-**Sa règle du 25/11 au soir.** Si la base n'est pas séparée à midi, la mission 10 bis ne retarde
-pas la livraison : elle reste sur sa branche et part après, quand ses specs pourront tourner sans
-toucher la production. Jean-Guy dit « on y va » ; rien ne commence avant.
+**Avancé au mercredi 25/11 au soir** par Jean-Guy (« changement de programme : on continue ce
+soir », « on y va ») : la base se sépare le soir même, puis les specs en attente, la mission
+10 bis en production, et la suite complète la nuit, sur la base d'essai. Sa règle de midi, dite
+une heure plus tôt, est levée. Le titre garde le jour prévu au départ.
 
 Niveau Sensible. Compter une heure, d'une traite, le matin. Pas entre 3 h 15 et 5 h 45 : ce sont
 les heures des tâches de nuit (la veille des acquéreurs, les purges) et de la sauvegarde de
@@ -36,10 +37,6 @@ confondre) et `acm-studio-essai` (à créer jeudi).
 
 ## Avant de commencer (Claude Code, 20 minutes, sans geste de Jean-Guy)
 
-0. Les enregistrements de la base faits le 25/11 au soir vivent sur la branche de la mission
-   10 bis (le relevé de Vercel, `npm run base:qui`, les réponses de Jean-Guy) : Claude Code les
-   porte d'abord sur `main`, pour que la base ne dépende pas de la mission 10 bis (sa règle de
-   midi).
 1. `npm run sauvegarde`, puis `npm run sauvegarde:verifier` : on ne va pas plus loin sans
    « Vérification réussie ».
 2. Le comptage de référence de la production (le 25/11 à 16 h 30 : 54 dossiers, 5 agences,
@@ -198,10 +195,10 @@ Puis Claude Code redéploie l'essai (un envoi sur la branche `essai`), sans gest
    des tests refuse de démarrer (tranché par Jean-Guy, plus bas).
 3. Les specs en attente : « Aide » et le guide, puis les dix specs de la fiche acquéreur repliée
    (Mission 10 bis), qui part ensuite en production — après une seconde relecture de la liste des
-   variables de Vercel, juste avant ce déploiement. Si la base n'est pas séparée à midi, la
-   mission 10 bis reste sur sa branche et la livraison se fait sans elle : ses specs ne se jouent
-   jamais sur la base de la production.
-4. La suite complète : une fois, de jour, sur la base d'essai (accord de Jean-Guy, plus bas).
+   variables de Vercel, juste avant ce déploiement. Ses specs ne se jouent jamais sur la base
+   de la production.
+4. La suite complète, sur la base d'essai : la nuit du 25/11, après la mission 10 bis (ordre de
+   Jean-Guy du soir même).
 5. Le comptage de la production, refait : il n'a pas bougé.
 6. `docs/DECISIONS.md` et `docs/PASSAGE_PAYANT.md` : la base n'est plus commune à la production et
    à l'essai. `CLAUDE.md` le dit encore (« La base Supabase est partagée entre la production,
@@ -218,11 +215,9 @@ Puis Claude Code redéploie l'essai (un envoi sur la branche `essai`), sans gest
 2. **Où se joue une migration.** Le chef la joue d'abord sur la base d'essai, sans geste de
    Jean-Guy (le gardien-sql la relit avant, comme aujourd'hui). Jean-Guy ne l'applique qu'à la
    production, après sauvegarde et comptage, comme aujourd'hui.
-3. **La suite complète de ce jeudi.** Une fois, de jour, sur la base d'essai, pour le contrôle
-   d'avant la livraison ; ensuite, la nuit comme avant.
-4. **La mission 10 bis et la livraison.** Si la base n'est pas séparée à midi, la mission 10 bis
-   ne retarde pas la livraison : elle reste sur sa branche et part après, quand ses specs
-   pourront tourner sans toucher la production.
+3. **La suite complète.** Sur la base d'essai, elle ne pèse plus sur la production. Le 25/11,
+   elle tourne la nuit même, après la mission 10 bis (ordre de Jean-Guy) ; ensuite, la nuit comme
+   avant.
 
 ## Ce qui reste comme avant
 
