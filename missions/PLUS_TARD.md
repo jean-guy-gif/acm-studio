@@ -236,9 +236,12 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 25/11 · Base d'essai · Après la séparation, restent à faire plus tard :
   - les prévisualisations des autres branches lisent encore la base de la production (les trois
     entrées communes de Vercel) : les passer sur la base d'essai demande de modifier ces entrées,
-    valeur comprise pour la clé secrète ; d'ici là, aucune spec sur une prévisualisation ;
-  - l'agence des tests et l'agence de démonstration des tests restent dans la production, vides :
-    leur retrait suit la procédure d'effacement, sur décision de Jean-Guy ;
+    valeur comprise pour la clé secrète ; d'ici là, aucune spec sur une prévisualisation (question
+    posée à Jean-Guy, `missions/BASE_JEUDI_MATIN.md`, « À trancher ») ;
+  - l'agence des tests (vide) et l'agence de démonstration du compte de test (douze dossiers)
+    restent dans la production — à ne pas confondre avec l'agence de démonstration des closers,
+    qui porte le même nom et ne change pas : leur retrait est une suppression de données, par la
+    procédure d'effacement, sur décision de Jean-Guy ;
   - les modèles d'e-mail et l'adresse du site de la base d'essai (invitation, mot de passe
     oublié) ne sont pas réglés : aucune spec n'envoie d'e-mail ;
   - le compte de Jean-Guy n'existe pas dans la base d'essai : à créer le jour où une mission
@@ -250,10 +253,15 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     2026, puis laissent la place aux nouvelles (« Publishable », « Secret »). Si les variables de
     la production portent des anciennes clés (une valeur qui commence par « eyJ »), elles sont à
     remplacer avant le 31/12/2026 : deux valeurs dans Vercel et un redéploiement, par Jean-Guy.
-    À essayer d'abord sur l'essai ; le code ne fait que passer les clés au client Supabase ;
-  - **les droits par défaut** : Supabase retire, sur les projets existants aussi, les droits
-    donnés d'office aux trois rôles de l'application sur ce que crée une migration (pas encore
-    appliqué à la production le 25/11). Ce jour-là, une migration qui crée une table ou une
-    fonction sans lui donner ses droits, rôle du serveur compris, casserait en production : les
-    prochaines migrations les donnent en toutes lettres, et le gardien-sql le vérifie.
+    La base d'essai, créée le 26/11, prend les nouvelles : c'est la répétition ; le code ne fait
+    que passer les clés au client Supabase (relu le 25/11) ;
+  - **les droits par défaut** : Supabase a annoncé pour le 30/10/2026 le retrait, sur les projets
+    existants aussi, des droits donnés d'office aux trois rôles de l'application sur ce que crée
+    une migration ; le 25/11, il n'était pas encore appliqué à la production : c'est d'un jour à
+    l'autre. Ce qui existe garde ses droits. Son annonce parle des tables et des séquences, sa
+    documentation aussi des fonctions : par prudence, la prochaine migration donne en toutes
+    lettres les droits de tout ce qu'elle crée, rôle du serveur compris — sans quoi sa table
+    serait hors d'atteinte de l'application en production. La CI ne verrait pas l'oubli : sa base
+    locale donne encore ces droits d'office. Proposition, à valider par Jean-Guy (pas de règle
+    nouvelle sans lui) : le gardien-sql le vérifie à chaque migration.
 

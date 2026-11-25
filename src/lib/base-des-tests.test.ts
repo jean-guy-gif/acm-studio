@@ -135,6 +135,7 @@ describe('la suite e2e se charge', () => {
         E2E_BASE_URL: process.env.E2E_BASE_URL ?? `https://${ESSAI_HOST}`,
       },
     });
+    expect(listed.status, `${listed.stdout}\n${listed.stderr}`.slice(-600)).toBe(0);
     const total = /Total: (\d+) tests? in (\d+) files?/.exec(listed.stdout ?? '');
     expect(total, `${listed.stdout}\n${listed.stderr}`.slice(-600)).not.toBeNull();
     expect(Number(total?.[1])).toBeGreaterThan(30);

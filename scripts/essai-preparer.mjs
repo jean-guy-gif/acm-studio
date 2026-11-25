@@ -25,9 +25,14 @@ import { resolve } from 'node:path';
 
 import { linkedProjectRef, readTestEnv, testDatabaseTarget } from './base-des-tests.mjs';
 import {
+  AUTO_RLS,
+  AUTO_RLS_FUNCTION,
   DEFAULT_PRIVILEGES,
   ESSAI_PROJECT_NAME,
+  EXPECTED_DEFAULT_PRIVILEGES,
   GRANTS,
+  PUBLIC_EXECUTE_REVOKED,
+  PUBLIC_EXECUTE_STATEMENT,
   STRUCTURE,
   defaultPrivilegeStatements,
   essaiProject,
@@ -111,8 +116,20 @@ const essaiRef = essai.arg.replace('--remote=', '');
 
 // Le projet visé est bien `acm-studio-essai`, et lui seul : ni la production (`acm-studio-staging`,
 // malgré son nom), ni un autre projet du compte.
-const checked = essaiProject(projects(), essaiRef, linkedProjectRef());
+const linkedAtStart = linkedProjectRef();
+const checked = essaiProject(projects(), essaiRef, linkedAtStart);
 if (!checked.ok) fail(checked.reason);
+
+// Le projet lié au dépôt reste la production : la sauvegarde et les migrations le visent. Une
+// commande vers la base d'essai ne doit jamais le changer ; si c'était le cas, tout s'arrête avant
+// qu'une autre commande ne se trompe de base.
+function linkedStillProduction() {
+  if (linkedProjectRef() !== linkedAtStart) {
+    fail(
+      `Le projet lié au dépôt a changé (${linkedAtStart} → ${linkedProjectRef()}) : remettez-le (\`npx --yes supabase@3.0.0 link --project-ref ${linkedAtStart}\`) avant toute autre commande.`,
+    );
+  }
+}
 
 function query(target, sql, { write = false } = {}) {
   return listOf(
@@ -232,34 +249,68 @@ console.log(
 );
 
 if (flags.includes('--structure')) {
-  // Les droits par défaut d'abord : la production donne d'office, à chaque table, fonction et
-  // séquence créée, des droits aux trois rôles de l'API ; les migrations comptent dessus (aucune ne
-  // donne un droit de table au rôle du serveur). Un projet neuf peut ne plus les donner : sans
-  // eux, l'essai répondrait « permission denied » partout. Ils ne valent que pour ce qui est créé
-  // ENSUITE : on les aligne sur une base encore vide, ou on s'arrête.
-  const wanted = query('--remote', DEFAULT_PRIVILEGES);
+  // Les droits par défaut d'abord : la production a été construite avec des droits donnés d'office,
+  // à chaque table, fonction et séquence créée, aux trois rôles de l'application ; les migrations
+  // comptent dessus (aucune ne donne un droit de table au rôle du serveur). Un projet neuf ne les
+  // donne plus : sans eux, l'essai répondrait « permission denied » partout. Ils ne valent que pour
+  // ce qui est créé ENSUITE : on les pose sur une base encore vide, ou on s'arrête. La référence
+  // est une liste fixe (`EXPECTED_DEFAULT_PRIVILEGES`), pas l'état de la production ce jour-là.
+  const wanted = EXPECTED_DEFAULT_PRIVILEGES;
+  const gone = missingDefaultPrivileges(wanted, query('--remote', DEFAULT_PRIVILEGES));
+  if (gone.length > 0) {
+    console.log(
+      `\n⚠ La production ne donne plus d’office ${gone.length} des ${wanted.length} droits avec lesquels elle a été construite : Supabase a appliqué son retrait. Ses tables gardent leurs droits ; sa prochaine migration devra donner les siens en toutes lettres (missions/PLUS_TARD.md). La base d’essai reçoit quand même la liste complète.`,
+    );
+  }
   const missing = missingDefaultPrivileges(wanted, query(essai.arg, DEFAULT_PRIVILEGES));
+  linkedStillProduction();
   const { tables, migrations } = essaiState();
   const empty = tables === 0 && migrations === 0;
   if (missing.length > 0) {
     if (!empty) {
       fail(
-        `La base d’essai n’est plus vide (${tables} tables) et ses droits par défaut ne sont pas ceux de la production : ce qui est déjà créé n’a pas ses droits. Supprimez le projet « ${ESSAI_PROJECT_NAME} », recréez-le, et relancez.`,
+        `La base d’essai n’est plus vide (${tables} tables) et il lui manque ${missing.length} droits par défaut : ce qui y a été créé sans eux n’a pas ses droits. Lancez \`npm run essai:preparer\` pour le voir (« droits sur les tables ») ; s’ils manquent, supprimez le projet « ${ESSAI_PROJECT_NAME} » (jamais « acm-studio-staging », qui est la production), recréez-le, et reprenez à \`-- --reference\`.`,
       );
     }
+    const statements = defaultPrivilegeStatements(missing);
+    // Les ordres s'affichent avant de partir : s'ils étaient refusés, ils se collent tels quels
+    // dans l'éditeur SQL du projet « acm-studio-essai » (`missions/BASE_JEUDI_MATIN.md`).
     console.log(
-      `\nDroits par défaut : ${missing.length} à donner, comme dans la production (base encore vide)…`,
+      `\nDroits par défaut : ${missing.length} à donner (base encore vide)…\n${statements.map((line) => `    ${line}`).join('\n')}`,
     );
-    query(essai.arg, defaultPrivilegeStatements(missing).join('\n'), { write: true });
+    query(essai.arg, statements.join('\n'), { write: true });
     const still = missingDefaultPrivileges(wanted, query(essai.arg, DEFAULT_PRIVILEGES));
     if (still.length > 0) {
       fail(
-        `Les droits par défaut n’ont pas pu être alignés sur ceux de la production (${still.length} manquent encore) : la structure n’est pas construite.`,
+        `Les droits par défaut n’ont pas pu être posés (${still.length} manquent encore) : la structure n’est pas construite.`,
       );
     }
-    console.log('  ✔ droits par défaut : ceux de la production.');
+    console.log(`  ✔ droits par défaut : les ${wanted.length} attendus.`);
   } else {
-    console.log('\n✔ Droits par défaut : déjà ceux de la production.');
+    console.log(`\n✔ Droits par défaut : les ${wanted.length} attendus sont déjà là.`);
+  }
+  // Le droit d'exécuter une fonction, donné d'office à tous : le défaut de Postgres, avec lequel la
+  // production a été construite. Un projet neuf peut l'avoir retiré ; on le rend sur une base
+  // encore vide, avant la première fonction, ou on s'arrête.
+  const publicRevoked = () => Number(query(essai.arg, PUBLIC_EXECUTE_REVOKED)[0].n) > 0;
+  if (publicRevoked()) {
+    if (!empty) {
+      fail(
+        `La base d’essai n’est plus vide (${tables} tables) et le droit d’exécuter une fonction n’y est plus donné d’office à tous : ses fonctions n’ont pas les droits de celles de la production. Lancez \`npm run essai:preparer\` pour le voir (« fonctions ouvertes à tous ») ; pour repartir, supprimez le projet « ${ESSAI_PROJECT_NAME} » (jamais « acm-studio-staging », qui est la production), recréez-le, et reprenez à \`-- --reference\`.`,
+      );
+    }
+    console.log(
+      `\nFonctions : ce projet ne donne plus d’office à tous le droit de les exécuter. À rendre (base encore vide)…\n    ${PUBLIC_EXECUTE_STATEMENT}`,
+    );
+    query(essai.arg, PUBLIC_EXECUTE_STATEMENT, { write: true });
+    if (publicRevoked()) {
+      fail(
+        'Le droit d’exécuter une fonction n’a pas pu être rendu à tous : la structure n’est pas construite.',
+      );
+    }
+    console.log('  ✔ fonctions : le droit donné d’office à tous, comme dans la production.');
+  } else {
+    console.log('✔ Fonctions : le droit donné d’office à tous est en place.');
   }
   if (!empty && migrations === 0) {
     fail(
@@ -271,6 +322,7 @@ if (flags.includes('--structure')) {
     cwd: REPO_ROOT,
     stdio: 'inherit',
   });
+  linkedStillProduction();
   if (pushed.status !== 0)
     fail('La structure n’a pas pu être construite : lisez le message ci-dessus.');
 }
@@ -306,17 +358,32 @@ compare('Structure', STRUCTURE);
 // répondrait « permission denied » à l'application.
 compare('Droits des trois rôles de l’API', GRANTS);
 const defaultsMissing = missingDefaultPrivileges(
-  query('--remote', DEFAULT_PRIVILEGES),
+  EXPECTED_DEFAULT_PRIVILEGES,
   query(essai.arg, DEFAULT_PRIVILEGES),
 );
 same &&= defaultsMissing.length === 0;
 console.log(
   `  ${defaultsMissing.length === 0 ? '✔' : '✖'} ${'droits par défaut'.padEnd(26)} ${
     defaultsMissing.length === 0
-      ? 'ceux de la production'
+      ? `les ${EXPECTED_DEFAULT_PRIVILEGES.length} attendus`
       : `${defaultsMissing.length} manquent dans la base d’essai`
   }`,
 );
+const publicExecuteRevoked = Number(query(essai.arg, PUBLIC_EXECUTE_REVOKED)[0].n) > 0;
+same &&= !publicExecuteRevoked;
+console.log(
+  `  ${publicExecuteRevoked ? '✖' : '✔'} ${'fonctions, droit de tous'.padEnd(26)} ${
+    publicExecuteRevoked
+      ? 'n’est plus donné d’office dans la base d’essai'
+      : 'donné d’office, comme dans la production'
+  }`,
+);
+if (Number(query(essai.arg, AUTO_RLS)[0].n) > 0) {
+  console.log(
+    `  ℹ RLS automatique : l’option de Supabase est allumée dans la base d’essai (sa fonction « ${AUTO_RLS_FUNCTION} », hors comptage). Sans effet si « tables avec la RLS » est le même nombre des deux côtés.`,
+  );
+}
+linkedStillProduction();
 
 // L'agence des tests doit rester fermée à l'API réelle d'Academia : le code la reconnaît par son
 // identifiant (« aucun test n'appelle l'API réelle », Jean-Guy, 19/11).

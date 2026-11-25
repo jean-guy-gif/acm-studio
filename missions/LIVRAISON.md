@@ -82,19 +82,20 @@ agences.
   de Jean-Guy), et plusieurs conseillers au même moment pèseront comme les tests.
   - Tout de suite, sans décision : la suite complète ne tourne que la nuit (règle du 23/11 ; le
     25/11 elle a tourné à 14 h, à tort), et en journée les seules specs concernées.
-  - À décider par Jean-Guy, ce sont des coûts (tarifs lus dans la documentation de Supabase le
-    25/11) : une base plus puissante, un réglage chez Supabase avec moins de deux minutes d'arrêt
-    — « Small », 2 Go et 90 connexions, environ 15 $ par mois au lieu de 10 ; « Medium », 4 Go et
-    120 connexions, environ 60 $ — ; et la base d'essai séparée, déjà décrite pas à pas
-    (`docs/PASSAGE_PAYANT.md`, étapes 3 à 7), environ 10 $ par mois, pour que les tests et la démo
-    ne pèsent plus sur les vraies agences.
+  - Décidé par Jean-Guy le 25/11, ce sont des coûts (tarifs lus dans la documentation de
+    Supabase le 25/11) : la base passe à la taille juste au-dessus, « Small » (2 Go et
+    90 connexions, environ 15 $ par mois au lieu de 10), un réglage chez Supabase avec moins de
+    deux minutes d'arrêt, et pas plus (« Medium », 4 Go et 120 connexions, environ 60 $, n'est
+    pas retenue) ; et une base d'essai séparée, environ 10 $ par mois, pour que les tests et
+    leur démo ne pèsent plus sur les vraies agences. La démo des closers reste dans la
+    production.
   - Plus tard : faire lire moins à « Aujourd'hui » et à la liste des dossiers
     (`missions/PLUS_TARD.md`).
 - **Avant le 31/12/2026 : les clés de Supabase.** Sa documentation annonce la fin des anciennes
   clés (« anon », « service_role ») pour la fin de 2026. Si les variables de la production en
   portent (une valeur qui commence par « eyJ »), elles sont à remplacer par les nouvelles : deux
-  valeurs dans Vercel, un redéploiement. À essayer d'abord sur l'essai, après la livraison
-  (`missions/PLUS_TARD.md`).
+  valeurs dans Vercel, un redéploiement. La base d'essai, créée le 26/11, prend les nouvelles :
+  c'est la répétition (`missions/PLUS_TARD.md`).
 - **La démo en production** : Jean-Guy la remet à zéro lui-même, de préférence hors des heures
   de rendez-vous tant que la base est commune.
 - **Chaque semaine** : `npm run sauvegarde`, puis `npm run sauvegarde:verifier` (la sauvegarde de
