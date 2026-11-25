@@ -1338,9 +1338,14 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       // Essai de Jean-Guy (26/10) : « Retenir » ne s'active que si la sélection cochée change ;
       // ce parcours n'a qu'un bien, sa sélection est déjà retenue : le lien répondu au téléphone
       // (390 × 844), la base relue, Visites et la fiche se prouvent sur la démo.
+      // Suite du 25/11 — sa sélection est présentée : elle n'est plus « actuelle », rien n'est
+      // coché (0/3), et son bien est à part, sous « Déjà vus avec lui », sans case « Retenir ».
       await page.goto(`${buyerUrl}/biens-ideaux`);
-      await expect(page.getByTestId('ideal-current')).toContainText('Sélection actuelle : A');
+      await expect(page.getByTestId('ideal-current')).toHaveCount(0);
+      await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (0/3)');
       await expect(page.getByTestId('ideal-retain')).toBeDisabled();
+      await expect(page.getByTestId('ideal-seen-item')).toHaveCount(1);
+      await expect(page.getByTestId('ideal-seen').getByRole('checkbox')).toHaveCount(0);
       const dossierLink = presentedLink;
       // « Retirer le lien » : il ne s'ouvre plus, tout de suite (le plus récent est en tête).
       await page.goto(`${buyerUrl}/dossier`);

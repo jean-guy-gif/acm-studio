@@ -9,6 +9,31 @@ const state = vi.hoisted(() => ({
   profile: null as null | { id: string; agency_id: string; removed_at: string | null },
   demo: false,
   client: null as unknown,
+  // Ce que l'acquéreur a déjà vu (`readSeenProperties`) ; null : la lecture a échoué.
+  seen: {
+    facts: [] as [string, string][],
+    marks: [] as unknown[],
+    failed: false,
+    // Sa dernière sélection lui est-elle parvenue (présentée, envoyée) ?
+    received: false,
+  },
+}));
+vi.mock('@/features/buyers/queries/read-seen-properties', () => ({
+  readSeenProperties: async (_client: unknown, _agencyId: string, buyerId: string) =>
+    state.seen.failed
+      ? null
+      : {
+          seen: new Map([
+            [
+              buyerId,
+              new Map(state.seen.facts.map(([key, reason]) => [key, { reason, at: null }])),
+            ],
+          ]),
+          keyOf: (item: { source: string; reference: string }) =>
+            `${item.source}:${item.reference}`,
+          marks: () => state.seen.marks,
+          receivedAt: () => (state.seen.received ? '2026-11-13T16:04:00Z' : null),
+        },
 }));
 vi.mock('@/lib/auth/get-profile', () => ({ getProfile: async () => state.profile }));
 vi.mock('@/lib/supabase/service-role', () => ({ createServiceRoleClient: () => state.client }));
@@ -41,6 +66,65 @@ describe('saveIdealSelection', () => {
   beforeEach(() => {
     state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: null };
     state.demo = false;
+    state.seen = { facts: [], marks: [], failed: false, received: false };
+  });
+
+  // Lancement, mission 3 (suite, Jean-Guy, 25/11) — un bien qu'il a déjà reçu, visité ou refusé ne
+  // se retient plus : relu en base, jamais cru du navigateur.
+  it('un bien qu’il a déjà vu : refusé, rien n’est écrit — même revenu sous une autre annonce', async () => {
+    const fake = fakeSupabase(() => ({ data: { id: BUYER } }));
+    state.client = fake.client;
+    state.seen.facts = [['listing:u1', 'sent']];
+    const direct = await saveIdealSelection(BUYER, [item('u1'), item('u2')], null);
+    expect(direct).toEqual({
+      ok: false,
+      error: 'Il a déjà vu l’un de ces biens : il ne se retient plus. Rechargez la page.',
+    });
+    // La même maison, rendue par la recherche sous une autre annonce : son identifiant chez le
+    // fournisseur est celui que la sélection présentée a gardé.
+    state.seen.marks = [{ key: 'listing:u1', propertyId: 'se-735', like: null }];
+    const again = await saveIdealSelection(
+      BUYER,
+      [{ ...item('autre-annonce'), snapshot: { key: 'se-735' } }],
+      null,
+    );
+    expect(again.ok).toBe(false);
+    expect(fake.writes()).toEqual([]);
+  });
+
+  it('un bien déjà visité de sa sélection en cours, pas encore reçue, reste ; reçue, il ne se retient plus', async () => {
+    const withPrevious = () =>
+      fakeSupabase((calls) => {
+        const table = [...calls].reverse().find((call) => call.method === 'from')?.args[0];
+        if (table === 'buyer_selections') {
+          return calls.some((call) => call.method === 'insert')
+            ? { data: { id: 'sel-2', buyer_id: BUYER, created_at: '2026-11-25T10:00:00Z' } }
+            : { data: { id: 'sel-1' } };
+        }
+        if (table === 'buyer_selection_items') {
+          return calls.some((call) => call.method === 'insert')
+            ? { data: [] }
+            : { data: [{ source: 'listing', reference: 'u1', listed_price: 1_639_500 }] };
+        }
+        return { data: { id: BUYER } };
+      });
+    state.seen.facts = [['listing:u1', 'visited']];
+    const composing = withPrevious();
+    state.client = composing.client;
+    expect((await saveIdealSelection(BUYER, [item('u1'), item('u2')], null)).ok).toBe(true);
+    state.seen.received = true;
+    const received = withPrevious();
+    state.client = received.client;
+    expect((await saveIdealSelection(BUYER, [item('u1'), item('u2')], null)).ok).toBe(false);
+    expect(received.writes()).toEqual([]);
+  });
+
+  it('ce qu’il a déjà vu n’a pas pu être lu : rien n’est écrit (M98)', async () => {
+    const fake = fakeSupabase(() => ({ data: { id: BUYER } }));
+    state.client = fake.client;
+    state.seen.failed = true;
+    expect((await saveIdealSelection(BUYER, [item('u1')], null)).ok).toBe(false);
+    expect(fake.writes()).toEqual([]);
   });
 
   it('sans profil, sans bien ou avec quatre biens : rien n’est écrit', async () => {
@@ -277,6 +361,7 @@ describe('saveIdealSelection : seul un mandat signé sans offre acceptée', () =
   beforeEach(() => {
     state.profile = { id: 'advisor-1', agency_id: 'agency-a', removed_at: null };
     state.demo = false;
+    state.seen = { facts: [], marks: [], failed: false, received: false };
   });
 
   const clientWith = (

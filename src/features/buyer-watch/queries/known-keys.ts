@@ -2,7 +2,7 @@ import 'server-only';
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { watchKey } from '@/features/buyer-watch/services/watch-finds';
+import { watchKey, watchPropertyKey } from '@/features/buyer-watch/services/watch-finds';
 import type { Database } from '@/lib/supabase/database.types';
 import { readPages } from '@/lib/supabase/read-pages';
 
@@ -74,7 +74,7 @@ export async function readBuyerKnownKeys(
       : await readPages((from, to) =>
           admin
             .from('buyer_selection_items')
-            .select('selection_id, source, reference')
+            .select('selection_id, source, reference, property_id:snapshot->>key')
             .eq('agency_id', agencyId)
             .in('selection_id', [...selectionBuyer.keys()])
             .range(from, to),
@@ -98,7 +98,12 @@ export async function readBuyerKnownKeys(
   };
   for (const row of items.data) {
     const buyerId = selectionBuyer.get(row.selection_id);
-    if (row.source === 'listing') add(buyerId, watchKey(row.reference));
+    if (row.source === 'listing') {
+      add(buyerId, watchKey(row.reference));
+      // Le même bien sous une autre annonce : son identifiant chez le fournisseur de la recherche.
+      const propertyId = (row as { property_id?: unknown }).property_id;
+      if (typeof propertyId === 'string' && propertyId) add(buyerId, watchPropertyKey(propertyId));
+    }
     if (row.source === 'competitor') {
       const url = comparableUrl.get(row.reference);
       if (url) add(buyerId, watchKey(url));
