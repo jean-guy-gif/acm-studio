@@ -253,6 +253,12 @@ d'autorisation, les preuves des onglets et de la feuille). Tests : barrières ve
 tests) ; la suite complète sur le code final de l'essai, le 25/11 de 23 h 31 à 0 h 07 : 37
 parcours sur 37, sans aléa.
 
+Avant la première mise en production de la refonte, la version à laquelle revenir en cas de
+défaut (règle du 23/11) : la production sert `6bf564c6`, le déploiement Vercel du 25/11 à 21 h 30
+(`5NZwEMe1H4VBrVJXGBUJfXADXGpV`, prêt, proposé au retour arrière) ; le code de l'application y est
+celui de la mission 10 bis. Le message de Jean-Guy s'arrêtait à « Avant la première mise en
+production, tu notes » : la fin de sa phrase lui est demandée.
+
 À écrire dans `docs/DECISIONS.md` à la mise en production du lot (son « oui ») : le menu de quatre
 entrées aux trois tailles remplace M145 B (les trois groupes), M149 (leurs titres) et M132 (la
 barre du haut et ☰) ; les trois onglets de « Vendeurs » ; le compte aux trois tailles (précise
