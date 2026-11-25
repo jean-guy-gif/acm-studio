@@ -134,7 +134,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 
 | Lot | Contenu                                                                                           | Maquettes       | Durée prévue | État    |
 | --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
-| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10 (2 h 50) : attend le « oui » |
+| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 1 h 25 (3 h 25) : attend le « oui » |
 | B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | à faire |
 | C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | à faire |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | à faire |
@@ -252,8 +252,10 @@ la barre « Enregistrer »), levé — la colonne passe au-dessus de la page pen
 ouverte, prouvé par une spec rouge avant la correction et verte après ; ses « à corriger » faits
 (la teinte du rond, le message d'opposition sur le menu du téléphone, l'aperçu fermé par liste
 d'autorisation, les preuves des onglets et de la feuille). Tests : barrières vertes (4 386
-tests) ; la suite complète sur le code final de l'essai, le 25/11 de 23 h 31 à 0 h 07 : 37
-parcours sur 37, sans aléa.
+tests) ; la suite complète sur l'essai, le 25/11 de 23 h 31 à 0 h 07 : 37 parcours sur 37, sans
+aléa ; puis, après la correction du menu du téléphone (les pages intérieures), les quatre specs
+concernées, 7 parcours, vertes — le parcours complet au second passage, le premier coupé par le
+réseau à l'export du comparatif (un aléa).
 
 Avant la première mise en production de la refonte, la version à laquelle revenir en cas de
 défaut (règle du 23/11) : la production sert `6bf564c6`, le déploiement Vercel du 25/11 à 21 h 30

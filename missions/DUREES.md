@@ -63,9 +63,9 @@ base d'essai.
 | Date  | Mission | Niveau | Durée totale | Dont attente de Jean-Guy | Dont tests |
 | ----- | ------- | ------ | ------------ | ------------------------ | ---------- |
 | 25/11 | La refonte : la mission lue, les huit maquettes relevées, `LANCEMENT.md` (la livraison au 27/11, les six lots, les dix questions) | Sensible | 20 min | 0 | 0 |
-| 25/11 – 26/11 | Refonte, lot A — le socle : le menu aux trois tailles, les onglets de « Vendeurs », le compte, les blocs ; le relecteur une passe (un bloquant levé) ; la suite complète sur le code final (37 sur 37) ; sur l'essai à 0 h 10, attend le « oui » | Sensible | 2 h 50 | 0 | 1 h 35 |
+| 25/11 – 26/11 | Refonte, lot A — le socle : le menu aux trois tailles, les onglets de « Vendeurs », le compte, les blocs ; le relecteur une passe (un bloquant levé) ; la suite complète sur le code final (37 sur 37) ; sur l'essai à 0 h 10, attend le « oui » ; puis le menu du téléphone sur les seules pages principales (maquettes 2, 3 et 4), à 1 h 25 | Sensible | 3 h 25 | 0 | 1 h 45 |
 
-Le soir du 25/11, après le total de 21 h 25 : la refonte, de 21 h 25 à 0 h 20 (3 h 10 d'horloge).
+Le soir du 25/11, après le total de 21 h 25 : la refonte, de 21 h 25 à 1 h 25 (4 h d'horloge).
 La suite complète a tourné trois fois pour le lot A (avant la relecture, les specs touchées après,
 puis tout sur le code final, de 23 h 31 à 0 h 07) : le menu change sous toutes les specs.
 

@@ -1,0 +1,109 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>:root{--navy:#1d4466;--navy2:#0f2c45;--ink:#1d2530;--mute:#6b7682;--line:#e4e8ee;--bg:#f6f7f9;--sel:#e8f0fa;--green:#1f8a5b;--greenbg:#e6f5ee;--amber:#b4690e;--amberbg:#fdf1e1;--blue:#2563a8;--bluebg:#e8f0fa;--grey:#8a94a0;--greybg:#eef0f3;--red:#b4382f;--redbg:#fbe9e7}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.side{background:#fff;border-right:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;gap:6px}
+.brand{font-family:'Inter Display';font-weight:800;color:var(--navy);font-size:14px;letter-spacing:.02em;margin:0 0 22px 8px}
+.nav{padding:11px 14px;border-radius:10px}.nav b{display:block;font-weight:600;font-size:15px;color:#2c3440}.nav span{font-size:12px;color:var(--mute)}
+.nav.on{background:var(--sel)}.nav.on b{color:var(--navy)}
+.nav .new{font-size:9.5px;background:var(--amber);color:#fff;border-radius:5px;padding:1px 5px;margin-left:6px;vertical-align:2px;font-weight:700}
+.main{padding:30px 40px}
+h1{font-family:'Inter Display';font-size:30px;color:var(--navy);margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 20px}
+.kpis{display:flex;gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:150px;cursor:pointer}
+.kpi .n{font-family:'Inter Display';font-size:24px;font-weight:700}.kpi .l{font-size:12px;color:var(--mute)}
+.kpi.on{border-color:var(--navy);box-shadow:0 0 0 1px var(--navy) inset}
+.kpi.wide{min-width:240px;background:var(--navy);color:#fff;border:0}.kpi.wide .l{color:#ffffffb0}
+.badge{display:inline-block;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600}
+.b-green{background:var(--greenbg);color:var(--green)}.b-amber{background:var(--amberbg);color:var(--amber)}.b-blue{background:var(--bluebg);color:var(--blue)}.b-grey{background:var(--greybg);color:var(--grey)}.b-red{background:var(--redbg);color:var(--red)}
+.btn{display:inline-block;border:1px solid #cfd6df;background:#fff;border-radius:9px;padding:8px 13px;font-weight:600;font-size:13px;color:#26303b;white-space:nowrap}
+.btn.p{background:var(--navy);border-color:var(--navy);color:#fff}
+.mute{color:var(--mute)}
+</style><style>
+.row{background:#fff;border:1px solid var(--line);border-radius:14px;display:grid;grid-template-columns:6px 1.35fr 1.2fr .75fr 1.15fr;align-items:center;margin-bottom:12px;overflow:hidden}
+.bar{align-self:stretch}.g{background:var(--green)}.a{background:var(--blue)}.x{background:var(--grey)}
+.c{padding:16px 18px}
+.t{font-weight:700;font-size:15.5px;margin-bottom:3px;display:flex;gap:8px;align-items:center}
+.path{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+.path i{font-style:normal;color:var(--mute)}.gap{font-size:12px;font-weight:700;border-radius:6px;padding:2px 6px;background:var(--greenbg);color:var(--green)}
+.lab{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:4px}
+.score{font-family:'Inter Display';font-weight:700;font-size:16px}.score em{font-style:normal;color:var(--green)}
+.act{display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-right:20px}
+.prog{font-size:12px;color:var(--mute)}
+.why{font-size:12.5px;color:var(--amber);font-weight:600}
+.more{font-size:12px;color:var(--blue);font-weight:600}
+.filters{display:flex;gap:8px;margin:0 0 14px}.chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 12px;font-size:12.5px;font-weight:600;color:#3a4552}.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.open{background:#fff;border:1px solid var(--line);border-top:0;border-radius:0 0 14px 14px;margin:-14px 0 12px 6px;padding:14px 18px 14px 24px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font-size:12.5px}
+.open div b{display:block;font-size:14px;margin-top:2px}
+.rap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:16px}
+.rap h3{margin:0 0 2px;font-size:15px}.rap .hint{font-size:12px;color:var(--mute);margin-bottom:10px}
+.ff{display:grid;grid-template-columns:1.1fr .6fr .7fr .8fr .8fr 1.1fr auto;gap:8px;align-items:end}
+.ff label{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:700;display:block;margin-bottom:3px}
+.ff .in{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13.5px;font-weight:600;white-space:nowrap}
+.res{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
+.res .rt{font-weight:700;font-size:14px;margin-bottom:10px}.res .rt span{color:var(--green)}
+.grp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g3{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.g3 .gh{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px}
+.g3 .it{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #eef1f4;font-size:13px}
+.g3 .it:first-of-type{border-top:0}.g3 .it b{display:block;font-size:13px}.g3 .it small{color:var(--mute);font-size:11.5px}
+.mini{font-size:11.5px;font-weight:700;border-radius:8px;padding:5px 9px;white-space:nowrap;border:1px solid var(--line)}
+.mini.p{background:var(--navy);color:#fff;border-color:var(--navy)}
+.match{font-size:11px;font-weight:700;color:var(--green);background:var(--greenbg);border-radius:6px;padding:2px 7px}
+</style></head><body><div class="app">
+<aside class="side"><div class="brand">VOTRE AGENCE</div>
+<div class="nav"><b>Préparation</b><span>Dossiers vendeurs</span></div>
+<div class="nav"><b>Live</b><span>Rendez-vous vendeur</span></div>
+<div class="nav on"><b>Suivi</b><span>Après le rendez-vous</span></div>
+<div class="nav"><b>Prospection<span class="new">NOUVEAU</span></b><span>Concurrents à démarcher</span></div>
+<div class="nav"><b>Administration</b><span>Agence et équipe</span></div></aside>
+<main class="main">
+<h1>Suivi</h1><p class="sub">Vos rendez-vous conclus, et ce qu'il reste à faire pour chacun.</p>
+<div class="kpis">
+ <div class="kpi on"><div class="n">6</div><div class="l">Mandats signés</div></div>
+ <div class="kpi"><div class="n" style="color:var(--blue)">12</div><div class="l">À relancer</div></div>
+ <div class="kpi"><div class="n" style="color:var(--grey)">3</div><div class="l">Vendus ailleurs · retirés</div></div>
+ <div class="kpi wide"><div class="n">−7 %</div><div class="l">Écart moyen : prix du vendeur → prix de commercialisation</div></div>
+</div>
+<div class="rap"><h3>Un acheteur dans le pipe ?</h3><div class="hint">Tapez sa recherche : ACM vous montre vos mandats, vos vendeurs à relancer et les concurrents à prospecter qui lui correspondent. Rien n'est enregistré.</div>
+<div class="ff"><div><label>Type</label><div class="in">Appartement</div></div><div><label>Pièces</label><div class="in">3</div></div><div><label>Surface</label><div class="in">60 m²</div></div><div><label>Budget min</label><div class="in">280 000 €</div></div><div><label>Budget max</label><div class="in">340 000 €</div></div><div><label>Secteur</label><div class="in">Antibes, Juan-les-Pins</div></div><span class="btn p">Rapprocher</span></div>
+<div class="res"><div class="rt"><span>4 biens</span> correspondent à cet acheteur</div><div class="grp">
+<div class="g3"><div class="gh" style="color:var(--green)">Mes mandats · 1</div>
+ <div class="it"><div><b>Test Antibes</b><small>3 p. · 65 m² · 320 000 €</small></div><span class="mini p">Proposer une visite</span></div></div>
+<div class="g3"><div class="gh" style="color:var(--blue)">Mes vendeurs à relancer · 1</div>
+ <div class="it"><div><b>Garcia</b><small>3 p. · 62 m² · 335 000 € · Juan-les-Pins</small></div><span class="mini">Rappeler : « j'ai un acheteur »</span></div></div>
+<div class="g3"><div class="gh" style="color:var(--amber)">Concurrents à prospecter · 2</div>
+ <div class="it"><div><b>12 av. de Verdun, Antibes</b><small>3 p. · 64 m² · 329 000 € · Propriétaire</small></div><span class="mini">Ajouter à la tournée</span></div>
+ <div class="it"><div><b>Rés. Les Pins, Juan-les-Pins</b><small>3 p. · 58 m² · 315 000 € · Exclusivité</small></div><span class="mini">Appeler le confrère</span></div></div>
+</div></div></div>
+<div class="filters"><span class="chip on">Tous</span><span class="chip">Mandats signés</span><span class="chip">À relancer</span><span class="chip">Vendus ailleurs · retirés</span></div>
+
+<div class="row"><div class="bar g"></div>
+ <div class="c"><div class="t">Test Antibes <span class="badge b-green">Mandat signé</span></div><div class="mute">Appartement · 3 pièces · 65 m² · Antibes · conclu le 09/10</div></div>
+ <div class="c"><div class="lab">Le chemin parcouru</div><div class="path">350 000 € <i>→</i> 320 000 € <span class="gap">−9 %</span></div></div>
+ <div class="c"><div class="lab">Prêt à lancer</div><div class="score">7 → <em>10</em>/10</div></div>
+ <div class="act"><span class="btn p">Prospecter · 5 concurrents →</span><span class="prog">1 prêt · 3 adresses à confirmer · 1 remis</span></div>
+</div>
+<div class="open"><div class="mute">Marché calculé<b>335 790 €</b></div><div class="mute">Analyse du conseiller<b>310 000 €</b></div><div class="mute">Prix conseillé<b>335 790 €</b></div><div class="mute">Convenu vs conseillé<b>−15 790 € (−5 %)</b></div></div>
+
+<div class="row"><div class="bar a"></div>
+ <div class="c"><div class="t">Leingnier <span class="badge b-blue">À relancer</span></div><div class="mute">Maison · 9 pièces · 200 m² · Cagnes-sur-Mer · conclu le 08/10</div></div>
+ <div class="c"><div class="lab">Le chemin parcouru</div><div class="path">790 000 € <i>→</i> 749 000 € <span class="gap">−5 %</span></div></div>
+ <div class="c"><div class="lab">Prêt à lancer</div><div class="score">6/10</div></div>
+ <div class="act"><span class="btn">Relancer →</span><span class="why">Ce qui le retient : « le délai »</span></div>
+</div>
+
+<div class="row"><div class="bar g"></div>
+ <div class="c"><div class="t">Martin <span class="badge b-green">Mandat signé</span></div><div class="mute">Maison · 5 pièces · 140 m² · Vence · conclu le 05/10</div></div>
+ <div class="c"><div class="lab">Le chemin parcouru</div><div class="path">720 000 € <i>→</i> 680 000 € <span class="gap">−6 %</span></div></div>
+ <div class="c"><div class="lab">Prêt à lancer</div><div class="score"><em>10</em>/10</div></div>
+ <div class="act"><span class="btn p">Prospecter · 4 concurrents →</span><span class="prog">2 dossiers remis · 1 RDV obtenu</span></div>
+</div>
+
+<div class="row"><div class="bar x"></div>
+ <div class="c"><div class="t">Dupont <span class="badge b-grey">Vendu ailleurs</span></div><div class="mute">Appartement · 2 pièces · 48 m² · Nice · conclu le 01/10</div></div>
+ <div class="c"><div class="lab">Le chemin parcouru</div><div class="path">260 000 € <i>→</i> —</div></div>
+ <div class="c"><div class="lab">Prêt à lancer</div><div class="score">4/10</div></div>
+ <div class="act"><span class="more">Voir le détail des prix ▾</span></div>
+</div>
+</main></div></body></html>

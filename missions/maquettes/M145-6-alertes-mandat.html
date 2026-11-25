@@ -1,0 +1,127 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M145-6 Rentrer le mandat</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:28px;align-items:flex-start}
+h1.sheet{font-size:20px;color:#27272a}
+.sheet-sub{font-size:13px;color:#3f3f46;max-width:1700px;line-height:1.5}
+.row-wrap{display:flex;gap:24px;align-items:flex-start}
+.frame-title{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px}
+.frame{background:#f7f8fa;position:relative;overflow:hidden;border:1px solid #a1a1aa}
+.desk{width:1280px;min-height:800px;display:flex}
+.fold{position:absolute;left:0;right:0;top:800px;border-top:2px dashed #ef4444}
+.fold span{position:absolute;right:8px;top:-20px;font-size:11px;font-weight:700;color:#ef4444;background:#f7f8fa;padding:0 4px}
+.tab{width:1024px;height:768px;display:flex}
+.phone{width:390px;height:844px;display:flex;flex-direction:column}
+.side{width:236px;align-self:stretch;background:#fff;border-right:1px solid #e4e4e7;padding:22px 14px;display:flex;flex-direction:column;gap:2px;flex:none}
+.tab .side{width:206px;padding:18px 10px}
+.agency{font-size:14px;font-weight:800;letter-spacing:.06em;color:#00527a;text-transform:uppercase;padding:0 10px 18px;line-height:1.3}
+.nav{padding:8px 12px;border-radius:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.nav b{display:block;font-size:14px;font-weight:600}
+.nav small{display:block;font-size:11.5px;color:#71717a;margin-top:1px}
+.nav.on{background:#eaf5ff}
+.nav.on b{color:#013a58;font-weight:800}
+.badge{background:#ea7a1a;color:#fff;font-size:11px;font-weight:800;border-radius:10px;padding:2px 7px;flex:none}
+.group{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:#71717a;padding:14px 12px 4px}
+.account{margin-top:auto;border-top:1px solid #e4e4e7;padding:12px 10px 0;font-size:12px;color:#52525b;line-height:1.45}
+.account b{color:#18181b;font-size:12.5px}
+.main{flex:1;padding:22px 36px;overflow:hidden;display:flex;flex-direction:column;gap:12px}
+.tab .main{padding:22px 24px;gap:12px}
+.phone .main{padding:16px 14px;gap:12px}
+.kicker{font-size:11.5px;font-weight:800;letter-spacing:.14em;color:#71717a;text-transform:uppercase}
+.title{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:38px;font-weight:800;color:#013a58;line-height:1.05}
+.phone .title{font-size:30px}
+.subtitle{font-size:14px;color:#52525b;margin-top:4px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.kpis{display:flex;gap:10px}
+.kpi{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:8px 14px;min-width:120px}
+.kpi b{display:block;font-size:22px;color:#013a58}
+.kpi span{font-size:12px;color:#52525b}
+.block{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:10px 20px;box-shadow:0 1px 2px rgb(0 0 0 / .04)}
+.tab .block{padding:10px 16px}
+.phone .block{padding:10px 12px}
+.block h2{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:21px;font-weight:800;color:#013a58;display:flex;align-items:baseline;gap:8px;padding-bottom:2px}
+.block h2 small{font-family:Montserrat,Arial,sans-serif;font-size:12.5px;font-weight:600;color:#71717a}
+.task{display:flex;align-items:center;gap:14px;padding:8px 0;border-top:1px solid #f0f0f2;position:relative}
+.task:first-of-type{border-top:0}
+.phone .task{flex-wrap:wrap;gap:8px 10px;align-items:flex-start}
+.ico{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px}
+.ico.urgent{background:#12875a}
+.ico.seller{background:#ea7a1a}
+.ico.buyer{background:#00527a}
+.ico.prosp{background:#52525b}
+.txt{flex:1;min-width:0}
+.txt b{display:block;font-size:14.5px;font-weight:700;line-height:1.3}
+.txt span{display:block;font-size:12.5px;color:#52525b;margin-top:2px;line-height:1.4}
+.txt span.late{display:inline;color:#c2410c;font-weight:700}
+.txt span.tag,.txt span.chip{display:inline-block}
+.txt span.inl{display:inline}
+.btn{border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:700;white-space:nowrap;flex:none;border:1.5px solid #00527a;color:#00527a;background:#fff}
+.btn.full{background:#00527a;color:#fff}
+.phone .btn{width:100%;text-align:center;padding:12px;margin-left:40px;width:calc(100% - 40px)}
+.links{font-size:12.5px;color:#00527a;font-weight:600;display:flex;gap:12px;flex:none}
+.pin{position:absolute;right:-30px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:#e8cf5a;color:#5b4a00;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.ghost{opacity:.55}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;color:#5b4a00;background:#fef6c7;border:1px dashed #e8cf5a;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.done{font-size:12.5px;color:#52525b;padding:2px 4px}
+.done s{color:#71717a}
+.txt span.argue{display:inline-block;margin-top:3px;font-size:12px;font-weight:700;color:#0b6b46;background:#e6f4ec;border-radius:999px;padding:1px 9px}
+.done-block{background:#fafafa;box-shadow:none}
+.done-block .done{padding:4px 0}
+.series{margin:0 0 6px 44px;border-left:3px solid #eaf5ff;padding-left:14px}
+.sub{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;border-top:1px dashed #ececef}
+.sub:first-child{border-top:0}
+.sub b{flex:1;font-weight:600}
+.sub .btn{padding:6px 12px;font-size:12.5px}
+.notes{width:430px;display:flex;flex-direction:column;gap:12px;flex:none}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#3a3000}
+.note b{color:#5b4a00}
+.note ol{padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.note code{font-size:11.5px;background:#fff8d6;padding:0 3px;border-radius:3px}
+.topbar{height:52px;background:#fff;border-bottom:1px solid #e4e4e7;display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex:none}
+.topbar .agency{padding:0;font-size:12.5px}
+.burger{display:flex;align-items:center;gap:6px;font-size:22px;color:#013a58}
+.drawer{background:#fff;border-bottom:1px solid #e4e4e7;padding:8px 10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:0 8px 20px rgb(0 0 0 / .08)}
+.scrim{flex:1;background:rgb(24 24 27 / .25)}
+.fiche{width:1280px;height:560px;display:flex}
+.nextstep{background:#fff;border:2px solid #00527a;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;width:400px}
+.nextstep .k{font-size:11px;font-weight:800;letter-spacing:.12em;color:#71717a;text-transform:uppercase}
+.nextstep h3{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:22px;color:#013a58}
+.nextstep p{font-size:13px;color:#52525b;line-height:1.45}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;background:#e7f4ee;color:#12875a;margin-right:6px}
+.listrow{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:14px}
+.empty{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:16px 18px;font-size:14px;color:#52525b;line-height:1.5}
+.error{background:#fff;border:1px solid #f1c3bd;border-radius:14px;padding:12px 16px;font-size:13px;color:#a3291f;line-height:1.5}
+</style></head><body><h1 class="sheet">M145-6 · Un bien sans mandat que veulent des acquéreurs prêts : une alerte pour rentrer le mandat, jamais une proposition</h1>
+<p class="sheet-sub">Même calcul de correspondance que la boucle (M133, M134, acquéreurs écartés exclus, M139). Les acquéreurs sont nommés sur les écrans du conseiller, jamais dans ce qui part vers le vendeur ou le propriétaire : seulement un nombre. Données : la démo, M. et Mme Rossi rendus prêts (décision du 07/11).</p>
+<div class="row-wrap" style="flex-wrap:wrap;max-width:1720px;align-items:flex-start">
+<div style="width:640px"><div class="frame-title">1 · Dossier de M. et Mme Lambert-Duval (à relancer), Vue d’ensemble</div><section class="block" style="padding:16px 20px"><h2 style="font-size:19px">Acquéreurs de l’agence pour ce bien</h2>
+<div class="txt"><span class="argue" style="font-size:13px">1 acquéreur prêt correspond à ce bien</span></div>
+<div class="task"><div class="txt"><b style="font-size:13.5px">M. et Mme Rossi</b><span>Antibes, Juan-les-Pins · jusqu’à 400 000 € · Prêt à visiter</span></div></div>
+<p style="font-size:13px;color:#52525b;margin:6px 0 10px">Rentrez le mandat pour pouvoir le proposer.</p>
+<span class="btn full">Relancer M. et Mme Lambert-Duval</span></section>
+<p style="font-size:12px;color:#52525b;margin-top:6px"><b>Avant :</b> « Proposer ce bien aux acquéreurs » (M134), retiré par la partie A. <b>Après :</b> l’argument et le geste de relance de la M130 A (message, SMS, e-mail, appel : un vendeur rencontré est un client en relation).</p></div>
+<div style="width:640px"><div class="frame-title">2 · La relance ouverte : le message au vendeur</div><section class="block" style="padding:16px 20px"><h2 style="font-size:19px">Relancer M. et Mme Lambert-Duval</h2>
+<div style="font-size:13px;line-height:1.55;border:1px solid #e4e4e7;border-radius:10px;padding:10px 12px;margin:8px 0">Bonjour,<br><span style="color:#71717a">[le message de relance d’aujourd’hui, inchangé : votre bien, son prix, ce qui lui manquait, le motif (M96, M130 A)]</span><br><mark style="background:#e6f4ec">Depuis notre rendez-vous, un acquéreur prêt à visiter cherche un bien comme le vôtre.</mark><br>Natacha — Agence Horizon Côte d’Azur</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="btn">Copier</span><span class="btn">SMS</span><span class="btn">WhatsApp</span><span class="btn">E-mail</span><span class="btn">Appeler</span><span class="btn full">J’ai relancé</span></div></section>
+<p style="font-size:12px;color:#52525b;margin-top:6px">La phrase surlignée s’ajoute au message (décision du 07/11) : un nombre, jamais un nom, un budget ni une commune d’acquéreur ; « un acquéreur », « 3 acquéreurs » ; modifiable comme le reste.</p></div>
+<div style="width:760px"><div class="frame-title">3 · Aujourd’hui, Prospection : la série ouverte</div><section class="block"><h2>Prospection<small>· courriers et passages</small></h2><div class="task"><span class="ico prosp">4</span><div class="txt"><b>Démarcher 4 biens : des acquéreurs prêts y correspondent</b><span class="argue">« 4, 4 et 3 acquéreurs prêts correspondent »</span><span>mandat simple chez un confrère · par courrier ou passage, jamais par téléphone</span></div><span class="btn">Fermer ▴</span></div><div class="series"><div class="sub"><b>Maison · 5 pièces · 130 m² · Vence · 715 000 € — 4 acquéreurs prêts</b><span class="btn">Préparer le courrier</span></div><div class="sub"><b>Maison · 5 pièces · 142 m² · Vence · 729 000 € — 4 acquéreurs prêts</b><span class="btn">Préparer le courrier</span></div><div class="sub"><b>Maison · 5 pièces · 135 m² · Saint-Paul-de-Vence · 740 000 € — 3 acquéreurs prêts</b><span class="btn">Préparer le courrier</span></div><div class="sub"><b>Maison · 5 pièces · 128 m² · Vence · 705 000 € — 2 acquéreurs prêts</b><span style="font-size:11.5px;color:#c2410c;font-weight:700">Adresse à confirmer</span><span class="btn">Confirmer l’adresse</span></div></div><div class="task"><span class="ico prosp">✉</span><div class="txt"><b>Démarcher 6 autres concurrents de 2 mandats</b><span>M. Lefebvre : 4 · M. et Mme Lopez : 2 · courrier au propriétaire, dossier au confrère</span></div><span class="btn">Prospecter</span></div></section>
+<p style="font-size:12px;color:#52525b;margin-top:6px">« Préparer le courrier » ouvre le dossier de prospection du bien, version propriétaire (M84 : mandat simple ou particulier). Une carte « Adresse à confirmer » entre aussi dans la série, « Confirmer l’adresse » d’abord (décision du 07/11 ; la 4e ligne est un exemple de forme, la démo n’a pas ce cas). Aucun bouton d’appel. ven-05 et ven-08, en exclusivité, ne déclenchent rien ; un concurrent « à vérifier » non plus : sa carte le dit (4).</p></div>
+<div style="width:520px"><div class="frame-title">4 · La carte de Prospection du bien</div><section class="block" style="padding:14px 18px"><div class="txt"><b>12 chemin des Restanques, 06140 Vence</b><span>Adresse confirmée · Mandat simple · Propriétaire · aller sonner</span></div>
+<div class="txt" style="margin:6px 0"><span class="argue">4 acquéreurs prêts correspondent · courrier ou passage</span></div>
+<div class="txt"><span>Maison · 5 p · 130 m² · 715 000 €</span></div>
+<div style="display:flex;gap:8px;margin-top:8px"><span class="btn">Préparer le dossier</span><span class="btn">Marquer remis</span></div></section>
+<section class="block" style="padding:14px 18px;margin-top:10px"><div class="txt"><b>5 chemin du Val, 06250 Mougins</b><span>Adresse confirmée · Vendu par : agence · Exclusivité : à vérifier</span></div>
+<div class="txt" style="margin:6px 0"><span class="argue" style="background:#fff3e0;color:#9a4d00">2 acquéreurs prêts correspondent : précisez le mandat</span></div>
+<div style="display:flex;gap:6px;align-items:center;font-size:12px">Exclusivité : <span class="btn" style="padding:4px 10px">Oui</span><span class="btn" style="padding:4px 10px">Non</span><span class="btn" style="padding:4px 10px">Inconnu</span></div></section>
+<p style="font-size:12px;color:#52525b;margin-top:6px">En haut, mandat simple : le nombre et « courrier ou passage ». En bas, exclusivité « à vérifier » : rien dans « Aujourd’hui », la carte demande de préciser (les choix de la M83) ; « Non » ou un particulier fait naître l’alerte, « Oui » l’éteint. Les cartes en exclusivité n’ont rien. Adresses et nombre du second exemple inventés pour la maquette (la démo n’a pas ce cas).</p></div>
+<div style="width:640px"><div class="frame-title">5 · « Proposer ce bien » (Lopez) : le même compte que la tâche</div><section class="block" style="padding:16px 20px"><h2 style="font-size:19px">4 acquéreurs prêts à visiter</h2>
+<div class="sub"><b>☑ La famille Moreau</b><span class="chip">Prêt à visiter</span></div><div class="sub"><b>☑ Mme Faure</b><span class="chip">Prêt à visiter</span></div><div class="sub"><b>☑ M. Girard et Mme Chevalier</b><span class="chip">Prêt à visiter</span></div><div class="sub"><b>☑ M. et Mme Roux</b><span class="chip">Prêt à visiter</span></div>
+<h2 style="font-size:15px;margin-top:10px">Correspond aussi, pas encore prêt · 1</h2>
+<div class="sub"><b>☐ M. Fontaine</b><span style="font-size:12px;color:#52525b">Financement en cours</span></div>
+<div style="margin-top:10px"><span class="btn full">Envoyer à 4 acquéreurs</span></div></section>
+<p style="font-size:12px;color:#52525b;margin-top:6px"><b>Avant :</b> « 5 acquéreurs correspondent », tous cochés, M. Fontaine compris, quand la tâche disait 4. <b>Après :</b> les prêts, cochés ; les autres à part, décochés, que le conseiller peut cocher (remplace M134, « tous cochés »).</p></div>
+<div style="width:760px"><div class="frame-title">7 · « Relancer plus tôt ? » : une relance pas encore due</div><section class="block"><h2>Vendeurs<small>· 2</small></h2><div class="task"><span class="ico seller">!</span><div class="txt"><b>Relancer plus tôt ? 1 acquéreur prêt correspond au bien des Lambert-Duval</b><span>relance prévue le 20/11 · réfléchit au prix</span></div><span class="links"><span>Garder la date</span></span><span class="btn">Relancer</span></div><div class="task"><span class="ico seller">◷</span><div class="txt"><b>Point marché de M. Lefebvre</b><span>mandat signé le 07/10 · premier Point marché dû (tous les mois)</span></div><span class="btn">Faire le point</span></div></section>
+<p style="font-size:12px;color:#52525b;margin-top:6px">La date du conseiller ne change pas (M105). Dès qu’un acquéreur prêt se met à correspondre, la ligne s’affiche ; « Relancer » ouvre la relance (avec la phrase anonyme), « Garder la date » cache la ligne jusqu’au 20/11, où la relance due la remplace, argument compris ; un acquéreur prêt de plus, ou une nouvelle relance, la fait revenir ; le geste vaut pour toute l’agence (décisions du 07/11). Exemple de forme : dans la démo, la relance des Lambert-Duval est due aujourd’hui, c’est elle qui porte l’argument (M145-1, ligne 2).</p></div>
+<div style="width:640px"><div class="frame-title">6 · La carte du Suivi de M. Lefebvre (mandat sous offre acceptée)</div><section class="block" style="padding:14px 18px"><div class="txt"><b>M. Lefebvre</b><span>Mandat signé · exclusif · Maison · 7 pièces · 210 m² · Mougins</span></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:12px"><span class="chip">Mandat signé ✓</span><span class="chip">Concurrents · 4 à démarcher</span><span class="chip" style="background:#fff3e0;color:#9a4d00">Point marché · dû</span><span class="chip">Visites acquéreurs · 1 faite</span><span class="chip" style="background:#12875a;color:#fff">Offre acceptée · famille Keller</span></div></section>
+<p style="font-size:12px;color:#52525b;margin-top:6px"><b>Avant :</b> « Acquéreurs · N ». <b>Après :</b> « Offre acceptée · famille Keller » à sa place, un seul libellé ; il mène à la fiche des Keller (« La vente », M143).</p></div>
+</div></body></html>

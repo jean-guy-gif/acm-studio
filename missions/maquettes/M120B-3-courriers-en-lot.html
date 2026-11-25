@@ -1,0 +1,85 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M120 B — Courriers en lot d’une recherche acquéreur</title><style>
+:root{--brand:#0d4d78;--brand2:#0a3d5f;--soft:#e8f1f8;--em:#059669;--emsoft:#ecfdf5;--ink:#18181b;--mute:#71717a;--line:#e4e4e7;--bg:#fafafa;--amber:#92400e;--amberbg:#fffbeb;--amberline:#fcd34d;--red:#b91c1c;--redbg:#fef2f2}
+*{box-sizing:border-box}body{margin:0;background:#d4d4d8;font-family:Inter,Montserrat,Arial,sans-serif;color:var(--ink);font-size:14px}
+.frame{width:1280px;height:800px;background:var(--bg);display:grid;grid-template-columns:240px 1fr;overflow:hidden;margin:24px auto;box-shadow:0 8px 30px #0003;position:relative}
+.cap{width:1280px;margin:24px auto 0;font:600 13px Inter,Arial;color:#3f3f46}
+.side{background:#fff;border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:4px}
+.switch{display:grid;grid-template-columns:1fr 1fr;background:#f4f4f5;border-radius:10px;padding:3px;margin-bottom:16px}
+.switch span{text-align:center;padding:7px 0;border-radius:8px;font-weight:600;font-size:13px;color:var(--mute)}
+.switch span.on{background:var(--em);color:#fff}
+.switch.v span.on{background:var(--brand)}
+.nav{padding:10px 12px;border-radius:10px}.nav b{display:block;font-weight:600;font-size:14.5px;color:#27272a}.nav span{font-size:12px;color:var(--mute)}
+.nav.on{background:var(--emsoft)}.nav.on b{color:#065f46}
+.side.v .nav.on{background:var(--soft)}.side.v .nav.on b{color:var(--brand2)}
+.me{margin-top:auto;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--mute)}.me b{display:block;color:var(--ink);font-size:13px}
+.main{padding:26px 34px;overflow:hidden}
+h1{font-family:Montserrat,Inter,sans-serif;font-size:26px;margin:0 0 4px;color:var(--ink)}
+.sub{color:var(--mute);margin:0 0 18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px}
+.badge{display:inline-flex;align-items:center;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;background:#f4f4f5;color:#3f3f46;white-space:nowrap}
+.b-brand{background:var(--soft);color:var(--brand2)}.b-em{background:var(--emsoft);color:#065f46}.b-amber{background:var(--amberbg);color:var(--amber)}.b-red{background:var(--redbg);color:var(--red)}
+.btn{display:inline-flex;align-items:center;border:1.5px solid var(--brand);background:#fff;color:var(--brand);border-radius:999px;padding:6px 14px;font-weight:700;font-size:12.5px;white-space:nowrap}
+.btn.p{background:var(--brand);color:#fff}
+.btn.lg{padding:9px 18px;font-size:13.5px}
+.lnk{color:var(--brand);font-weight:600;font-size:12.5px;text-decoration:underline;text-underline-offset:3px}
+.back{color:var(--mute);font-size:13px}
+.hint{color:var(--mute);font-size:12.5px}
+.kick{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.ann{position:absolute;background:#fef9c3;border:1px solid #eab308;color:#713f12;border-radius:8px;padding:6px 9px;font-size:11.5px;line-height:1.35;max-width:250px;box-shadow:0 2px 6px #0002}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:18px 20px}
+.steps li{list-style:none;display:flex;flex-direction:column;gap:6px}
+.steps .h{font-family:Montserrat,Inter,Arial,sans-serif;font-weight:700;font-size:15px}
+.steps .s{font-size:13px;color:#52525b}
+.steps .ok{color:#047857;font-weight:600}
+.steps .acts{margin-top:auto;display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding-top:4px}
+.print{background:#f4f4f5;display:block;padding:22px 0}
+.ph{width:794px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.held{border:1px solid var(--amberline);background:var(--amberbg);color:#78350f;border-radius:12px;padding:12px 14px;font-size:13.5px}
+.held ul{margin:6px 0 0;padding-left:20px}.held li{margin:3px 0}
+.mini{width:794px;margin:18px auto 0;height:330px;overflow:hidden;background:#fff;box-shadow:0 1px 3px #0002,0 8px 24px #00000014;padding:40px 46px;font-size:12px;color:#1d2530;position:relative}
+.mini .hd{display:flex;justify-content:space-between;border-bottom:2px solid #0a3d5f;padding-bottom:12px}
+.mini h4{font-family:Montserrat,Arial,sans-serif;font-size:24px;color:#0a3d5f;margin:18px 0 8px}
+.mini h4 em{font-style:normal;color:#0d4d78}
+.fade{position:absolute;left:0;right:0;bottom:0;height:80px;background:linear-gradient(#fff0,#f4f4f5)}
+</style></head><body>
+<div class="cap">Écran 1 · Fiche acquéreur, en tête (1280 × 800, haut de page) — l’étape 4 porte le lot</div>
+<div class="frame" style="height:460px">
+<aside class="side"><div class="switch"><span>Vendeur</span><span class="on">Acquéreur</span></div><div class="nav on"><b>Acquéreurs</b><span>Fiches de recherche</span></div><div class="nav"><b>Biens idéaux</b><span>Trouver et sélectionner</span></div><div class="nav"><b>Visites</b><span>Demandes et retours</span></div><div class="nav"><b>Prospection</b><span>Biens à démarcher</span></div><div class="me"><b>Jean-Guy Ourmières</b>Côte d’Azur Immobilier ▾</div></aside>
+<main class="main">
+  <a class="back">← Acquéreurs</a>
+  <div class="row" style="margin:6px 0 4px"><h1 style="margin:0">Famille Keller</h1><span class="badge b-em">En recherche</span></div>
+  <p class="sub">Maison · Mougins, Mouans-Sartoux, Valbonne</p>
+  <ol class="card steps" style="margin:0">
+    <li><span class="h">1 · Biens idéaux</span><span class="s ok">Sélection retenue le 27/10 ✓</span><div class="acts"><span class="btn">Trouver les biens idéaux</span></div></li>
+    <li><span class="h">2 · Présenter la sélection</span><span class="s">Pas encore présentée</span><div class="acts"><span class="btn">Présenter la sélection</span></div></li>
+    <li><span class="h">3 · Dossier acquéreur</span><span class="s ok">Réponse reçue le 29/10 ✓</span><div class="acts"><span class="btn">Dossier acquéreur</span></div></li>
+    <li><span class="h">4 · Visites</span><span class="s">Visites : 3 visites à organiser</span><span class="s">Courriers : 1 prêt à imprimer · 1 en attente</span><div class="acts"><span class="btn p">Organiser les visites</span><span class="btn">Préparer tous les courriers</span></div></li>
+  </ol>
+</main>
+<div class="ann" style="left:640px;top:350px">« Préparer tous les courriers » : en contour, sous le bouton plein de l’étape. Visible dès qu’un courrier ou un dossier existe pour cette fiche ; absent sinon. Même libellé que Prospection (M98).</div>
+</div>
+
+<div class="cap">Écran 2 · /acquereurs/[id]/courriers (1280 × 800) — en tête ce qui n’est pas imprimé, avec sa raison ; puis les feuilles</div>
+<div class="frame print" style="height:800px">
+  <div class="ph">
+    <div class="row"><a class="back">← Retour à la fiche</a><span class="btn p lg" style="margin-left:auto">Imprimer</span></div>
+    <div><h1 style="font-size:22px">Courriers de la recherche</h1>
+    <p class="hint" style="margin:2px 0 0;font-size:13.5px">Pour : Famille Keller — 1 document prêt à imprimer, tel qu’enregistré. Pour modifier un texte ou une photo, ouvrez-le depuis sa visite.</p></div>
+    <div class="held"><b>1 courrier non imprimé&nbsp;:</b>
+      <ul><li><b>Maison · 7 pièces · 200 m² · Mouans-Sartoux</b> — Adresse à confirmer avant d’envoyer</li></ul>
+    </div>
+    <div class="row"><span class="btn">Marquer tous remis</span><span class="hint">Un dossier au confrère compte comme « contacté ».</span></div>
+  </div>
+  <div class="mini">
+    <div class="hd"><b style="color:#0a3d5f;font-size:15px">Côte d’Azur Immobilier</b><span style="text-align:right;color:#6b7682;font-size:11px">À l’attention de<br><b style="color:#1d2530;font-size:12px">Agence titulaire de l’exclusivité</b><br>Maison · 7 pièces · 220 m² · Mougins</span></div>
+    <div style="font-size:10px;letter-spacing:.14em;color:#0d4d78;font-weight:700;margin-top:18px">DEMANDE DE COLLABORATION</div>
+    <h4 style="margin-top:4px">Une recherche qui correspond<br>à <em>votre exclusivité.</em></h4>
+    <p>Cher confrère,</p><p>Je suis Jean-Guy Ourmières, conseiller chez Côte d’Azur Immobilier. J’accompagne une recherche à Mougins…</p>
+    <div class="fade"></div>
+  </div>
+  <div class="ann" style="left:1040px;top:150px;max-width:220px">Raisons possibles, dans l’ordre du courrier unitaire : « Ce propriétaire a demandé à ne plus être sollicité » · « Adresse à confirmer avant d’envoyer » · téléphone du conseiller · adresse de l’agence · carte professionnelle · « À qui s’adresser ? Choisissez sur la visite : propriétaire ou confrère. »</div>
+  <div class="ann" style="left:1040px;top:420px;max-width:220px">Confirmation dans l’écran : « Marquer ce document comme remis ? » / « Marquer les 2 documents comme remis ? » — Annuler · Confirmer. Puis : « 1 marqué « remis », 1 marqué « contacté ». »</div>
+  <div class="ann" style="left:24px;top:150px;max-width:200px">Vide : « Aucun document à imprimer : aucun courrier de cette recherche n’est « prêt à envoyer ». » Le bouton Imprimer disparaît, la liste des raisons reste.</div>
+</div>
+</body></html>

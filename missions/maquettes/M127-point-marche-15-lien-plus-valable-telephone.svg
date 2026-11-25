@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" font-family="Inter, Helvetica, Arial, sans-serif">
+<title>M127 B — Le lien du Point marché n'est plus valable (vendeur, téléphone)</title>
+<!-- Fond : dégradé brand-soft → blanc, comme ErrorScreen (M88), couleurs par défaut de l'app : le lien ne lit rien de l'agence. -->
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#eaf5ff"/>
+    <stop offset="1" stop-color="#ffffff"/>
+  </linearGradient>
+</defs>
+<rect x="0" y="0" width="390" height="844" fill="url(#bg)"/>
+
+<!-- marque discrète, comme l'écran d'erreur -->
+<text x="195" y="300" font-size="11" font-weight="700" letter-spacing="3" fill="#00527a" fill-opacity="0.7" text-anchor="middle">ACM STUDIO</text>
+
+<!-- titre : une phrase, au vendeur -->
+<text x="195" y="356" font-size="26" font-weight="700" fill="#00527a" text-anchor="middle">Ce lien n’est plus valable</text>
+
+<!-- message : ce qui s'est passé, et quoi faire — rien sur l'agence, ni « mes dossiers » -->
+<text x="195" y="400" font-size="15" fill="#52525b" text-anchor="middle">Le Point marché a été retiré, ou son lien a</text>
+<text x="195" y="422" font-size="15" fill="#52525b" text-anchor="middle">expiré : il est valable 30 jours.</text>
+<text x="195" y="456" font-size="15" fill="#52525b" text-anchor="middle">Pour le recevoir de nouveau, demandez-le</text>
+<text x="195" y="478" font-size="15" fill="#52525b" text-anchor="middle">à votre conseiller.</text>
+
+<!-- aucun bouton : il n'y a rien à faire ici ; aucune adresse de l'outil -->
+
+<!-- notes de lecture (hors maquette) -->
+<rect x="16" y="700" width="358" height="120" rx="10" fill="#ffffff" stroke="#0d4d78" stroke-dasharray="5 4"/>
+<text x="30" y="724" font-size="11" font-weight="700" fill="#0d4d78">Lecture</text>
+<text x="30" y="744" font-size="10" fill="#18181b">• Même page pour un lien expiré, retiré, mal formé ou inconnu : on ne dit</text>
+<text x="30" y="758" font-size="10" fill="#18181b">  pas lequel, et rien du dossier ni de l’agence (M92, M119).</text>
+<text x="30" y="776" font-size="10" fill="#18181b">• Ni « Revenir à mes dossiers », ni « votre agence » : le lecteur est le</text>
+<text x="30" y="790" font-size="10" fill="#18181b">  vendeur. Pas de bouton : la seule suite est d’appeler son conseiller.</text>
+<text x="30" y="808" font-size="10" fill="#18181b">• Jamais indexée (noindex), comme le lien lui-même (M110).</text>
+</svg>

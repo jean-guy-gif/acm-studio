@@ -1,0 +1,103 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M148 · 4 — « Pourquoi est-il toujours sur le marché ? » : l’écran le plus long du Live</title><style>
+@font-face{font-family:Rajdhani;font-weight:600;src:url(../../src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2)}
+@font-face{font-family:Rajdhani;font-weight:700;src:url(../../src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2)}
+@font-face{font-family:Montserrat;font-weight:100 900;src:url(../../src/features/branding/fonts/montserrat/montserrat-latin.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}
+.sub{font-size:13px;color:#3f3f46;max-width:1700px;line-height:1.5}
+.layout{display:flex;gap:28px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:22px}
+.rowf{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.ft{font-size:13px;font-weight:800;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff}
+.st.av{background:#71717a}.st.ap{background:#12875a}
+.notes{width:430px;display:flex;flex-direction:column;gap:12px;flex:none}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#3a3000}
+.note b{color:#5b4a00}.note ol,.note ul{padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.note code{font-size:11.5px;background:#fff8d6;padding:0 3px;border-radius:3px}
+.pin{display:inline-flex;width:18px;height:18px;border-radius:50%;background:#e8cf5a;color:#5b4a00;font-size:10.5px;font-weight:800;align-items:center;justify-content:center;flex:none;font-style:normal;font-family:Montserrat}
+.avant{position:relative;width:512px;border:1px solid #a1a1aa;background:#1c4a72}
+.avant img{display:block;width:512px}
+.fold{position:absolute;left:0;right:0;border-top:3px solid #ef4444}
+.fold span{position:absolute;right:4px;top:-22px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px}
+.over{position:absolute;left:4px;bottom:6px;background:#ef4444;color:#fff;font-size:12px;font-weight:800;padding:3px 8px;border-radius:5px}
+/* La scène du Live */
+.scene{position:relative;overflow:hidden;color:#fff;background:linear-gradient(135deg,#2a6596 0%,#1f5683 45%,#173f63 100%);font-family:Montserrat,Arial,sans-serif;display:flex;flex-direction:column;border:1px solid #52525b}
+.scene.overflowing{outline:6px solid #ef4444}
+.hdr{flex:none;display:flex;align-items:center;gap:14px;padding:12px 28px 0;height:46px;font-size:13px}
+.hdr .ag{font-family:Rajdhani;font-weight:700;letter-spacing:.02em;font-size:14px}
+.hdr .k{color:#5ab4ff;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
+.hdr .sp{flex:1}.hdr .n{color:rgba(255,255,255,.5);font-size:12px}
+.hdr .ch{color:rgba(255,255,255,.8);font-size:12.5px}
+.prog{flex:none;margin:6px 28px 0;height:3px;border-radius:2px;background:rgba(255,255,255,.12)}
+.prog i{display:block;height:3px;border-radius:2px;background:#3aa0ff}
+.screen{flex:1;min-height:0;overflow:hidden;padding:14px 28px 12px;display:flex;flex-direction:column;gap:12px}
+.bar{flex:none;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(31,86,131,.96);border-top:1px solid rgba(255,255,255,.12)}
+.prev{border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:9px 16px;font-size:13.5px}
+.cta{background:#fff;color:#0f3a5c;border-radius:12px;padding:12px 26px;font-family:Rajdhani;font-weight:700;font-size:17px}
+.q{font-family:Rajdhani;font-weight:700;font-size:38px;line-height:1.02;letter-spacing:-.01em}
+.hint{font-size:15px;color:rgba(255,255,255,.72);line-height:1.35}
+.g2{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;min-height:0}
+.photo{position:relative;border-radius:16px;background-size:cover;background-position:center;min-height:0}
+.thumbs{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
+.thumbs i{width:46px;height:34px;border-radius:6px;border:2px solid rgba(255,255,255,.85);background-size:cover;background-position:center}
+.thumbs i.on{border-color:#fff;box-shadow:0 0 0 2px #3aa0ff}
+.lbl{font-family:Rajdhani;font-weight:600;font-size:19px;line-height:1.15}
+.lbl small{display:block;font-family:Montserrat;font-weight:400;font-size:13px;color:rgba(255,255,255,.6)}
+.panel{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+.fl{font-size:12.5px;color:rgba(255,255,255,.72)}
+.choice{border:2px solid rgba(255,255,255,.25);border-radius:12px;min-height:46px;display:flex;align-items:center;justify-content:center;font-family:Rajdhani;font-weight:600;font-size:18px;color:rgba(255,255,255,.85);text-align:center;padding:4px 10px;line-height:1.1}
+.choice.on{background:#fff;color:#0f3a5c;border-color:#fff}
+.choice.sm{min-height:40px;font-size:16px}
+.addc{font-size:13px;color:rgba(255,255,255,.7);text-decoration:underline;text-underline-offset:3px}
+.chg{display:grid;gap:7px}
+.chip{border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);padding:6px 10px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.chip .l{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.chip .v{font-family:Rajdhani;font-weight:600;font-size:16px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.g{border-color:rgba(52,211,153,.6);background:rgba(16,185,129,.16)}.chip.g .v{color:#6ee7b7}
+.chip.o{border-color:rgba(251,191,36,.6);background:rgba(245,158,11,.16)}.chip.o .v{color:#fcd34d}
+.legend{font-size:11px;color:rgba(255,255,255,.6);display:flex;justify-content:space-between;gap:10px}
+.legend b{font-weight:700}.legend .gk{color:#6ee7b7}.legend .ok{color:#fcd34d}
+.stl{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.big{font-family:Rajdhani;font-weight:700;font-size:54px;line-height:.95;letter-spacing:-.01em}
+.mid{font-family:Rajdhani;font-weight:700;font-size:28px;line-height:1}
+.sv{font-family:Rajdhani;font-weight:600;font-size:18px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.tone-g{color:#6ee7b7}.tone-o{color:#fcd34d}.tone-r{color:#fca5a5}
+.bg-g{background:#34d399}.bg-o{background:#fbbf24}.bg-r{background:#f87171}
+.guess{border-left:5px solid;padding:4px 0 4px 12px;display:flex;flex-direction:column;gap:2px}
+.guess.g{border-color:#34d399}.guess.o{border-color:#fbbf24}.guess.r{border-color:#f87171}
+.gap{font-size:14px;font-weight:600}
+.dcard{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.dcard.sel{border:2px solid #fff}
+.dcard .ph{height:84px;background-size:cover;background-position:center}
+.dcard .tx{padding:7px 10px;display:flex;flex-direction:column;gap:2px;font-size:12px}
+.wire{border:2px dashed rgba(255,255,255,.35);border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12.5px;color:rgba(255,255,255,.8);padding:6px}
+/* Documents (synthèse) */
+.doc{background:#fff;color:#27272a;font-family:Montserrat,Arial,sans-serif;border:1px solid #a1a1aa}
+.dk{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#64748b}
+.dcardw{border:1px solid #e4e4e7;background:#fafafa;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.pair{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.pair b{font-family:Rajdhani;font-size:17px}
+.gt-g{color:#047857}.gt-o{color:#b45309}.gt-r{color:#b91c1c}
+.gb-g{border-left:5px solid #10b981}.gb-o{border-left:5px solid #f59e0b}.gb-r{border-left:5px solid #ef4444}
+/* La frise */
+.band{position:relative}
+.band .line{position:absolute;left:0;right:0;height:3px;background:#e4e4e7}
+.band .pd{position:absolute;width:12px;height:12px;border-radius:50%;background:#a1a1aa;transform:translate(-50%,-50%)}
+.band .mk{position:absolute;display:flex;flex-direction:column;align-items:center;font-size:10.5px;line-height:1.15;white-space:nowrap;text-align:center}
+.band .mk b{font-size:11px}
+.band .tick{position:absolute;width:2px}
+.band .lab{position:absolute;font-size:10.5px;line-height:1.15;white-space:nowrap;text-align:center;padding:1px 3px;background:#fff}
+.band .lab b{display:block;font-size:11px}
+.ends{display:flex;justify-content:space-between;font-size:11.5px;color:#71717a;margin-top:2px}
+.clash{outline:2px solid #ef4444;background:#fee2e2 !important}
+</style></head><body><h1 class="sheet">M148 · 4 — « Pourquoi est-il toujours sur le marché ? » : l’écran le plus long du Live</h1><p class="sub">Mesuré le 08/11 : avant la révélation de la durée, l’écran dépasse de 578 px (1024 × 768), 526, 398 ; une fois la durée révélée (même écran), de 783, 731 et 989 px en portrait. Sept raisons en grands boutons, un rappel des prix, la grille, un commentaire ouvert.</p><div class="layout"><div class="col"><div class="rowf"><div><div class="ft"><span class="st av">AVANT</span>Durée révélée · 1024 × 768 (essai)</div><div class="avant"><img src="M148-avant/I08-comparable_duration-1024x768.jpg"><div class="fold" style="top:342px"><span>barre du bas : tout ce qui est dessous défile</span></div><div class="over">dépasse de 783 px</div></div></div><div><div class="ft"><span class="st ap">APRÈS</span>Tablette paysage · 1024 × 768</div><div class="scene" data-frame style="width:1024px;height:768px"><div class="hdr"><span class="ag">AGENCE HORIZON CÔTE D’AZUR</span><span class="k">Concurrent 1 sur 5 · étape 4 sur 4</span><span class="n">7 / 25</span><span class="sp"></span><span class="ch">Réglages</span><span class="ch">Clair</span><span class="ch">Plein écran</span><span class="ch">Quitter</span></div><div class="prog"><i style="width:28%"></i></div><div class="screen"><div><div class="q">Pourquoi est-il toujours sur le marché ?</div><div class="hint">La durée observée est révélée — qu’est-ce qui retient ce bien sur le marché ?</div></div><div class="g2" style="flex:1"><div style="display:flex;flex-direction:column;gap:7px"><div class="photo" style="height:236px;background-image:url(../../public/demo/photos/maison-03.jpg)"><div class="thumbs"><i class="on" style="background-image:url(../../public/demo/photos/maison-04.jpg)"></i><i class="" style="background-image:url(../../public/demo/photos/maison-05.jpg)"></i></div></div><div class="lbl">Maison · 5 pièces · 135 m² · Saint-Paul-de-Vence<small>Saint-Paul-de-Vence</small></div><div class="fl" style="font-size:13.5px">740 000 € · 5 481 €/m² · votre réponse <b class="tone-o">700 000 €</b> <span class="tone-o">(prix affiché 5,7 % au-dessus)</span> · sérieux : oui <i class="pin">3</i></div><div class="chg" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="chip "><span class="l">Surface</span><span class="v">135 m²</span></div><div class="chip "><span class="l">DPE</span><span class="v">C</span></div><div class="chip "><span class="l">Pièces</span><span class="v">5</span></div><div class="chip "><span class="l">Chambres</span><span class="v">4</span></div><div class="chip "><span class="l">État</span><span class="v">Bon</span></div><div class="chip "><span class="l">GES</span><span class="v">C</span></div><div class="chip "><span class="l">Extérieur</span><span class="v">Terrasse, Jardin</span></div><div class="chip "><span class="l">Stationnement</span><span class="v">Garage</span></div><div class="chip g"><span class="l">Exposition · pour vous</span><span class="v">Sud-Est</span></div></div></div><div style="display:flex;flex-direction:column;gap:10px"><div class="panel"><div style="display:flex;gap:28px"><div><span class="stl">Votre réponse</span><div class="mid">60 jours</div></div><div><span class="stl">Sur le marché depuis</span><div class="big" style="font-size:44px">35 jours</div></div></div><span class="fl">Soit 25 jours de moins que votre réponse. Historique de prix non disponible.</span></div><div class="panel" style="gap:7px"><span class="fl">Selon vous, pourquoi ?</span><div class="chg" style="grid-template-columns:repeat(2,1fr)"><div class="choice sm on">Prix trop élevé</div><div class="choice sm">État du bien</div><div class="choice sm">Travaux à prévoir</div><div class="choice sm">Forte concurrence</div><div class="choice sm">Manque de visibilité</div><div class="choice sm">Je ne sais pas</div><div class="choice sm">Autre</div></div><span class="addc">+ Ajouter un commentaire</span></div></div></div></div><div class="bar"><span class="prev">← Précédent</span><span class="cta">Valider et continuer →</span></div></div></div></div>
+     <div class="rowf"><div><div class="ft"><span class="st ap">APRÈS</span>Tablette portrait · 820 × 1180</div><div class="scene" data-frame style="width:820px;height:1180px"><div class="hdr"><span class="ag">AGENCE HORIZON CÔTE D’AZUR</span><span class="k">Concurrent 1 sur 5 · étape 4 sur 4</span><span class="n">7 / 25</span><span class="sp"></span><span class="ch">Réglages</span><span class="ch">Clair</span><span class="ch">Plein écran</span><span class="ch">Quitter</span></div><div class="prog"><i style="width:28%"></i></div><div class="screen"><div><div class="q">Pourquoi est-il toujours sur le marché ?</div><div class="hint">La durée observée est révélée — qu’est-ce qui retient ce bien sur le marché ?</div></div><div class="g2" style="grid-template-columns:1fr 1fr"><div style="display:flex;flex-direction:column;gap:6px"><div class="photo" style="height:250px;background-image:url(../../public/demo/photos/maison-03.jpg)"><div class="thumbs"><i class="on" style="background-image:url(../../public/demo/photos/maison-04.jpg)"></i><i class="" style="background-image:url(../../public/demo/photos/maison-05.jpg)"></i></div></div><div class="lbl" style="font-size:17px">Maison · 5 pièces · 135 m² · Saint-Paul-de-Vence</div></div><div class="panel" style="height:fit-content"><div><span class="stl">Votre réponse</span><div class="mid">60 jours</div></div><div><span class="stl">Sur le marché depuis</span><div class="big" style="font-size:46px">35 jours</div></div><span class="fl">Soit 25 jours de moins que votre réponse. Historique de prix non disponible.</span></div></div><div class="fl" style="font-size:13.5px">740 000 € · 5 481 €/m² · votre réponse <b class="tone-o">700 000 €</b> <span class="tone-o">(prix affiché 5,7 % au-dessus)</span> · sérieux : oui</div><div class="panel" style="gap:7px"><span class="fl">Selon vous, pourquoi ?</span><div class="chg" style="grid-template-columns:repeat(4,1fr)"><div class="choice sm on">Prix trop élevé</div><div class="choice sm">État du bien</div><div class="choice sm">Travaux à prévoir</div><div class="choice sm">Forte concurrence</div><div class="choice sm">Manque de visibilité</div><div class="choice sm">Je ne sais pas</div><div class="choice sm">Autre</div></div><span class="addc">+ Ajouter un commentaire</span></div><div class="legend"><span class="stl">Face à votre bien, critère par critère</span><span><b class="gk">vert</b> = avantage pour vous · <b>gris</b> = équivalent · <b class="ok">orange</b> = avantage pour lui</span></div><div class="chg" style="grid-template-columns:repeat(3,minmax(0,1fr))"><div class="chip "><span class="l">Surface</span><span class="v">135 m²</span></div><div class="chip "><span class="l">DPE</span><span class="v">C</span></div><div class="chip "><span class="l">Pièces</span><span class="v">5</span></div><div class="chip "><span class="l">Chambres</span><span class="v">4</span></div><div class="chip "><span class="l">État</span><span class="v">Bon</span></div><div class="chip "><span class="l">GES</span><span class="v">C</span></div><div class="chip "><span class="l">Extérieur</span><span class="v">Terrasse, Jardin</span></div><div class="chip "><span class="l">Stationnement</span><span class="v">Garage</span></div><div class="chip g"><span class="l">Exposition · pour vous</span><span class="v">Sud-Est</span></div></div></div><div class="bar"><span class="prev">← Précédent</span><span class="cta">Valider et continuer →</span></div></div></div></div></div><div class="notes"><div class="note"><b>Avant</b> (<code>live-page-duration.tsx</code>) : « Votre réponse 60 jours » et « 35 jours » l’un sous l’autre en très grand, les 7 raisons en boutons de 56 à 80 px sur 2 colonnes, un panneau de rappel (prix affiché, prix au m², votre réponse, sérieux), puis la grille en cartes.</div>
+     <div class="note"><b>Après</b> :<ol>
+     <li><i class="pin">1</i> Les deux durées côte à côte, la révélée plus grande.</li>
+     <li><i class="pin">2</i> Les 7 raisons en boutons compacts de 40 px (2 colonnes en paysage, 4 en portrait), libellés sur une ligne.</li>
+     <li><i class="pin">3</i> Le panneau de rappel devient une ligne sous le libellé, et la réponse au prix y garde sa couleur (point 2).</li>
+     <li><i class="pin">4</i> La grille en pastilles, 3 colonnes sous la photo en paysage.</li></ol></div>
+     <div class="note"><b>Avant la révélation</b> (le champ « depuis combien de temps ? » à la place des deux durées) : même disposition, le champ prend la place des deux durées.</div></div></div></body></html>

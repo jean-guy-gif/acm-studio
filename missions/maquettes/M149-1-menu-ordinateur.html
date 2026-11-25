@@ -1,0 +1,240 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M149 · 1 — Les titres du menu, sur ordinateur (1280, colonne de gauche)</title><style>
+@font-face{font-family:Montserrat;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2') format('woff2');font-weight:100 900}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-500.woff2') format('woff2');font-weight:500}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2') format('woff2');font-weight:600}
+@font-face{font-family:Rajdhani;src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2') format('woff2');font-weight:700}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}
+.sheet-sub{font-size:13px;color:#3f3f46;max-width:1700px;line-height:1.5}
+.layout{display:flex;gap:26px;align-items:flex-start}
+.col{display:flex;flex-direction:column}
+.frame-title{font-size:13px;font-weight:800;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff}
+.st.av{background:#71717a}.st.ap{background:#12875a}.st.alt{background:#7c5cbf}
+.frame{background:#fafafa;border:1px solid #a1a1aa;overflow:hidden;position:relative}
+.desk{width:560px;height:820px;display:flex}
+.side{width:256px;flex:none;background:#fff;border-right:1px solid #e4e4e7;padding:24px 20px;display:flex;flex-direction:column;gap:32px}
+.sidebody{display:flex;flex-direction:column;justify-content:space-between;flex:1}
+.logo{display:flex;align-items:center;gap:6px;color:#00527a}
+.logo span{display:flex;flex-direction:column;line-height:1}
+.logo b{font-size:15px;font-weight:800;letter-spacing:.08em}.logo i{font-style:normal;font-size:7px;font-weight:600;letter-spacing:.2em;color:#00527a;margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:6px}
+.group{display:flex;flex-direction:column;gap:6px}
+.item{display:flex;flex-direction:column;border-radius:12px;padding:8px 14px}
+.item .il{display:flex;justify-content:space-between;align-items:center;font-family:Rajdhani,Montserrat,sans-serif;font-size:16px;font-weight:500;color:#52525b}
+.item .ih{font-size:12px;color:#71717a}
+.item.active{background:#eaf5ff}.item.active .il{color:#00527a;font-weight:600}.item.active .ih{color:rgba(0,82,122,.6)}
+.badge{border-radius:999px;background:#ea580c;color:#fff;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;padding:1px 8px}
+/* AVANT : le code d'aujourd'hui */
+.v-avant .gt{padding:12px 14px 0;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a}
+/* APRÈS A et B */
+.v-A .group:not(.first),.v-B .group:not(.first){border-top:1px solid #e4e4e7;margin-top:12px;padding-top:14px}
+.v-A .gt,.v-B .gt{display:flex;align-items:center;gap:8px;padding:0 14px 2px;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#00527a}
+.account{display:flex;align-items:center;gap:10px;border:1px solid #e4e4e7;border-radius:12px;padding:10px 12px;background:#fff}
+.avatar{width:34px;height:34px;border-radius:999px;background:#eaf5ff;color:#00527a;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none}
+.who{display:flex;flex-direction:column;font-size:11px;color:#71717a;min-width:0;flex:1}.who b{font-size:12.5px;color:#18181b}
+.who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{color:#71717a;font-size:12px}
+.pagezone{flex:1;padding:40px 30px;display:flex;flex-direction:column;gap:12px}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.14em;color:#71717a;text-transform:uppercase}
+.ptitle{font-family:Rajdhani,Montserrat,sans-serif;font-size:34px;font-weight:700;color:#00527a;line-height:1}
+.stub{height:10px;border-radius:5px;background:#e4e4e7}.w40{width:40%}.w50{width:50%}.w60{width:60%}.w70{width:70%}.w80{width:80%}
+.cardstub{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.phone{width:390px;height:820px;display:flex;flex-direction:column;background:#fff}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #e4e4e7}
+.topbar .logo{flex:1}
+.pbadge{border-radius:999px;background:#ea580c;color:#fff;font-size:12px;font-weight:700;padding:1px 8px}
+.burger{width:40px;height:40px;border:1px solid #e4e4e7;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#3f3f46}
+.panel{padding:12px 16px 4px;display:flex;flex-direction:column;gap:16px;border-bottom:1px solid #e4e4e7}
+.phone .nav,.phone .group{gap:4px}
+.phone .item{padding:7px 14px}
+.under{padding:14px 16px;font-size:12px;color:#a1a1aa;background:#fafafa;flex:1}
+.notes{display:flex;flex-direction:column;gap:12px;width:390px}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5;color:#5b4a00}
+.note ul{margin:4px 0 0 16px}.note code{font-size:11px;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+</style></head><body>
+<h1 class="sheet">M149 · 1 — Les titres du menu, sur ordinateur (1280, colonne de gauche)</h1><p class="sheet-sub">Avant, puis les deux variantes. Les entrées et leurs sous-titres ne changent pas ; « Suivi » est l’entrée choisie. À droite, le début de la page, pour l’échelle.</p>
+<div class="layout"><div class="col"><div class="frame-title"><span class="st av">AVANT</span>aujourd’hui · Ordinateur</div>
+  <div class="frame desk">
+    <aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><div class="sidebody"><nav class="nav v-avant">
+    <div class="group first">
+      
+      
+  <a class="item">
+    <span class="il">Aujourd’hui<span class="badge">7</span></span>
+    <span class="ih">Ce qu’il y a à faire</span>
+  </a>
+    </div>
+    <div class="group">
+      <span class="gt"><span>Vendeurs</span></span>
+      
+  <a class="item">
+    <span class="il">Préparation</span>
+    <span class="ih">Dossiers vendeurs</span>
+  </a>
+  <a class="item">
+    <span class="il">Live</span>
+    <span class="ih">Rendez-vous vendeur</span>
+  </a>
+  <a class="item active">
+    <span class="il">Suivi</span>
+    <span class="ih">Après le rendez-vous</span>
+  </a>
+    </div>
+    <div class="group later">
+      <span class="gt"><span>Acquéreurs</span></span>
+      
+  <a class="item">
+    <span class="il">Acquéreurs</span>
+    <span class="ih">Ce que chacun cherche</span>
+  </a>
+  <a class="item">
+    <span class="il">Visites</span>
+    <span class="ih">À planifier, faites, retours</span>
+  </a>
+    </div>
+    <div class="group later">
+      <span class="gt"><span>Les deux</span></span>
+      
+  <a class="item">
+    <span class="il">Prospection</span>
+    <span class="ih">Courriers et passages</span>
+  </a>
+    </div></nav>
+  <div class="account"><span class="avatar">CM</span><span class="who"><b>Claire Martin</b><span>claire.martin@example.com</span><span>Agence Horizon Côte d’Azur</span></span><span class="chev">⌃</span></div></div></aside>
+    
+  <div class="pagezone">
+    <span class="kicker">Après le rendez-vous</span>
+    <span class="ptitle">Suivi</span>
+    <div class="stub w60"></div>
+    <div class="cardstub"><div class="stub w40"></div><div class="stub w80"></div><div class="stub w70"></div></div>
+    <div class="cardstub"><div class="stub w50"></div><div class="stub w80"></div></div>
+  </div>
+  </div></div><div class="col"><div class="frame-title"><span class="st ap">APRÈS · A</span>typographique · Ordinateur</div>
+  <div class="frame desk">
+    <aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><div class="sidebody"><nav class="nav v-A">
+    <div class="group first">
+      
+      
+  <a class="item">
+    <span class="il">Aujourd’hui<span class="badge">7</span></span>
+    <span class="ih">Ce qu’il y a à faire</span>
+  </a>
+    </div>
+    <div class="group">
+      <span class="gt"><span>Vendeurs</span></span>
+      
+  <a class="item">
+    <span class="il">Préparation</span>
+    <span class="ih">Dossiers vendeurs</span>
+  </a>
+  <a class="item">
+    <span class="il">Live</span>
+    <span class="ih">Rendez-vous vendeur</span>
+  </a>
+  <a class="item active">
+    <span class="il">Suivi</span>
+    <span class="ih">Après le rendez-vous</span>
+  </a>
+    </div>
+    <div class="group later">
+      <span class="gt"><span>Acquéreurs</span></span>
+      
+  <a class="item">
+    <span class="il">Acquéreurs</span>
+    <span class="ih">Ce que chacun cherche</span>
+  </a>
+  <a class="item">
+    <span class="il">Visites</span>
+    <span class="ih">À planifier, faites, retours</span>
+  </a>
+    </div>
+    <div class="group later">
+      <span class="gt"><span>Les deux</span></span>
+      
+  <a class="item">
+    <span class="il">Prospection</span>
+    <span class="ih">Courriers et passages</span>
+  </a>
+    </div></nav>
+  <div class="account"><span class="avatar">CM</span><span class="who"><b>Claire Martin</b><span>claire.martin@example.com</span><span>Agence Horizon Côte d’Azur</span></span><span class="chev">⌃</span></div></div></aside>
+    
+  <div class="pagezone">
+    <span class="kicker">Après le rendez-vous</span>
+    <span class="ptitle">Suivi</span>
+    <div class="stub w60"></div>
+    <div class="cardstub"><div class="stub w40"></div><div class="stub w80"></div><div class="stub w70"></div></div>
+    <div class="cardstub"><div class="stub w50"></div><div class="stub w80"></div></div>
+  </div>
+  </div></div><div class="col"><div class="frame-title"><span class="st alt">APRÈS · B</span>typographique + icône · Ordinateur</div>
+  <div class="frame desk">
+    <aside class="side"><span class="logo"><svg width="30" height="20" viewBox="6 20 52 34"><path d="M18 34a14 14 0 0 1 28 0z" fill="#e8a33d"/><path d="M8 36h48" stroke="#00527a" stroke-width="3.2" stroke-linecap="round"/><path d="M12 43c4-2.6 8-2.6 12 0s8 2.6 12 0 8-2.6 12 0" fill="none" stroke="#00527a" stroke-width="2.6" stroke-linecap="round"/></svg><span><b>HORIZON</b><i>CÔTE D’AZUR</i></span></span><div class="sidebody"><nav class="nav v-B">
+    <div class="group first">
+      
+      
+  <a class="item">
+    <span class="il">Aujourd’hui<span class="badge">7</span></span>
+    <span class="ih">Ce qu’il y a à faire</span>
+  </a>
+    </div>
+    <div class="group">
+      <span class="gt"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"/></svg><span>Vendeurs</span></span>
+      
+  <a class="item">
+    <span class="il">Préparation</span>
+    <span class="ih">Dossiers vendeurs</span>
+  </a>
+  <a class="item">
+    <span class="il">Live</span>
+    <span class="ih">Rendez-vous vendeur</span>
+  </a>
+  <a class="item active">
+    <span class="il">Suivi</span>
+    <span class="ih">Après le rendez-vous</span>
+  </a>
+    </div>
+    <div class="group later">
+      <span class="gt"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c.8-3.5 3.3-5.4 6.2-5.4s5.4 1.9 6.2 5.4"/><circle cx="17.4" cy="9" r="2.5"/><path d="M16.6 14.5c2.5.3 4.1 2 4.7 5.5"/></svg><span>Acquéreurs</span></span>
+      
+  <a class="item">
+    <span class="il">Acquéreurs</span>
+    <span class="ih">Ce que chacun cherche</span>
+  </a>
+  <a class="item">
+    <span class="il">Visites</span>
+    <span class="ih">À planifier, faites, retours</span>
+  </a>
+    </div>
+    <div class="group later">
+      <span class="gt"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h15.5M16 4.5 19.5 8 16 11.5M20 16H4.5M8 12.5 4.5 16 8 19.5"/></svg><span>Les deux</span></span>
+      
+  <a class="item">
+    <span class="il">Prospection</span>
+    <span class="ih">Courriers et passages</span>
+  </a>
+    </div></nav>
+  <div class="account"><span class="avatar">CM</span><span class="who"><b>Claire Martin</b><span>claire.martin@example.com</span><span>Agence Horizon Côte d’Azur</span></span><span class="chev">⌃</span></div></div></aside>
+    
+  <div class="pagezone">
+    <span class="kicker">Après le rendez-vous</span>
+    <span class="ptitle">Suivi</span>
+    <div class="stub w60"></div>
+    <div class="cardstub"><div class="stub w40"></div><div class="stub w80"></div><div class="stub w70"></div></div>
+    <div class="cardstub"><div class="stub w50"></div><div class="stub w80"></div></div>
+  </div>
+  </div></div>
+  <div class="notes">
+    <div class="note"><b>Le constat</b> — aujourd’hui le titre fait 11 px, gris (4,8:1), au même gris que les sous-titres des entrées (« Dossiers vendeurs »…) et 4 px plus petit qu’elles : l’œil le lit comme une légende, pas comme un repère. Seuls 12 px le séparent de l’entrée du dessus, sans filet.</div>
+    <div class="note"><b>A, typographique</b>
+      <ul>
+        <li>Titre : 13 px (au lieu de 11), extra-gras, capitales espacées, dans la couleur foncée de l’agence (<code>brand-deep</code>, 8,4:1 sur blanc avec la charte par défaut ; toute charte est ramenée à ≥ 4,5:1 par <code>ensureTextContrast</code>, M143).</li>
+        <li>Un filet fin (1 px, zinc-200) au-dessus de chaque groupe, 12 px d’air au-dessus du filet, 14 px entre le filet et le titre (aujourd’hui : 12 px, sans filet).</li>
+        <li>Rien d’autre ne bouge : les entrées, leurs sous-titres, la pastille d’« Aujourd’hui », l’entrée choisie en bleu clair.</li>
+      </ul>
+    </div>
+    <div class="note"><b>B, avec une icône</b> — la même chose, plus une icône de trait de 17 px (16 sur téléphone), dans la même couleur, devant le titre : une maison pour « Vendeurs », deux personnes pour « Acquéreurs », deux flèches qui se croisent pour « Les deux ». Tracées en SVG dans le code (aucune bibliothèque ajoutée), masquées aux lecteurs d’écran.</div>
+    <div class="note"><b>Mode sombre</b> (« Sombre » de la carte du conseiller) — le titre passe dans la couleur claire de l’agence (<code>brand</code>, 7,1:1 sur le fond sombre), le filet en blanc à 10 %.</div>
+    <div class="note"><b>Téléphone</b> — le menu ☰ ouvert : la même règle ; les entrées n’y ont pas de sous-titre (inchangé), le filet et le titre suffisent à séparer les groupes. Le menu s’allonge d’environ 57 px (mesuré sur la planche), sur téléphone comme sur ordinateur ; il tient toujours dans l’écran.</div>
+    <div class="note"><b>Ma recommandation : A.</b> La couleur, la taille et le filet suffisent à faire voir les groupes ; les icônes ajoutent trois dessins à apprendre pour trois mots déjà courts, et « Les deux » n’a pas d’icône évidente.</div>
+  </div></div></body></html>

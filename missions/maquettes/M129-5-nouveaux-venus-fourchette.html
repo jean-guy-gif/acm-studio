@@ -1,0 +1,101 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M129-5 · Nouveaux venus : fourchette, coût, mention</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:24px;align-items:flex-start}
+.frame-title{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px}
+.frame{background:#fafafa;position:relative;overflow:hidden;border:1px solid #a1a1aa}
+.desk{width:1280px;height:800px;display:flex}
+.phone{width:390px;height:844px;background:#fff}
+.a4{width:794px;height:1123px;background:#fff;padding:46px 53px;position:relative}
+.side{width:232px;height:100%;background:#fff;border-right:1px solid #e4e4e7;padding:20px 12px;display:flex;flex-direction:column;gap:6px;flex:none}
+.switch{display:flex;background:#f4f4f5;border-radius:16px;padding:2px;margin:0 8px 14px}
+.switch span{flex:1;text-align:center;font-size:12px;font-weight:600;color:#71717a;padding:6px 0;border-radius:14px}
+.switch .on{background:#00527a;color:#fff;font-weight:700}
+.nav{padding:8px 16px;border-radius:10px}
+.nav b{display:block;font-size:14px}
+.nav small{font-size:11px;color:#71717a}
+.nav.on{background:#e8f1f8}.nav.on b{color:#00527a}
+.account{margin-top:auto;border:1px solid #e4e4e7;border-radius:10px;padding:10px 16px}
+.account b{font-size:12px;display:block}.account small{font-size:10.5px;color:#71717a}
+.main{flex:1;padding:26px 32px;overflow:hidden;display:flex;flex-direction:column;gap:14px}
+.h1{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:28px;font-weight:700}
+.sub{font-size:12.5px;color:#71717a;margin-top:-10px}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:14px;border-left:6px solid #059669;overflow:hidden}
+.row-head{padding:14px 18px 10px;display:flex;flex-direction:column;gap:6px}
+.name{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:17px;font-weight:700;display:flex;gap:10px;align-items:center}
+.pill{font-family:Montserrat,Inter,Arial,sans-serif;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px}
+.meta{font-size:12px;color:#71717a}
+.kick{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#71717a}
+.actions{display:flex;gap:12px;align-items:center;padding:4px 18px 12px;flex-wrap:wrap}
+.btn{font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;border:1.5px solid #00527a;color:#00527a;background:#fff;white-space:nowrap}
+.btn.full{background:#00527a;color:#fff}
+.btn.sm{font-size:12px;padding:6px 12px}
+.btn.off{opacity:.45}
+.txt{font-size:12.5px;font-weight:600;color:#00527a;white-space:nowrap}
+.zone{border-top:1px solid #f4f4f5;padding:10px 18px;display:flex;flex-direction:column;gap:8px}
+.verdict{display:flex;gap:14px;align-items:flex-start;border:1.5px solid;border-radius:12px;padding:12px 16px}
+.verdict .ico{width:34px;height:34px;border-radius:50%;color:#fff;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;flex:none}
+.verdict .t{font-weight:800;font-size:17px}
+.verdict p{font-size:12.5px;line-height:1.45;margin-top:3px;color:#27272a}
+.steps{display:flex;align-items:stretch;gap:6px}
+.step{flex:1;border:1px solid #e4e4e7;border-radius:10px;padding:8px 12px;background:#fff;display:flex;flex-direction:column;gap:5px}
+.step .k{font-size:9.5px;font-weight:700;letter-spacing:.05em;white-space:nowrap;color:#71717a;text-transform:uppercase}
+.step .r{font-weight:800;font-size:22px;line-height:1}
+.step .r sup{font-size:12px}
+.step .r small{font-size:13px;color:#71717a;font-weight:700;margin-left:5px}
+.step .none{font-size:12px;color:#71717a;border:1px dashed #d4d4d8;border-radius:8px;padding:8px;text-align:center}
+.step .hint{font-size:10.5px;color:#71717a}
+.arrow{align-self:center;color:#a1a1aa;font-size:16px}
+.ruler{display:flex;gap:3px;align-items:center;height:14px}
+.ruler i{flex:1;height:9px;border-radius:3px;display:block}
+.ruler i.me{height:14px;border:2px solid #18181b}
+.note{font-size:11.5px;color:#71717a;line-height:1.45}
+.lecture{position:absolute;right:16px;bottom:16px;width:360px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.45;color:#57534e}
+.lecture b{color:#92400e}
+.radio{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid #e4e4e7;border-radius:9px;font-size:12.5px;background:#fff}
+.radio .dot{width:15px;height:15px;border-radius:50%;border:2px solid #a1a1aa;flex:none}
+.radio.sel{border-color:#b8892b;background:#fbf4e4}
+.radio.sel .dot{border:5px solid #b8892b}
+.radio .pr{margin-left:auto;font-weight:700}
+.tag{font-size:9.5px;font-weight:800;letter-spacing:.08em;padding:2px 7px;border-radius:5px;text-transform:uppercase;white-space:nowrap}
+.tag.new{background:#e6ecfa;color:#1b2f6e}
+.tag.gold{background:#b8892b;color:#fff}
+.tag.goldline{border:1px solid #b8892b;color:#b8892b}
+.msg{font-size:12px;padding:7px 10px;border-radius:8px}
+.msg.err{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.msg.ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+.msg.warn{background:#fbf4e4;color:#713f12;border:1px solid #e9d5a6}
+</style></head><body><section><div class="frame-title">M129-5 a · Suivi 1280 × 800 · proposition de recherche (fourchette et coût annoncés avant), puis résultats élargis</div><div class="frame desk"><aside class="side"><div class="switch"><span class="on">Vendeur</span><span>Acquéreur</span></div>
+<div class="nav"><b>Préparation</b><small>Dossiers vendeurs</small></div>
+<div class="nav"><b>Live</b><small>Rendez-vous vendeur</small></div>
+<div class="nav on"><b>Suivi</b><small>Après le rendez-vous</small></div>
+<div class="nav"><b>Prospection</b><small>Concurrents à démarcher</small></div>
+<div class="account"><b>Natacha Morel</b><small>Mon compte et l’agence ▾</small></div></aside><div class="main"><div class="h1">Suivi</div>
+<div class="card"><div class="row-head">
+<div class="name">M. Lefebvre <span class="pill" style="background:#ecfdf5;color:#059669">Mandat signé</span><span class="pill" style="background:#e8f1f8;color:#00527a">Exclusif</span></div>
+<div class="meta">Maison · 7 pièces · 210 m² · Mougins · conclu le 15/10 · Durée du Live : 48 min</div>
+<div style="display:flex;gap:28px;align-items:baseline"><span class="kick">Le chemin parcouru</span><span style="font-size:13px;font-weight:700">1 774 500 € → 1 690 000 € → 1 639 500 €</span><span style="font-size:12px;font-weight:700;color:#059669">−8 %</span><span class="kick">Prêt à lancer</span><span style="font-size:13px;font-weight:700">7 → 10/10</span></div>
+</div>
+<div class="actions"><span class="btn ">Prospecter · 5 concurrents →</span><span class="meta">1 remis · 1 adresse à confirmer · 1 ne plus solliciter</span><span class="btn">Mettre à jour les concurrents</span><span class="txt">Voir le détail des prix ▾</span><span class="txt">Changer l’issue</span></div><div class="zone" style="gap:10px">
+<div style="border:1px solid #e4e4e7;border-left:5px solid #059669;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;background:#fff">
+<b style="font-size:15px">Chercher les nouveaux venus sur le marché ?</b>
+<p style="font-size:12.5px;line-height:1.5">Les biens vus sur le marché depuis le 15/10, avec les critères du dossier, <b>de 1 557 000 € à 1 639 500 €</b> (jusqu’à 5 % sous le prix de commercialisation). S’il y en a moins de 3, la recherche s’élargit <b>à partir de 1 475 000 €</b> (jusqu’à 10 % sous). Sans ceux déjà retenus ou écartés.</p>
+<p style="font-size:12.5px"><b>Recherche payante : jusqu’à 0,60 €, 1,20 € si la recherche s’élargit.</b></p>
+<div style="display:flex;gap:14px;align-items:center"><span class="btn full">Chercher les nouveaux venus</span><span class="txt" style="color:#71717a">Pas maintenant</span></div>
+</div></div><div class="zone" style="gap:8px">
+<b style="font-size:14px">Nouveaux sur le marché depuis le rendez-vous</b>
+<span class="meta">2 trouvés de 1 475 000 € à 1 639 500 € · recherche élargie à 10 % sous le prix de commercialisation (1 seul bien jusqu’à 5 %) · 40 annonces facturées (0,40 €) · critères du dossier · vus sur le marché après le 15/10</span>
+<span class="meta">3 biens sous 1 475 000 € : non proposés · 2 annonces en vente avant le rendez-vous : non proposées</span>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="border:1px solid #e4e4e7;border-radius:10px;padding:10px 12px;font-size:12.5px;background:#fff"><b>Maison · 7 pièces · 200 m² · Mougins</b><br>1 620 000 € · 8 100 €/m²<br><span style="color:#00527a;font-weight:600">Vu sur le marché depuis le 24/10</span><div style="margin-top:6px;display:flex;gap:10px"><span class="btn sm">Retenir</span><span class="txt" style="color:#71717a">Écarter</span></div></div>
+<div style="border:1px solid #e4e4e7;border-radius:10px;padding:10px 12px;font-size:12.5px;background:#fff"><b>Maison · 6 pièces · 190 m² · Mougins</b><br>1 495 000 € · 7 868 €/m²<br><span style="color:#00527a;font-weight:600">Vu sur le marché depuis le 21/10</span><div style="margin-top:6px;display:flex;gap:10px"><span class="btn sm">Retenir</span><span class="txt" style="color:#71717a">Écarter</span></div></div></div></div></div>
+<div class="lecture" style="width:330px;bottom:12px"><b>Lecture.</b> La proposition et les résultats ne sont pas à l’écran en même temps : montrés ensemble pour les textes. Bornes au millier : plancher arrondi au millier INFÉRIEUR, le même dans la requête et à l’écran (1 557 525 → 1 557 000 ; 1 475 550 → 1 475 000). Pendant : « Recherche en cours… · Jusqu’à 1,20 € réservés sur le budget du mois ; la part non utilisée est rendue. »</div></div></div></section>
+<section><div class="frame-title">M129-5 b · Document et lien · la fourchette cherchée, et la mention « en vente avant le rendez-vous, non montré alors »</div><div class="frame a4"><div style="display:flex;flex-direction:column;gap:14px">
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Étape 3 de « Où en est votre prix », sous « 4e sur 6 »</div>
+<div style="border:1px solid #d9822b;background:#fcf0e2;border-radius:10px;padding:10px 14px;width:330px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Avec les nouveaux venus</div><div style="font-weight:800;font-size:28px;color:#d9822b">4<sup style="font-size:14px">e</sup> <small style="font-size:16px;color:#71717a">sur 6</small></div><div class="ruler"><i class="" style="background:#b8dccb"></i><i class="" style="background:#b8dccb"></i><i class="" style="background:#f3d6b6"></i><i class="me" style="background:#d9822b"></i><i class="" style="background:#edc3bf"></i><i class="" style="background:#edc3bf"></i></div><div style="font-size:11px;color:#71717a;margin-top:5px">cherchés de 1 475 000 € à 1 639 500 €</div></div>
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Pour lire ce document (dernière page), une phrase ajoutée</div>
+<p style="font-size:13px;line-height:1.5;max-width:640px">Les nouveaux venus ont été cherchés de 1 475 000 € à 1 639 500 €, soit jusqu’à 10 % sous votre prix, avec les critères de votre bien, parmi les annonces vues sur le marché après le rendez-vous.</p>
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Un bien retenu à tort (Biot, vu sur le marché depuis le 17/06/2025) · exemple de forme</div>
+<div style="border:1px solid #e4e4e7;border-top:3px solid #00527a;padding:12px 14px;max-width:640px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Retenu après le rendez-vous · en vente avant le rendez-vous, non montré alors</div><div style="font-family:Rajdhani,Montserrat,Arial;font-size:20px;font-weight:700;color:#013a58">Maison · 5 pièces · 110 m² · Biot</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-top:8px"><div style="border:1px solid #e4e4e7;padding:8px 10px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">En vente depuis le</div><b style="font-size:15px">17/06/2025</b><div style="color:#71717a">non montré au rendez-vous</div></div><div style="border:1px solid #e4e4e7;padding:8px 10px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Prix affiché</div><b style="font-size:18px">798 000 €</b></div></div>
+<p style="font-size:12px;color:#71717a;margin-top:8px">Il n’entre ni dans les trois étapes ni dans le classement.</p></div>
+<p style="font-size:12px;color:#71717a;max-width:640px">Sur le Suivi, sa ligne dit : « Concurrent 7 · Maison · 5 pièces · 110 m² · Biot » · « En vente avant le rendez-vous, non montré alors · 798 000 € ». Rien n’est effacé ; il reste retenu.</p></div></div></section></body></html>

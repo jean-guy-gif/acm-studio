@@ -1,0 +1,102 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M148 · 6 — La synthèse au vendeur : le même code couleur sur chaque concurrent deviné</title><style>
+@font-face{font-family:Rajdhani;font-weight:600;src:url(../../src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2)}
+@font-face{font-family:Rajdhani;font-weight:700;src:url(../../src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2)}
+@font-face{font-family:Montserrat;font-weight:100 900;src:url(../../src/features/branding/fonts/montserrat/montserrat-latin.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}
+.sub{font-size:13px;color:#3f3f46;max-width:1700px;line-height:1.5}
+.layout{display:flex;gap:28px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:22px}
+.rowf{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.ft{font-size:13px;font-weight:800;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff}
+.st.av{background:#71717a}.st.ap{background:#12875a}
+.notes{width:430px;display:flex;flex-direction:column;gap:12px;flex:none}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#3a3000}
+.note b{color:#5b4a00}.note ol,.note ul{padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.note code{font-size:11.5px;background:#fff8d6;padding:0 3px;border-radius:3px}
+.pin{display:inline-flex;width:18px;height:18px;border-radius:50%;background:#e8cf5a;color:#5b4a00;font-size:10.5px;font-weight:800;align-items:center;justify-content:center;flex:none;font-style:normal;font-family:Montserrat}
+.avant{position:relative;width:512px;border:1px solid #a1a1aa;background:#1c4a72}
+.avant img{display:block;width:512px}
+.fold{position:absolute;left:0;right:0;border-top:3px solid #ef4444}
+.fold span{position:absolute;right:4px;top:-22px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px}
+.over{position:absolute;left:4px;bottom:6px;background:#ef4444;color:#fff;font-size:12px;font-weight:800;padding:3px 8px;border-radius:5px}
+/* La scène du Live */
+.scene{position:relative;overflow:hidden;color:#fff;background:linear-gradient(135deg,#2a6596 0%,#1f5683 45%,#173f63 100%);font-family:Montserrat,Arial,sans-serif;display:flex;flex-direction:column;border:1px solid #52525b}
+.scene.overflowing{outline:6px solid #ef4444}
+.hdr{flex:none;display:flex;align-items:center;gap:14px;padding:12px 28px 0;height:46px;font-size:13px}
+.hdr .ag{font-family:Rajdhani;font-weight:700;letter-spacing:.02em;font-size:14px}
+.hdr .k{color:#5ab4ff;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
+.hdr .sp{flex:1}.hdr .n{color:rgba(255,255,255,.5);font-size:12px}
+.hdr .ch{color:rgba(255,255,255,.8);font-size:12.5px}
+.prog{flex:none;margin:6px 28px 0;height:3px;border-radius:2px;background:rgba(255,255,255,.12)}
+.prog i{display:block;height:3px;border-radius:2px;background:#3aa0ff}
+.screen{flex:1;min-height:0;overflow:hidden;padding:14px 28px 12px;display:flex;flex-direction:column;gap:12px}
+.bar{flex:none;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(31,86,131,.96);border-top:1px solid rgba(255,255,255,.12)}
+.prev{border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:9px 16px;font-size:13.5px}
+.cta{background:#fff;color:#0f3a5c;border-radius:12px;padding:12px 26px;font-family:Rajdhani;font-weight:700;font-size:17px}
+.q{font-family:Rajdhani;font-weight:700;font-size:38px;line-height:1.02;letter-spacing:-.01em}
+.hint{font-size:15px;color:rgba(255,255,255,.72);line-height:1.35}
+.g2{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;min-height:0}
+.photo{position:relative;border-radius:16px;background-size:cover;background-position:center;min-height:0}
+.thumbs{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
+.thumbs i{width:46px;height:34px;border-radius:6px;border:2px solid rgba(255,255,255,.85);background-size:cover;background-position:center}
+.thumbs i.on{border-color:#fff;box-shadow:0 0 0 2px #3aa0ff}
+.lbl{font-family:Rajdhani;font-weight:600;font-size:19px;line-height:1.15}
+.lbl small{display:block;font-family:Montserrat;font-weight:400;font-size:13px;color:rgba(255,255,255,.6)}
+.panel{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+.fl{font-size:12.5px;color:rgba(255,255,255,.72)}
+.choice{border:2px solid rgba(255,255,255,.25);border-radius:12px;min-height:46px;display:flex;align-items:center;justify-content:center;font-family:Rajdhani;font-weight:600;font-size:18px;color:rgba(255,255,255,.85);text-align:center;padding:4px 10px;line-height:1.1}
+.choice.on{background:#fff;color:#0f3a5c;border-color:#fff}
+.choice.sm{min-height:40px;font-size:16px}
+.addc{font-size:13px;color:rgba(255,255,255,.7);text-decoration:underline;text-underline-offset:3px}
+.chg{display:grid;gap:7px}
+.chip{border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);padding:6px 10px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.chip .l{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.chip .v{font-family:Rajdhani;font-weight:600;font-size:16px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.g{border-color:rgba(52,211,153,.6);background:rgba(16,185,129,.16)}.chip.g .v{color:#6ee7b7}
+.chip.o{border-color:rgba(251,191,36,.6);background:rgba(245,158,11,.16)}.chip.o .v{color:#fcd34d}
+.legend{font-size:11px;color:rgba(255,255,255,.6);display:flex;justify-content:space-between;gap:10px}
+.legend b{font-weight:700}.legend .gk{color:#6ee7b7}.legend .ok{color:#fcd34d}
+.stl{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.big{font-family:Rajdhani;font-weight:700;font-size:54px;line-height:.95;letter-spacing:-.01em}
+.mid{font-family:Rajdhani;font-weight:700;font-size:28px;line-height:1}
+.sv{font-family:Rajdhani;font-weight:600;font-size:18px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.tone-g{color:#6ee7b7}.tone-o{color:#fcd34d}.tone-r{color:#fca5a5}
+.bg-g{background:#34d399}.bg-o{background:#fbbf24}.bg-r{background:#f87171}
+.guess{border-left:5px solid;padding:4px 0 4px 12px;display:flex;flex-direction:column;gap:2px}
+.guess.g{border-color:#34d399}.guess.o{border-color:#fbbf24}.guess.r{border-color:#f87171}
+.gap{font-size:14px;font-weight:600}
+.dcard{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.dcard.sel{border:2px solid #fff}
+.dcard .ph{height:84px;background-size:cover;background-position:center}
+.dcard .tx{padding:7px 10px;display:flex;flex-direction:column;gap:2px;font-size:12px}
+.wire{border:2px dashed rgba(255,255,255,.35);border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12.5px;color:rgba(255,255,255,.8);padding:6px}
+/* Documents (synthèse) */
+.doc{background:#fff;color:#27272a;font-family:Montserrat,Arial,sans-serif;border:1px solid #a1a1aa}
+.dk{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#64748b}
+.dcardw{border:1px solid #e4e4e7;background:#fafafa;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.pair{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.pair b{font-family:Rajdhani;font-size:17px}
+.gt-g{color:#047857}.gt-o{color:#b45309}.gt-r{color:#b91c1c}
+.gb-g{border-left:5px solid #10b981}.gb-o{border-left:5px solid #f59e0b}.gb-r{border-left:5px solid #ef4444}
+/* La frise */
+.band{position:relative}
+.band .line{position:absolute;left:0;right:0;height:3px;background:#e4e4e7}
+.band .pd{position:absolute;width:12px;height:12px;border-radius:50%;background:#a1a1aa;transform:translate(-50%,-50%)}
+.band .mk{position:absolute;display:flex;flex-direction:column;align-items:center;font-size:10.5px;line-height:1.15;white-space:nowrap;text-align:center}
+.band .mk b{font-size:11px}
+.band .tick{position:absolute;width:2px}
+.band .lab{position:absolute;font-size:10.5px;line-height:1.15;white-space:nowrap;text-align:center;padding:1px 3px;background:#fff}
+.band .lab b{display:block;font-size:11px}
+.ends{display:flex;justify-content:space-between;font-size:11.5px;color:#71717a;margin-top:2px}
+.clash{outline:2px solid #ef4444;background:#fee2e2 !important}
+</style></head><body><h1 class="sheet">M148 · 6 — La synthèse au vendeur : le même code couleur sur chaque concurrent deviné</h1><p class="sub">Section « Les biens que nous avons regardés ensemble » (M113), à l’écran (lien public, 794 px = A4) et sur téléphone ; le PDF est l’impression de la même page. Démo de Vence, devinettes du Live du 08/11.</p><div class="layout"><div class="col"><div class="rowf"><div><div class="ft"><span class="st av">AVANT</span>Synthèse, fiche d’un concurrent (le code de main)</div><div class="doc" style="width:420px;padding:16px;display:flex;flex-direction:column;gap:8px"><div class="dcardw"><span class="dk">Le prix</span><div class="pair"><span>Vous imaginiez</span><b>700 000 €</b></div><div class="pair"><span>Prix affiché</span><b>740 000 €</b></div><div style="font-size:12.5px;font-weight:700;color:#013a58">+5,7 % par rapport à votre réponse · 5 481 €/m²</div></div></div></div></div><div class="rowf"><div><div class="ft"><span class="st ap">APRÈS</span>Écran et PDF (A4, 794 px)</div><div class="doc" style="width:794px;padding:28px;display:flex;flex-direction:column;gap:12px"><div><span class="dk">02 · Les biens que nous avons regardés ensemble</span></div><div class="dcardw" style="background:#fff;gap:8px"><div style="display:flex;gap:12px"><div class="photo" style="width:150px;height:100px;flex:none;border-radius:0;background-image:url(../../public/demo/photos/maison-03.jpg)"></div><div style="display:flex;flex-direction:column;gap:3px;flex:1"><b style="font-family:Rajdhani;font-size:17px">Maison · 5 pièces · 135 m² · Saint-Paul-de-Vence</b><span style="font-size:12px;color:#52525b">Un sérieux concurrent ? <b>Oui, un concurrent sérieux</b></span></div></div><div class="dcardw gb-o" style="gap:3px"><span class="dk">Le prix</span><div class="pair"><span>Vous imaginiez</span><b class="gt-o">700 000 €</b></div><div class="pair"><span>Prix affiché</span><b>740 000 €</b></div><div class="gt-o" style="font-size:12.5px;font-weight:700"><span class="dot" style="background:currentColor"></span>Prix affiché 5,7 % au-dessus de votre réponse · 5 481 €/m²</div></div></div><div class="dcardw" style="background:#fff;gap:8px"><div style="display:flex;gap:12px"><div class="photo" style="width:150px;height:100px;flex:none;border-radius:0;background-image:url(../../public/demo/photos/maison-06.jpg)"></div><div style="display:flex;flex-direction:column;gap:3px;flex:1"><b style="font-family:Rajdhani;font-size:17px">Maison · 5 pièces · 132 m² · La Colle-sur-Loup</b><span style="font-size:12px;color:#52525b">Un sérieux concurrent ? <b>Oui, un concurrent sérieux</b></span></div></div><div class="dcardw gb-g" style="gap:3px"><span class="dk">Le prix</span><div class="pair"><span>Vous imaginiez</span><b class="gt-g">760 000 €</b></div><div class="pair"><span>Prix affiché</span><b>749 000 €</b></div><div class="gt-g" style="font-size:12.5px;font-weight:700"><span class="dot" style="background:currentColor"></span>Prix affiché 1,4 % en dessous de votre réponse · 5 674 €/m²</div></div></div><div class="dcardw" style="background:#fff;gap:8px"><div style="display:flex;gap:12px"><div class="photo" style="width:150px;height:100px;flex:none;border-radius:0;background-image:url(../../public/demo/photos/maison-05.jpg)"></div><div style="display:flex;flex-direction:column;gap:3px;flex:1"><b style="font-family:Rajdhani;font-size:17px">Maison · 5 pièces · 142 m² · Les Collines</b><span style="font-size:12px;color:#52525b">Un sérieux concurrent ? <b>Oui, un concurrent sérieux</b></span></div></div><div class="dcardw gb-r" style="gap:3px"><span class="dk">Le prix</span><div class="pair"><span>Vous imaginiez</span><b class="gt-r">820 000 €</b></div><div class="pair"><span>Prix affiché</span><b>729 000 €</b></div><div class="gt-r" style="font-size:12.5px;font-weight:700"><span class="dot" style="background:currentColor"></span>Prix affiché 11,1 % en dessous de votre réponse · 5 134 €/m²</div></div></div><div class="dcardw" style="background:#fff;gap:8px"><div style="display:flex;gap:12px"><div class="photo" style="width:150px;height:100px;flex:none;border-radius:0;background-image:url(../../public/demo/photos/maison-08.jpg)"></div><div style="display:flex;flex-direction:column;gap:3px;flex:1"><b style="font-family:Rajdhani;font-size:17px">Maison · 5 pièces · 128 m² · Vence</b><span style="font-size:12px;color:#52525b">Un sérieux concurrent ? <b>Non</b></span></div></div><div style="background:#f4f4f5;padding:8px 10px;font-size:12.5px;color:#52525b">Pas un concurrent pour vous : son prix n’a pas été regardé. <i class="pin">4</i></div></div></div></div><div><div class="ft"><span class="st ap">APRÈS</span>Téléphone · 390 px (lien public)</div><div class="doc" style="width:390px;padding:14px;display:flex;flex-direction:column;gap:12px"><div><span class="dk">02 · Les biens que nous avons regardés ensemble</span></div><div class="dcardw" style="background:#fff;gap:8px"><div style="display:flex;gap:12px"><div class="photo" style="width:150px;height:100px;flex:none;border-radius:0;background-image:url(../../public/demo/photos/maison-03.jpg)"></div><div style="display:flex;flex-direction:column;gap:3px;flex:1"><b style="font-family:Rajdhani;font-size:17px">Maison · 5 pièces · 135 m² · Saint-Paul-de-Vence</b><span style="font-size:12px;color:#52525b">Un sérieux concurrent ? <b>Oui, un concurrent sérieux</b></span></div></div><div class="dcardw gb-o" style="gap:3px"><span class="dk">Le prix</span><div class="pair"><span>Vous imaginiez</span><b class="gt-o">700 000 €</b></div><div class="pair"><span>Prix affiché</span><b>740 000 €</b></div><div class="gt-o" style="font-size:12.5px;font-weight:700"><span class="dot" style="background:currentColor"></span>Prix affiché 5,7 % au-dessus de votre réponse · 5 481 €/m²</div></div></div><div class="dcardw" style="background:#fff;gap:8px"><div style="display:flex;gap:12px"><div class="photo" style="width:150px;height:100px;flex:none;border-radius:0;background-image:url(../../public/demo/photos/maison-06.jpg)"></div><div style="display:flex;flex-direction:column;gap:3px;flex:1"><b style="font-family:Rajdhani;font-size:17px">Maison · 5 pièces · 132 m² · La Colle-sur-Loup</b><span style="font-size:12px;color:#52525b">Un sérieux concurrent ? <b>Oui, un concurrent sérieux</b></span></div></div><div class="dcardw gb-g" style="gap:3px"><span class="dk">Le prix</span><div class="pair"><span>Vous imaginiez</span><b class="gt-g">760 000 €</b></div><div class="pair"><span>Prix affiché</span><b>749 000 €</b></div><div class="gt-g" style="font-size:12.5px;font-weight:700"><span class="dot" style="background:currentColor"></span>Prix affiché 1,4 % en dessous de votre réponse · 5 674 €/m²</div></div></div><div class="dcardw" style="background:#fff;gap:8px"><div style="display:flex;gap:12px"><div class="photo" style="width:150px;height:100px;flex:none;border-radius:0;background-image:url(../../public/demo/photos/maison-05.jpg)"></div><div style="display:flex;flex-direction:column;gap:3px;flex:1"><b style="font-family:Rajdhani;font-size:17px">Maison · 5 pièces · 142 m² · Les Collines</b><span style="font-size:12px;color:#52525b">Un sérieux concurrent ? <b>Oui, un concurrent sérieux</b></span></div></div><div class="dcardw gb-r" style="gap:3px"><span class="dk">Le prix</span><div class="pair"><span>Vous imaginiez</span><b class="gt-r">820 000 €</b></div><div class="pair"><span>Prix affiché</span><b>729 000 €</b></div><div class="gt-r" style="font-size:12.5px;font-weight:700"><span class="dot" style="background:currentColor"></span>Prix affiché 11,1 % en dessous de votre réponse · 5 134 €/m²</div></div></div><div class="dcardw" style="background:#fff;gap:8px"><div style="display:flex;gap:12px"><div class="photo" style="width:150px;height:100px;flex:none;border-radius:0;background-image:url(../../public/demo/photos/maison-08.jpg)"></div><div style="display:flex;flex-direction:column;gap:3px;flex:1"><b style="font-family:Rajdhani;font-size:17px">Maison · 5 pièces · 128 m² · Vence</b><span style="font-size:12px;color:#52525b">Un sérieux concurrent ? <b>Non</b></span></div></div><div style="background:#f4f4f5;padding:8px 10px;font-size:12.5px;color:#52525b">Pas un concurrent pour vous : son prix n’a pas été regardé. <i class="pin">4</i></div></div></div></div></div></div><div class="notes"><div class="note"><b>Avant</b> (<code>seller-synthesis-document.tsx</code>) : « Vous imaginiez », « Prix affiché », puis « +5,7 % par rapport à votre réponse » dans la couleur de l’agence, quel que soit l’écart.</div>
+     <div class="note"><b>Après</b> :<ol><li><i class="pin">1</i> « Vous imaginiez » prend la couleur (vert, orange, rouge) et le bloc un trait de la même couleur à gauche.</li>
+     <li><i class="pin">2</i> L’écart est écrit avec les mots du Live : « Prix affiché 5,7 % au-dessus de votre réponse » (question 2) — la couleur ne parle jamais seule, et la synthèse se lit en noir et blanc.</li>
+     <li><i class="pin">3</i> Même règle, même service que le Live, sur les montants figés au Live (M96, M111) : la synthèse ne recalcule rien.</li>
+     <li><i class="pin">4</i> Un « Non » : aucune couleur, aucun prix (M41, M104). Une réponse à 0 € ou une présentation directe : aucune couleur.</li></ol></div>
+     <div class="note"><b>Aussi</b> : la fiche du « plus dangereux, selon vous » (même bloc). Le bilan « Vous avez sous-estimé 4 concurrents sur 6, de 6 % en moyenne » (M96) n’est pas coloré : la règle porte sur chaque réponse.</div>
+     <div class="note"><b>Encre</b> : vert #047857, orange #b45309, rouge #b91c1c sur fond blanc (contraste ≥ 4,5 : 1, M143) ; à l’impression, <code>print-color-adjust: exact</code> comme le reste du document.</div></div></div></body></html>

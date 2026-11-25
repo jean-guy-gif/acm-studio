@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="794" height="1123" viewBox="0 0 794 1123" font-family="Montserrat, Inter, Arial, sans-serif">
+<title>M127 B — Où en est votre prix, sans nouveau venu retenu</title>
+<rect x="0" y="0" width="794" height="1123" fill="#fff"/>
+<rect x="56" y="52" width="28" height="26" fill="none" stroke="#0d4d78" stroke-width="1"/>
+<text x="70" y="71" font-family="Montserrat, Inter, Arial, sans-serif" font-size="11" font-weight="700" fill="#0d4d78" text-anchor="middle">03</text>
+<text x="96" y="72" font-family="Rajdhani, Montserrat, Arial, sans-serif" font-size="22" font-weight="700" fill="#0d4d78">Où en est votre prix</text>
+<line x1="56" y1="86" x2="738" y2="86" stroke="#0d4d78" stroke-width="2"/>
+<text x="96" y="106" font-family="Montserrat, Inter, Arial, sans-serif" font-size="10.5" fill="#71717a">Trois lignes à la même échelle : votre prix reste à la même place, la fourchette du marché se déplace.</text>
+<rect x="62" y="124" width="5" height="16" rx="1" fill="#047857"/>
+<text x="78" y="136" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#18181b">Votre prix retenu ensemble</text>
+<rect x="240.4" y="127" width="18" height="10" rx="5" fill="#d4e4f3"/>
+<text x="262.4" y="136" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#18181b">Fourchette du marché, du plus bas au plus haut</text>
+<line x1="541.8" y1="124" x2="541.8" y2="140" stroke="#0d4d78" stroke-width="1.5"/>
+<text x="554.8" y="136" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#18181b">Prix médian</text>
+<path d="M65 145 L72 152 L65 159 L58 152 Z" fill="#dc2626"/>
+<text x="78" y="156" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#18181b">Le plus dangereux, selon vous</text>
+<circle cx="265.6" cy="152" r="5" fill="#94a3b8"/>
+<text x="278.6" y="156" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#18181b">Un concurrent</text>
+<circle cx="379.8" cy="152" r="5" fill="#fff" stroke="#94a3b8" stroke-width="1.6"/>
+<text x="392.8" y="156" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#18181b">Annonce disparue</text>
+<line x1="518.2" y1="152" x2="504.20000000000005" y2="152" stroke="#18181b" stroke-width="1.4"/><path d="M508.20000000000005 148 L502.20000000000005 152 L508.20000000000005 156" fill="none" stroke="#18181b" stroke-width="1.4"/>
+<text x="523.2" y="156" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#18181b">A bougé depuis le rendez-vous</text>
+<line x1="56" y1="168" x2="738" y2="168" stroke="#e4e4e7" stroke-width="1"/>
+<line x1="306.3333333333333" y1="222" x2="306.3333333333333" y2="636" stroke="#eef2f6" stroke-width="1"/>
+<line x1="479" y1="222" x2="479" y2="636" stroke="#eef2f6" stroke-width="1"/>
+<line x1="651.6666666666667" y1="222" x2="651.6666666666667" y2="636" stroke="#eef2f6" stroke-width="1"/>
+<text x="56" y="290" font-family="Rajdhani, Montserrat, Arial, sans-serif" font-size="14" font-weight="700" fill="#18181b">1 · Au rendez-vous</text>
+<text x="56" y="307" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#71717a">8 octobre</text>
+<text x="56" y="321" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#71717a">5 concurrents</text>
+<line x1="220" y1="300" x2="738" y2="300" stroke="#e4e4e7" stroke-width="1"/>
+<rect x="263.1666666666667" y="292" width="386.77333333333337" height="16" rx="8" fill="#d4e4f3"/>
+<line x1="565.3333333333333" y1="258" x2="565.3333333333333" y2="314" stroke="#0d4d78" stroke-width="1.5"/>
+<text x="571.3333333333333" y="234" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="600" fill="#0d4d78" text-anchor="start" letter-spacing="1">MÉDIANE</text>
+<text x="571.3333333333333" y="248" font-family="Montserrat, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#0d4d78" text-anchor="start">1 650 000 €</text>
+<text x="263.1666666666667" y="268" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="600" fill="#71717a" text-anchor="start" letter-spacing="1">PLUS BAS</text>
+<text x="263.1666666666667" y="282" font-family="Montserrat, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#18181b" text-anchor="start">1 475 000 €</text>
+<text x="649.94" y="268" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="600" fill="#71717a" text-anchor="start" letter-spacing="1">PLUS HAUT</text>
+<text x="649.94" y="282" font-family="Montserrat, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#18181b" text-anchor="start">1 699 000 €</text>
+<circle cx="263.1666666666667" cy="300" r="5" fill="#94a3b8"/>
+<circle cx="271.8" cy="300" r="5" fill="#94a3b8"/>
+<circle cx="565.3333333333333" cy="300" r="5" fill="#94a3b8"/>
+<circle cx="649.94" cy="300" r="5" fill="#94a3b8"/>
+<path d="M634.4 292 L642.4 300 L634.4 308 L626.4 300 Z" fill="#dc2626"/>
+<text x="646.4" y="326" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="600" fill="#dc2626" text-anchor="start" letter-spacing="1">PLUS DANGEREUX</text>
+<text x="646.4" y="341" font-family="Montserrat, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#dc2626" text-anchor="start">1 690 000 €</text>
+<line x1="565.3333333333333" y1="309" x2="565.3333333333333" y2="358" stroke="#18181b" stroke-width="1.4"/>
+<line x1="565.3333333333333" y1="358" x2="403.5733333333333" y2="358" stroke="#18181b" stroke-width="1.4"/>
+<path d="M409.5733333333333 353 L401.5733333333333 358 L409.5733333333333 363" fill="none" stroke="#18181b" stroke-width="1.4"/>
+<text x="535.2033333333334" y="373" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#18181b" text-anchor="end">A baissé : 1 650 000 € → 1 554 000 € · −5,8 %</text>
+<text x="56" y="396" font-family="Montserrat, Inter, Arial, sans-serif" font-size="11.5" font-weight="500" fill="#18181b">Au rendez-vous, votre prix retenu était parmi ceux des 5</text>
+<text x="56" y="412" font-family="Montserrat, Inter, Arial, sans-serif" font-size="11.5" font-weight="500" fill="#18181b">concurrents : le 3e moins cher des 6 biens comparés.</text>
+<text x="56" y="482" font-family="Rajdhani, Montserrat, Arial, sans-serif" font-size="14" font-weight="700" fill="#18181b">2 · Aujourd’hui</text>
+<text x="56" y="499" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#71717a">29 octobre · 3 encore en vente</text>
+<text x="56" y="513" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#71717a">2 annonces disparues</text>
+<line x1="220" y1="492" x2="738" y2="492" stroke="#e4e4e7" stroke-width="1"/>
+<rect x="399.5733333333333" y="484" width="250.36666666666673" height="16" rx="8" fill="#d4e4f3"/>
+<line x1="634.4" y1="450" x2="634.4" y2="506" stroke="#0d4d78" stroke-width="1.5"/>
+<text x="634.4" y="426" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="600" fill="#0d4d78" text-anchor="middle" letter-spacing="1">MÉDIANE</text>
+<text x="634.4" y="440" font-family="Montserrat, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#0d4d78" text-anchor="middle">1 690 000 €</text>
+<text x="399.5733333333333" y="460" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="600" fill="#71717a" text-anchor="start" letter-spacing="1">PLUS BAS</text>
+<text x="399.5733333333333" y="474" font-family="Montserrat, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#18181b" text-anchor="start">1 554 000 €</text>
+<text x="649.94" y="460" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="600" fill="#71717a" text-anchor="start" letter-spacing="1">PLUS HAUT</text>
+<text x="649.94" y="474" font-family="Montserrat, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#18181b" text-anchor="start">1 699 000 €</text>
+<circle cx="399.5733333333333" cy="492" r="5" fill="#94a3b8"/>
+<circle cx="649.94" cy="492" r="5" fill="#94a3b8"/>
+<path d="M634.4 484 L642.4 492 L634.4 500 L626.4 492 Z" fill="#dc2626"/>
+<text x="646.4" y="518" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="600" fill="#dc2626" text-anchor="start" letter-spacing="1">PLUS DANGEREUX</text>
+<text x="646.4" y="533" font-family="Montserrat, Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#dc2626" text-anchor="start">1 690 000 €</text>
+<circle cx="263.1666666666667" cy="492" r="5" fill="#fff" stroke="#94a3b8" stroke-width="1.6"/>
+<text x="257.1666666666667" y="518" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#71717a" font-style="italic">1 475 000 € · retiré sans vente</text>
+<circle cx="271.8" cy="492" r="5" fill="#fff" stroke="#94a3b8" stroke-width="1.6"/>
+<text x="257.1666666666667" y="532" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9.5" fill="#71717a" font-style="italic">1 480 000 € · vente probable</text>
+<text x="56" y="558" font-family="Montserrat, Inter, Arial, sans-serif" font-size="11.5" font-weight="500" fill="#18181b">Aujourd’hui, 1 concurrent sur 3 est sous votre prix, dont 1</text>
+<text x="56" y="574" font-family="Montserrat, Inter, Arial, sans-serif" font-size="11.5" font-weight="500" fill="#18181b">passé dessous depuis le rendez-vous : vous êtes le 2e moins</text>
+<text x="56" y="590" font-family="Montserrat, Inter, Arial, sans-serif" font-size="11.5" font-weight="500" fill="#18181b">cher des 4 biens encore en vente. 2 annonces ont disparu : 1</text>
+<text x="56" y="606" font-family="Montserrat, Inter, Arial, sans-serif" font-size="11.5" font-weight="500" fill="#18181b">vente probable, 1 retirée sans vente.</text>
+<line x1="220" y1="636" x2="738" y2="636" stroke="#94a3b8" stroke-width="1"/>
+<line x1="306.3333333333333" y1="632" x2="306.3333333333333" y2="640" stroke="#94a3b8" stroke-width="1"/>
+<text x="306.3333333333333" y="653" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" fill="#71717a" text-anchor="middle">1 500 000 €</text>
+<line x1="479" y1="632" x2="479" y2="640" stroke="#94a3b8" stroke-width="1"/>
+<text x="479" y="653" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" fill="#71717a" text-anchor="middle">1 600 000 €</text>
+<line x1="651.6666666666667" y1="632" x2="651.6666666666667" y2="640" stroke="#94a3b8" stroke-width="1"/>
+<text x="651.6666666666667" y="653" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" fill="#71717a" text-anchor="middle">1 700 000 €</text>
+<text x="56" y="653" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" fill="#a1a1aa">Même échelle sur les trois lignes</text>
+<rect x="544.7033333333334" y="214" width="5" height="430" rx="2" fill="#047857"/>
+<text x="547.2033333333334" y="180" font-family="Montserrat, Inter, Arial, sans-serif" font-size="9" font-weight="700" fill="#047857" text-anchor="middle" letter-spacing="1.2">VOTRE PRIX</text>
+<text x="547.2033333333334" y="199" font-family="Montserrat, Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="#047857" text-anchor="middle">1 639 500 €</text>
+<text x="547.2033333333334" y="211" font-family="Montserrat, Inter, Arial, sans-serif" font-size="8.5" font-weight="500" fill="#047857" text-anchor="middle">Prix aligné sur le marché</text>
+<text x="56" y="706" font-family="Rajdhani, Montserrat, Arial, sans-serif" font-size="14" font-weight="700" fill="#18181b">3 · Les nouveaux venus</text>
+<rect x="232" y="682" width="506" height="52" rx="4" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="479" y="712" font-family="Montserrat, Inter, Arial, sans-serif" font-size="11.5" fill="#71717a" text-anchor="middle">Aucun nouveau venu retenu depuis le rendez-vous</text>
+<text x="56" y="1080" font-family="Montserrat, Inter, Arial, sans-serif" font-size="8.5" fill="#a1a1aa" letter-spacing="1.2">ÉTUDE CONFIDENTIELLE · MOUGINS · 29 OCTOBRE 2026</text>
+<text x="738" y="1080" font-family="Montserrat, Inter, Arial, sans-serif" font-size="8.5" fill="#a1a1aa" text-anchor="end">07 / 08</text>
+</svg>

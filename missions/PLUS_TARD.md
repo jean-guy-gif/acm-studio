@@ -301,4 +301,8 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     Montserrat) : les écrans n'y ont pas le bleu nuit des maquettes, qui est la charte de
     l'agence de Jean-Guy. Lui donner cette charte demanderait de rejouer la suite (des specs
     peuvent lire une couleur) : à faire seulement s'il le demande.
+  - vu en mesurant le téléphone : dans l'agence de démonstration, « Nouvel acquéreur » déborde de
+    12 px à 390 px de large (le bouton « Lire cette photo » du bloc des notes de démonstration
+    sort de sa carte). D'avant la refonte, et seulement dans la démo : repris avec le lot D, qui
+    refait cet écran.
 

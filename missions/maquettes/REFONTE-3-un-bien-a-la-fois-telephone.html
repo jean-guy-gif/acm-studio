@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Un bien à la fois</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#26327F;text-decoration:none}a:hover{color:#1B2559}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F5FA; color: #1B2559; font-family: 'Nunito Sans', system-ui, sans-serif; padding: 24px 20px 28px; display: flex; flex-direction: column; gap: 14px">
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+    <a href="Main.dc.html" style="display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 700; height: 44px">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>Mercier</a>
+    <span style="font-size: 15px; font-weight: 700">Bien 1 sur 4</span>
+    <span style="font-size: 14px; color: #5B6380">0 retenu sur 3</span>
+  </div>
+
+  <div aria-hidden="true" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+    <span style="height: 4px; border-radius: 2px; background: #26327F"></span>
+    <span style="height: 4px; border-radius: 2px; background: #D5DAEA"></span>
+    <span style="height: 4px; border-radius: 2px; background: #D5DAEA"></span>
+    <span style="height: 4px; border-radius: 2px; background: #D5DAEA"></span>
+  </div>
+
+  <div style="position: relative; height: 250px; border-radius: 20px; overflow: hidden; background: #E7EAF7">
+    <img src="/_blob/7b3b6ea617339a9406184ed95987620a" alt="Villa avec piscine et jardin" style="width: 100%; height: 100%; object-fit: cover; display: block">
+    <span style="position: absolute; left: 12px; top: 12px; height: 32px; padding: 0 12px; border-radius: 16px; background: #FFFFFF; color: #0B6B4A; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 6px">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>8 critères sur 8</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+      <span style="font-size: 28px; font-weight: 800; letter-spacing: -0.5px">1 590 000 €</span>
+      <span style="height: 30px; padding: 0 12px; border-radius: 15px; background: #E3F4EC; color: #0B6B4A; font-size: 13px; font-weight: 700; display: flex; align-items: center; white-space: nowrap">110 000 € sous leur budget</span>
+    </div>
+    <p style="margin: 0; font-size: 16px; color: #5B6380">Maison · 8 pièces · 200 m² · Mougins</p>
+  </div>
+
+  <div style="background: #FFFFFF; border: 1px solid #E3E6F0; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+    <h2 style="margin: 0; font-size: 16px; font-weight: 800">Pourquoi celui-ci pour eux</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+      <span style="height: 34px; padding: 0 12px; border-radius: 17px; background: #FDEBDD; color: #7A2E08; font-size: 14px; font-weight: 700; display: flex; align-items: center">Piscine</span>
+      <span style="height: 34px; padding: 0 12px; border-radius: 17px; background: #E3F4EC; color: #0B6B4A; font-size: 14px; font-weight: 700; display: flex; align-items: center">« au calme » dans l'annonce</span>
+      <span style="height: 34px; padding: 0 12px; border-radius: 17px; background: #E7EAF7; color: #1B2559; font-size: 14px; font-weight: 700; display: flex; align-items: center">Mougins</span>
+      <span style="height: 34px; padding: 0 12px; border-radius: 17px; background: #E7EAF7; color: #1B2559; font-size: 14px; font-weight: 700; display: flex; align-items: center">2 pièces de plus</span>
+    </div>
+    <a href="Suivi.dc.html" style="font-size: 14px; font-weight: 700; height: 32px; display: flex; align-items: center">Voir l'annonce complète</a>
+  </div>
+
+  <div style="margin-top: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+    <button type="button" style="height: 58px; border-radius: 16px; background: #FFFFFF; border: 1px solid #D5DAEA; color: #1B2559; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Écarter</button>
+    <a href="Suivi.dc.html" style="height: 58px; border-radius: 16px; background: #26327F; color: #FFFFFF; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Proposer</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
