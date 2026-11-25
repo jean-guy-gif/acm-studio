@@ -11,6 +11,13 @@ soir », « on y va ») : la base se sépare le soir même, puis les specs en at
 10 bis en production, et la suite complète la nuit, sur la base d'essai. Sa règle de midi, dite
 une heure plus tôt, est levée. Le titre garde le jour prévu au départ.
 
+**Fait le 25/11 au soir.** Sauvegarde vérifiée à 18 h 50 ; la taille « Small » à 19 h 06 (la base
+indisponible de 19 h 06 min 30 s à 19 h 08 min 25 s, 90 connexions ensuite) ; la base
+`acm-studio-essai` construite à 19 h 30 (même structure, mêmes droits que la production) ; les
+trois variables de Vercel ajoutées, les entrées communes intactes ; la preuve à 19 h 45 (l'essai
+parle à la base d'essai) ; puis la bascule des tests. Le détail est dans `docs/DECISIONS.md`. Ce
+qui suit est le pas-à-pas tel qu'il a été suivi.
+
 Niveau Sensible. Compter une heure, d'une traite, le matin. Pas entre 3 h 15 et 5 h 45 : ce sont
 les heures des tâches de nuit (la veille des acquéreurs, les purges) et de la sauvegarde de
 Supabase.

@@ -12,9 +12,11 @@ const { AccountMenu, AccountMenuEntries, ACCOUNT_MENU_LABEL } =
   await import('@/components/app-shell/account-menu');
 const { accountMenuFor } = await import('@/features/workspace-mode/services/workspace-mode');
 const { SidebarNav } = await import('@/components/app-shell/sidebar-nav');
-const { ShellSidebar, MOBILE_MENU_LABEL } = await import('@/components/app-shell/shell-sidebar');
+const { ShellSidebar } = await import('@/components/app-shell/shell-sidebar');
+const { PhoneAccount } = await import('@/components/app-shell/phone-account');
+const { SellerTabs } = await import('@/components/app-shell/seller-tabs');
 const { AppStage } = await import('@/components/theme/app-stage');
-// La carte lit le thème (Sombre / Clair) : rendue sous la scène, l'enfant passé en argument.
+// Le compte lit le thème (Sombre / Clair) : rendu sous la scène, l'enfant passé en argument.
 const Stage = AppStage as (props: {
   initialTheme: 'light' | 'dark';
   children?: ReactNode;
@@ -22,101 +24,132 @@ const Stage = AppStage as (props: {
 
 const links = (html: string): string[] =>
   [...html.matchAll(/<a [^>]*href="([^"]+)"/g)].map((match) => match[1]!);
+// La balise <a> d'une adresse, avec ses classes.
+const anchor = (html: string, href: string): string =>
+  html.match(new RegExp(`<a [^>]*href="${href}"[^>]*>`))?.[0] ?? '';
 
+const account = {
+  profileName: 'Carl Conseiller',
+  profileEmail: 'carl@example.org',
+  agencyName: 'Agence Test',
+  signOutAction: async () => {},
+};
 const card = (props: Partial<Parameters<typeof AccountMenu>[0]> = {}) =>
   renderToStaticMarkup(
     createElement(
       Stage,
       { initialTheme: 'light' },
-      createElement(AccountMenu, {
-        profileName: 'Carl Conseiller',
-        profileEmail: 'carl@example.org',
-        agencyName: 'Agence Test',
-        signOutAction: async () => {},
-        ...props,
-      }),
+      createElement(AccountMenu, { ...account, ...props }),
     ),
   );
 
-// Mission 125 — le menu de gauche ne montre que le travail ; le reste est derrière la carte.
-describe('le menu de gauche', () => {
+// La refonte, lot A — UNE navigation, la même aux trois tailles (maquettes REFONTE-1, 5 et 6).
+describe('le menu de l’application', () => {
   beforeEach(() => {
     nav.pathname = '/builder';
   });
 
-  // Mission 145 (partie B) — un seul menu en trois groupes, sans interrupteur (remplace M118).
-  it('Aujourd’hui, puis Vendeurs, Acquéreurs, Les deux : les espaces, rien d’autre', () => {
+  it('Aujourd’hui · Vendeurs · Acquéreurs · Visites, puis Prospection et Aide : une seule navigation', () => {
     const html = renderToStaticMarkup(createElement(SidebarNav));
+    expect(html.match(/<nav /g)).toHaveLength(1);
+    expect(html).toContain('aria-label="Menu principal"');
     expect(links(html)).toEqual([
       '/aujourdhui',
       '/builder',
-      '/live',
-      '/suivi',
       '/acquereurs',
       '/visites',
       '/prospection',
-    ]);
-    for (const group of ['Vendeurs', 'Acquéreurs', 'Les deux']) expect(html).toContain(group);
-    expect(html).not.toMatch(/Administration|Aide|Ma démo|Erreurs|Mon profil/);
-    expect(html).not.toContain('workspace-switch');
-  });
-
-  // Mission 149 (variante A) — les titres de groupe se voient : la couleur foncée de l'agence,
-  // plus le gris des sous-titres ; un filet au-dessus de chaque groupe titré, pas d'« Aujourd'hui ».
-  it('les titres de groupe : couleur foncée de l’agence, 13 px, un filet au-dessus de chaque groupe', () => {
-    const html = renderToStaticMarkup(createElement(SidebarNav));
-    const titles = [
-      ...html.matchAll(/<span data-testid="nav-group-title" class="([^"]*)">([^<]*)</g),
-    ];
-    expect(titles.map((match) => match[2])).toEqual(['Vendeurs', 'Acquéreurs', 'Les deux']);
-    for (const [, classes] of titles) {
-      expect(classes).toContain('text-brand-deep');
-      expect(classes).toContain('text-[13px]');
-      expect(classes).toContain('font-extrabold');
-      expect(classes).toContain('stage:text-brand');
-      expect(classes).not.toContain('zinc-500');
-    }
-    const groups = [...html.matchAll(/<div data-testid="nav-group" class="([^"]*)"/g)].map(
-      (match) => match[1]!,
-    );
-    expect(groups).toHaveLength(4);
-    expect(groups[0]).not.toContain('border-t');
-    for (const classes of groups.slice(1)) expect(classes).toContain('border-t');
-  });
-
-  it('la pastille d’Aujourd’hui ne s’affiche pas tant que le nombre n’est pas lu', () => {
-    nav.pathname = '/aujourdhui';
-    const html = renderToStaticMarkup(createElement(SidebarNav));
-    expect(html).toContain('aria-current="page"');
-    expect(html).not.toContain('data-testid="today-count"');
-  });
-
-  it('une page du menu de la carte ne surligne aucun des quatre espaces', () => {
-    for (const pathname of [
-      '/admin',
-      '/admin/equipe',
       '/bienvenue',
-      '/profil',
-      '/ma-demo',
-      '/erreurs',
+    ]);
+    for (const label of [
+      'Aujourd’hui',
+      'Vendeurs',
+      'Acquéreurs',
+      'Visites',
+      'Prospection',
+      'Aide',
     ]) {
+      expect(html).toContain(`<span>${label}</span>`);
+    }
+    // Plus de groupes, plus d'interrupteur, et rien du compte.
+    expect(html).not.toMatch(/nav-group|workspace-switch|Préparation|Les deux/);
+    expect(html).not.toMatch(/Administration|Ma démo|Erreurs|Mon profil/);
+  });
+
+  it('quatre entrées sur téléphone ; Aide à partir de 768 px, en bas ; Prospection à partir de 1280 px', () => {
+    const html = renderToStaticMarkup(createElement(SidebarNav));
+    for (const href of ['/aujourdhui', '/builder', '/acquereurs', '/visites']) {
+      expect(anchor(html, href), href).toMatch(/class="flex /);
+      expect(anchor(html, href), href).not.toMatch(/class="hidden /);
+    }
+    expect(anchor(html, '/bienvenue')).toMatch(/class="hidden md:flex /);
+    expect(anchor(html, '/bienvenue')).toContain('md:mt-auto');
+    expect(anchor(html, '/prospection')).toMatch(/class="hidden xl:flex /);
+    // En bas sur téléphone (quatre colonnes), en colonne à partir de 768 px.
+    expect(html).toMatch(
+      /<nav [^>]*class="grid h-\[72px\] grid-cols-4 [^"]*md:flex[^"]*md:flex-col/,
+    );
+  });
+
+  it('« Vendeurs » surligne Préparation, Live et Suivi', () => {
+    for (const pathname of ['/builder', '/builder/abc/avant-rendez-vous', '/live', '/suivi']) {
       nav.pathname = pathname;
       const html = renderToStaticMarkup(createElement(SidebarNav));
-      expect(html).not.toContain('aria-current="page"');
+      expect(html.match(/aria-current="page"/g), pathname).toHaveLength(1);
+      expect(anchor(html, '/builder'), pathname).toContain('aria-current="page"');
     }
+  });
+
+  it('la pastille d’Aujourd’hui ne s’affiche pas tant que la page n’a rien dit', () => {
+    nav.pathname = '/aujourdhui';
+    const html = renderToStaticMarkup(createElement(SidebarNav));
+    expect(anchor(html, '/aujourdhui')).toContain('aria-current="page"');
+    expect(html).not.toContain('today-count');
+  });
+
+  it('une page du compte ne surligne aucune entrée ; « Aide » surligne la sienne', () => {
+    for (const pathname of ['/admin', '/admin/equipe', '/profil', '/ma-demo', '/erreurs']) {
+      nav.pathname = pathname;
+      expect(renderToStaticMarkup(createElement(SidebarNav)), pathname).not.toContain(
+        'aria-current',
+      );
+    }
+    nav.pathname = '/bienvenue';
+    expect(anchor(renderToStaticMarkup(createElement(SidebarNav)), '/bienvenue')).toContain(
+      'aria-current="page"',
+    );
   });
 });
 
-describe('la carte du conseiller', () => {
+describe('le compte du conseiller', () => {
   it('un bouton fermé, au libellé accessible, qui dit nom, e-mail et agence', () => {
     const html = card();
     expect(html).toContain(`aria-label="${ACCOUNT_MENU_LABEL}"`);
     expect(html).toContain('aria-haspopup="menu"');
     expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('data-testid="account-card"');
     for (const text of ['Carl Conseiller', 'carl@example.org', 'Agence Test']) {
       expect(html).toContain(text);
     }
     expect(html).not.toContain('role="menu"');
+  });
+
+  it('sur tablette, un rond à ses initiales ; sur ordinateur, sa carte', () => {
+    const html = card();
+    // Le rond, caché à partir de 1280 px ; le nom, l'e-mail et l'agence, montrés à partir de là.
+    expect(html).toMatch(
+      /<span aria-hidden="true" class="[^"]*rounded-full[^"]*xl:hidden[^"]*">CC</,
+    );
+    expect(html).toMatch(/<span class="hidden [^"]*xl:flex">/);
+  });
+
+  it('sur téléphone, le rond seul, sous un autre repère', () => {
+    const html = card({ variant: 'avatar' });
+    expect(html).toContain('data-testid="account-avatar"');
+    expect(html).not.toContain('data-testid="account-card"');
+    expect(html).toContain(`aria-label="${ACCOUNT_MENU_LABEL}"`);
+    expect(html).toContain('>CC<');
+    expect(html).not.toContain('carl@example.org');
   });
 
   it('la pastille des erreurs : pour un opérateur, et seulement s’il y en a', () => {
@@ -127,12 +160,19 @@ describe('la carte du conseiller', () => {
     const html = card({ errorsBadge: { count: 3, label: '3 erreurs depuis hier' } });
     expect(html).toContain('data-testid="account-errors-badge"');
     expect(html).toContain('title="3 erreurs depuis hier"');
+    // Sur téléphone, un repère à part : jamais deux fois le même sur la page d'« Aujourd'hui ».
+    const phone = card({
+      variant: 'avatar',
+      errorsBadge: { count: 3, label: '3 erreurs depuis hier' },
+    });
+    expect(phone).toContain('data-testid="account-avatar-errors-badge"');
+    expect(phone).not.toContain('data-testid="account-errors-badge"');
   });
 });
 
-// Le menu ouvert : « Erreurs » et sa pastille pour un opérateur ; ni l'un ni l'autre pour un
+// La feuille ouverte : « Erreurs » et sa pastille pour un opérateur ; ni l'un ni l'autre pour un
 // conseiller (le layout ne transmet la pastille qu'aux opérateurs, M100).
-describe('le menu ouvert de la carte', () => {
+describe('la feuille ouverte du compte', () => {
   const entries = (operator: boolean, errorsBadge: { count: number; label: string } | null) =>
     renderToStaticMarkup(
       createElement(AccountMenuEntries, {
@@ -162,26 +202,32 @@ describe('le menu ouvert de la carte', () => {
 
   it('un conseiller : ni « Erreurs », ni pastille', () => {
     const html = entries(false, null);
-    expect(links(html)).toEqual(['/profil', '/admin', '/bienvenue']);
+    expect(links(html)).toEqual(['/profil', '/admin', '/prospection', '/bienvenue']);
     expect(html).not.toContain('Erreurs');
     expect(html).not.toContain('account-errors-label');
     for (const label of ['Sombre', 'Déconnexion']) expect(html).toContain(label);
   });
+
+  it('Prospection s’efface à partir de 1280 px, Aide à partir de 768 px : le menu les montre', () => {
+    const html = entries(false, null);
+    expect(anchor(html, '/prospection')).toContain('xl:hidden');
+    expect(anchor(html, '/bienvenue')).toContain('md:hidden');
+    for (const href of ['/profil', '/admin']) {
+      expect(anchor(html, href), href).not.toMatch(/md:hidden|xl:hidden/);
+    }
+  });
 });
 
-// Sous 768 px (décision de Jean-Guy, 06/11) : une barre compacte en haut — le nom de l'agence et
-// ☰ (plus d'interrupteur depuis la M145) — et le menu replié ; à partir de 768 px, la colonne toujours dépliée.
-describe('la barre compacte du téléphone', () => {
+// Le cadre aux trois tailles : en bas sur téléphone (remplace M132, la barre du haut et ☰), une
+// colonne d'icônes à partir de 768 px, le menu complet à partir de 1280 px.
+describe('le menu aux trois tailles', () => {
   const shell = () =>
     renderToStaticMarkup(
       createElement(
         Stage,
         { initialTheme: 'light' },
         createElement(ShellSidebar, {
-          profileName: 'Carl Conseiller',
-          profileEmail: 'carl@example.org',
-          agencyName: 'Agence Test',
-          signOutAction: async () => {},
+          ...account,
           logoLightUrl: null,
           logoDarkUrl: null,
           errorsBadge: null,
@@ -190,32 +236,61 @@ describe('la barre compacte du téléphone', () => {
       ),
     );
 
-  it('le nom de l’agence, puis ☰ fermé ; plus d’interrupteur', () => {
+  it('fixé en bas sur téléphone, en colonne à gauche à partir de 768 px ; plus de ☰', () => {
     const html = shell();
-    expect(html).not.toContain('workspace-switch');
-    const order = ['Agence Test', 'data-testid="mobile-menu-toggle"'];
-    const positions = order.map((needle) => html.indexOf(needle));
-    expect(positions.every((position) => position >= 0)).toBe(true);
-    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-    expect(html).toMatch(
-      new RegExp(`aria-label="${MOBILE_MENU_LABEL}" aria-expanded="false"[^>]*md:hidden`),
-    );
+    const aside = html.match(/<aside data-testid="shell-menu" class="([^"]+)"/)?.[1] ?? '';
+    expect(aside).toMatch(/^fixed inset-x-0 bottom-0 /);
+    expect(aside).toContain('md:sticky');
+    expect(aside).toContain('md:h-screen');
+    expect(aside).toContain('md:w-[var(--shell-left)]');
+    // Jamais à l'impression.
+    expect(aside).toContain('print:hidden');
+    expect(html).not.toMatch(/mobile-menu-toggle|shell-menu-panel|mobile-today-count|☰/);
   });
 
-  it('les entrées et la carte, repliées sous 768 px, toujours visibles au-delà', () => {
+  it('le logo de l’agence sur ordinateur seulement ; le compte à partir de 768 px', () => {
     const html = shell();
-    const panel = html.match(/<div id="[^"]+" data-testid="shell-menu-panel" class="([^"]+)"/);
-    expect(panel?.[1]).toMatch(/^hidden .*md:flex/);
-    const inside = html.slice(html.indexOf('data-testid="shell-menu-panel"'));
-    expect(links(inside)).toEqual([
+    expect(html).toMatch(/<div class="hidden [^"]*xl:block">[\s\S]*Agence Test/);
+    expect(html).toMatch(/<div class="hidden md:block"><div class="relative"><button/);
+    expect(links(html)).toEqual([
       '/aujourdhui',
       '/builder',
-      '/live',
-      '/suivi',
       '/acquereurs',
       '/visites',
       '/prospection',
+      '/bienvenue',
     ]);
-    expect(inside).toContain('data-testid="account-card"');
+  });
+
+  it('sur téléphone, le compte s’ouvre en haut d’« Aujourd’hui », et nulle part ailleurs', () => {
+    const phone = () =>
+      renderToStaticMarkup(
+        createElement(
+          Stage,
+          { initialTheme: 'light' },
+          createElement(PhoneAccount, { ...account, errorsBadge: null, demoEntry: false }),
+        ),
+      );
+    nav.pathname = '/aujourdhui';
+    expect(phone()).toMatch(/<div class="[^"]*md:hidden" data-testid="phone-account">/);
+    expect(phone()).toContain('data-testid="account-avatar"');
+    for (const pathname of ['/acquereurs', '/builder', '/visites', '/aujourdhui/x']) {
+      nav.pathname = pathname;
+      expect(phone(), pathname).not.toMatch(/account-avatar|phone-account/);
+    }
+  });
+});
+
+describe('les onglets du vendeur', () => {
+  it('Préparation · Live · Suivi, des liens ; l’onglet de la page est dit', () => {
+    for (const current of ['/builder', '/live', '/suivi'] as const) {
+      const html = renderToStaticMarkup(createElement(SellerTabs, { current }));
+      expect(html).toContain('aria-label="Vendeurs"');
+      expect(links(html)).toEqual(['/builder', '/live', '/suivi']);
+      expect(html.match(/aria-current="page"/g), current).toHaveLength(1);
+      expect(anchor(html, current), current).toContain('aria-current="page"');
+      // Des onglets, jamais un bouton plein de plus (M146).
+      expect(html).not.toContain('btn-filled');
+    }
   });
 });

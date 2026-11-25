@@ -162,7 +162,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       expect(dialog.message()).toContain('ne sont pas enregistrées');
       void dialog.dismiss();
     });
-    await page.getByRole('link', { name: /^Suivi/ }).click();
+    await sideNav(page)
+      .getByRole('link', { name: /^Vendeurs/ })
+      .click();
     await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/property`));
     await expect(field('Surface')).toHaveValue('65');
 
@@ -848,32 +850,28 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   // statut, archivage.
   await test.step('La fiche acquéreur : créer, retrouver, rapprocher, statut, archiver', async () => {
     const buyerName = `Acquéreur ${dossierName}`;
-    // Mission 145 (partie B) — un seul menu en trois groupes, sans interrupteur (remplace M118) :
-    // Aujourd'hui, puis Vendeurs, Acquéreurs, Les deux.
+    // La refonte, lot A — un seul menu, sans interrupteur (M145) : Aujourd'hui, Vendeurs,
+    // Acquéreurs, Visites ; sur ordinateur, Prospection et Aide s'y ajoutent.
     await expect(page.getByTestId('workspace-switch')).toHaveCount(0);
     const nav = sideNav(page);
-    await expect(nav.getByRole('link')).toHaveCount(7);
+    await expect(nav.getByRole('link')).toHaveCount(6);
     for (const label of [
       'Aujourd’hui',
-      'Préparation',
-      'Live',
-      'Suivi',
+      'Vendeurs',
       'Acquéreurs',
       'Visites',
       'Prospection',
+      'Aide',
     ]) {
       await expect(nav.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
-    for (const group of ['Vendeurs', 'Les deux']) await expect(nav).toContainText(group);
     await nav.getByRole('link', { name: /^Acquéreurs/ }).click();
     await expect(page).toHaveURL(/\/acquereurs$/);
     // Mission 125 — le reste est derrière la carte du conseiller, qui se ferme par Échap et par un
     // clic dehors.
-    await expect(nav.getByRole('link', { name: /^(Administration|Aide|Mon profil)/ })).toHaveCount(
-      0,
-    );
+    await expect(nav.getByRole('link', { name: /^(Administration|Mon profil)/ })).toHaveCount(0);
     const accountMenu = await openAccountMenu(page);
-    for (const label of ['Mon profil', 'Administration', 'Aide', 'Sombre', 'Déconnexion']) {
+    for (const label of ['Mon profil', 'Administration', 'Sombre', 'Déconnexion']) {
       await expect(
         accountMenu.getByRole('menuitem', { name: new RegExp(`^${label}`) }),
       ).toBeVisible();
@@ -902,9 +900,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(/\/acquereurs\/nouveau$/);
     const quick = page.getByTestId('buyer-quick-form');
     await expectNoHorizontalScroll(page, 'Saisie rapide (390 × 844)');
-    // Sous 768 px, le menu est une barre compacte : le champ Nom se voit sans défiler.
-    await expect(page.getByTestId('mobile-menu-toggle')).toBeVisible();
-    await expect(sideNav(page)).toBeHidden();
+    // Sous 768 px, le menu est en bas, quatre entrées : le champ Nom se voit sans défiler.
+    await expect(sideNav(page).getByRole('link')).toHaveCount(4);
+    await expect(page.getByTestId('shell-menu')).toBeInViewport({ ratio: 1 });
     await expect(quick.locator('input[name="name"]')).toBeInViewport({ ratio: 1 });
     await quick.locator('input[name="name"]').fill(buyerName);
     await quick.locator('input[name="phone"]').fill('06 39 98 90 11');
@@ -947,16 +945,20 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('today-page')).toContainText(
       `Reprendre contact avec ${buyerName}`,
     );
-    // Sur téléphone, la première ligne du jour se voit sans défiler ; ☰ déplie le menu et la
-    // carte du conseiller, un lien choisi le replie.
+    // Sur téléphone, la première ligne du jour se voit sans défiler ; le compte du conseiller
+    // s'ouvre par le rond en haut d'« Aujourd'hui », et « Vendeurs », dans le menu du bas, mène au
+    // Live par son onglet.
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByTestId('today-line').first()).toBeInViewport({ ratio: 1 });
     await expectNoHorizontalScroll(page, 'Aujourd’hui (390 × 844)');
-    await page.getByTestId('mobile-menu-toggle').click();
-    await expect(page.getByTestId('account-card')).toBeVisible();
-    await sideNav(page).getByRole('link', { name: /^Live/ }).click();
+    await expect(page.getByTestId('account-avatar')).toBeVisible();
+    await sideNav(page)
+      .getByRole('link', { name: /^Vendeurs/ })
+      .click();
+    await expect(page).toHaveURL(/\/builder$/);
+    await page.getByTestId('seller-tabs').getByRole('link', { name: 'Live', exact: true }).click();
     await expect(page).toHaveURL(/\/live$/);
-    await expect(sideNav(page)).toBeHidden();
+    await expect(sideNav(page).getByRole('link')).toHaveCount(4);
     await page.setViewportSize({ width: 1280, height: 720 });
     // « J'ai eu l'acquéreur aujourd'hui » : il redevient prêt, la tâche s'en va.
     await page.goto(buyerUrl);

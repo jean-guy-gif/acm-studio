@@ -222,7 +222,8 @@ test('la carte du conseiller et son menu tiennent sur tablette', async ({ page }
     const size = `${viewport.width} × ${viewport.height}`;
     await page.setViewportSize(viewport);
     await page.goto('/builder');
-    await expect(sideNav(page).getByRole('link')).toHaveCount(7);
+    // La refonte, lot A — sur tablette, la colonne d'icônes : quatre entrées et Aide.
+    await expect(sideNav(page).getByRole('link')).toHaveCount(5);
     const menu = await openAccountMenu(page);
     const entries = menu.getByRole('menuitem');
     expect(await entries.count(), `Menu de la carte vide en ${size}`).toBeGreaterThanOrEqual(5);

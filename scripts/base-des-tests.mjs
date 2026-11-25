@@ -21,9 +21,11 @@ const PROJECT_REF = /^[a-z0-9]{20}$/;
 // lit encore la base de la production.
 export const ESSAI_HOST = 'acm-studio-essai.vercel.app';
 
-// Une fois la base d'essai vérifiée, la référence devient obligatoire : sans elle, les tests
-// s'arrêtent au lieu de retomber, en silence, sur la base de la production.
-export const TESTS_ON_SEPARATE_BASE = false;
+// La base d'essai est séparée et vérifiée depuis le 25/11/2026 au soir (`npm run essai:preuve` :
+// la session neuve du compte de test se lit dans la base d'essai, pas dans celle de la
+// production). La référence est donc obligatoire : sans elle, les tests s'arrêtent au lieu de
+// retomber, en silence, sur la base de la production ; et les specs ne se jouent que sur l'essai.
+export const TESTS_ON_SEPARATE_BASE = true;
 
 export const MISSING_REF =
   'E2E_SUPABASE_REF manque dans .env.e2e.local : les tests ne visent que la base d’essai, jamais celle de la production.';

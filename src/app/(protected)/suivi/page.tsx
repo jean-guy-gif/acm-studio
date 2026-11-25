@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { SellerTabs } from '@/components/app-shell/seller-tabs';
 import { emptyState, kickerLabel, link, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { redirect } from 'next/navigation';
 
@@ -241,6 +242,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const counts = suiviCounts(counted);
   return (
     <div className="flex flex-col gap-5 md:gap-6">
+      <SellerTabs current="/suivi" />
       <div className="flex flex-col gap-1.5">
         <span className={kickerLabel}>Après le rendez-vous</span>
         <h1 className={pageTitle}>Suivi</h1>

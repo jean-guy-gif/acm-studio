@@ -1,4 +1,7 @@
-# Livraison — jeudi 26 novembre 2026
+# Livraison — vendredi 27 novembre 2026
+
+Prévue le jeudi 26/11 ; repoussée au vendredi 27/11 au soir par Jean-Guy le 25/11 au soir, avec
+la refonte de l'expérience (`missions/LANCEMENT.md`).
 
 La liste du lancement (`missions/LANCEMENT.md`) est faite : ses douze premières missions sont en
 production. Cette feuille dit ce qui part, où en est la production, ce qui reste éteint exprès, et
@@ -17,7 +20,7 @@ ce que Jean-Guy a à faire lui-même.
 
 ## Les contrôles
 
-Faits le mercredi 25/11 ; ceux marqués ↻ se refont le jeudi 26/11 au soir, avant de dire « livré ».
+Faits le mercredi 25/11 ; ceux marqués ↻ se refont le vendredi 27/11, après le gel de 14 h, avant de dire « livré ».
 
 | Contrôle                                              | Résultat le 25/11                                                                                                                                         |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,11 +71,12 @@ agences.
   - deux classements par l'IA comptés au pire en novembre, 1,29 € en tout (correctif du 24/11) ;
   - un dossier conclu ne se supprime pas depuis l'écran, et une visite faite d'un acquéreur archivé
     reste comptée dans le Suivi (Lancement 11).
-- **Avant d'ouvrir d'autres agences : la base.** Décidé par Jean-Guy le 25/11 : la base d'essai
-  séparée et la taille juste au-dessus (« Small »), le jeudi 26/11 au matin
-  (`missions/BASE_JEUDI_MATIN.md`, ses gestes un par un). C'est le seul point de cette feuille
-  qui touche la production. La production, l'essai, les tests et la démo écrivent dans la même base, et cette
-  base est la plus petite de l'offre Pro (1 Go de mémoire, 60 connexions). Lu dans ses journaux le
+- **Avant d'ouvrir d'autres agences : la base. Fait le 25/11 au soir.** Décidé par Jean-Guy le
+  25/11 et fait le soir même, sur ses gestes (`missions/BASE_JEUDI_MATIN.md`) : la base de la
+  production est en « Small » (2 Go, 90 connexions ; un peu moins de deux minutes d'arrêt,
+  mesurées), et la base d'essai est séparée : les tests et leur démo n'écrivent plus dans la base
+  de la production. Ce qui suit dit pourquoi. Avant, la production, l'essai, les tests et la démo
+  écrivaient dans la même base, la plus petite de l'offre Pro (1 Go de mémoire, 60 connexions). Lu dans ses journaux le
   25/11 : pendant les suites de tests, elle s'est figée plusieurs fois, dix à vingt secondes à
   14 h 10, 14 h 13 et 14 h 51, et une minute et demie à 11 h (« plus de connexion libre », des
   réponses en erreur). Chaque fois juste après une remise à zéro de la démo par les tests, qui
@@ -91,7 +95,7 @@ agences.
     production.
   - Plus tard : faire lire moins à « Aujourd'hui » et à la liste des dossiers
     (`missions/PLUS_TARD.md`).
-- **Avant le 31/12/2026 : les clés de Supabase.** Sa documentation annonce la fin des anciennes
+- **Après la livraison, pas avant (Jean-Guy, 25/11 au soir), et avant le 31/12/2026 : les clés de Supabase.** Sa documentation annonce la fin des anciennes
   clés (« anon », « service_role ») pour la fin de 2026. Si les variables de la production en
   portent (une valeur qui commence par « eyJ »), elles sont à remplacer par les nouvelles : deux
   valeurs dans Vercel, un redéploiement. La base d'essai, créée le 26/11, prend les nouvelles :

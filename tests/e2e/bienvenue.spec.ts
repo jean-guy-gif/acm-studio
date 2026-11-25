@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './test';
 
-import { chooseInMoreMenu, expectOneFilled, goViaAccountMenu, login } from './support';
+import { chooseInMoreMenu, expectOneFilled, goViaAccountMenu, login, sideNav } from './support';
 
 // Mission 97 — le junior autonome : « Bienvenue », le dossier d'exemple, et le Live.
 // Le compte de test a déjà des dossiers : il arrive donc sur la Préparation, et revient à
@@ -47,6 +47,17 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
       await expect(page.getByTestId('need-locator')).toContainText(
         'Facultatif : Localisateur Academia',
       );
+
+      // Lancement, mission 13 — le guide de prise en main : un lien vers le PDF, ouvert dans un
+      // nouvel onglet ; le PDF se lit connecté (la garde de session passe sur les PDF).
+      const guide = page.getByTestId('welcome-guide');
+      await expect(guide).toBeVisible();
+      await expect(guide).toContainText('Guide de prise en main');
+      await expect(guide).toHaveAttribute('href', '/guide/guide-de-prise-en-main.pdf');
+      await expect(guide).toHaveAttribute('target', '_blank');
+      const pdf = await page.request.get('/guide/guide-de-prise-en-main.pdf');
+      expect(pdf.status()).toBe(200);
+      expect(pdf.headers()['content-type']).toContain('application/pdf');
 
       // Les 4 étapes.
       for (const step of [
@@ -116,7 +127,9 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
     });
 
     await test.step('Les concurrents fictifs : aucun mot banni, surfaces au m²', async () => {
-      await page.getByRole('link', { name: /^Préparation/ }).click();
+      await sideNav(page)
+        .getByRole('link', { name: /^Vendeurs/ })
+        .click();
       await page.goto(`${projectUrl}/comparables`);
       await expect(page.getByRole('heading', { name: /Concurrents retenus \(5\)/ })).toBeVisible();
       const text = await page.locator('main').innerText();

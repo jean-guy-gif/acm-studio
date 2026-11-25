@@ -189,13 +189,13 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
   fois, chacune avec sa réponse par défaut, et avance avec elle ; Jean-Guy corrige après. Le chef
   tranche seul les détails et le dit après. Restent à Jean-Guy : appliquer une migration, et
   essayer lui-même une mission Sensible quand il le faut.
-- **Petit et Moyen ne passent plus par l'essai** (Jean-Guy, 23/11) : le chef teste sur sa branche,
-  en local ou sur la prévisualisation Vercel de la branche (le plus simple des deux), fait l'essai
+- **Petit et Moyen n'attendent plus l'essai de Jean-Guy** (Jean-Guy, 23/11) : le chef teste en
+  fusionnant sa branche dans `essai` : les specs ne se jouent que sur l'essai ; il fait l'essai
   lui-même dans un vrai navigateur, range deux ou trois captures dans `missions/maquettes/`, puis
   pousse sur `main` et met en production ; Jean-Guy regarde après. Si quelque chose empêche de
   tester ainsi (connexion, adresse du site), le chef le dit en une ligne, avec sa solution.
-  L'essai (branche `essai`) ne sert plus qu'aux missions Sensible que Jean-Guy doit essayer
-  lui-même : celles-là attendent son « valide » (`/valide NN`).
+  L'essai de Jean-Guy ne sert plus qu'aux missions Sensible qu'il doit essayer lui-même :
+  celles-là attendent son « valide » (`/valide NN`).
 - **Les tests** (Jean-Guy, 23/11) : la suite e2e complète tourne une fois par nuit, plus à chaque
   mission ; en journée, les specs concernées seulement. Le relecteur ne passe qu'une fois, et pas
   du tout sur une mission Petit.
@@ -220,9 +220,10 @@ jamais** ; si un jour le desserrage touchait la commune, cette règle tomberait.
   ordinateur, avec des notes avant / après, une seule fois, rangée dans `missions/maquettes/` ; le
   chef avance avec elle, Jean-Guy corrige après. Pas de maquette pour une mission Petit, sauf écran
   nouveau.
-- La base Supabase est partagée entre la production, l'essai et les prévisualisations : une
-  migration doit rester compatible avec le code de `main`, et c'est Jean-Guy qui l'applique, après
-  sauvegarde et comptage.
+- La production a sa base ; l'essai et les tests ont la leur (`acm-studio-essai`, depuis le 25/11).
+  Les prévisualisations des autres branches lisent encore la base de la production : aucune spec
+  n'y tourne. Une migration se joue d'abord sur la base d'essai, par le chef ; Jean-Guy l'applique
+  à la production, après sauvegarde et comptage, et elle reste compatible avec le code de `main`.
 - Barrières : `npm run typecheck`, `npm run lint`, `npm test`, `npm run format:check`,
   `npm run build` (la CI les rejoue à chaque push). Une mission n'est finie que vue à l'écran.
 - **Équipe allégée** (Jean-Guy, 05/11 et 23/11) : l'architecte seulement avec une migration ou une

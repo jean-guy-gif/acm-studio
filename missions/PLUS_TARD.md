@@ -278,3 +278,9 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     Jean-Guy, 25/11 au soir) ;
   - « Tout le dossier » voisine avec « Dossier acquéreur et lien » : deux notions, un même mot
     (les mots de la fiche sont ceux de Jean-Guy).
+- 25/11 · Base d'essai, le soir même · Restent, sans urgence : `langue-du-vendeur` a échoué une
+  fois dans la suite du soir (le passage du Live en anglais par « Réglages »), puis est passée au
+  rejeu et cinq fois de suite à 21 h 12 : on n'y touche pas (ordre de Jean-Guy) ; si elle
+  retombe, la cause se cherche avant toute correction — l'aléa n'était pas la base commune. Les
+  deux agences des tests restées dans la production n'y servent plus (leur retrait : sa
+  décision). Les anciennes clés de Supabase de la production : après la livraison, pas avant.

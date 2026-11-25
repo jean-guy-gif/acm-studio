@@ -11,6 +11,25 @@
   --foreground: #171717;
 }
 
+/* La refonte, lot A — le cadre aux trois tailles (maquettes REFONTE-1, 5 et 6). Sur téléphone, le
+   menu est en bas (72 px) ; à partir de 768 px, à gauche, en icônes (88 px) ; à partir de 1280 px,
+   complet (232 px). Ces deux mesures servent au cadre et aux barres fixées en bas de ses écrans. */
+:root {
+  --shell-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  --shell-left: 0px;
+}
+@media (min-width: 768px) {
+  :root {
+    --shell-bottom: 0px;
+    --shell-left: 88px;
+  }
+}
+@media (min-width: 1280px) {
+  :root {
+    --shell-left: 232px;
+  }
+}
+
 /* Tokens statiques → génèrent bg-brand, text-brand-deep, rounded-card, shadow-card… */
 @theme {
   --color-brand: #3ea9ff;
