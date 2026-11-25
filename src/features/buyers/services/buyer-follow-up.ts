@@ -110,6 +110,9 @@ export type FollowUpEntry = {
   again: boolean;
   // Le dernier fait daté, pour ranger dans un groupe.
   lastAt: string;
+  // Il l'a vu en présentation, avec le conseiller : la date de cette présentation (la plus
+  // ancienne), même si le lien lui a été partagé avant. Absent : jamais présenté.
+  presentedAt?: string | null;
 };
 
 type Draft = {
@@ -120,6 +123,7 @@ type Draft = {
   itemId: string | null;
   itemAt: string;
   sentAt: string | null;
+  presentedAt: string | null;
   // Par quoi il l'a reçu : le plus ancien moyen connu (une réponse donnée pendant la présentation
   // est datée AVANT la fin de celle-ci : elle ne l'efface pas).
   how: { how: SentHow; at: string } | null;
@@ -170,6 +174,7 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
       itemId: null,
       itemAt: '',
       sentAt: null,
+      presentedAt: null,
       how: null,
       answers: [],
       dismissed: null,
@@ -206,11 +211,21 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
     return target;
   };
 
+  const presentedOf = new Map(
+    rows.selections.flatMap((row) =>
+      row.presented_at ? [[row.id, row.presented_at] as const] : [],
+    ),
+  );
   for (const item of rows.items) {
     const reached = shownAt.get(item.selection_id);
     if (!reached || item.removed_at != null) continue;
     const target = ofItem(item.id, reached.at);
-    if (target) sent(target, reached.at, reached.how);
+    if (!target) continue;
+    sent(target, reached.at, reached.how);
+    const presented = presentedOf.get(item.selection_id);
+    if (presented && (!target.presentedAt || presented < target.presentedAt)) {
+      target.presentedAt = presented;
+    }
   }
   for (const row of rows.proposals) {
     const target = draft(row.property_key);
@@ -281,6 +296,7 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
       group,
       again: false,
       lastAt: dates.sort().at(-1) ?? '',
+      presentedAt: known.presentedAt,
     };
     // Visité, et une autre visite à organiser : elle a sa ligne sous « Visites à organiser ».
     if (group === 'visited' && pending.length > 0) {
@@ -421,6 +437,9 @@ export type SeenWithHim = {
 };
 
 function sentMention(entry: FollowUpEntry, now: Date): string {
+  // Présenté avec lui : c'est ce que « Déjà vus avec lui » dit d'abord, même si le lien de la
+  // sélection a été partagé avant la présentation.
+  if (entry.presentedAt) return `Présenté ${formatRelativeDay(entry.presentedAt, now)}`;
   if (!entry.sent) return 'Déjà vu';
   const when = formatRelativeDay(entry.sent.at, now);
   if (entry.sent.how === 'presentation') return `Présenté ${when}`;

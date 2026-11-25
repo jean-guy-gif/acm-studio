@@ -426,6 +426,27 @@ describe('« Déjà vus avec lui »', () => {
     expect(list().some((line) => line.label.includes('Vence'))).toBe(false);
   });
 
+  // Vu chez un vrai acquéreur (25/11) : le lien partagé trois minutes avant la fin de la
+  // présentation faisait dire « Envoyé le 13/11, par le lien » d'un bien présenté avec lui.
+  it('présenté avec lui : la présentation l’emporte sur un lien partagé plus tôt', () => {
+    const both = {
+      ...base,
+      shares: [{ selection_id: 's1', occurred_at: '2026-11-14T09:00:00Z' }],
+      responses: [],
+      dismissals: [],
+      visits: [],
+    };
+    const list = seenWithHim(buyerFollowUp(both), [], NOW);
+    expect(list.map((line) => line.mention)).toEqual([
+      'Présenté le 14/11',
+      'Présenté le 14/11',
+      'Présenté le 14/11',
+      'Présenté le 14/11',
+    ]);
+    // « Son suivi » garde sa règle : le plus ancien moyen connu.
+    expect(followUpFacts(buyerFollowUp(both)[0], NOW)[0]).toBe('Envoyé le 14/11, par le lien');
+  });
+
   it('envoyé par le lien, ou proposé : la mention dit comment', () => {
     const shared = {
       ...base,
