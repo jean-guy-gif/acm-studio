@@ -1,3 +1,4 @@
+import type { FetchFailureReason } from '@/features/comparable-import/services/fetch-listing-page';
 import type { Exclusivity, MandateSource } from '@/features/competitor-mandate/types';
 
 // Final normalised data offered to the advisor for prefill (never persisted directly).
@@ -118,6 +119,8 @@ export type ObservedPriceChange = {
 
 export type ListingHistory = { age: ListingAge; priceChange: ObservedPriceChange };
 
+export type ImportFailureReason = FetchFailureReason | 'empty';
+
 export type ComparableImportResult =
   | {
       ok: true;
@@ -131,4 +134,8 @@ export type ComparableImportResult =
   | {
       ok: false;
       error: string;
+      // Lancement, mission 11 (suite) — pourquoi le serveur n'a pas lu la page (`empty` : lue, sans
+      // rien d'exploitable). L'écran s'en sert pour ne pas dire « supprimée » quand c'est
+      // l'extension qui n'a pas lu (`importListingFromUrl`).
+      reason?: ImportFailureReason;
     };
