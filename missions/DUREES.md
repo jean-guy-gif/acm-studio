@@ -36,7 +36,10 @@ commits et des messages, à quelques minutes près.
 | 25/11 | Lancement 3 (suite) : le doublon de la veille dans « Le marché » | Petit | 15 min | 0 | 5 min |
 | 25/11 | Lancement 13 : le guide de prise en main, la feuille de livraison, les contrôles, la base qui se fige | Petit | 1 h 10 | 0 | 10 min |
 | 25/11 | La suite e2e complète du 25/11, jouée à 14 h (37 sur 37, 4 rejouées) | — | 1 h 00 | 0 | 1 h 00 |
-| 25/11 | **Total de la journée (neuf lignes ; 8 h d'horloge, de 7 h à 15 h, la suite de l'après-midi en même temps que la mission 13)** | | **8 h 15** | 0 | 4 h 20 |
+| 25/11 | Lancement 13 (suite) : le lien « Guide de prise en main » dans « Aide » | Petit | 20 min | 0 | 0 |
+| 25/11 | Mission 10 bis : la maquette de la fiche acquéreur repliée (le code attend l'« ok » de Jean-Guy) | Moyen | 15 min | en cours | 0 |
+| 25/11 | La base d'essai séparée : l'outillage des tests et le déroulé de jeudi matin | Sensible | 45 min | 0 | 0 |
+| 25/11 | **Total de la journée à 16 h 45 (douze lignes ; 9 h d'horloge, de 7 h à 16 h 45, avec une heure d'attente de 15 h à 16 h)** | | **9 h 35** | 1 h | 4 h 20 |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
 pas mesurées ici : de 9 h 24 à 20 h 14, avec les attentes. Le total de 2 h 10 est celui de l'horloge,

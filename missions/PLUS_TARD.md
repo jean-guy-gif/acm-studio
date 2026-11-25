@@ -233,4 +233,13 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   (`tests/e2e/support.ts`) : cela évite une spec tombée quand la base se fige après une remise à
   zéro, pas le figement lui-même ; une action faite pendant ce moment peut encore tomber (vu une
   fois : « Un incident est survenu » au changement de langue, vert au rejeu).
+- 25/11 · Base d'essai · Après la séparation, restent à faire plus tard :
+  - les prévisualisations des autres branches lisent encore la base de la production (les trois
+    entrées communes de Vercel) : les passer sur la base d'essai demande de modifier ces entrées,
+    valeur comprise pour la clé secrète ; d'ici là, aucune spec sur une prévisualisation ;
+  - l'agence des tests et l'agence de démonstration des tests restent dans la production, vides :
+    leur retrait suit la procédure d'effacement, sur décision de Jean-Guy ;
+  - le poste de développement (`.env.local`) lit encore la base de la production ;
+  - les modèles d'e-mail et l'adresse du site de la base d'essai (invitation, mot de passe
+    oublié) ne sont pas réglés : aucune spec n'envoie d'e-mail.
 
