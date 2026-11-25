@@ -142,6 +142,16 @@ export const socleBtnFilled =
 export const socleBtnOutline =
   'inline-flex h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-brand-deep bg-white px-5 text-base font-bold text-brand-deep transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/40 stage:bg-transparent stage:text-white stage:hover:bg-white/10';
 
+// Le bouton d'une tâche, dans une carte « à faire » : plein pour la première, en contour pour les
+// autres, sur toute la largeur. Les gestes d'« Aujourd'hui » le prennent quand ils s'y affichent.
+export type TaskButtonLook = 'today' | 'socle';
+
+export function taskButtonClass(primary: boolean, look: TaskButtonLook = 'today'): string {
+  return look === 'socle'
+    ? `${primary ? socleBtnFilled : socleBtnOutline} w-full`
+    : `${primary ? btnPrimary : btnSecondary} self-start whitespace-nowrap sm:self-auto`;
+}
+
 // Le bouton discret d'un en-tête (« Nouveau ») : 44 px, un contour gris.
 export const socleBtnQuiet =
   'inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-[#D5DAEA] bg-white px-4 text-[15px] font-bold text-brand-deep transition-colors hover:border-brand-deep disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/10 stage:text-white';

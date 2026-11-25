@@ -1,0 +1,101 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M129-3 · Fiche du plus dangereux, cadre doré</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:24px;align-items:flex-start}
+.frame-title{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px}
+.frame{background:#fafafa;position:relative;overflow:hidden;border:1px solid #a1a1aa}
+.desk{width:1280px;height:800px;display:flex}
+.phone{width:390px;height:844px;background:#fff}
+.a4{width:794px;height:1123px;background:#fff;padding:46px 53px;position:relative}
+.side{width:232px;height:100%;background:#fff;border-right:1px solid #e4e4e7;padding:20px 12px;display:flex;flex-direction:column;gap:6px;flex:none}
+.switch{display:flex;background:#f4f4f5;border-radius:16px;padding:2px;margin:0 8px 14px}
+.switch span{flex:1;text-align:center;font-size:12px;font-weight:600;color:#71717a;padding:6px 0;border-radius:14px}
+.switch .on{background:#00527a;color:#fff;font-weight:700}
+.nav{padding:8px 16px;border-radius:10px}
+.nav b{display:block;font-size:14px}
+.nav small{font-size:11px;color:#71717a}
+.nav.on{background:#e8f1f8}.nav.on b{color:#00527a}
+.account{margin-top:auto;border:1px solid #e4e4e7;border-radius:10px;padding:10px 16px}
+.account b{font-size:12px;display:block}.account small{font-size:10.5px;color:#71717a}
+.main{flex:1;padding:26px 32px;overflow:hidden;display:flex;flex-direction:column;gap:14px}
+.h1{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:28px;font-weight:700}
+.sub{font-size:12.5px;color:#71717a;margin-top:-10px}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:14px;border-left:6px solid #059669;overflow:hidden}
+.row-head{padding:14px 18px 10px;display:flex;flex-direction:column;gap:6px}
+.name{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:17px;font-weight:700;display:flex;gap:10px;align-items:center}
+.pill{font-family:Montserrat,Inter,Arial,sans-serif;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px}
+.meta{font-size:12px;color:#71717a}
+.kick{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#71717a}
+.actions{display:flex;gap:12px;align-items:center;padding:4px 18px 12px;flex-wrap:wrap}
+.btn{font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;border:1.5px solid #00527a;color:#00527a;background:#fff;white-space:nowrap}
+.btn.full{background:#00527a;color:#fff}
+.btn.sm{font-size:12px;padding:6px 12px}
+.btn.off{opacity:.45}
+.txt{font-size:12.5px;font-weight:600;color:#00527a;white-space:nowrap}
+.zone{border-top:1px solid #f4f4f5;padding:10px 18px;display:flex;flex-direction:column;gap:8px}
+.verdict{display:flex;gap:14px;align-items:flex-start;border:1.5px solid;border-radius:12px;padding:12px 16px}
+.verdict .ico{width:34px;height:34px;border-radius:50%;color:#fff;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;flex:none}
+.verdict .t{font-weight:800;font-size:17px}
+.verdict p{font-size:12.5px;line-height:1.45;margin-top:3px;color:#27272a}
+.steps{display:flex;align-items:stretch;gap:6px}
+.step{flex:1;border:1px solid #e4e4e7;border-radius:10px;padding:8px 12px;background:#fff;display:flex;flex-direction:column;gap:5px}
+.step .k{font-size:9.5px;font-weight:700;letter-spacing:.05em;white-space:nowrap;color:#71717a;text-transform:uppercase}
+.step .r{font-weight:800;font-size:22px;line-height:1}
+.step .r sup{font-size:12px}
+.step .r small{font-size:13px;color:#71717a;font-weight:700;margin-left:5px}
+.step .none{font-size:12px;color:#71717a;border:1px dashed #d4d4d8;border-radius:8px;padding:8px;text-align:center}
+.step .hint{font-size:10.5px;color:#71717a}
+.arrow{align-self:center;color:#a1a1aa;font-size:16px}
+.ruler{display:flex;gap:3px;align-items:center;height:14px}
+.ruler i{flex:1;height:9px;border-radius:3px;display:block}
+.ruler i.me{height:14px;border:2px solid #18181b}
+.note{font-size:11.5px;color:#71717a;line-height:1.45}
+.lecture{position:absolute;right:16px;bottom:16px;width:360px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 12px;font-size:11px;line-height:1.45;color:#57534e}
+.lecture b{color:#92400e}
+.radio{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid #e4e4e7;border-radius:9px;font-size:12.5px;background:#fff}
+.radio .dot{width:15px;height:15px;border-radius:50%;border:2px solid #a1a1aa;flex:none}
+.radio.sel{border-color:#b8892b;background:#fbf4e4}
+.radio.sel .dot{border:5px solid #b8892b}
+.radio .pr{margin-left:auto;font-weight:700}
+.tag{font-size:9.5px;font-weight:800;letter-spacing:.08em;padding:2px 7px;border-radius:5px;text-transform:uppercase;white-space:nowrap}
+.tag.new{background:#e6ecfa;color:#1b2f6e}
+.tag.gold{background:#b8892b;color:#fff}
+.tag.goldline{border:1px solid #b8892b;color:#b8892b}
+.msg{font-size:12px;padding:7px 10px;border-radius:8px}
+.msg.err{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.msg.ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+.msg.warn{background:#fbf4e4;color:#713f12;border:1px solid #e9d5a6}
+</style></head><body><div style="display:flex;gap:24px;align-items:flex-start"><section><div class="frame-title">M129-3 a · Document A4 · plus dangereux changé · le nouveau, cadre doré, « LE PLUS DANGEREUX AUJOURD’HUI »</div><div class="frame a4"><article style="border:3px solid #b8892b;background:#fff;break-inside:avoid">
+<div style="background:#b8892b;color:#fff;font-weight:800;font-size:12px;letter-spacing:.14em;padding:8px 16px;display:flex;align-items:center;gap:8px">◆ LE PLUS DANGEREUX AUJOURD’HUI</div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:12px;background:#fbf4e4">
+<div><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Nouveau venu</div><div style="font-family:Rajdhani,Montserrat,Arial;font-size:22px;font-weight:700;color:#013a58">Maison · 7 pièces · 200 m² · Mougins</div></div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:6px"><div style="height:230px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff">photo de l’annonce</div><div style="display:grid;gap:6px"><div style="height:112px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff"></div><div style="height:112px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff"></div></div></div>
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Ses caractéristiques face à votre bien</div>
+<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">Surface</td><td style="text-align:right">210 m²</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#c2410c">200 m²</td></tr><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">Terrain</td><td style="text-align:right">1 800 m²</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#c2410c">1 600 m²</td></tr><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">Pièces · chambres</td><td style="text-align:right">7 · 4</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#52525b">7 · 4</td></tr><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">DPE</td><td style="text-align:right">B</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#c2410c">C</td></tr></table>
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#00527a">Le prix, depuis son arrivée sur le marché</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+<div style="border:1px solid #e4e4e7;background:#fff;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Vu sur le marché depuis le</div><div style="font-weight:700;font-size:16px">24/10</div><div style="color:#71717a">pas encore en vente au rendez-vous</div></div>
+<div style="border:1.5px solid #b8892b;background:#fff;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Prix affiché</div><div style="font-weight:800;font-size:22px">1 620 000 €</div><div style="color:#71717a">8 100 €/m² · 19 500 € sous votre prix</div></div></div>
+</div></article><div style="position:absolute;left:53px;right:53px;bottom:24px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:.12em;color:#64748b">ÉTUDE CONFIDENTIELLE · MOUGINS · 5 NOVEMBRE 2026<span>04 / 11</span></div></div></section><section><div class="frame-title">M129-3 b · Document A4 · même document · l’ancien choix : plus de cadre, la mention discrète « votre choix au rendez-vous »</div><div class="frame a4"><article style="border:1px solid #e4e4e7;border-top:3px solid #00527a;background:#fff;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Concurrent 1 · <span style="color:#b8892b">votre choix au rendez-vous</span></div><div style="font-family:Rajdhani,Montserrat,Arial;font-size:22px;font-weight:700;color:#013a58">Maison · 7 pièces · 225 m² · Mougins</div></div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:6px"><div style="height:200px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff">photo de l’annonce</div><div style="display:grid;gap:6px"><div style="height:97px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff"></div><div style="height:97px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff"></div></div></div>
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Ses caractéristiques face à votre bien</div>
+<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">Surface</td><td style="text-align:right">210 m²</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#15803d">225 m²</td></tr><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">Pièces · chambres</td><td style="text-align:right">7 · 4</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#15803d">7 · 5</td></tr><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">DPE</td><td style="text-align:right">B</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#52525b">B</td></tr></table>
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#00527a">Le prix, depuis le rendez-vous</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px">
+<div style="border:1px solid #e4e4e7;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Au rendez-vous</div><div style="font-weight:700;font-size:16px">1 690 000 €</div></div>
+<div style="border:1px solid #e4e4e7;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Aujourd’hui</div><div style="font-weight:800;font-size:18px">1 690 000 €</div></div>
+<div style="border:1px solid #e4e4e7;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Écart</div><div style="font-weight:700;font-size:16px">0 %</div><div style="color:#71717a">prix inchangé</div></div></div>
+<div style="font-size:12px;color:#71717a">Toujours en vente depuis 65 jours · 7 511 €/m² aujourd’hui</div></article><div style="margin-top:18px;border:1px dashed #d4d4d8;padding:12px;font-size:12px;color:#71717a;line-height:1.5"><b style="color:#18181b">Sans changement</b> (aucun plus dangereux désigné après le rendez-vous) : cette fiche-ci porte le cadre doré et le bandeau « ◆ LE PLUS DANGEREUX, SELON VOUS », exactement comme la fiche a. Un seul cadre doré par document. Même cadre (3 px, fond #fbf4e4) sur sa ligne du classement, comme la v2.</div><div style="position:absolute;left:53px;right:53px;bottom:24px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:.12em;color:#64748b">ÉTUDE CONFIDENTIELLE · MOUGINS · 5 NOVEMBRE 2026<span>04 / 11</span></div></div></section></div>
+<section><div class="frame-title">M129-3 c · Lien, téléphone 390 × 844 · la même fiche, le cadre doré pleine largeur</div><div class="frame phone"><div style="padding:12px 12px 90px;height:100%;overflow:hidden"><article style="border:3px solid #b8892b;background:#fff;break-inside:avoid">
+<div style="background:#b8892b;color:#fff;font-weight:800;font-size:12px;letter-spacing:.14em;padding:8px 16px;display:flex;align-items:center;gap:8px">◆ LE PLUS DANGEREUX AUJOURD’HUI</div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:12px;background:#fbf4e4">
+<div><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Nouveau venu</div><div style="font-family:Rajdhani,Montserrat,Arial;font-size:22px;font-weight:700;color:#013a58">Maison · 7 pièces · 200 m² · Mougins</div></div>
+<div style="display:grid;grid-template-columns:1fr;gap:6px"><div style="height:200px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff">photo de l’annonce</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="height:80px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff"></div><div style="height:80px;background:linear-gradient(135deg,#9ca3af,#d4d4d8);display:flex;align-items:flex-end;padding:6px;font-size:10px;color:#fff"></div></div></div>
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Ses caractéristiques face à votre bien</div>
+<table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">Surface</td><td style="text-align:right">210 m²</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#c2410c">200 m²</td></tr><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">Terrain</td><td style="text-align:right">1 800 m²</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#c2410c">1 600 m²</td></tr><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">Pièces · chambres</td><td style="text-align:right">7 · 4</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#52525b">7 · 4</td></tr><tr style="border-bottom:1px solid #f4f4f5"><td style="padding:5px 0;color:#71717a">DPE</td><td style="text-align:right">B</td><td style="text-align:right;padding-left:10px;font-weight:600;color:#c2410c">C</td></tr></table>
+<div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#00527a">Le prix, depuis son arrivée sur le marché</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+<div style="border:1px solid #e4e4e7;background:#fff;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Vu sur le marché depuis le</div><div style="font-weight:700;font-size:16px">24/10</div><div style="color:#71717a">pas encore en vente au rendez-vous</div></div>
+<div style="border:1.5px solid #b8892b;background:#fff;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#71717a">Prix affiché</div><div style="font-weight:800;font-size:22px">1 620 000 €</div><div style="color:#71717a">8 100 €/m² · 19 500 € sous votre prix</div></div></div>
+</div></article></div>
+<div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e4e4e7;padding:12px 16px 22px"><div class="btn" style="text-align:center">Télécharger en PDF</div></div></div></section></body></html>

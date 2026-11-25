@@ -1,0 +1,99 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M147 · 5 — Ma démo : la remise à zéro en étapes, « prête » seulement sur preuve</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:22px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}
+.sheet-sub{font-size:13px;color:#3f3f46;max-width:1900px;line-height:1.5}
+.layout{display:flex;gap:28px;align-items:flex-start}
+.devices{display:flex;flex-direction:column;gap:26px}
+.pair{display:flex;gap:22px;align-items:flex-start}
+.frame-title{font-size:13px;font-weight:800;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.frame-title .st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff}
+.st.av{background:#71717a}.st.ap{background:#12875a}.st.alt{background:#7c5cbf}
+.frame{background:#f7f8fa;position:relative;overflow:hidden;border:1px solid #a1a1aa}
+.desk{width:1280px}.tab{width:1024px}.phone{width:390px}
+.zone{padding:22px 32px;display:flex;flex-direction:column;gap:14px}
+.tab .zone{padding:20px 22px}.phone .zone{padding:14px 12px;gap:12px}
+.kicker{font-size:11.5px;font-weight:800;letter-spacing:.14em;color:#71717a;text-transform:uppercase}
+.title{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:34px;font-weight:800;color:#013a58;line-height:1.05}
+.phone .title{font-size:27px}
+.btn{display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:9px 15px;font-size:13.5px;font-weight:700;white-space:nowrap;border:1.5px solid #d4d4d8;color:#18181b;background:#fff}
+.btn.full{background:#00527a;border-color:#00527a;color:#fff}
+.btn.sm{padding:6px 11px;font-size:12.5px;border-radius:8px;border-width:1px}
+.lnk{font-size:12.5px;font-weight:700;color:#00527a;white-space:nowrap}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;position:relative}
+.phone .card{padding:12px}
+.h2{font-size:17px;font-weight:800;color:#013a58}
+.hint{font-size:12.5px;color:#52525b;line-height:1.5}
+.small{font-size:11.5px;color:#71717a}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:#52525b;font-weight:600}
+.field span{background:#fff;border:1px solid #d4d4d8;border-radius:8px;padding:7px 10px;font-size:13px;color:#18181b;font-weight:500}
+.field span.empty{color:#a1a1aa}
+.formline{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tab .formline{grid-template-columns:repeat(2,1fr)}.phone .formline{grid-template-columns:1fr}
+.blocks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tab .blocks{grid-template-columns:repeat(2,1fr)}.phone .blocks{grid-template-columns:1fr}
+.blk{border:1px solid #e4e4e7;border-radius:10px;padding:9px 11px;font-size:12px;color:#52525b;line-height:1.45}
+.blk b{display:block;color:#18181b;font-size:12.5px;margin-bottom:2px}
+.addr{font-size:13px;font-weight:700;color:#18181b;background:#f4f4f5;border-radius:8px;padding:6px 10px;display:inline-block}
+.toast{display:inline-flex;gap:8px;align-items:center;font-size:12.5px;font-weight:700;color:#0b6b46;background:#e6f4ec;border-radius:999px;padding:4px 12px}
+.warn{font-size:12.5px;font-weight:700;color:#b45309;background:#fef3c7;border-radius:10px;padding:8px 12px}
+.badge{display:inline-block;font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px;background:#f4f4f5;color:#3f3f46;vertical-align:middle}
+.badge.green{background:#e6f4ec;color:#0b6b46}
+.photo{width:120px;height:82px;border-radius:10px;flex:none;background:linear-gradient(135deg,#c8d3c4,#9fb39a)}
+.phone .photo{width:96px;height:68px}
+.gone{position:relative;opacity:.55}
+.gone::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 10px,rgb(185 28 28 / .10) 10px 12px);border-radius:inherit;pointer-events:none}
+.strike{text-decoration:line-through;text-decoration-color:#b91c1c}
+.notes{width:440px;display:flex;flex-direction:column;gap:12px;flex:none}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#3a3000}
+.note b{color:#5b4a00}
+.note ol,.note ul{padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.note code{font-size:11.5px;background:#fff8d6;padding:0 3px;border-radius:3px}
+.pin{display:inline-flex;width:18px;height:18px;border-radius:50%;background:#e8cf5a;color:#5b4a00;font-size:10.5px;font-weight:800;align-items:center;justify-content:center;vertical-align:middle;margin:0 3px;flex:none;font-style:normal}
+.mobile{background:#fff;display:flex;flex-direction:column;gap:12px;padding:16px 14px}
+.desk .mobile,.tab .mobile{max-width:560px;margin:0 auto;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7}
+.lh{border:1px solid #e4e4e7;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;font-size:12px;color:#52525b}
+.lh b{color:#18181b}
+.lh .t{font-size:13.5px;font-weight:800;color:#013a58}
+.academia{border:1px solid #bcd9ee;background:#eaf5ff;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.academia b{font-size:13.5px;color:#013a58}
+.msg{background:#f4f4f5;border-radius:12px;padding:10px 12px;font-size:12.5px;line-height:1.55;color:#18181b;white-space:pre-line}
+.bar{height:8px;border-radius:999px;background:#e4e4e7;overflow:hidden}
+.bar i{display:block;height:100%;background:#00527a;border-radius:999px}
+.steps{display:flex;flex-direction:column;gap:5px;font-size:12.5px}
+.steps div{display:flex;gap:8px;align-items:center;color:#52525b}
+.steps .ok{color:#0b6b46;font-weight:700}
+.steps .now{color:#013a58;font-weight:800}
+.ok-box{background:#e6f4ec;border:1px solid #b9e0c9;border-radius:12px;padding:10px 14px;font-size:13.5px;color:#0b6b46;font-weight:700}
+.err-box{background:#fde8e8;border:1px solid #f5c2c2;border-radius:12px;padding:10px 14px;font-size:13px;color:#b91c1c;font-weight:600;line-height:1.5}
+.dl{display:flex;flex-direction:column;gap:6px}
+.dl div{display:flex;justify-content:space-between;align-items:center;border:1px solid #e4e4e7;border-radius:10px;padding:8px 12px;font-size:12.5px;background:#fff}
+.stage{background:radial-gradient(120% 90% at 20% 0%,#0a4f78 0%,#062b44 55%,#041d2f 100%);color:#fff;display:flex;flex-direction:column;height:430px}
+.phone .stage{height:560px}
+.stage .top{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;gap:10px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.stage .top small{font-weight:600;letter-spacing:0;text-transform:none;color:rgb(255 255 255 / .6);margin-left:8px}
+.stage .tools{display:flex;gap:6px}
+.stage .tools span{font-size:11.5px;font-weight:700;border:1px solid rgb(255 255 255 / .25);border-radius:8px;padding:4px 8px;text-transform:none;letter-spacing:0}
+.intro{flex:1;margin:4px 22px 20px;border-radius:18px;background:linear-gradient(135deg,#0d6a9c,#033453);padding:28px 34px;display:flex;flex-direction:column;justify-content:space-between}
+.phone .intro{margin:4px 10px 12px;padding:20px 16px}
+.intro .big{font-size:26px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.intro .k{font-size:11px;font-weight:700;letter-spacing:.2em;color:#7cc4ee;text-transform:uppercase}
+.intro h2{font-size:28px;line-height:1.15;font-weight:600;max-width:600px}
+.phone .intro h2{font-size:21px}
+.intro .go{display:inline-flex;background:#fff;color:#013a58;font-weight:800;border-radius:12px;padding:11px 18px;font-size:14px;align-self:flex-start}
+.side{display:flex;gap:0}
+.sidebar{width:220px;background:#fff;border-right:1px solid #e4e4e7;padding:14px;display:flex;flex-direction:column;gap:10px;font-size:13px}
+.sidebar .ag{font-weight:800;color:#013a58;font-size:14px}
+.sidebar div.m{color:#52525b;font-weight:600;padding:5px 8px;border-radius:8px}
+.sidebar div.m.on{background:#eaf5ff;color:#013a58}
+.topbar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-bottom:1px solid #e4e4e7;padding:10px 12px;font-size:13px;font-weight:800;color:#013a58}
+</style></head><body><h1 class="sheet">M147 · 5 — Ma démo : la remise à zéro en étapes, « prête » seulement sur preuve</h1><p class="sheet-sub">Trois états, un par appareil : pendant (ordinateur), prête (tablette), pas aboutie (téléphone).</p><div class="layout"><div class="devices"><div class="pair"><div><div class="frame-title"><span class="st av">AVANT</span>Ordinateur · 1280</div><div class="frame desk"><div class="zone"><div><div class="kicker">Démo</div><div class="title">Ma démo</div></div><div class="card"><div class="h2">Ma démo</div><div class="hint">Six dossiers aux étapes de l’outil… et neuf acquéreurs à rapprocher.</div><div class="dl"><div><span>M. et Mme Martin · À préparer</span><span class="lnk">Ouvrir →</span></div><div><span>Mme Garcia · Prêt pour le Live</span><span class="lnk">Ouvrir →</span></div><div><span>Mr and Mrs Bernard · Prêt, présentation directe</span><span class="lnk">Ouvrir →</span></div><div><span>M. Lefebvre · Conclu, mandat signé</span><span class="lnk">Ouvrir →</span></div><div><span>M. et Mme Lopez · Conclu, mandat signé</span><span class="lnk">Ouvrir →</span></div><div><span>M. et Mme Lambert-Duval · À relancer</span><span class="lnk">Ouvrir →</span></div></div><div class="row"><span class="btn" style="opacity:.5">Remise à zéro…</span><i class="pin">1</i><span class="small">~20 s sans rien dire, puis la page… ou « Première connexion », ou 12 dossiers</span></div></div></div></div></div><div><div class="frame-title"><span class="st ap">APRÈS</span>Ordinateur · 1280</div><div class="frame desk"><div class="zone"><div><div class="kicker">Démo</div><div class="title">Ma démo</div></div><div class="card"><div class="h2">Remise à zéro de votre démo <i class="pin">2</i></div><div class="bar"><i style="width:58%"></i></div><div class="steps"><div class="ok">✓ Vos anciens dossiers et acquéreurs supprimés</div><div class="ok">✓ Dossiers 1 à 3 créés</div><div class="now">● Dossier 4 sur 6 : M. Lefebvre, mandat signé…</div><div>○ Acquéreurs</div><div>○ Vérification</div></div><div class="small">Environ 20 secondes. Gardez cette page ouverte.</div></div></div></div></div></div><div class="pair"><div><div class="frame-title"><span class="st av">AVANT</span>Tablette · 1024</div><div class="frame tab"><div class="zone"><div><div class="kicker">Démo</div><div class="title">Ma démo</div></div><div class="card"><div class="h2">Ma démo</div><div class="hint">Six dossiers aux étapes de l’outil… et neuf acquéreurs à rapprocher.</div><div class="dl"><div><span>M. et Mme Martin · À préparer</span><span class="lnk">Ouvrir →</span></div><div><span>Mme Garcia · Prêt pour le Live</span><span class="lnk">Ouvrir →</span></div><div><span>Mr and Mrs Bernard · Prêt, présentation directe</span><span class="lnk">Ouvrir →</span></div><div><span>M. Lefebvre · Conclu, mandat signé</span><span class="lnk">Ouvrir →</span></div><div><span>M. et Mme Lopez · Conclu, mandat signé</span><span class="lnk">Ouvrir →</span></div><div><span>M. et Mme Lambert-Duval · À relancer</span><span class="lnk">Ouvrir →</span></div></div><div class="row"><span class="btn" style="opacity:.5">Remise à zéro…</span><i class="pin">1</i><span class="small">~20 s sans rien dire, puis la page… ou « Première connexion », ou 12 dossiers</span></div></div></div></div></div><div><div class="frame-title"><span class="st ap">APRÈS</span>Tablette · 1024</div><div class="frame tab"><div class="zone"><div><div class="kicker">Démo</div><div class="title">Ma démo</div></div><div class="ok-box">✓ Votre démo est prête : six dossiers et neuf acquéreurs, datés d’aujourd’hui. <i class="pin">3</i></div><div class="card"><div class="dl"><div><span>M. et Mme Martin · À préparer</span><span class="lnk">Ouvrir →</span></div><div><span>Mme Garcia · Prêt pour le Live</span><span class="lnk">Ouvrir →</span></div><div><span>Mr and Mrs Bernard · Prêt, présentation directe</span><span class="lnk">Ouvrir →</span></div><div><span>M. Lefebvre · Conclu, mandat signé</span><span class="lnk">Ouvrir →</span></div><div><span>M. et Mme Lopez · Conclu, mandat signé</span><span class="lnk">Ouvrir →</span></div><div><span>M. et Mme Lambert-Duval · À relancer</span><span class="lnk">Ouvrir →</span></div></div><div class="row"><span class="btn">Remettre ma démo à zéro</span></div></div></div></div></div></div><div class="pair"><div><div class="frame-title"><span class="st av">AVANT</span>Téléphone · 390</div><div class="frame phone"><div class="zone"><div><div class="kicker">Démo</div><div class="title">Ma démo</div></div><div class="card"><div class="h2">Ma démo</div><div class="hint">Six dossiers aux étapes de l’outil… et neuf acquéreurs à rapprocher.</div><div class="dl"><div><span>M. et Mme Martin · À préparer</span><span class="lnk">Ouvrir →</span></div><div><span>Mme Garcia · Prêt pour le Live</span><span class="lnk">Ouvrir →</span></div><div><span>Mr and Mrs Bernard · Prêt, présentation directe</span><span class="lnk">Ouvrir →</span></div><div><span>M. Lefebvre · Conclu, mandat signé</span><span class="lnk">Ouvrir →</span></div><div><span>M. et Mme Lopez · Conclu, mandat signé</span><span class="lnk">Ouvrir →</span></div><div><span>M. et Mme Lambert-Duval · À relancer</span><span class="lnk">Ouvrir →</span></div></div><div class="row"><span class="btn" style="opacity:.5">Remise à zéro…</span><i class="pin">1</i><span class="small">~20 s sans rien dire, puis la page… ou « Première connexion », ou 12 dossiers</span></div></div></div></div></div><div><div class="frame-title"><span class="st ap">APRÈS</span>Téléphone · 390</div><div class="frame phone"><div class="zone"><div><div class="kicker">Démo</div><div class="title">Ma démo</div></div><div class="err-box">La remise à zéro n’a pas abouti : 5 dossiers sur 6 (il manque « Prêt, présentation directe »). Rien n’est prêt. <i class="pin">4</i><div style="margin-top:8px"><span class="btn sm full">Recommencer</span></div></div><div class="card"><div class="hint" style="color:#b91c1c">Vos dossiers de démo n’ont pas pu être lus : rechargez la page. <i class="pin">5</i></div><div class="small">(autre état : lecture en échec — ni « Préparer », ni « Remettre à zéro »)</div></div></div></div></div></div></div><div class="notes"><div class="note"><b>Avant</b> <i class="pin">1</i> : un seul bouton « Remise à zéro… » pendant ~20 s, sans message de fin (C7). Trois ratés en trois jours : 12 dossiers, un dossier manquant, « Première connexion ». Cause trouvée dans le code : des lectures en échec lues comme des absences (inventaire §4).</div>
+<div class="note"><b>Après</b> — trois états, un par appareil, valables sur les trois :
+<ol>
+<li><i class="pin">2</i> <b>Ordinateur</b> : la remise à zéro en étapes courtes, la barre et l’étape en cours (« Dossier 4 sur 6 »). Le seul plein de l’écran pendant ce temps : aucun.</li>
+<li><i class="pin">3</i> <b>Tablette</b> : « Votre démo est prête » seulement quand la base relit six dossiers, un par étape attendue, et les neuf acquéreurs.</li>
+<li><i class="pin">4</i> <b>Téléphone</b> : autre chose (5, 12, une étape en double, une étape en échec) : le message le dit, « Recommencer » est le seul plein, jamais « prête ».</li>
+<li><i class="pin">5</i> Les dossiers illisibles : la page le dit et ne propose ni « Préparer » (qui en recréait six) ni « Remettre à zéro ».</li>
+</ol></div>
+<div class="note">Hors de « Ma démo » : un profil illisible ne mène plus à « Première connexion » mais à la page d’erreur, relu une fois d’abord (question 7).</div></div></div></body></html>

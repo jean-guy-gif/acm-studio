@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { btnPrimary, btnSecondary } from '@/components/ui/styles';
+import { taskButtonClass, type TaskButtonLook } from '@/components/ui/styles';
 
 // Mission 130 — le bouton d'une tâche d'« À faire aujourd'hui » qui se fait dans une carte
 // (relancer, faire le point) : la carte est déjà sur la page, il la prévient et la montre, à chaque
@@ -16,17 +16,20 @@ export function SuiviTaskButton({
   label,
   open,
   primary = true,
+  look = 'today',
 }: {
   href: string;
   label: string;
   open: SuiviOpenDetail | null;
   // Mission 145 — un seul bouton plein par page (« Aujourd'hui ») : les autres en contour.
   primary?: boolean;
+  // La refonte, lot B — dans une carte « à faire », le bouton du socle.
+  look?: TaskButtonLook;
 }) {
   return (
     <Link
       href={href}
-      className={`${primary ? btnPrimary : btnSecondary} self-start whitespace-nowrap sm:self-auto`}
+      className={taskButtonClass(primary, look)}
       onClick={(event) => {
         // Cmd-, Ctrl- ou Maj-clic : un nouvel onglet, comme tout lien.
         if (!open || event.metaKey || event.ctrlKey || event.shiftKey) return;

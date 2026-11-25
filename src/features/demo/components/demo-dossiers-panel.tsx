@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { alertError, card, hintText, link, sectionTitle } from '@/components/ui/styles';
+import { ALL_BUYERS_HREF } from '@/features/buyers/services/buyers-page';
 import { DemoSetup } from '@/features/demo/components/demo-setup';
 import type { DemoDossier } from '@/features/demo/queries/get-demo-dossiers';
 import { DEMO_BUYERS } from '@/features/demo/services/demo-buyers';
@@ -32,7 +33,7 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] | null
         prêt pour le Live, prêt en présentation directe,{' '}
         {numberInWords(DEMO_SEEDS.filter((key) => DEMO_SEED_STAGE[key] === 'signed').length)}{' '}
         mandats signés, à relancer ; et {numberInWords(DEMO_BUYERS.length)}{' '}
-        <Link href="/acquereurs" className={link}>
+        <Link href={ALL_BUYERS_HREF} className={link}>
           acquéreurs
         </Link>{' '}
         à rapprocher. Ils sont à vous ; chaque closer a les siens.

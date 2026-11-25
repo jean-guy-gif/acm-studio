@@ -20,7 +20,7 @@ test('la langue de l’acquéreur : les Wilson, leur dossier, son lien et la pr�
 
   let buyerUrl = '';
   await test.step('Les biens idéaux des Wilson, retenus (l’écran du conseiller en français)', async () => {
-    await page.goto('/acquereurs');
+    await page.goto('/acquereurs?tous=1');
     const link = page.getByRole('link', { name: 'Mr and Mrs Wilson' }).first();
     await expect(link).toBeVisible();
     await link.click();

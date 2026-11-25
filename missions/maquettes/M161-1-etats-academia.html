@@ -1,0 +1,109 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
+@font-face{font-family:Rajdhani;font-weight:700;src:url(file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2)}
+@font-face{font-family:Montserrat;font-weight:100 900;src:url(file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:16px}
+h1{font-size:22px}.sub{font-size:13px;color:#3f3f46}
+.layout{display:flex;gap:24px;align-items:flex-start}.rows{display:flex;flex-direction:column;gap:22px}.rowx{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:6px}.ftitle{font-size:13px;font-weight:700;color:#3f3f46}
+.notes{width:400px;display:flex;flex-direction:column;gap:10px}.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.5;color:#3d3200}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.title{font-family:Rajdhani;font-size:20px}.title2{font-family:Rajdhani;font-size:17px}
+.pill{font-size:11px;font-weight:700;background:#e0f2fe;color:#00527a;border-radius:999px;padding:2px 9px}
+.muted{font-size:13px;color:#71717a}.hint{font-size:12.5px;color:#71717a}.line{font-size:14px}
+.err{font-size:14px;color:#b91c1c;font-weight:600}.warn{font-size:14px;color:#b45309;font-weight:600}
+.btn2{align-self:flex-start;border:1px solid #d4d4d8;border-radius:12px;padding:7px 13px;font-size:13px;font-weight:600}
+.dots{color:#00527a;letter-spacing:2px;margin-right:6px}
+.changed{background:#fefce8;outline:2px dashed #eab308;outline-offset:4px;border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:8px}
+.blocks{display:grid;grid-template-columns:1fr 1fr;gap:10px}.blk{border:1px solid #e4e4e7;border-radius:12px;padding:12px;font-size:13px;display:flex;flex-direction:column;gap:4px}.blk b{font-family:Rajdhani;font-size:16px}
+.choice{margin-top:6px}.choice label{display:flex;gap:10px;align-items:center;font-size:14px;font-weight:600}.choice label small{font-weight:400;color:#71717a}.choice .off{opacity:.5}
+.box{width:16px;height:16px;border:2px solid #a1a1aa;border-radius:4px;display:inline-block}.box.on{background:#00527a;border-color:#00527a}
+</style></head><body>
+<h1>M161 · 1 — L’API réelle d’Academia : les états nouveaux à l’écran</h1>
+<p class="sub">L’attente du dossier, l’adresse introuvable, le plafond atteint (carte « Le bien dans Academia », Bien vendeur) ; l’attente et les blocs vides (« Avant le rendez-vous »). Pour le conseiller seul.</p>
+<div class="layout"><div class="rows"><div class="rowx"><div class="col"><div class="ftitle">Bien vendeur · l’attente (ordinateur)</div>
+  <div class="card" style="width:560px">
+    <div class="row"><b class="title">Le bien dans Academia</b><span class="pill">Pour vous seul</span></div>
+    <p class="muted">4 chemin des Restanques Hautes, 06140 Vence</p>
+    <div class="changed">
+  <p class="line"><span class="dots">●●●</span> Academia prépare le dossier de cette adresse : 20 à 60 secondes.</p>
+  <p class="hint">La page vérifie toute seule, toutes les 10 secondes, deux minutes au plus.</p></div>
+  </div></div><div class="col"><div class="ftitle">Après 2 minutes</div>
+  <div class="card" style="width:560px">
+    <div class="row"><b class="title">Le bien dans Academia</b><span class="pill">Pour vous seul</span></div>
+    <p class="muted">4 chemin des Restanques Hautes, 06140 Vence</p>
+    <div class="changed">
+  <p class="line">La préparation prend plus de temps que prévu.</p>
+  <p class="hint">Revenez sur cette page dans quelques minutes : la demande continue chez Academia.</p>
+  <span class="btn2">Vérifier maintenant</span></div>
+  </div></div><div class="col"><div class="ftitle">Téléphone · l’attente</div>
+  <div class="card" style="width:360px">
+    <div class="row"><b class="title">Le bien dans Academia</b><span class="pill">Pour vous seul</span></div>
+    <p class="muted">4 chemin des Restanques Hautes, 06140 Vence</p>
+    <div class="changed">
+  <p class="line"><span class="dots">●●●</span> Academia prépare le dossier de cette adresse : 20 à 60 secondes.</p>
+  <p class="hint">La page vérifie toute seule, toutes les 10 secondes, deux minutes au plus.</p></div>
+  </div></div></div><div class="rowx"><div class="col"><div class="ftitle">Bien vendeur · adresse introuvable (422)</div>
+  <div class="card" style="width:560px">
+    <div class="row"><b class="title">Le bien dans Academia</b><span class="pill">Pour vous seul</span></div>
+    <p class="muted">4 chemin des Restanques Hautes, 06140 Vence</p>
+    <div class="changed">
+  <p class="err">Academia ne trouve pas cette adresse. Corrigez le numéro, la rue, le code postal ou la ville du bien, puis recommencez.</p>
+  <span class="btn2">Corriger l’adresse du bien</span>
+  <p class="hint">Ou collez le lien « Vivre ici » vous-même.</p></div>
+  </div></div><div class="col"><div class="ftitle">Tablette · adresse introuvable</div>
+  <div class="card" style="width:460px">
+    <div class="row"><b class="title">Le bien dans Academia</b><span class="pill">Pour vous seul</span></div>
+    <p class="muted">4 chemin des Restanques Hautes, 06140 Vence</p>
+    <div class="changed">
+  <p class="err">Academia ne trouve pas cette adresse. Corrigez le numéro, la rue, le code postal ou la ville du bien, puis recommencez.</p>
+  <span class="btn2">Corriger l’adresse du bien</span>
+  <p class="hint">Ou collez le lien « Vivre ici » vous-même.</p></div>
+  </div></div><div class="col"><div class="ftitle">Téléphone · adresse introuvable</div>
+  <div class="card" style="width:360px">
+    <div class="row"><b class="title">Le bien dans Academia</b><span class="pill">Pour vous seul</span></div>
+    <p class="muted">4 chemin des Restanques Hautes, 06140 Vence</p>
+    <div class="changed">
+  <p class="err">Academia ne trouve pas cette adresse. Corrigez le numéro, la rue, le code postal ou la ville du bien, puis recommencez.</p>
+  <span class="btn2">Corriger l’adresse du bien</span>
+  <p class="hint">Ou collez le lien « Vivre ici » vous-même.</p></div>
+  </div></div></div><div class="rowx"><div class="col"><div class="ftitle">Plafond · trop d’appels (429, 120 par minute)</div>
+  <div class="card" style="width:560px">
+    <div class="row"><b class="title">Le bien dans Academia</b><span class="pill">Pour vous seul</span></div>
+    <p class="muted">4 chemin des Restanques Hautes, 06140 Vence</p>
+    <div class="changed">
+  <p class="warn">Academia reçoit beaucoup de demandes en ce moment : réessayez dans 1 minute.</p>
+  <span class="btn2">Réessayer</span></div>
+  </div></div><div class="col"><div class="ftitle">Plafond · 200 dossiers neufs par 24 h (429, Retry-After)</div>
+  <div class="card" style="width:560px">
+    <div class="row"><b class="title">Le bien dans Academia</b><span class="pill">Pour vous seul</span></div>
+    <p class="muted">4 chemin des Restanques Hautes, 06140 Vence</p>
+    <div class="changed">
+  <p class="warn">Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui : réessayez demain, à partir de 14 h 05.</p>
+  <p class="hint">Les dossiers déjà prêts restent lisibles. Ou collez le lien « Vivre ici » vous-même.</p></div>
+  </div></div></div><div class="rowx"><div class="col"><div class="ftitle">Avant le rendez-vous · l’attente du dossier d’adresse</div>
+  <div class="card changed" style="width:1180px">
+    <div class="row"><b class="title">Dossier d’adresse</b><span class="pill">Pour vous seul</span></div>
+    <p class="line"><span class="dots">●●●</span> Academia prépare le dossier d’adresse : 20 à 60 secondes. Il s’affiche ici dès qu’il est prêt, sans recharger.</p>
+    <p class="hint">Le reste de la page est déjà là ; votre décision de prix ne l’attend pas.</p>
+  </div></div></div><div class="rowx"><div class="col"><div class="ftitle">Avant le rendez-vous · blocs vides (« aucun ») et non vérifiés</div>
+  <div class="card" style="width:1180px">
+    <div class="row"><b class="title">Dossier d’adresse</b><span class="pill">Pour vous seul</span></div>
+    <div class="blocks">
+      
+  <div class="blk changed"><b>Permis autour</b><p>Aucun permis de construire relevé à moins de 300 m depuis 2022.</p><p class="hint">Sitadel (SDES) · données du 07/10/2026</p></div>
+      
+  <div class="blk changed"><b>Permis de démolir</b><p>Non vérifiés pour cette adresse.</p><p class="hint">Pas montré au vendeur.</p></div>
+      
+  <div class="blk changed"><b>Copropriété</b><p>Aucune copropriété enregistrée à cette adresse.</p><p class="hint">Registre national des copropriétés (Anah) · données du 07/10/2026</p></div>
+      
+  <div class="blk "><b>Risques</b><p>Argiles (à l’adresse du bien) : exposition moyenne · Séisme (la commune) : zone 4, moyenne</p><p class="hint">Géorisques · données du 07/10/2026</p></div>
+    </div>
+    <div class="choice changed">
+      <b class="title2">Ce que verra le vendeur : le quartier</b>
+      <label><span class="box on"></span>Permis autour <small>— Aucun permis de construire relevé à moins de 300 m depuis 2022.</small></label>
+      <label class="off"><span class="box"></span>Copropriété <small>— rien à montrer : aucune copropriété à cette adresse</small></label>
+      <p class="hint">Un bloc non vérifié par la source n’est jamais proposé au vendeur.</p>
+    </div>
+  </div></div></div></div>
+<div class="notes"><div class="note"><b>En jaune :</b> Ce qui est nouveau. Le reste de la carte et du dossier d’adresse ne change pas.</div><div class="note"><b>L’attente :</b> 20 à 60 secondes annoncées ; la page vérifie toute seule toutes les 10 s (Laurent : 5 s au plus souvent), 2 minutes au plus ; au-delà, « Vérifier maintenant ». Sur « Avant le rendez-vous », le dossier d’adresse vérifie lui aussi, sans retenir la page (M158).</div><div class="note"><b>Bloc vide :</b> « aucun » : la source a été lue et n’a rien trouvé, dit avec son échelle (« Aucun permis… à moins de 300 m »), proposé au vendeur quand c’est une information (urbanisme, permis, ventes), pas quand il n’y a rien à montrer (copropriété, population). « non vérifié » : dit au conseiller, jamais proposé ni montré au vendeur.</div><div class="note"><b>Adresse introuvable :</b> 422 sans proposition : le conseiller corrige l’adresse du bien (le bouton mène au champ). 422 avec propositions : le choix d’aujourd’hui (M157) ne change pas.</div><div class="note"><b>Plafond :</b> Le délai vient de Retry-After : « dans 1 minute », ou « demain, à partir de 14 h 05 » au-delà d’une heure. 503 : le message d’aujourd’hui, « Academia ne répond pas pour l’instant ».</div></div></div></body></html>
