@@ -28,7 +28,7 @@ commits et des messages, à quelques minutes près.
 | 24/11 | Lancement 10 : la fiche acquéreur simplifiée | Moyen | 1 h 40 | 0 | 55 min |
 | 24/11 | **Total de la journée (douze lignes, menées en parallèle : 8 h d'horloge, de 8 h 45 à 16 h 45)** | | **13 h 10** | 0 | 5 h 40 |
 | 25/11 | La suite e2e complète du 24/11 au soir, jouée le 25/11 à 7 h (37 sur 37, 13 rejouées) | — | 1 h 10 | 0 | 1 h 10 |
-| 25/11 | Lancement 11 : le parcours sur le compte réel, quatre défauts corrigés | Petit | 1 h 30 | 0 | 25 min |
+| 25/11 | Lancement 11 : le parcours sur le compte réel, quatre défauts corrigés | Petit | 1 h 45 | 0 | 40 min |
 | 25/11 | Lancement 12 : sauvegardes, journal d'erreurs, suite de nuit | Petit | 25 min | 0 | 8 min |
 
 Les missions du 23/11 d'avant la règle (163 C, Correctifs 163, Correctifs 163 sur l'avis) ne sont
