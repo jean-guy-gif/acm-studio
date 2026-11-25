@@ -7,6 +7,9 @@ const FORBIDDEN_PORTALS: readonly { suffix: string; name: string }[] = [
   { suffix: 'bellesdemeures.com', name: 'Belles Demeures' },
 ];
 
+// Leurs noms, tels que le guide de prise en main les dit (un test compare les deux).
+export const FORBIDDEN_PORTAL_NAMES: readonly string[] = FORBIDDEN_PORTALS.map(({ name }) => name);
+
 export function forbiddenPortalMessage(raw: string): string | null {
   let host: string;
   try {
