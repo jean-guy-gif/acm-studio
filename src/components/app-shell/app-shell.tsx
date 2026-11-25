@@ -1,11 +1,16 @@
 import type { ErrorsBadge } from '@/components/app-shell/account-menu';
+import { PhoneAccount } from '@/components/app-shell/phone-account';
 import { ShellSidebar } from '@/components/app-shell/shell-sidebar';
 import { AppStage } from '@/components/theme/app-stage';
 import type { AppTheme } from '@/components/theme/theme';
 
-// Shell applicatif présentational : barre latérale + zone principale, dans le
-// thème choisi par l'utilisateur (bouton Clair/Sombre). Aucune donnée chargée
-// ici — le layout protégé fournit profil/agence, l'aperçu design des fixtures.
+// Shell applicatif présentational : le menu + la zone principale, dans le thème choisi par
+// l'utilisateur (bouton Clair/Sombre). Aucune donnée chargée ici — le layout protégé fournit
+// profil et agence.
+//
+// La refonte, lot A — le cadre aux trois tailles : le menu en bas sur téléphone (la page garde sa
+// place au-dessus, `--shell-bottom`), en icônes puis complet à gauche à partir de 768 px ; le fond
+// des maquettes (#F4F5FA).
 export function AppShell({
   profileName,
   profileEmail,
@@ -33,7 +38,7 @@ export function AppShell({
 }) {
   return (
     <AppStage initialTheme={initialTheme}>
-      <div className="relative isolate flex min-h-screen flex-col bg-zinc-50 text-zinc-900 transition-colors duration-300 md:flex-row stage:bg-[#051826] stage:text-white">
+      <div className="relative isolate flex min-h-screen flex-col bg-[#F4F5FA] text-zinc-900 transition-colors duration-300 md:flex-row stage:bg-[#051826] stage:text-white">
         {/* Halo d'ambiance discret, uniquement en thème sombre. */}
         <div
           aria-hidden
@@ -51,7 +56,15 @@ export function AppShell({
           demoEntry={demoEntry}
         />
 
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 pb-[var(--shell-bottom)]">
+          <PhoneAccount
+            profileName={profileName}
+            profileEmail={profileEmail}
+            agencyName={agencyName}
+            signOutAction={signOutAction}
+            errorsBadge={errorsBadge}
+            demoEntry={demoEntry}
+          />
           <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-6 sm:px-6 md:px-10 md:py-10">
             {children}
           </div>

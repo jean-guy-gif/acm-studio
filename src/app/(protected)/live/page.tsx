@@ -1,6 +1,7 @@
 import { ExampleBadge } from '@/features/welcome/components/example-badge';
 import Link from 'next/link';
 
+import { SellerTabs } from '@/components/app-shell/seller-tabs';
 import {
   badgeNeutral,
   card,
@@ -36,6 +37,7 @@ export default async function LivePage() {
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
+      <SellerTabs current="/live" />
       <div className="flex flex-col gap-1.5">
         <span className={kickerLabel}>Rendez-vous vendeur</span>
         <h1 className={pageTitle}>Live</h1>

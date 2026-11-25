@@ -1,44 +1,86 @@
-export type NavItem = { href: string; label: string; hint: string };
-export type NavGroup = { label: string | null; items: NavItem[] };
+// La refonte, lot A (mission de Jean-Guy, 25/11 au soir ; maquettes REFONTE-1 à 8) — un menu de
+// quatre entrées, le même aux trois tailles : Aujourd'hui · Vendeurs · Acquéreurs · Visites. En bas
+// sur téléphone ; en icônes sur tablette, avec Aide ; complet sur ordinateur, avec Prospection et
+// Aide (remplace M145 B, les trois groupes « Vendeurs / Acquéreurs / Les deux », et M149, leurs
+// titres). Les adresses ne changent pas.
+export type NavIcon = 'today' | 'sellers' | 'buyers' | 'visits' | 'prospecting' | 'help';
 
-// Mission 145 (partie B) — un seul menu, en trois groupes, au lieu de l'interrupteur Vendeur |
-// Acquéreur (remplace M118, décision de Jean-Guy, 07/11) : « Aujourd'hui » en tête, puis Vendeurs,
-// Acquéreurs, et Prospection une seule fois, sous « Les deux ». Rien ne change de mode tout seul :
-// il n'y a plus de mode. Les adresses ne changent pas ; `profiles.workspace_mode` n'est plus lu.
-export const NAV_GROUPS: NavGroup[] = [
+// La plus petite taille où l'entrée est au menu : le téléphone (toujours), la tablette (à partir de
+// 768 px) ou l'ordinateur (à partir de 1280 px). Ailleurs, elle est dans la feuille du compte.
+export type NavFrom = 'phone' | 'tablet' | 'desktop';
+
+export type NavItem = {
+  href: string;
+  label: string;
+  icon: NavIcon;
+  from: NavFrom;
+  // Les espaces que l'entrée surligne : « Vendeurs » tient Préparation, Live et Suivi.
+  spaces: string[];
+  // Rangée en bas du menu (tablette et ordinateur).
+  pinned?: boolean;
+};
+
+export const NAV_ITEMS: NavItem[] = [
   {
-    label: null,
-    items: [{ href: '/aujourdhui', label: 'Aujourd’hui', hint: 'Ce qu’il y a à faire' }],
+    href: '/aujourdhui',
+    label: 'Aujourd’hui',
+    icon: 'today',
+    from: 'phone',
+    spaces: ['/aujourdhui'],
   },
   {
+    href: '/builder',
     label: 'Vendeurs',
-    items: [
-      { href: '/builder', label: 'Préparation', hint: 'Dossiers vendeurs' },
-      { href: '/live', label: 'Live', hint: 'Rendez-vous vendeur' },
-      { href: '/suivi', label: 'Suivi', hint: 'Après le rendez-vous' },
-    ],
+    icon: 'sellers',
+    from: 'phone',
+    spaces: ['/builder', '/live', '/suivi'],
   },
   {
+    href: '/acquereurs',
     label: 'Acquéreurs',
-    items: [
-      { href: '/acquereurs', label: 'Acquéreurs', hint: 'Ce que chacun cherche' },
-      { href: '/visites', label: 'Visites', hint: 'À planifier, faites, retours' },
-    ],
+    icon: 'buyers',
+    from: 'phone',
+    spaces: ['/acquereurs'],
+  },
+  { href: '/visites', label: 'Visites', icon: 'visits', from: 'phone', spaces: ['/visites'] },
+  {
+    href: '/prospection',
+    label: 'Prospection',
+    icon: 'prospecting',
+    from: 'desktop',
+    spaces: ['/prospection'],
   },
   {
-    label: 'Les deux',
-    items: [{ href: '/prospection', label: 'Prospection', hint: 'Courriers et passages' }],
+    href: '/bienvenue',
+    label: 'Aide',
+    icon: 'help',
+    from: 'tablet',
+    spaces: ['/bienvenue'],
+    pinned: true,
   },
 ];
 
-export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
+export function isNavItemActive(item: NavItem, pathname: string): boolean {
+  return item.spaces.some((space) => pathname === space || pathname.startsWith(`${space}/`));
+}
 
-// Mission 125 — le menu de gauche ne montre que le travail : les quatre espaces du mode. Tout le
-// reste passe derrière la carte du conseiller, en bas (décision de Jean-Guy, 25/10) : Mon profil,
-// Administration, Aide (« Bienvenue », M97), Ma démo pour l'agence de démonstration seulement (M114),
-// Erreurs pour un opérateur seulement (M100). Les adresses ne changent pas ; aucun droit ne change :
-// chaque page se garde seule. Sombre / Clair et Déconnexion, des gestes, sont ajoutés par la carte.
-export type AccountLink = { href: string; label: string };
+// « Vendeurs » n'a qu'une entrée au menu : ses trois espaces (CLAUDE.md) restent des pages, et se
+// rejoignent par ces onglets, en tête de chacune de leurs listes.
+export type SellerTab = { href: '/builder' | '/live' | '/suivi'; label: string };
+
+export const SELLER_TABS: SellerTab[] = [
+  { href: '/builder', label: 'Préparation' },
+  { href: '/live', label: 'Live' },
+  { href: '/suivi', label: 'Suivi' },
+];
+
+// Mission 125 — tout ce qui n'est pas le travail passe derrière le compte du conseiller (décision de
+// Jean-Guy, 25/10) : Mon profil, Administration, Ma démo pour l'agence de démonstration seulement
+// (M114), Erreurs pour un opérateur seulement (M100). La refonte y range aussi ce que le menu ne
+// montre pas à cette taille : Prospection sous 1280 px, Aide sous 768 px (`until`). Les adresses ne
+// changent pas ; aucun droit ne change : chaque page se garde seule. Sombre / Clair et Déconnexion,
+// des gestes, sont ajoutés par la feuille.
+export type AccountLink = { href: string; label: string; until?: 'tablet' | 'desktop' };
 
 export function accountMenuFor({
   demo,
@@ -50,7 +92,8 @@ export function accountMenuFor({
   return [
     { href: '/profil', label: 'Mon profil' },
     { href: '/admin', label: 'Administration' },
-    { href: '/bienvenue', label: 'Aide' },
+    { href: '/prospection', label: 'Prospection', until: 'desktop' },
+    { href: '/bienvenue', label: 'Aide', until: 'tablet' },
     ...(demo ? [{ href: '/ma-demo', label: 'Ma démo' }] : []),
     ...(operator ? [{ href: '/erreurs', label: 'Erreurs' }] : []),
   ];

@@ -87,20 +87,24 @@ export async function openToday(page: Page, query = ''): Promise<Locator> {
   return page.getByTestId('today-page');
 }
 
-// Le menu de gauche (M145 : trois groupes, plus d'interrupteur).
+// Le menu de l'application (la refonte, lot A) : une seule navigation aux trois tailles — en bas
+// sur téléphone, en icônes sur tablette, complète sur ordinateur.
 export function sideNav(page: Page): Locator {
   return page.getByRole('navigation', { name: 'Menu principal' });
 }
 
-// Mission 125 — Mon profil, Administration, Aide, Ma démo et Erreurs sont derrière la carte du
-// conseiller, en bas du menu de gauche : on l'ouvre, puis on choisit l'entrée.
-// Sous 768 px, la carte est derrière ☰ (barre compacte du haut) : on le déplie d'abord.
+// Mission 125 — Mon profil, Administration, Ma démo et Erreurs sont derrière le compte du
+// conseiller : on l'ouvre, puis on choisit l'entrée. La refonte, lot A — le compte est en bas du
+// menu à partir de 768 px (sa carte sur ordinateur, un rond à ses initiales sur tablette, le même
+// repère) ; sur téléphone, c'est un rond en haut d'« Aujourd'hui » : on y va d'abord.
 export async function openAccountMenu(page: Page): Promise<Locator> {
   const card = page.getByTestId('account-card');
-  if (!(await card.isVisible())) {
-    await page.getByTestId('mobile-menu-toggle').click();
+  if (await card.isVisible()) {
+    await card.click();
+  } else {
+    if (new URL(page.url()).pathname !== '/aujourdhui') await page.goto('/aujourdhui');
+    await page.getByTestId('account-avatar').click();
   }
-  await card.click();
   const menu = page.getByTestId('account-menu');
   await expect(menu).toBeVisible();
   return menu;
@@ -238,7 +242,14 @@ export async function chooseInCardMenu(card: Locator, label: string): Promise<vo
   await card.getByRole('menuitem', { name: label, exact: true }).click();
 }
 
+// La refonte, lot A — « Aide » (à partir de 768 px) et « Prospection » (à partir de 1280 px) sont
+// au menu : on les y prend ; en dessous, ils sont dans la feuille du compte, comme le reste.
 export async function goViaAccountMenu(page: Page, label: string): Promise<void> {
+  const inMenu = sideNav(page).getByRole('link', { name: new RegExp(`^${label}`) });
+  if (await inMenu.isVisible()) {
+    await inMenu.click();
+    return;
+  }
   const menu = await openAccountMenu(page);
   await menu.getByRole('menuitem', { name: new RegExp(`^${label}`) }).click();
   await expect(menu).toHaveCount(0);

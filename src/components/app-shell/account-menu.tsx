@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 
+import { initialsOf } from '@/components/socle/initials';
 import { useAppStage } from '@/components/theme/app-stage';
-import { softPanel } from '@/components/ui/styles';
 import {
   accountMenuFor,
   type AccountLink,
@@ -25,6 +25,11 @@ const entry =
 // démonstration, M114) · Erreurs (opérateurs, M100) · Sombre / Clair · Déconnexion. Fermeture par
 // Échap, clic dehors ou choix d'une entrée ; au clavier : flèches, Début, Fin. Il ne change que
 // l'affichage : chaque page se garde seule, les adresses ne changent pas.
+//
+// La refonte, lot A — le même compte aux trois tailles : sa carte en bas du menu sur ordinateur, un
+// rond aux initiales en bas de la colonne d'icônes sur tablette (`variant="menu"`), et un rond en
+// haut d'« Aujourd'hui » sur téléphone (`variant="avatar"`). La feuille porte aussi ce que le menu
+// ne montre pas à cette taille : Prospection sous 1280 px, Aide sous 768 px.
 export function AccountMenu({
   profileName,
   profileEmail,
@@ -32,6 +37,7 @@ export function AccountMenu({
   signOutAction,
   errorsBadge = null,
   demoEntry = false,
+  variant = 'menu',
 }: {
   profileName: string;
   profileEmail: string;
@@ -39,6 +45,7 @@ export function AccountMenu({
   signOutAction: () => Promise<void>;
   errorsBadge?: ErrorsBadge | null;
   demoEntry?: boolean;
+  variant?: 'menu' | 'avatar';
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -50,8 +57,11 @@ export function AccountMenu({
   const links = accountMenuFor({ demo: demoEntry, operator: errorsBadge != null });
   const showBadge = errorsBadge != null && errorsBadge.count > 0;
 
+  // Les entrées visibles à cette taille : une entrée que le menu montre déjà est masquée ici.
   const items = (): HTMLElement[] =>
-    Array.from(menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    Array.from(menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []).filter(
+      (element) => element.offsetParent !== null,
+    );
   const close = (refocus: boolean) => {
     setOpen(false);
     if (refocus) button.current?.focus();
@@ -60,7 +70,7 @@ export function AccountMenu({
   // À l'ouverture, la première entrée prend le focus ; un clic hors de la carte ferme.
   useEffect(() => {
     if (!open) return;
-    menu.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    items()[0]?.focus();
     const outside = (event: MouseEvent) => {
       if (!container.current?.contains(event.target as Node)) setOpen(false);
     };
@@ -85,6 +95,21 @@ export function AccountMenu({
     else if (event.key === 'Tab') setOpen(false);
   };
 
+  const initials = initialsOf(profileName);
+  const badge = showBadge ? (
+    <span
+      data-testid={variant === 'avatar' ? 'account-avatar-errors-badge' : 'account-errors-badge'}
+      title={errorsBadge.label}
+      className={
+        variant === 'avatar'
+          ? 'absolute -top-1 -right-1 rounded-full bg-red-600 px-1.5 py-px text-[11px] font-semibold text-white'
+          : 'absolute -top-1 -right-1 rounded-full bg-red-600 px-1.5 py-px text-[11px] font-semibold text-white xl:static xl:shrink-0 xl:px-2 xl:py-0.5 xl:text-xs'
+      }
+    >
+      {errorsBadge.count}
+    </span>
+  ) : null;
+
   return (
     <div ref={container} className="relative">
       <button
@@ -101,25 +126,37 @@ export function AccountMenu({
             setOpen(true);
           }
         }}
-        data-testid="account-card"
-        className={`${softPanel} flex w-full flex-col gap-0.5 px-3.5 py-3 text-left transition-colors hover:border-zinc-300 stage:hover:border-white/20`}
+        data-testid={variant === 'avatar' ? 'account-avatar' : 'account-card'}
+        className={
+          variant === 'avatar'
+            ? 'relative flex size-12 items-center justify-center rounded-full border border-[#D5DAEA] bg-white text-[15px] font-extrabold text-brand-deep stage:border-white/15 stage:bg-white/10 stage:text-white'
+            : 'relative flex h-12 w-full items-center justify-center rounded-xl text-left transition-colors hover:bg-[#F4F5FA] xl:h-auto xl:items-start xl:justify-between xl:gap-2 xl:border xl:border-zinc-100 xl:bg-zinc-50 xl:px-3.5 xl:py-3 xl:hover:border-zinc-300 stage:hover:bg-white/[0.06] xl:stage:border-white/10 xl:stage:bg-white/[0.04] xl:stage:hover:border-white/20'
+        }
       >
-        <span className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-semibold text-zinc-800 stage:text-white">
-            {profileName}
-          </span>
-          {showBadge ? (
+        {variant === 'avatar' ? (
+          <span aria-hidden>{initials}</span>
+        ) : (
+          <>
             <span
-              data-testid="account-errors-badge"
-              title={errorsBadge.label}
-              className="shrink-0 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white"
+              aria-hidden
+              className="flex size-10 items-center justify-center rounded-full bg-brand-soft text-sm font-extrabold text-brand-deep xl:hidden stage:bg-brand/15 stage:text-brand"
             >
-              {errorsBadge.count}
+              {initials}
             </span>
-          ) : null}
-        </span>
-        <span className="truncate text-xs text-zinc-500 stage:text-white/50">{profileEmail}</span>
-        <span className="truncate text-xs text-zinc-500 stage:text-white/40">{agencyName}</span>
+            <span className="hidden min-w-0 flex-1 flex-col gap-0.5 xl:flex">
+              <span className="truncate text-sm font-semibold text-zinc-800 stage:text-white">
+                {profileName}
+              </span>
+              <span className="truncate text-xs text-zinc-500 stage:text-white/50">
+                {profileEmail}
+              </span>
+              <span className="truncate text-xs text-zinc-500 stage:text-white/40">
+                {agencyName}
+              </span>
+            </span>
+          </>
+        )}
+        {badge}
       </button>
 
       {open ? (
@@ -130,7 +167,11 @@ export function AccountMenu({
           aria-label={ACCOUNT_MENU_LABEL}
           onKeyDown={onMenuKey}
           data-testid="account-menu"
-          className="absolute top-full right-0 left-0 z-50 mt-2 flex md:top-auto md:bottom-full md:mt-0 md:mb-2 flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg stage:border-white/10 stage:bg-[#0b2233]"
+          className={`absolute z-50 flex w-60 flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg stage:border-white/10 stage:bg-[#0b2233] ${
+            variant === 'avatar'
+              ? 'top-full right-0 mt-2'
+              : 'bottom-full left-0 mb-2 xl:right-0 xl:w-auto'
+          }`}
         >
           <AccountMenuEntries
             links={links}
@@ -181,7 +222,7 @@ export function AccountMenuEntries({
             tabIndex={-1}
             aria-current={current ? 'page' : undefined}
             onClick={onLink}
-            className={entry}
+            className={`${entry} ${link.until === 'tablet' ? 'md:hidden' : ''} ${link.until === 'desktop' ? 'xl:hidden' : ''}`}
           >
             <span>{link.label}</span>
             {link.href === '/erreurs' && errorsBadge != null && errorsBadge.count > 0 ? (
