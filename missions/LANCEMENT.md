@@ -180,8 +180,10 @@ avance avec elle, Jean-Guy corrige) :
    Google ou à Apple : elle demanderait la juriste.
 7. Ce que les maquettes montrent et que la base n'a pas (la date et l'heure du rendez-vous) ne
    s'affiche pas : aucune migration.
-8. Les couleurs et la police restent celles de la charte de l'agence ; le bleu nuit et Nunito Sans
-   des maquettes sont la charte par défaut. Le mode sombre continue de marcher.
+8. Les couleurs et la police restent celles de la charte de chaque agence : le bleu nuit et Nunito
+   Sans des maquettes sont ceux de l'agence de Jean-Guy ; une autre agence garde les siens (par
+   défaut, le bleu de Start Academy, Montserrat et Rajdhani). Les gris, les fonds et les arrondis
+   sont ceux des maquettes. Le mode sombre continue de marcher.
 9. Pour regarder l'essai, Jean-Guy se connecte avec le compte de démonstration des tests
    (`E2E_DEMO_EMAIL`, dans `.env.e2e.local`) : son propre compte n'existe pas dans la base d'essai.
 10. Le guide de prise en main nomme le menu d'aujourd'hui : il suit le nouveau menu avant le gel.
