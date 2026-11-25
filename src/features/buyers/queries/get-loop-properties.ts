@@ -137,6 +137,10 @@ export async function getLoopTasks(
       sellerName: item.sellerName ?? '',
       dueOn: parisDay(new Date(item.bornAt)),
       count,
+      // La refonte, lot B — les mêmes acquéreurs que le compte, un par carte « à faire ».
+      proposeBuyers: loop.toPropose
+        .filter((entry) => entry.ready)
+        .map((entry) => ({ id: entry.buyer.id, name: entry.buyer.name })),
       propertyKey: item.key,
       propertyLabel: item.label,
       origin: item.origin,

@@ -65,7 +65,9 @@ export function AppShell({
             errorsBadge={errorsBadge}
             demoEntry={demoEntry}
           />
-          <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-6 sm:px-6 md:px-10 md:py-10">
+          {/* Une page en deux colonnes (la liste, le détail : maquettes REFONTE-5, 6 et 8) prend
+              toute la place, sans marge : elle le dit par `data-shell-wide`. */}
+          <div className="mx-auto w-full max-w-6xl px-4 pt-4 pb-6 has-[[data-shell-wide]]:max-w-none has-[[data-shell-wide]]:p-0 sm:px-6 md:px-10 md:py-10">
             {children}
           </div>
         </main>

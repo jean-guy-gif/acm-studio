@@ -33,31 +33,58 @@ export function PersonMark({
 
 // La carte « à faire » : la personne, ce qu'il y a à faire, et son bouton sur toute la largeur. Le
 // bouton est donné par l'écran : plein pour la première carte, en contour pour les autres (un seul
-// bouton plein par écran).
+// bouton plein par écran). Avec une adresse, la personne mène à sa fiche ; un retard se dit à la
+// suite de la tâche, en orange.
 export function TaskCard({
   name,
   task,
+  late = null,
   tone = 'plain',
+  href,
   action,
   testId = 'task-card',
 }: {
   name: string;
   task: string;
+  late?: string | null;
   tone?: Tone;
+  href?: string;
   action: React.ReactNode;
   testId?: string;
 }) {
+  const person = (
+    <>
+      <PersonMark name={name} tone={tone} />
+      <span className="flex min-w-0 flex-col gap-px">
+        <span className="text-[17px] font-bold text-brand-darker stage:text-white">{name}</span>
+        <span className="text-[15px] text-[#5B6380] stage:text-white/60">
+          {task}
+          {late ? <LateNote late={late} /> : null}
+        </span>
+      </span>
+    </>
+  );
   return (
     <div className={`${socleCard} flex flex-col gap-3 p-4`} data-testid={testId}>
-      <div className="flex items-center gap-3">
-        <PersonMark name={name} tone={tone} />
-        <div className="flex min-w-0 flex-col gap-px">
-          <span className="text-[17px] font-bold text-brand-darker stage:text-white">{name}</span>
-          <span className="text-[15px] text-[#5B6380] stage:text-white/60">{task}</span>
-        </div>
-      </div>
+      {href ? (
+        <Link href={href} className="flex items-center gap-3" data-testid={`${testId}-person`}>
+          {person}
+        </Link>
+      ) : (
+        <div className="flex items-center gap-3">{person}</div>
+      )}
       <div className="flex flex-col [&>*]:w-full">{action}</div>
     </div>
+  );
+}
+
+// « · en retard de 3 jours », à la suite de ce qu'il y a à faire.
+export function LateNote({ late }: { late: string }) {
+  return (
+    <span className="font-semibold text-[#9A3A0A] stage:text-orange-300" data-testid="task-late">
+      {' · '}
+      {late}
+    </span>
   );
 }
 
@@ -68,20 +95,26 @@ export function PersonRow({
   href,
   name,
   task,
+  late = null,
   tone = 'plain',
   selected = false,
+  keepScroll = false,
   testId = 'person-row',
 }: {
   href: string;
   name: string;
   task: string;
+  late?: string | null;
   tone?: Tone;
   selected?: boolean;
+  // Choisir une personne ne quitte pas la page : la liste ne remonte pas en haut.
+  keepScroll?: boolean;
   testId?: string;
 }) {
   return (
     <Link
       href={href}
+      scroll={!keepScroll}
       aria-current={selected ? 'true' : undefined}
       data-testid={testId}
       className={`flex items-center gap-3 rounded-2xl border-2 bg-white p-3 transition-colors xl:p-3.5 stage:bg-white/5 ${
@@ -95,7 +128,10 @@ export function PersonRow({
         <span className="text-base font-bold text-brand-darker xl:text-[17px] stage:text-white">
           {name}
         </span>
-        <span className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60">{task}</span>
+        <span className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60">
+          {task}
+          {late ? <LateNote late={late} /> : null}
+        </span>
       </span>
     </Link>
   );

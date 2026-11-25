@@ -7,7 +7,7 @@ import type { Database } from '@/lib/supabase/database.types';
 // dit pas « Pas de dossier sans sélection retenue », il dit que la fiche n'existe plus et ramène
 // à la liste.
 export const BUYER_GONE_MESSAGE = 'Cette fiche n’existe plus.';
-export const BUYERS_LIST_HREF = '/acquereurs';
+export const BUYERS_LIST_HREF = '/acquereurs?tous=1';
 
 // Vrai seulement quand la base répond que la fiche n'est plus là : une lecture en échec ne dit
 // jamais « elle n'existe plus ».

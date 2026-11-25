@@ -116,6 +116,11 @@ export type SuiviTask = {
   linkExpired?: boolean;
   // Mission 136 — un bien trouvé par la veille pour plusieurs acquéreurs : lesquels.
   watchBuyers?: { id: string; name: string }[];
+  // La refonte, lot B — « à faire aujourd'hui », une carte par personne : les acquéreurs d'une
+  // tâche qui en réunit plusieurs. Les visites à organiser d'un mandat (une entrée par demande), et
+  // les acquéreurs prêts à qui proposer un bien. Rien de plus que ce que la tâche compte déjà.
+  visitBuyers?: { id: string; name: string }[];
+  proposeBuyers?: { id: string; name: string }[];
   // Mission 137 B — l'offre d'achat et son dernier jour de validité (AAAA-MM-JJ).
   offerId?: string;
   validUntil?: string;
@@ -164,7 +169,7 @@ export type SuiviTaskInput = {
   // La plus ancienne adresse prête (ISO) ; sinon le démarchage date de la signature.
   readySince?: string | null;
   // Les demandes de visite vivantes (ni annulées ni faites, acquéreur non archivé) sur ce mandat.
-  visits: { requestedAt: string; buyerName: string | null }[];
+  visits: { requestedAt: string; buyerName: string | null; buyerId?: string }[];
 };
 
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -267,6 +272,9 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
         dueOn: firstDay,
         count: visits.length,
         buyerName: first.buyerName,
+        visitBuyers: visits.flatMap((visit) =>
+          visit.buyerId ? [{ id: visit.buyerId, name: visit.buyerName ?? '' }] : [],
+        ),
       });
     }
   }

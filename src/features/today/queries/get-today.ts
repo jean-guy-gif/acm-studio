@@ -294,7 +294,9 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
   const propertyOf = new Map(dossiers.map((d) => [d.project.id, d.property]));
   const withAlerts = [
     ...withFollowUpAlerts(dues, upcoming, followUpAlerts, today).map((task) =>
-      task.kind === 'follow_up' && task.readyBuyers
+      // La refonte, lot B — une visite demandée dit aussi le bien (« la maison de Mougins »), pour
+      // la carte de son acquéreur ; la ligne d'« Aujourd'hui » ne change pas.
+      (task.kind === 'follow_up' && task.readyBuyers) || task.kind === 'visit'
         ? {
             ...task,
             property: {

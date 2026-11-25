@@ -22,6 +22,8 @@ export type TaskVisit = {
   visitedAt: string | null;
   buyerArchived: boolean;
   buyerName: string;
+  // La refonte, lot B — l'acquéreur de la demande, pour sa carte « à faire aujourd'hui ».
+  buyerId?: string;
   // Le jour et l'heure confirmés de la visite (« Confirmer la visite », M142), s'il y en a.
   scheduledAt?: string | null;
   // Mission 139 — le compte rendu de la visite faite : ce qui a déplu (« prix » compte un retour).
@@ -148,6 +150,7 @@ export function suiviTaskInputs(input: {
     visits: (visits.get(project.id) ?? []).map((visit) => ({
       requestedAt: visit.requestedAt,
       buyerName: visit.buyerName,
+      buyerId: visit.buyerId,
     })),
   }));
 }

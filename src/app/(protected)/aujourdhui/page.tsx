@@ -81,7 +81,7 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
         </div>
         {today.readyBuyers != null ? (
           <Link
-            href="/acquereurs"
+            href="/acquereurs?etat=ready"
             className={`${card} flex flex-col px-4 py-2.5`}
             data-testid="today-ready-buyers"
           >
