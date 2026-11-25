@@ -32,14 +32,15 @@ import { DismissControl } from '@/features/buyer-dismissals/components/dismiss-c
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
 import type { SeenWithHim } from '@/features/buyers/services/buyer-follow-up';
 import {
+  candidateTarget,
   countSeen,
   currentSeenLabel,
   isClosedForBuyer,
   seenLine,
   seenMatcher,
-  toLike,
   type CurrentSeenReason,
   type SeenMark,
+  type SeenReason,
 } from '@/features/buyers/services/seen-properties';
 import { importIdealListing } from '@/features/ideal-properties/actions/import-ideal-listing';
 import { saveIdealSelection } from '@/features/ideal-properties/actions/save-ideal-selection';
@@ -237,9 +238,10 @@ export function IdealPropertiesPanel({
   // Mission 139 — ce que le conseiller a écarté pour lui (la clé de chaque bien) ; null : la
   // lecture a échoué (M98).
   dismissed?: string[] | null;
-  // Lancement, mission 3 — ce qu'il a déjà vu (envoyé, visité, refusé), par la clé de chaque
-  // bien : jamais reproposé dans les listes.
-  seen?: { key: string; reason: 'sent' | 'visited' | 'refused' }[];
+  // Lancement, mission 3 — ce qu'il a déjà vu (envoyé, visité, refusé) ou que le conseiller a
+  // écarté pour lui, par la clé de chaque bien : jamais reproposé dans les listes ; un écarté ne se
+  // compte pas dans la ligne des biens retirés.
+  seen?: { key: string; reason: SeenReason }[];
   // Ce qu'il a dit des biens de sa sélection en cours, pas encore reçue (`source:reference` →
   // refusé, écarté, visité) : un bien refusé ou écarté n'y est plus coché et ne se recoche pas.
   currentSeen?: Record<string, CurrentSeenReason>;
@@ -516,29 +518,15 @@ export function IdealPropertiesPanel({
   // Lancement, mission 3 — déjà envoyé, visité ou refusé : hors des listes, et compté. Suite du
   // 25/11 — reconnu aussi sous une autre annonce (`seenMatcher`).
   const seenOf = seenMatcher(seen, seenMarks);
-  const shownReason = (reason: ReturnType<typeof seenOf>) =>
-    reason === 'dismissed' ? undefined : reason;
   const seenReason = (item: SelectionItemInput, listingUrl: string | null) =>
-    isHidden(item, listingUrl)
-      ? undefined
-      : shownReason(seenOf({ key: targetKey(item, listingUrl) }));
+    isHidden(item, listingUrl) ? undefined : seenOf({ key: targetKey(item, listingUrl) });
   // Une annonce du marché : par son annonce, puis par le bien chez le fournisseur, puis par sa
-  // ressemblance (commune, prix, pièces, surface).
+  // ressemblance (commune, prix, pièces, surface) — un bien écarté pour lui aussi, sous une autre
+  // annonce.
   const marketSeenReason = (entry: CategorizedCandidate) => {
     const item = marketItem(entry);
     if (isHidden(item, entry.candidate.url)) return undefined;
-    return shownReason(
-      seenOf({
-        key: targetKey(item, entry.candidate.url),
-        propertyId: entry.candidate.key,
-        like: toLike({
-          city: entry.candidate.city,
-          rooms: entry.candidate.roomsCount,
-          surface: entry.candidate.surfaceArea,
-          price: entry.candidate.price,
-        }),
-      }),
-    );
+    return seenOf(candidateTarget(targetKey(item, entry.candidate.url), entry.candidate));
   };
 
   const actions = (item: SelectionItemInput) => (
@@ -619,7 +607,7 @@ export function IdealPropertiesPanel({
   // Un bien de la veille, déjà en tête, ne se répète pas dans les annonces du marché.
   const watchUrls = new Set(watchEntries.map((entry) => entry.candidate.url));
   // Les annonces du marché (la veille et la recherche, chacune une fois) qu'il a déjà vues.
-  const marketSeen = new Map<string, 'sent' | 'visited' | 'refused'>();
+  const marketSeen = new Map<string, SeenReason>();
   for (const entry of [
     ...(watch?.entries ?? []),
     ...(market

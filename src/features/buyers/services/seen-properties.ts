@@ -127,10 +127,13 @@ type Notes = {
   verdict: { refused: boolean; at: string } | null;
 };
 
-// Quand chaque sélection lui est-elle parvenue ? Présentée, son lien partagé, ou un envoi noté sur
-// l'un de ses biens : la plus ancienne date connue. Une sélection absente n'a pas été reçue.
+// Quand chaque sélection lui est-elle parvenue ? Présentée, son lien partagé, un envoi noté sur
+// l'un de ses biens, ou une réponse de sa part sur l'un d'eux (il l'a vue, en présentation ou sur le
+// lien : une présentation commencée, un lien répondu sans partage noté) : la plus ancienne date
+// connue. Une visite demandée par le conseiller seul ne dit pas qu'il a reçu les autres biens. Une
+// sélection absente n'a pas été reçue.
 export function receivedSelections(
-  rows: Pick<SeenRows, 'selections' | 'shares' | 'proposals' | 'items'>,
+  rows: Pick<SeenRows, 'selections' | 'shares' | 'proposals' | 'items' | 'responses'>,
 ): Map<string, string> {
   const itemOf = new Map(rows.items.map((row) => [row.id, row]));
   const shownAt = new Map<string, string>();
@@ -143,6 +146,9 @@ export function receivedSelections(
   for (const row of rows.shares) shown(row.selection_id, row.occurred_at);
   for (const row of rows.proposals) {
     if (row.selection_item_id) shown(itemOf.get(row.selection_item_id)?.selection_id, row.sent_at);
+  }
+  for (const row of rows.responses) {
+    shown(itemOf.get(row.selection_item_id)?.selection_id, row.answered_at);
   }
   return shownAt;
 }
@@ -350,8 +356,18 @@ export function seenMarksOf(
   return marks;
 }
 
+// La raison la plus forte, quand un bien en rappelle plusieurs : écarté, puis refusé, puis visité,
+// puis envoyé (l'ordre de `seenProperties`).
+const REASON_WEIGHT: Record<SeenReason, number> = { sent: 1, visited: 2, refused: 3, dismissed: 4 };
+const strongest = (reasons: (SeenReason | undefined)[]): SeenReason | undefined =>
+  reasons.reduce<SeenReason | undefined>(
+    (best, reason) =>
+      reason && (!best || REASON_WEIGHT[reason] > REASON_WEIGHT[best]) ? reason : best,
+    undefined,
+  );
+
 // Ce bien, il l'a déjà vu ? Par la clé de la boucle, puis par l'identifiant du fournisseur, puis
-// par ressemblance. Rend la raison (envoyé, visité, refusé, écarté), sinon rien.
+// par ressemblance. Rend la raison la plus forte (écarté, refusé, visité, envoyé), sinon rien.
 export function seenMatcher(
   facts: readonly { key: string; reason: SeenReason }[],
   marks: readonly SeenMark[],
@@ -359,14 +375,40 @@ export function seenMatcher(
   const reasons = new Map(facts.map((fact) => [fact.key, fact.reason]));
   const known = marks.filter((mark) => reasons.has(mark.key));
   return (target) => {
-    const direct = reasons.get(target.key);
-    if (direct) return direct;
-    const sameProperty = target.propertyId
-      ? known.find((mark) => mark.propertyId === target.propertyId)
-      : undefined;
-    if (sameProperty) return reasons.get(sameProperty.key);
     const like = target.like;
-    const alike = like ? known.find((mark) => mark.like && sameBien(mark.like, like)) : undefined;
-    return alike ? reasons.get(alike.key) : undefined;
+    return strongest([
+      reasons.get(target.key),
+      ...known
+        .filter(
+          (mark) =>
+            (target.propertyId != null && mark.propertyId === target.propertyId) ||
+            (like != null && mark.like != null && sameBien(mark.like, like)),
+        )
+        .map((mark) => reasons.get(mark.key)),
+    ]);
+  };
+}
+
+// La cible d'une annonce de la recherche (le marché, la veille) : sa clé, l'identifiant du bien chez
+// le fournisseur, sa ressemblance.
+export function candidateTarget(
+  key: string,
+  candidate: {
+    key: string | null;
+    city: string | null;
+    roomsCount: number | null;
+    surfaceArea: number | null;
+    price: number | null;
+  },
+): SeenTarget {
+  return {
+    key,
+    propertyId: candidate.key,
+    like: toLike({
+      city: candidate.city,
+      rooms: candidate.roomsCount,
+      surface: candidate.surfaceArea,
+      price: candidate.price,
+    }),
   };
 }

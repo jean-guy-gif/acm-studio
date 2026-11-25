@@ -78,7 +78,8 @@ describe('saveIdealSelection', () => {
     const direct = await saveIdealSelection(BUYER, [item('u1'), item('u2')], null);
     expect(direct).toEqual({
       ok: false,
-      error: 'Il a déjà vu l’un de ces biens : il ne se retient plus. Rechargez la page.',
+      error:
+        'L’un de ces biens a déjà été vu avec lui, ou écarté pour lui : il ne se retient plus. Rechargez la page.',
     });
     // La même maison, rendue par la recherche sous une autre annonce : son identifiant chez le
     // fournisseur est celui que la sélection présentée a gardé.
@@ -117,6 +118,15 @@ describe('saveIdealSelection', () => {
     state.client = received.client;
     expect((await saveIdealSelection(BUYER, [item('u1'), item('u2')], null)).ok).toBe(false);
     expect(received.writes()).toEqual([]);
+    // Refusé, ou écarté pour lui, il ne se reprend jamais, même gardé d'une sélection en cours.
+    state.seen.received = false;
+    for (const reason of ['refused', 'dismissed']) {
+      state.seen.facts = [['listing:u1', reason]];
+      const refused = withPrevious();
+      state.client = refused.client;
+      expect((await saveIdealSelection(BUYER, [item('u1'), item('u2')], null)).ok).toBe(false);
+      expect(refused.writes()).toEqual([]);
+    }
   });
 
   it('ce qu’il a déjà vu n’a pas pu être lu : rien n’est écrit (M98)', async () => {

@@ -44,13 +44,13 @@ test('un bien refusé ou visité n’est pas reproposé', async ({ page }) => {
   const said = (await lines.allInnerTexts()).join(' ');
   expect(said).toMatch(/retirés? parce que déjà vus? avec lui/);
   expect(said).toMatch(/refusés?/);
-  // Sous le compteur de la recherche : les biens retirés parce qu'il les a déjà vus (25/11).
-  const summaryBottom = (await page.getByTestId('ideal-market-summary').boundingBox())!.y;
-  if ((await page.getByTestId('ideal-market-seen').count()) > 0) {
-    expect((await page.getByTestId('ideal-market-seen').boundingBox())!.y).toBeGreaterThan(
-      summaryBottom,
-    );
-  }
+  // Sous le compteur de la recherche : les biens retirés parce qu'il les a déjà vus (25/11). Le
+  // marché simulé de la démo ramène au moins une de leurs maisons refusées : la ligne est là.
+  const marketSeen = page.getByTestId('ideal-market-seen');
+  await expect(marketSeen).toContainText(/retirés? parce que déjà vus? avec lui/);
+  expect((await marketSeen.boundingBox())!.y).toBeGreaterThan(
+    (await page.getByTestId('ideal-market-summary').boundingBox())!.y,
+  );
   // Leurs deux refus sont à part, avec leur raison.
   await expect(
     page
