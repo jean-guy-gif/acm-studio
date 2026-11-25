@@ -169,3 +169,22 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     ne les montre plus : voulu (la visite a eu lieu) ou non ? À trancher par Jean-Guy.
   - geo.api.gouv.fr a dépassé son délai deux fois le 24/11 : garder en cache la liste des communes
     d'un département éviterait l'appel.
+- 25/11 · Lancement 3 (suite) · L'acquéreur ne retrouve plus sur son lien un bien resté en
+  « Peut-être » (ou envoyé sans réponse) : un bien déjà vu ne se retient plus, et le lien d'une
+  nouvelle sélection remplace le précédent (M122 B). Accepté par Jean-Guy le 25/11 ; à revoir si
+  un vrai acquéreur le demande.
+- 25/11 · Lancement 3 (suite) · Relecteur, laissé tel quel :
+  - la ressemblance (commune, prix, pièces, surface) ne reconnaît plus un bien dont le prix a
+    baissé depuis la sélection : l'identifiant du bien chez le fournisseur reste la première
+    preuve ; élargir le prix multiplierait les faux positifs. `isSameStreamEstateProperty`
+    (doublons d'une réponse, M78) compare le code INSEE, la ressemblance des biens vus la commune
+    écrite : deux règles proches, à réunir un jour ;
+  - la page des biens idéaux lit toutes les visites de l'agence (`readVisitLines`), comme la fiche
+    acquéreur : léger aujourd'hui ;
+  - dans la spec `demo`, la preuve que les photos d'un mandat ne disparaissent pas après une
+    réponse (Lancement 11) ne joue que si la page est rendue de nouveau dans les 15 secondes.
+- 25/11 · Lancement 11 (suite) · Belles Demeures : seul un accord du site (son robots.txt)
+  permettrait de lire ses annonces ; l'extension ne lit pas ce site non plus, et toute
+  modification de l'extension repasse par Google. Les autres sites qu'aucun lecteur ne connaît
+  (le site d'une agence) se lisent désormais par le serveur seul, sans solliciter l'extension :
+  aucun vrai dossier ne l'a encore montré.

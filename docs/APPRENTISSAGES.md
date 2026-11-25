@@ -774,6 +774,19 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   required environment variable »), les autres passent. Lire la liste des FAIL avant de chercher
   un défaut ; avec la variable (comme la CI), 463 fichiers verts.
 
+- 25/11 · Lancement 3 (suite) · Le fournisseur de la recherche (Stream Estate) rend un même bien
+  sous des annonces différentes d'une recherche à l'autre : ne jamais reconnaître un bien du
+  marché par sa seule annonce. Son identifiant (`property.uuid`) est gardé dans le `snapshot`
+  d'un bien de sélection, sous `key`, et dans les trouvailles de la veille.
+- 25/11 · Une suite e2e lancée en journée tombe quand le réseau du poste décroche (« La
+  connexion du compte de test a échoué », bouton « Connexion… » resté grisé) : trois épisodes
+  le 25/11 (7 h, 11 h, 13 h). Rejouer la spec seule avant de chercher un défaut.
+- 25/11 · Une preuve e2e qui attend « la page est rendue de nouveau » (une adresse signée
+  neuve) n'est pas sûre : sans nouveau rendu, elle tombe sans défaut. La rendre conditionnelle,
+  et garder la preuve ferme dans un test unitaire.
+- 25/11 · Le relecteur coupé par la limite d'usage du modèle : le relancer aussitôt sur un autre
+  modèle (`model`), avec la même consigne, plutôt qu'attendre l'heure de remise à zéro.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
@@ -922,6 +935,13 @@ null; end;` passe toujours, que la fonction refuse ou non (l'échec, lui aussi P
   téléchargés un par un) et s'arrête si la base change pendant qu'elle tourne : la lancer quand
   aucune spec e2e ne tourne. La sauvegarde quotidienne de Supabase (offre Pro) ne prend PAS les
   fichiers du stockage : la nôtre reste la seule copie des photos et des signatures.
+
+- 25/11 · Lancement 11 · Dans une session sans écran, le connecteur Supabase refuse un `delete`
+  (« SQL execution was declined ») et laisse passer un `update` par identifiant exact. Pour
+  retirer une ligne de test d'un compte réel : archiver ou annuler (réversible) ; l'effacement
+  réel reste un geste de Jean-Guy, ou d'une session où il peut confirmer. Une visite « faite »
+  ne s'annule pas telle quelle (contrainte `cancelled_not_visited`) : son compte rendu se vide
+  d'abord, dans la même écriture.
 
 ## Les rendus
 
