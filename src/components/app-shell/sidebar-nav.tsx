@@ -33,7 +33,7 @@ export function SidebarNav() {
   return (
     <nav
       aria-label="Menu principal"
-      className="grid h-[72px] grid-cols-4 items-center text-xs font-bold md:flex md:h-auto md:flex-1 md:flex-col md:gap-1.5 xl:text-[15px]"
+      className="grid h-[72px] grid-cols-4 items-center text-xs font-bold md:flex md:h-auto md:flex-1 md:flex-col md:items-stretch md:gap-1.5 xl:text-[15px]"
     >
       {NAV_ITEMS.map((item) => {
         const active = isNavItemActive(item, pathname);
