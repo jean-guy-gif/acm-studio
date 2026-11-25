@@ -2,6 +2,7 @@ import { dpeClass, type DpeClass } from '@/features/dpe/services/dpe';
 import { z } from 'zod';
 
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
+import { EXTENSION_HOST_SUFFIXES } from '@/features/comparable-import/utils/extension-hosts';
 import { communeKey } from '@/features/competitor-search/utils/commune-name';
 import { DEMO_LISTING_HOST } from '@/features/demo/constants';
 import { normalizePropertyType } from '@/features/competitor-search/utils/normalize-property-type';
@@ -59,13 +60,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // d'éditeur (« SL »), ni le domaine, ni le nom du portail ne sont reconnus (sondé le 05/10 : 0
 // résultat en inclusion, aucun effet en exclusion). Conséquence : les biens hors liste sont encore
 // renvoyés, donc facturés, puis écartés et comptés.
-export const IMPORTABLE_HOST_SUFFIXES = [
-  'seloger.com',
-  'bienici.com',
-  'green-acres.fr',
-  'immobilier.lefigaro.fr',
-  'maisonsetappartements.fr',
-];
+export const IMPORTABLE_HOST_SUFFIXES = EXTENSION_HOST_SUFFIXES;
 
 const STREAM_PROPERTY_TYPES: Record<string, number> = { apartment: 0, house: 1 };
 

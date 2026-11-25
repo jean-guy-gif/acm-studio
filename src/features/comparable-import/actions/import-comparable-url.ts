@@ -9,6 +9,7 @@ import { normalizeListingData } from '@/features/comparable-import/services/norm
 import { observeListing } from '@/features/comparable-import/services/record-listing-observation';
 import { detectSource } from '@/features/comparable-import/utils/detect-source';
 import { isAllowedProtocol, normalizeUrl } from '@/features/comparable-import/utils/normalize-url';
+import { forbiddenPortalMessage } from '@/features/comparable-import/utils/forbidden-portals';
 import {
   isUnreadPortalHost,
   UNREAD_PORTAL_MESSAGE,
@@ -55,10 +56,15 @@ export async function importComparableUrl(
   if (isUnreadPortalHost(url.hostname)) {
     return { ok: false, error: UNREAD_PORTAL_MESSAGE };
   }
+  // Lancement, mission 11 (suite) — un site qui interdit la lecture de ses annonces : rien n'est lu.
+  const forbidden = forbiddenPortalMessage(url.href);
+  if (forbidden) {
+    return { ok: false, error: forbidden };
+  }
 
   const page = await fetchListingPage(rawUrl);
   if (!page.ok) {
-    return { ok: false, error: page.error };
+    return { ok: false, error: page.error, reason: page.reason };
   }
 
   // Use the ORIGINAL advisor URL for extraction (e.g. SeLoger location), not the
@@ -68,7 +74,11 @@ export async function importComparableUrl(
   const { data, foundFields, missingFields } = normalizeListingData(parts, page.finalUrl, source);
 
   if (foundFields.length === 0 && data.photoUrls.length === 0) {
-    return { ok: false, error: 'Aucune information exploitable n’a été détectée.' };
+    return {
+      ok: false,
+      error: 'Aucune information exploitable n’a été détectée.',
+      reason: 'empty',
+    };
   }
 
   // Side effect: record a dated observation of this public listing and derive its
