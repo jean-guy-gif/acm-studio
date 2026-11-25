@@ -7,9 +7,10 @@ ce que Jean-Guy a à faire lui-même.
 ## Ce qui part
 
 - **Le produit**, en production : acm-studio-henna.vercel.app.
-- **Le guide de prise en main**, pour les conseillers : `docs/guide/guide-de-prise-en-main.pdf`,
-  deux pages A4, à imprimer ou à envoyer. Sa source est le fichier `.html` d'à côté ; après une
-  correction, `npm run guide:pdf` refait le PDF et refuse de l'écrire si un texte dépasse de sa
+- **Le guide de prise en main**, pour les conseillers : `public/guide/guide-de-prise-en-main.pdf`,
+  deux pages A4, à imprimer ou à envoyer ; chaque conseiller l'ouvre aussi depuis « Aide », par le
+  lien « Guide de prise en main ». Sa source est `docs/guide/guide-de-prise-en-main.html` ; après
+  une correction, `npm run guide:pdf` refait le PDF et refuse de l'écrire si un texte dépasse de sa
   page. Sa ligne des portails dit que Belles Demeures et Leboncoin se saisissent à la main ; un
   test la compare au code.
 - **Les douze missions**, une ligne chacune dans `missions/LANCEMENT.md`.
@@ -56,8 +57,8 @@ Faits le mercredi 25/11 ; ceux marqués ↻ se refont le jeudi 26/11 au soir, av
 Rien de tout cela ne retient la livraison ; le point sur la base se décide avant d'ouvrir d'autres
 agences.
 
-- **Le guide** : le lire, et dire ce qui change. L'adresse de l'outil et le contact qui y sont
-  écrits sont ceux d'aujourd'hui (acm-studio-henna.vercel.app, formation@start-academy.fr).
+- **Le guide** : validé par Jean-Guy le 25/11, avec l'adresse de l'outil et le contact qui y sont
+  écrits (acm-studio-henna.vercel.app, formation@start-academy.fr).
 - **Les points à trancher**, notés en route (`docs/DECISIONS.md`, `missions/PLUS_TARD.md`) :
   - la phrase de la page de confidentialité pour les photos lues par l'IA (Lancement 9) ;
   - une veille reprise par un manager retrouve son plafond par défaut, même si l'opérateur l'avait

@@ -7,6 +7,7 @@ import {
   btnSecondary,
   card,
   kickerLabel,
+  link,
   pageSubtitle,
   pageTitle,
   sectionTitle,
@@ -16,7 +17,7 @@ import { getDemoDossiers } from '@/features/demo/queries/get-demo-dossiers';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { openExampleDossier } from '@/features/welcome/actions/open-example-dossier';
 import { WelcomeChecklist } from '@/features/welcome/components/welcome-checklist';
-import { WELCOME_STEPS } from '@/features/welcome/services/welcome';
+import { GUIDE_HREF, GUIDE_LABEL, WELCOME_STEPS } from '@/features/welcome/services/welcome';
 import { getProfile } from '@/lib/auth/get-profile';
 
 type WelcomePageProps = {
@@ -56,7 +57,20 @@ export default async function WelcomePage({ searchParams }: WelcomePageProps) {
       </section>
 
       <section className={`${card} flex flex-col gap-4 p-5 sm:p-6`}>
-        <h2 className={sectionTitle}>Les 4 étapes</h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 className={sectionTitle}>Les 4 étapes</h2>
+          {/* Lancement, mission 13 — le guide de prise en main, deux pages, en PDF : un lien,
+              jamais un bouton plein de plus (M146). */}
+          <a
+            href={GUIDE_HREF}
+            target="_blank"
+            rel="noopener"
+            className={`${link} text-sm`}
+            data-testid="welcome-guide"
+          >
+            {GUIDE_LABEL} ↗
+          </a>
+        </div>
         <ol className="flex flex-col gap-3.5">
           {WELCOME_STEPS.map((step, index) => (
             <li key={step.title} className="flex items-start gap-3">
