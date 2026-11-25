@@ -286,7 +286,7 @@ export function BuyerFollowUp({
               </span>
               {gist ? (
                 <span
-                  className="text-sm text-zinc-600 stage:text-white/70"
+                  className="basis-full pl-6 text-sm text-zinc-600 sm:basis-auto sm:pl-0 stage:text-white/70"
                   data-testid="buyer-follow-up-gist"
                 >
                   {gist}

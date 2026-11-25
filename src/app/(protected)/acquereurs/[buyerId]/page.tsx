@@ -366,6 +366,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const foldSummary =
     'flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-0.5 marker:hidden [&::-webkit-details-marker]:hidden';
   const foldChevron = 'w-3 shrink-0 text-xs text-brand-deep transition-transform stage:text-brand';
+  // Sur téléphone, la ligne d'un pli passe sous son titre, alignée sur lui.
+  const foldLineWrap = 'basis-full pl-5 sm:basis-auto sm:pl-0';
   // « Prêt à visiter ? » reste dehors, ouvert, tant qu'il manque quelque chose (Lancement 10) ;
   // prêt, il se range dans « Tout le dossier ». En pause pendant la vente (M143).
   const readinessOutside = sale == null && readinessOpen(readiness.state, searching);
@@ -427,8 +429,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
         ) : (
           <h2 className={foldTitle}>Prêt à visiter ?</h2>
         )}
-        <span data-testid="buyer-readiness-line">
-          ·{' '}
+        <span className={foldLineWrap} data-testid="buyer-readiness-line">
+          <span className="hidden sm:inline">· </span>
           {readinessLine({
             financing: buyer.financing,
             lastExchange,
@@ -631,7 +633,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               <h2 className="font-title text-base font-semibold text-brand-deep stage:text-white">
                 Ses critères et ce qui compte pour eux
               </h2>
-              <span className={foldLine} data-testid="buyer-search-line">
+              <span className={`${foldLine} ${foldLineWrap}`} data-testid="buyer-search-line">
                 {searchFoldLine({
                   criteria: criteria.length,
                   mustHave: criteria.filter((item) => item.mustHave).length,
@@ -954,7 +956,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
             Tout le dossier
           </h2>
-          <span className={foldLine} data-testid="buyer-all-line">
+          <span className={`${foldLine} ${foldLineWrap}`} data-testid="buyer-all-line">
             {everythingLine({
               selection: showSelection,
               vouchers: vouchersShown,
@@ -1240,8 +1242,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 ▸
               </span>
               <h3 className={nestedTitle}>Ce qui s’est passé</h3>
-              <span data-testid="buyer-timeline-line">
-                ·{' '}
+              <span className={foldLineWrap} data-testid="buyer-timeline-line">
+                <span className="hidden sm:inline">· </span>
                 {timelineLine(
                   timeline.length,
                   timeline[0] ? formatRelativeDay(timeline[0].at, now) : null,
