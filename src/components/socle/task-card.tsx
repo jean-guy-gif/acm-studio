@@ -56,8 +56,13 @@ export function TaskCard({
     <>
       <PersonMark name={name} tone={tone} />
       <span className="flex min-w-0 flex-col gap-px">
-        <span className="text-[17px] font-bold text-brand-darker stage:text-white">{name}</span>
-        <span className="text-[15px] text-[#5B6380] stage:text-white/60">
+        <span
+          className="text-[17px] font-bold text-brand-darker stage:text-white"
+          data-testid="person-name"
+        >
+          {name}
+        </span>
+        <span className="text-[15px] text-[#5B6380] stage:text-white/60" data-testid="person-task">
           {task}
           {late ? <LateNote late={late} /> : null}
         </span>
@@ -125,10 +130,16 @@ export function PersonRow({
     >
       <PersonMark name={name} tone={tone} compact />
       <span className="flex min-w-0 flex-col gap-px">
-        <span className="text-base font-bold text-brand-darker xl:text-[17px] stage:text-white">
+        <span
+          className="text-base font-bold text-brand-darker xl:text-[17px] stage:text-white"
+          data-testid="person-name"
+        >
           {name}
         </span>
-        <span className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60">
+        <span
+          className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60"
+          data-testid="person-task"
+        >
           {task}
           {late ? <LateNote late={late} /> : null}
         </span>
