@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import { defineConfig, devices } from '@playwright/test';
 
+import { testsBaseUrl } from './scripts/base-des-tests.mjs';
+
 // Mission 66 — le parcours complet, rejoué dans un vrai navigateur sur l'URL d'essai.
 // Lancé à la main (`npm run e2e`), jamais dans la CI : il lui faut l'URL d'essai et le
 // compte de test, dont les identifiants vivent dans `.env.e2e.local` (ignoré par git).
@@ -29,6 +31,9 @@ loadE2eEnv();
 if (!process.env.E2E_BASE_URL) {
   throw new Error('E2E_BASE_URL manquant : renseignez-le dans .env.e2e.local (ignoré par git).');
 }
+// La base d'essai séparée (25/11) : une fois la séparation faite, les specs ne se jouent que sur
+// l'essai — la prévisualisation d'une autre branche lit encore la base de la production.
+testsBaseUrl(process.env.E2E_BASE_URL);
 
 export default defineConfig({
   testDir: 'tests/e2e',
