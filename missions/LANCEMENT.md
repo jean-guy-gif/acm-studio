@@ -151,6 +151,41 @@ Le calendrier (son message du 25/11 au soir) : jeudi 26/11, les lots A à E, un 
 nouveauté, la suite complète sur l'essai, le parcours complet joué aux trois tailles sur le compte
 normal, le journal d'erreurs ; vendredi soir, son mot « livraison ».
 
+Ce que montrent les maquettes, relevé le 25/11 : le menu devient Aujourd'hui · Vendeurs ·
+Acquéreurs · Visites (en bas sur téléphone ; en icônes, avec Aide, sur tablette ; complet, avec
+Prospection et Aide, sur ordinateur) ; une colonne « à faire aujourd'hui » de 420 px (340 sur
+tablette) et le détail à droite ; la carte « à faire » (pastille aux initiales, nom, ce qu'il y a
+à faire, son bouton) ; « Tous mes acquéreurs · 12 » et « Tous mes vendeurs · 18 » en ligne ;
+« Bien 1 sur 4 · 0 retenu sur 3 » ; le dossier vendeur avec sa prochaine étape, trois tuiles
+(concurrents retenus, prix à revérifier, acquéreurs prêts à visiter), ses cinq étapes (le bien,
+les concurrents, le prix, le rendez-vous, conclure) et « Tout le dossier ».
+
+Questions posées à Jean-Guy le 25/11 au soir, chacune avec la réponse par défaut du chef (il
+avance avec elle, Jean-Guy corrige) :
+
+1. Préparation, Live et Suivi n'ont plus d'entrée au menu : ils restent des pages, ouvertes depuis
+   « Tous mes vendeurs » (trois onglets : en préparation, prêts pour le Live, conclus).
+2. Le compte (Mon profil, Administration, Ma démo, Sombre / Clair, Déconnexion) n'est sur aucune
+   maquette : il garde sa carte en bas du menu sur ordinateur, devient une icône en bas du menu sur
+   tablette et un rond aux initiales en haut d'« Aujourd'hui » sur téléphone ; la même feuille
+   porte Prospection et Aide là où le menu ne les montre pas.
+3. « Aujourd'hui » garde son contenu ; il prend seulement le socle.
+4. « Proposer », dans « un bien à la fois », retient le bien dans la sélection (trois au plus) :
+   rien ne part vers l'acquéreur avant « Envoyer la sélection ». « Écarter » garde sa raison en un
+   geste.
+5. « Nouvel acquéreur par une phrase » passe par la lecture des notes, ouverte agence par agence
+   (un coût) : là où elle est fermée, « Nouvel acquéreur » reste la saisie rapide d'aujourd'hui.
+6. « Dicter » : la dictée de l'appareil (le micro du clavier), rien ne passe par ACM, la page de
+   confidentialité ne change pas. La reconnaissance vocale du navigateur enverrait la voix à
+   Google ou à Apple : elle demanderait la juriste.
+7. Ce que les maquettes montrent et que la base n'a pas (la date et l'heure du rendez-vous) ne
+   s'affiche pas : aucune migration.
+8. Les couleurs et la police restent celles de la charte de l'agence ; le bleu nuit et Nunito Sans
+   des maquettes sont la charte par défaut. Le mode sombre continue de marcher.
+9. Pour regarder l'essai, Jean-Guy se connecte avec le compte de démonstration des tests
+   (`E2E_DEMO_EMAIL`, dans `.env.e2e.local`) : son propre compte n'existe pas dans la base d'essai.
+10. Le guide de prise en main nomme le menu d'aujourd'hui : il suit le nouveau menu avant le gel.
+
 ## Chaque soir
 
 La suite e2e complète, lancée par le chef en fin de journée (accord de Jean-Guy, 23/11), puis le
