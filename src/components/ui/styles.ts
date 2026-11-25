@@ -146,6 +146,20 @@ export const socleBtnOutline =
 export const socleBtnQuiet =
   'inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-[#D5DAEA] bg-white px-4 text-[15px] font-bold text-brand-deep transition-colors hover:border-brand-deep disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/10 stage:text-white';
 
+// Les grands boutons d'une décision (la prochaine étape, « Écarter » et « Proposer ») : coins de
+// 16 px, texte de 17 px. Leur hauteur est celle de l'écran : `socleBigStep` pour le bouton d'une
+// prochaine étape (54 px, 56 sur ordinateur), `socleBigPair` pour la paire d'un bien (58 px, 56
+// sur ordinateur).
+export const socleBtnFilledBig =
+  'btn-filled inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-deep px-6 text-[17px] font-bold text-white transition-colors hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:hover:bg-white stage:hover:text-brand-deep';
+
+export const socleBtnQuietBig =
+  'inline-flex items-center justify-center gap-2 rounded-2xl border border-[#D5DAEA] bg-white px-6 text-[17px] font-bold text-brand-darker transition-colors hover:border-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/10 stage:text-white';
+
+export const socleBigStep = 'h-[54px] xl:h-14';
+
+export const socleBigPair = 'h-[58px] xl:h-14';
+
 // La carte : blanche, coins de 20 px. Avec une ombre légère (téléphone) ou un filet (le détail).
 export const socleCard =
   'rounded-[20px] bg-white shadow-[0_1px_2px_rgba(27,37,89,0.06)] stage:bg-white/5 stage:shadow-none';

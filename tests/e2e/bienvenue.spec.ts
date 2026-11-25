@@ -35,7 +35,7 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
   await archiveExamples(page);
 
   try {
-    await test.step('« Aide », dans le menu de la carte, ouvre « Bienvenue »', async () => {
+    await test.step('« Aide », au menu, ouvre « Bienvenue »', async () => {
       await goViaAccountMenu(page, 'Aide');
       await expect(page).toHaveURL(/\/bienvenue$/);
       await expect(page.getByRole('heading', { name: /^Bienvenue/ })).toBeVisible();

@@ -28,6 +28,7 @@ import {
   homeHref,
   isChromeBrowser,
 } from '@/features/welcome/services/welcome';
+import { accountMenuFor, NAV_ITEMS } from '@/features/workspace-mode/services/workspace-mode';
 import { isPublicPath } from '@/lib/supabase/public-paths';
 
 const SRC = join(process.cwd(), 'src');
@@ -100,10 +101,14 @@ describe('« Bienvenue » (mission 97)', () => {
   });
 
   it('« Aide » ramène à « Bienvenue » depuis le menu', () => {
-    // Mission 125 — « Aide » est au menu de la carte du conseiller, dans le service du mode.
-    expect(read('features', 'workspace-mode', 'services', 'workspace-mode.ts')).toContain(
-      "{ href: '/bienvenue', label: 'Aide'",
-    );
+    // La refonte, lot A — « Aide » est au menu à partir de 768 px ; en dessous, dans la feuille du
+    // compte du conseiller (M125). Aux deux endroits, la même adresse.
+    expect(NAV_ITEMS.find((item) => item.label === 'Aide')?.href).toBe('/bienvenue');
+    expect(accountMenuFor({ demo: false, operator: false })).toContainEqual({
+      href: '/bienvenue',
+      label: 'Aide',
+      until: 'tablet',
+    });
   });
 });
 
