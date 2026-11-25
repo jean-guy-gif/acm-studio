@@ -8,8 +8,9 @@ import { findsForBuyer } from '@/features/buyer-watch/services/watch-criteria';
 import { watchTasks, type WatchRunFinds } from '@/features/buyer-watch/services/watch-tasks';
 import {
   readWatchFinds,
-  watchKey,
   type WatchFind,
+  watchKey,
+  watchPropertyKey,
 } from '@/features/buyer-watch/services/watch-finds';
 import {
   effectiveWatchCapCents,
@@ -107,7 +108,11 @@ async function recentFinds(
     // Ni connu depuis, ni contraire à un indispensable de la fiche telle qu'elle est aujourd'hui.
     const finds = findsForBuyer(
       buyer,
-      run.finds.filter((find) => !keys.has(watchKey(find.url))),
+      run.finds.filter(
+        (find) =>
+          !keys.has(watchKey(find.url)) &&
+          !(find.key != null && keys.has(watchPropertyKey(find.key))),
+      ),
     );
     if (finds.length > 0) runs.push({ buyerId, ranAt: run.ranAt, finds });
   }

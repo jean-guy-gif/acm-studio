@@ -30,12 +30,17 @@ import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 import { undoDismissal } from '@/features/buyer-dismissals/actions/dismiss';
 import { DismissControl } from '@/features/buyer-dismissals/components/dismiss-control';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
+import type { SeenWithHim } from '@/features/buyers/services/buyer-follow-up';
 import {
+  candidateTarget,
   countSeen,
   currentSeenLabel,
   isClosedForBuyer,
   seenLine,
+  seenMatcher,
   type CurrentSeenReason,
+  type SeenMark,
+  type SeenReason,
 } from '@/features/buyers/services/seen-properties';
 import { importIdealListing } from '@/features/ideal-properties/actions/import-ideal-listing';
 import { saveIdealSelection } from '@/features/ideal-properties/actions/save-ideal-selection';
@@ -88,6 +93,18 @@ import { sheetFactsFromSelectionListing } from '@/features/property-sheet/servic
 import type { CompetitorCandidate } from '@/features/competitor-search/types';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
+
+// « Déjà vus avec lui » : la mention de chaque bien, à la couleur de « Son suivi » ; le mot dit
+// toujours l'état, jamais la couleur seule (M129).
+const SEEN_PILL = 'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap';
+const SEEN_TONES: Record<SeenWithHim['tone'], string> = {
+  ok: `${SEEN_PILL} bg-emerald-50 text-emerald-800`,
+  now: `${SEEN_PILL} bg-sky-100 text-sky-900`,
+  wait: `${SEEN_PILL} border border-zinc-200 bg-zinc-50 text-zinc-600`,
+  no: `${SEEN_PILL} bg-orange-50 text-orange-800`,
+  off: `${SEEN_PILL} bg-zinc-100 text-zinc-600`,
+  plain: `${SEEN_PILL} bg-zinc-100 text-zinc-700`,
+};
 
 // Mission 118 (partie B) — « Trouver les biens idéaux », sur un seul écran, réservé au conseiller :
 //   1. ce que l'agence a déjà — le rapprochement de M86, gratuit, rendu d'abord ;
@@ -180,6 +197,8 @@ export function IdealPropertiesPanel({
   dismissed = [],
   seen = [],
   currentSeen = {},
+  seenMarks = [],
+  seenList = [],
   mandatesUnread = false,
   buyerName = null,
   budgetMax = null,
@@ -219,12 +238,18 @@ export function IdealPropertiesPanel({
   // Mission 139 — ce que le conseiller a écarté pour lui (la clé de chaque bien) ; null : la
   // lecture a échoué (M98).
   dismissed?: string[] | null;
-  // Lancement, mission 3 — ce qu'il a déjà vu (envoyé, visité, refusé), par la clé de chaque
-  // bien : jamais reproposé dans les listes ; la sélection actuelle, elle, reste dans son bandeau.
-  seen?: { key: string; reason: 'sent' | 'visited' | 'refused' }[];
-  // Ce qu'il a dit des biens de sa sélection actuelle (`source:reference` → refusé, écarté, visité) :
-  // un bien refusé ou écarté n'y est plus coché et ne se recoche pas.
+  // Lancement, mission 3 — ce qu'il a déjà vu (envoyé, visité, refusé) ou que le conseiller a
+  // écarté pour lui, par la clé de chaque bien : jamais reproposé dans les listes ; un écarté ne se
+  // compte pas dans la ligne des biens retirés.
+  seen?: { key: string; reason: SeenReason }[];
+  // Ce qu'il a dit des biens de sa sélection en cours, pas encore reçue (`source:reference` →
+  // refusé, écarté, visité) : un bien refusé ou écarté n'y est plus coché et ne se recoche pas.
   currentSeen?: Record<string, CurrentSeenReason>;
+  // Lancement, mission 3 (suite, 25/11) — ce qui fait reconnaître ses biens sous une autre annonce
+  // (l'identifiant du fournisseur de la recherche, la ressemblance) ; et « Déjà vus avec lui » :
+  // ces biens, à part, chacun avec sa mention, sans case « Retenir » ; null : lecture en échec.
+  seenMarks?: SeenMark[];
+  seenList?: SeenWithHim[] | null;
   // Mission 145 — les offres de l'agence n'ont pas pu être lues : aucun mandat n'est proposé, et
   // l'écran le dit (M98).
   mandatesUnread?: boolean;
@@ -243,7 +268,9 @@ export function IdealPropertiesPanel({
   const [error, setError] = useState<string | null>(null);
   const [extensionIssue, setExtensionIssue] = useState<ExtensionIssue | null>(null);
   // Lancement, mission 3 — un bien de sa sélection qu'il a refusé, ou écarté pour lui, n'est plus
-  // coché en arrivant : la prochaine sélection ne le reprend pas.
+  // coché en arrivant : la prochaine sélection ne le reprend pas. Suite du 25/11 — `current` : sa
+  // sélection retenue qu'il n'a pas encore reçue ; après une présentation ou un envoi, elle est
+  // vide : rien n'est coché en arrivant (0/3).
   const closed = (item: SelectionItemInput) => isClosedForBuyer(currentSeen[keyOf(item)]);
   const [selected, setSelected] = useState<Map<string, SelectionItemInput>>(
     () => new Map(current.filter((item) => !closed(item)).map((item) => [keyOf(item), item])),
@@ -267,9 +294,12 @@ export function IdealPropertiesPanel({
     item: SelectionItemInput;
     rankLine: string | null;
   } | null>(null);
+  // Un bien déjà vu avec lui s'ouvre en lecture seule : sa fiche, sans « Retenir ce bien ».
+  const [seenSheet, setSeenSheet] = useState(false);
   const closeSheet = () => {
     sheet.close();
     setSheetItem(null);
+    setSeenSheet(false);
   };
   // Fiche ouverte : son « Retenir ce bien » est le seul plein de l'écran (M146).
   const pageLeads = sheetItem == null;
@@ -485,10 +515,19 @@ export function IdealPropertiesPanel({
     );
   const isHidden = (item: SelectionItemInput, listingUrl: string | null) =>
     hidden.has(targetKey(item, listingUrl));
-  // Lancement, mission 3 — déjà envoyé, visité ou refusé : hors des listes, et compté.
-  const seenReasons = new Map(seen.map((fact) => [fact.key, fact.reason]));
+  // Lancement, mission 3 — déjà envoyé, visité ou refusé : hors des listes, et compté. Suite du
+  // 25/11 — reconnu aussi sous une autre annonce (`seenMatcher`).
+  const seenOf = seenMatcher(seen, seenMarks);
   const seenReason = (item: SelectionItemInput, listingUrl: string | null) =>
-    isHidden(item, listingUrl) ? undefined : seenReasons.get(targetKey(item, listingUrl));
+    isHidden(item, listingUrl) ? undefined : seenOf({ key: targetKey(item, listingUrl) });
+  // Une annonce du marché : par son annonce, puis par le bien chez le fournisseur, puis par sa
+  // ressemblance (commune, prix, pièces, surface) — un bien écarté pour lui aussi, sous une autre
+  // annonce.
+  const marketSeenReason = (entry: CategorizedCandidate) => {
+    const item = marketItem(entry);
+    if (isHidden(item, entry.candidate.url)) return undefined;
+    return seenOf(candidateTarget(targetKey(item, entry.candidate.url), entry.candidate));
+  };
 
   const actions = (item: SelectionItemInput) => (
     <div className="flex shrink-0 flex-col items-end gap-1">
@@ -559,7 +598,7 @@ export function IdealPropertiesPanel({
     layout.showMarket({ item: marketItem(entry), listingUrl: entry.candidate.url }) &&
     !isHidden(marketItem(entry), entry.candidate.url);
   const showMarket = (entry: CategorizedCandidate): boolean =>
-    marketOpen(entry) && seenReason(marketItem(entry), entry.candidate.url) == null;
+    marketOpen(entry) && marketSeenReason(entry) == null;
 
   const watchEntries = (watch?.entries ?? []).filter(showMarket);
   // Mission 151 (partie B) — pendant la recherche et sa lecture, le message d'attente prend la
@@ -568,16 +607,14 @@ export function IdealPropertiesPanel({
   // Un bien de la veille, déjà en tête, ne se répète pas dans les annonces du marché.
   const watchUrls = new Set(watchEntries.map((entry) => entry.candidate.url));
   // Les annonces du marché (la veille et la recherche, chacune une fois) qu'il a déjà vues.
-  const marketSeen = new Map<string, 'sent' | 'visited' | 'refused'>();
+  const marketSeen = new Map<string, SeenReason>();
   for (const entry of [
     ...(watch?.entries ?? []),
     ...(market
       ? IDEAL_CATEGORIES.flatMap((category) => market.categorized.byCategory[category])
       : []),
   ]) {
-    const reason = marketOpen(entry)
-      ? seenReason(marketItem(entry), entry.candidate.url)
-      : undefined;
+    const reason = marketOpen(entry) ? marketSeenReason(entry) : undefined;
     if (reason) marketSeen.set(entry.candidate.url, reason);
   }
   const marketSeenLine = seenLine(countSeen([...marketSeen.values()]));
@@ -952,7 +989,7 @@ export function IdealPropertiesPanel({
           </p>
         </div>
         {budgetWarning ? <p className={hintText}>{budgetWarning}</p> : null}
-        {marketSeenLine ? (
+        {marketSeenLine && market == null ? (
           <p className={hintText} data-testid="ideal-market-seen">
             {marketSeenLine}
           </p>
@@ -1034,6 +1071,16 @@ export function IdealPropertiesPanel({
                 ? ` · ${excludedLine(market.categorized.excluded)}`
                 : ''}
             </p>
+            {/* Lancement, mission 3 (suite, 25/11) — sous le compteur de la recherche : les biens
+                retirés parce qu'il les a déjà vus. */}
+            {marketSeenLine ? (
+              <p
+                className="text-sm font-semibold text-zinc-700 stage:text-white/80"
+                data-testid="ideal-market-seen"
+              >
+                {marketSeenLine}
+              </p>
+            ) : null}
             {IDEAL_CATEGORIES.map((category) => {
               const entries = market.categorized.byCategory[category].filter(
                 (entry) => showMarket(entry) && !watchUrls.has(entry.candidate.url),
@@ -1077,6 +1124,71 @@ export function IdealPropertiesPanel({
         )}
       </section>
 
+      {/* Lancement, mission 3 (suite, Jean-Guy, 25/11) — « Déjà vus avec lui » : à part, chaque bien
+          avec sa mention, sans case « Retenir ». */}
+      {seenList == null ? (
+        <p
+          role="alert"
+          className="text-sm font-semibold text-red-700"
+          data-testid="ideal-seen-unread"
+        >
+          Les biens qu’il a déjà vus n’ont pas pu être listés : rechargez la page.
+        </p>
+      ) : seenList.length > 0 ? (
+        <section
+          className={`${card} flex flex-col gap-3 bg-zinc-50/60 p-5 stage:bg-white/[0.03]`}
+          data-testid="ideal-seen"
+        >
+          <div className="flex flex-col gap-0.5">
+            <h2 className={`${sectionTitle} flex flex-wrap items-center gap-2`}>
+              Déjà vus avec lui <span className={badgeBrand}>{seenList.length}</span>
+            </h2>
+            <p className={hintText}>
+              Il les a reçus, visités ou refusés : ils ne lui sont plus proposés, et ne se
+              retiennent plus.
+            </p>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {seenList.map((line) => (
+              <li
+                key={line.key}
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-xl border border-zinc-200 bg-white px-4 py-3 stage:border-white/10 stage:bg-transparent"
+                data-testid="ideal-seen-item"
+              >
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  {line.itemId ? (
+                    <button
+                      type="button"
+                      className={openSheetLink}
+                      data-testid="open-property-sheet"
+                      onClick={() => {
+                        setSheetItem(null);
+                        setSeenSheet(true);
+                        sheet.openTarget({ kind: 'selection-item', id: line.itemId as string });
+                      }}
+                    >
+                      {line.label}
+                    </button>
+                  ) : (
+                    <span className="font-semibold text-brand-deep stage:text-white">
+                      {line.label}
+                    </span>
+                  )}
+                  <span className="text-sm text-zinc-600 stage:text-white/70">
+                    {[line.price != null ? formatEuro(line.price) : null, line.origin]
+                      .filter((part): part is string => part != null)
+                      .join(' · ')}
+                  </span>
+                </span>
+                <span className={SEEN_TONES[line.tone]} data-testid="ideal-seen-mention">
+                  {line.mention}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {error ? (
         <p role="alert" className={alertError}>
           {error}
@@ -1101,14 +1213,14 @@ export function IdealPropertiesPanel({
         </button>
         {full ? <span className={hintText}>{SELECTION_TOO_MANY}</span> : null}
       </div>
-      {sheet.state && sheetItem ? (
+      {sheet.state && (sheetItem || seenSheet) ? (
         <PropertySheetView
           state={sheet.state}
           onClose={closeSheet}
           backLabel="Ses biens idéaux"
           budgetMax={budgetMax}
-          rankLine={sheetItem.rankLine}
-          footer={sheetFooter(sheetItem.item)}
+          rankLine={sheetItem?.rankLine ?? null}
+          footer={sheetItem ? sheetFooter(sheetItem.item) : undefined}
         />
       ) : null}
     </div>

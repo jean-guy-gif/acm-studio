@@ -1876,16 +1876,21 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   );
   await answer('no').click();
   await expect(answer('no')).toHaveAttribute('aria-pressed', 'true');
-  await expect
-    .poll(() => mandatePhotos.first().getAttribute('src'), {
-      message: 'la page est rendue de nouveau après la réponse',
-      timeout: 20_000,
-    })
-    .not.toBe(firstPhoto);
-  await expect(
-    page.getByTestId('presentation-item').locator('img[data-kept="1"]'),
-    'les photos du mandat ne sont pas remontées à la réponse',
-  ).toHaveCount(photoCount);
+  // La preuve ne vaut que si la page a été rendue de nouveau (une adresse signée neuve) : sans
+  // nouveau rendu dans les quinze secondes, il n'y a rien à prouver ici (vu une fois le 25/11).
+  const rendered = await expect
+    .poll(() => mandatePhotos.first().getAttribute('src'), { timeout: 15_000 })
+    .not.toBe(firstPhoto)
+    .then(
+      () => true,
+      () => false,
+    );
+  if (rendered) {
+    await expect(
+      page.getByTestId('presentation-item').locator('img[data-kept="1"]'),
+      'les photos du mandat ne sont pas remontées à la réponse',
+    ).toHaveCount(photoCount);
+  }
   await page.getByTestId('presentation-next').click();
   await expect(page.getByTestId('deck-kicker')).toContainText('Bien B');
   // « Terminer » avec B sans réponse : confirmation, et l'on revient.

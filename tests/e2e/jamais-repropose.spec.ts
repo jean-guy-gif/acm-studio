@@ -7,8 +7,10 @@ import { demoCredentials, login, resetDemoByScreen } from './support';
 // - les Keller ont refusé deux maisons de Mougins (« Le prix », sélection présentée il y a 21
 //   jours) : leurs biens idéaux ne les ramènent plus, ni de l'agence ni du marché, et l'écran dit
 //   combien de biens ne leur sont pas reproposés, et pourquoi ;
-// - la famille Moreau a dit « Pas pour moi » au troisième bien de sa sélection présentée : dans
-//   « Sélection actuelle », il n'est plus coché, ne se recoche pas, et l'écran le dit ;
+// - la famille Moreau a dit « Pas pour moi » au troisième bien de sa sélection présentée. Suite
+//   du 25/11 (Jean-Guy) : une sélection reçue n'est plus « actuelle » — rien n'est coché en
+//   arrivant (0/3), ses trois biens sont à part, sous « Déjà vus avec lui », chacun avec sa
+//   mention, sans case « Retenir » ;
 // - M. et Mme Rossi ont visité l'appartement de Juan-les-Pins : « Proposer ce bien » le dit
 //   (« déjà visité le … ») et ne les compte plus parmi les acquéreurs à qui l'envoyer.
 // `E2E_CAPTURES=1` range trois captures dans `missions/maquettes/`.
@@ -40,37 +42,55 @@ test('un bien refusé ou visité n’est pas reproposé', async ({ page }) => {
   );
   await expect(lines.first()).toBeVisible();
   const said = (await lines.allInnerTexts()).join(' ');
-  expect(said).toMatch(/ne lui (est|sont) pas reproposés?/);
+  expect(said).toMatch(/retirés? parce que déjà vus? avec lui/);
   expect(said).toMatch(/refusés?/);
+  // Sous le compteur de la recherche : les biens retirés parce qu'il les a déjà vus (25/11). Le
+  // marché simulé de la démo ramène au moins une de leurs maisons refusées : la ligne est là.
+  const marketSeen = page.getByTestId('ideal-market-seen');
+  await expect(marketSeen).toContainText(/retirés? parce que déjà vus? avec lui/);
+  expect((await marketSeen.boundingBox())!.y).toBeGreaterThan(
+    (await page.getByTestId('ideal-market-summary').boundingBox())!.y,
+  );
+  // Leurs deux refus sont à part, avec leur raison.
+  await expect(
+    page
+      .getByTestId('ideal-seen-mention')
+      .filter({ hasText: /^Refusé : / })
+      .first(),
+  ).toBeVisible();
   if (process.env.E2E_CAPTURES === '1') {
     await page.addStyleTag({ content: HIDE_PREVIEW_TOOLBAR });
     await lines.first().scrollIntoViewIfNeeded();
     await page.screenshot({ path: 'missions/maquettes/L3-biens-ideaux-non-reproposes.png' });
   }
 
-  // La famille Moreau : le bien refusé de sa sélection actuelle n'est plus coché.
+  // La famille Moreau : sa sélection présentée n'est plus « actuelle ». Rien n'est coché.
   await page.goto('/acquereurs?vue=agence&q=moreau');
   await page.getByRole('link', { name: 'Famille Moreau', exact: true }).first().click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Moreau');
   await page.goto(`${page.url().replace(/[?#].*$/, '')}/biens-ideaux`);
   await expect(page.getByTestId('ideal-title')).toHaveText('Les biens idéaux de Famille Moreau');
-  const currentItem = (letter: string) =>
-    page.locator(`[data-testid="ideal-current-item"][data-letter="${letter}"]`);
-  await expect(page.getByTestId('ideal-current-item')).toHaveCount(3);
-  await expect(page.getByTestId('ideal-current-seen')).toHaveCount(1);
-  await expect(currentItem('C').getByTestId('ideal-current-seen')).toHaveText(
-    'Refusé par lui : il ne sera pas repris dans sa prochaine sélection.',
-  );
-  await expect(currentItem('A').getByRole('checkbox')).toBeChecked();
-  await expect(currentItem('B').getByRole('checkbox')).toBeChecked();
-  await expect(currentItem('C').getByRole('checkbox')).not.toBeChecked();
-  await expect(currentItem('C').getByRole('checkbox')).toBeDisabled();
-  // La prochaine sélection ne le reprend pas : « Retenir » propose les deux autres.
-  await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (2/3)');
-  await expect(page.getByTestId('ideal-retain')).toBeEnabled();
+  await expect(page.getByTestId('ideal-current')).toHaveCount(0);
+  await expect(page.getByTestId('ideal-retain')).toHaveText('Retenir la sélection (0/3)');
+  await expect(page.getByTestId('ideal-retain')).toBeDisabled();
+  await expect(page.getByRole('checkbox', { checked: true })).toHaveCount(0);
+  // « Déjà vus avec lui » : ses trois biens, chacun avec sa mention, sans case « Retenir ».
+  const seenWithHim = page.getByTestId('ideal-seen');
+  await expect(seenWithHim).toContainText('Déjà vus avec lui');
+  await expect(seenWithHim.getByTestId('ideal-seen-item')).toHaveCount(3);
+  await expect(seenWithHim.getByRole('checkbox')).toHaveCount(0);
+  const mentions = await seenWithHim.getByTestId('ideal-seen-mention').allInnerTexts();
+  expect(mentions.filter((mention) => /^Refusé/.test(mention))).toHaveLength(1);
+  expect(mentions.filter((mention) => /^Présenté /.test(mention))).toHaveLength(2);
+  // Aucun de ces trois biens ne revient dans « Ce que l'agence a déjà ».
+  const seenLabels = await seenWithHim.getByTestId('open-property-sheet').allInnerTexts();
+  for (const label of seenLabels) {
+    await expect(page.getByTestId('ideal-agency-hit').filter({ hasText: label })).toHaveCount(0);
+  }
   if (process.env.E2E_CAPTURES === '1') {
     await page.addStyleTag({ content: HIDE_PREVIEW_TOOLBAR });
-    await page.screenshot({ path: 'missions/maquettes/L3-selection-actuelle-refuse.png' });
+    await seenWithHim.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: 'missions/maquettes/L3b-deja-vus-avec-lui-ecran.png' });
   }
 
   // M. et Mme Rossi : l'appartement de Juan-les-Pins, déjà visité.

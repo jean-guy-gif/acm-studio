@@ -8,6 +8,7 @@ import {
   readWatchFinds,
   toWatchFind,
   watchKey,
+  watchPropertyKey,
   watchReasonsOf,
   withSoftReasons,
 } from '@/features/buyer-watch/services/watch-finds';
@@ -182,6 +183,18 @@ describe('ce que la veille garde', () => {
       knownKeys: [watchKey(known.url)],
     });
     expect(outcome.finds.map((find) => find.key)).toEqual(['100000006']);
+    expect(outcome.excludedKnown).toBe(1);
+  });
+
+  // Lancement, mission 3 (suite, 25/11) — le même bien rendu sous une autre annonce : reconnu par
+  // son identifiant chez le fournisseur, gardé avec la sélection.
+  it('ni un bien de ses sélections revenu sous une autre annonce', () => {
+    const again = candidate('100000008');
+    const outcome = filterWatchFinds([again, candidate('100000009')], {
+      seenSince: daysAgo(7),
+      knownKeys: [watchPropertyKey(again.key!)],
+    });
+    expect(outcome.finds.map((find) => find.key)).toEqual(['100000009']);
     expect(outcome.excludedKnown).toBe(1);
   });
 

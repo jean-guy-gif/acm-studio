@@ -6,6 +6,9 @@ import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { readSeenProperties } from '@/features/buyers/queries/read-seen-properties';
 import { currentSeenReason, seenKeysOf } from '@/features/buyers/services/seen-properties';
+import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-requests';
+import { getBuyerFollowUpRows } from '@/features/buyers/queries/get-buyer-follow-up';
+import { buyerFollowUp, seenWithHim } from '@/features/buyers/services/buyer-follow-up';
 import { buyerToCriteria } from '@/features/buyers/services/buyer-criteria';
 import { streamEstateApiKey } from '@/features/competitor-search/services/stream-estate-config';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -64,7 +67,17 @@ export default async function IdealPropertiesPage({ params }: Props) {
   const signedIds = dossiers
     .filter((dossier) => dossier.conclusion?.outcome === 'signed')
     .map((dossier) => dossier.project.id);
-  const [{ cards }, selection, demo, watchRun, seenRead, offers, condominiums] = await Promise.all([
+  const [
+    { cards },
+    selection,
+    demo,
+    watchRun,
+    seenRead,
+    offers,
+    condominiums,
+    followUpRows,
+    visitRead,
+  ] = await Promise.all([
     getAgencyProspecting(dossiers),
     getIdealSelection(buyer.id),
     isDemoAgency(profile.agency_id),
@@ -79,6 +92,9 @@ export default async function IdealPropertiesPage({ params }: Props) {
     buyer.condominiumAccepted === false
       ? getMandateCondominiums(profile.agency_id, signedIds)
       : Promise.resolve(new Map<string, boolean>()),
+    // Lancement, mission 3 (suite) — « Déjà vus avec lui » : les lignes de « Son suivi ».
+    getBuyerFollowUpRows(supabase, profile.agency_id, buyer.id),
+    readVisitLines(),
   ]);
   // Une lecture des offres en échec ne propose aucun mandat (M98) : les concurrents restent.
   const underOffer = offers == null ? new Set(signedIds) : projectsUnderOffer(offers);
@@ -97,9 +113,15 @@ export default async function IdealPropertiesPage({ params }: Props) {
   );
   // Ce qu'il a déjà vu ; null : la lecture a échoué (M98).
   const seenFacts = seenRead ? seenKeysOf(seenRead.seen, buyer.id) : null;
-  // Sa sélection actuelle : ce qu'il a dit de chacun de ses biens (refusé, écarté, visité).
+  // Lancement, mission 3 (suite, Jean-Guy, 25/11) — une sélection qu'il a reçue (présentée, lien
+  // partagé, envoi noté) n'est plus « actuelle » : rien n'est coché en arrivant (0/3), ses biens
+  // passent sous « Déjà vus avec lui ». « Sélection actuelle » ne reste que pour une sélection
+  // retenue qu'il n'a pas encore reçue, encore à présenter.
+  const received = selection != null && seenRead?.receivedAt(selection.id) != null;
+  const current = selection && !received ? selection.items : [];
+  // Ce qu'il a dit de chacun des biens de cette sélection en cours (refusé, écarté, visité).
   const currentSeen = Object.fromEntries(
-    (selection?.items ?? []).flatMap((item) => {
+    current.flatMap((item) => {
       const key = seenRead?.keyOf(item);
       const reason = currentSeenReason(
         key ? seenRead?.seen.get(buyer.id)?.get(key)?.reason : undefined,
@@ -107,6 +129,32 @@ export default async function IdealPropertiesPage({ params }: Props) {
       return reason ? [[selectionKey(item), reason]] : [];
     }),
   );
+  const currentKeys = new Set(current.map((item) => seenRead?.keyOf(item) ?? null));
+  // « Déjà vus avec lui » : ce qu'il a reçu, visité ou refusé, chaque bien avec sa mention ; null :
+  // la lecture a échoué, l'écran le dit (M98).
+  const ownVisits = visitRead.lines.filter((line) => line.buyerId === buyer.id);
+  const seenList =
+    followUpRows && !visitRead.failed
+      ? seenWithHim(
+          buyerFollowUp({
+            ...followUpRows,
+            visits: ownVisits.map((line) => ({
+              id: line.id,
+              itemId: line.itemId,
+              requestedAt: line.requestedAt,
+              visitedAt: line.visitedAt,
+              opinion: line.report?.opinion ?? null,
+              outcome: line.outcome,
+            })),
+          }),
+          ownVisits.map((line) => ({
+            id: line.id,
+            visitedAt: line.visitedAt,
+            disliked: line.report?.disliked ?? [],
+          })),
+          // Un bien de la sélection en cours a déjà sa ligne dans le bandeau.
+        ).filter((line) => !currentKeys.has(line.key))
+      : null;
   const deduced = idealSearchCriteria(buyer);
   const watchCategorized =
     watchRun != null
@@ -172,7 +220,7 @@ export default async function IdealPropertiesPage({ params }: Props) {
         </p>
       </div>
       <IdealPropertiesPanel
-        current={selection ? selectionAsInputs(selection) : []}
+        current={selection ? selectionAsInputs({ ...selection, items: current }) : []}
         presented={selection?.presentedAt != null}
         buyerId={buyer.id}
         agency={agency}
@@ -185,10 +233,10 @@ export default async function IdealPropertiesPage({ params }: Props) {
             ? seenFacts.filter((fact) => fact.reason === 'dismissed').map((fact) => fact.key)
             : null
         }
+        seen={seenFacts ?? []}
         currentSeen={currentSeen}
-        seen={(seenFacts ?? []).flatMap((fact) =>
-          fact.reason === 'dismissed' ? [] : [{ key: fact.key, reason: fact.reason }],
-        )}
+        seenMarks={seenRead ? seenRead.marks(buyer.id) : []}
+        seenList={seenList}
         mandatesUnread={offers == null}
         buyerName={buyer.name}
         budgetMax={buyer.budgetMax}

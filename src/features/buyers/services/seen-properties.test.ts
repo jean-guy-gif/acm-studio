@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  candidateTarget,
   contactedOf,
   countSeen,
   currentSeenLabel,
   currentSeenReason,
   isClosedForBuyer,
   keptForProposal,
+  receivedSelections,
   ruledOutOf,
   seenKeysOf,
   seenLine,
+  seenMarksOf,
+  seenMatcher,
   seenProperties,
+  toLike,
   type SeenRows,
 } from '@/features/buyers/services/seen-properties';
 
@@ -194,13 +199,13 @@ describe('la ligne dite au conseiller', () => {
 
   it('dit le nombre et pourquoi, au singulier comme au pluriel', () => {
     expect(seenLine({ sent: 1, visited: 0, refused: 0 })).toBe(
-      '1 bien ne lui est pas reproposé : 1 déjà envoyé.',
+      '1 bien retiré parce que déjà vu avec lui : 1 déjà envoyé.',
     );
     expect(seenLine({ sent: 2, visited: 1, refused: 1 })).toBe(
-      '4 biens ne lui sont pas reproposés : 2 déjà envoyés, 1 visité, 1 refusé.',
+      '4 biens retirés parce que déjà vus avec lui : 2 déjà envoyés, 1 visité, 1 refusé.',
     );
     expect(seenLine(countSeen(['sent', undefined, 'refused', 'dismissed', 'sent']))).toBe(
-      '3 biens ne lui sont pas reproposés : 2 déjà envoyés, 1 refusé.',
+      '3 biens retirés parce que déjà vus avec lui : 2 déjà envoyés, 1 refusé.',
     );
   });
 });
@@ -231,7 +236,104 @@ describe('le lien de proposition', () => {
   });
 });
 
-describe('sa sélection actuelle, sur les biens idéaux', () => {
+// Lancement, mission 3 (suite, Jean-Guy, 25/11) — vu chez un vrai acquéreur : une maison présentée le
+// 13/11 ressortait 1re du marché le 25/11. Le fournisseur de la recherche la rendait sous une
+// autre annonce : la clé de la boucle (l'annonce publiée) ne la reconnaissait plus.
+describe('le même bien sous une autre annonce', () => {
+  const house = { city: 'Mouans-Sartoux', rooms: 6, surface: 257, price: 1_698_000 };
+  const presented: SeenRows = {
+    ...base,
+    selections: [{ id: 's1', buyer_id: 'keller', presented_at: '2026-11-13T16:04:00Z' }],
+    items: [
+      {
+        id: 'i2',
+        selection_id: 's1',
+        source: 'listing',
+        reference: 'https://www.bienici.com/annonce/ag133861-559023029',
+        removed_at: null,
+        property_id: 'se-735ba130',
+        like: house,
+      },
+      { id: 'i3', selection_id: 's1', source: 'competitor', reference: 'c1', removed_at: null },
+    ],
+    competitorLikes: new Map([
+      ['c1', { city: 'Mougins', rooms: 6, surface: 283, price: 1_696_000 }],
+    ]),
+  };
+  const match = (rows: SeenRows) => {
+    const facts = seenKeysOf(seenProperties(rows), 'keller');
+    return seenMatcher(facts, seenMarksOf(rows).get('keller') ?? []);
+  };
+  const elsewhere = 'listing:seloger:26555NBRWCHG';
+
+  it('par son annonce publiée, comme avant', () => {
+    expect(match(presented)({ key: 'listing:bienici:ag133861-559023029' })).toBe('sent');
+  });
+
+  it('par son identifiant chez le fournisseur, quand son annonce a changé', () => {
+    expect(match(presented)({ key: elsewhere, propertyId: 'se-735ba130' })).toBe('sent');
+    expect(match(presented)({ key: elsewhere, propertyId: 'se-autre' })).toBeUndefined();
+  });
+
+  it('à défaut : même commune, même prix, mêmes pièces, surface à 2 m² près', () => {
+    const seen = match(presented);
+    expect(seen({ key: elsewhere, like: { ...house, city: 'MOUANS SARTOUX', surface: 255 } })).toBe(
+      'sent',
+    );
+    expect(seen({ key: elsewhere, like: { ...house, surface: 260 } })).toBeUndefined();
+    expect(seen({ key: elsewhere, like: { ...house, price: 1_732_000 } })).toBeUndefined();
+    expect(seen({ key: elsewhere, like: { ...house, rooms: 5 } })).toBeUndefined();
+    expect(seen({ key: elsewhere, like: { ...house, city: 'Mougins' } })).toBeUndefined();
+  });
+
+  it('une donnée qui manque ne fait pas une ressemblance', () => {
+    const seen = match(presented);
+    expect(seen({ key: elsewhere, like: toLike({ ...house, rooms: null }) })).toBeUndefined();
+    expect(toLike({ city: '  ', rooms: 6, surface: 257, price: 1 })).toBeNull();
+    expect(toLike({ city: 'Vence', rooms: '5', surface: '135.0', price: '713000' })).toEqual({
+      city: 'Vence',
+      rooms: 5,
+      surface: 135,
+      price: 713_000,
+    });
+  });
+
+  it('un concurrent de l’agence qu’il a vu est reconnu sous une annonce du marché', () => {
+    expect(
+      match(presented)({
+        key: elsewhere,
+        like: { city: 'Mougins', rooms: 6, surface: 284, price: 1_696_000 },
+      }),
+    ).toBe('sent');
+  });
+
+  it('son dernier mot vaut aussi sous l’autre annonce : refusé', () => {
+    const refused = match({
+      ...presented,
+      responses: [{ selection_item_id: 'i2', answer: 'no', answered_at: '2026-11-13T16:10:00Z' }],
+    });
+    expect(refused({ key: elsewhere, propertyId: 'se-735ba130' })).toBe('refused');
+  });
+
+  it('une sélection seulement enregistrée, ou un bien retiré avant l’envoi, ne retire rien', () => {
+    const saved = {
+      ...presented,
+      selections: [{ id: 's1', buyer_id: 'keller', presented_at: null }],
+    };
+    expect(match(saved)({ key: elsewhere, propertyId: 'se-735ba130' })).toBeUndefined();
+    const removed = {
+      ...presented,
+      items: presented.items.map((item) => ({ ...item, removed_at: '2026-11-13T16:00:00Z' })),
+    };
+    expect(match(removed)({ key: elsewhere, propertyId: 'se-735ba130' })).toBeUndefined();
+  });
+
+  it('chacun ses biens : la marque d’un acquéreur ne dit rien d’un autre', () => {
+    expect(seenMarksOf(presented).get('rossi')).toBeUndefined();
+  });
+});
+
+describe('sa sélection retenue, pas encore reçue, sur les biens idéaux', () => {
   it('refusé ou écarté : plus coché, dit à l’écran ; visité sans refus : reste, dit aussi', () => {
     expect(currentSeenReason('refused')).toBe('refused');
     expect(currentSeenReason('dismissed')).toBe('dismissed');
@@ -247,5 +349,99 @@ describe('sa sélection actuelle, sur les biens idéaux', () => {
     );
     expect(currentSeenLabel('visited')).toBe('Déjà visité.');
     expect(currentSeenLabel(undefined)).toBeNull();
+  });
+});
+
+// Suite du 25/11 — une sélection qu'il a reçue n'est plus « actuelle » : rien n'est coché en
+// arrivant sur les biens idéaux, ses biens passent sous « Déjà vus avec lui ».
+describe('la sélection lui est-elle parvenue ?', () => {
+  it('seulement enregistrée : non', () => {
+    expect(receivedSelections(base).has('s1')).toBe(false);
+  });
+
+  it('présentée, son lien partagé, ou un envoi noté sur l’un de ses biens : oui, à la plus ancienne date', () => {
+    const presented = receivedSelections({
+      ...base,
+      selections: [{ id: 's1', buyer_id: 'keller', presented_at: '2026-11-13T16:04:00Z' }],
+      shares: [{ selection_id: 's1', occurred_at: '2026-11-12T09:00:00Z' }],
+    });
+    expect(presented.get('s1')).toBe('2026-11-12T09:00:00Z');
+    const proposed = receivedSelections({
+      ...base,
+      proposals: [
+        {
+          buyer_id: 'keller',
+          property_key: 'project:p1',
+          sent_at: '2026-11-20T10:00:00Z',
+          selection_item_id: 'i1',
+        },
+      ],
+    });
+    expect(proposed.get('s1')).toBe('2026-11-20T10:00:00Z');
+  });
+});
+
+// Relecture du 25/11 — une réponse de l'acquéreur dit qu'il a reçu la sélection ; une visite demandée
+// par le conseiller seul, non.
+describe('reçue par une réponse', () => {
+  it('une réponse sur l’un de ses biens : la sélection lui est parvenue, à cette date', () => {
+    const received = receivedSelections({
+      ...base,
+      responses: [
+        { selection_item_id: 'i2', answer: 'maybe', answered_at: '2026-11-12T09:00:00Z' },
+      ],
+    });
+    expect(received.get('s1')).toBe('2026-11-12T09:00:00Z');
+  });
+
+  it('ses autres biens sont envoyés, eux aussi', () => {
+    const facts = factsOf({
+      ...base,
+      responses: [{ selection_item_id: 'i1', answer: 'no', answered_at: '2026-11-12T09:00:00Z' }],
+    });
+    expect(facts['project:p1']).toBe('refused');
+    expect(Object.values(facts).filter((reason) => reason === 'sent')).toHaveLength(2);
+  });
+});
+
+describe('la raison la plus forte, et la cible d’une annonce', () => {
+  it('un bien qui en rappelle deux : écarté l’emporte sur envoyé, refusé sur visité', () => {
+    const like = { city: 'Vence', rooms: 5, surface: 135, price: 713_000 };
+    const seen = seenMatcher(
+      [
+        { key: 'listing:a', reason: 'sent' },
+        { key: 'listing:b', reason: 'dismissed' },
+      ],
+      [
+        { key: 'listing:a', propertyId: 'se-1', like },
+        { key: 'listing:b', propertyId: null, like },
+      ],
+    );
+    expect(seen({ key: 'listing:autre', propertyId: 'se-1', like })).toBe('dismissed');
+  });
+
+  it('une annonce de la recherche : son identifiant chez le fournisseur et sa ressemblance', () => {
+    expect(
+      candidateTarget('listing:seloger:X', {
+        key: 'se-735',
+        city: 'Mouans-Sartoux',
+        roomsCount: 6,
+        surfaceArea: 257,
+        price: 1_698_000,
+      }),
+    ).toEqual({
+      key: 'listing:seloger:X',
+      propertyId: 'se-735',
+      like: { city: 'Mouans-Sartoux', rooms: 6, surface: 257, price: 1_698_000 },
+    });
+    expect(
+      candidateTarget('listing:x', {
+        key: null,
+        city: null,
+        roomsCount: 6,
+        surfaceArea: 257,
+        price: 1,
+      }),
+    ).toEqual({ key: 'listing:x', propertyId: null, like: null });
   });
 });

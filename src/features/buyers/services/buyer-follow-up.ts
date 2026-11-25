@@ -6,7 +6,7 @@ import {
   type ItemAnswer,
   type NoReason,
 } from '@/features/buyer-deck/types';
-import { DISMISS_REASON_LABELS } from '@/features/buyer-messages/report';
+import { DISLIKED_LABELS, DISMISS_REASON_LABELS } from '@/features/buyer-messages/report';
 import { refusedAfterVisit, seenItemKey } from '@/features/buyers/services/seen-properties';
 import { formatRelativeDay } from '@/lib/format';
 
@@ -148,6 +148,16 @@ export function buyerFollowUp(rows: FollowUpRows): FollowUpEntry[] {
     if (row.selection_item_id) {
       shown(itemOf.get(row.selection_item_id)?.selection_id, row.sent_at, 'proposal');
     }
+  }
+  // Relecture du 25/11 — une réponse de sa part sur l'un des biens : il a vu la sélection, en
+  // présentation ou sur le lien (une présentation commencée, un lien répondu sans partage noté). La
+  // même règle que `receivedSelections`.
+  for (const row of rows.responses) {
+    shown(
+      itemOf.get(row.selection_item_id)?.selection_id,
+      row.answered_at,
+      row.answered_during === 'dossier' ? 'link' : 'presentation',
+    );
   }
 
   const drafts = new Map<string, Draft>();
@@ -392,4 +402,88 @@ export function selectionFollowed(
     const key = item ? seenItemKey(item, rows.competitorUrls) : null;
     return key != null && reached.has(key);
   });
+}
+
+// Lancement, mission 3 (suite, Jean-Guy, 25/11) — « Déjà vus avec lui », sur les biens idéaux : les
+// biens qu'il a reçus, visités ou refusés, à part, chacun avec sa mention (« Présenté le 13/11 »,
+// « Visité le 13/11 », « Refusé : Le prix »), sans case « Retenir ». Les mêmes lignes que « Son
+// suivi », sans ce que le conseiller a écarté pour lui (il ne l'a pas vu) ni la seconde ligne d'un
+// bien déjà visité. Dates relatives (M143). Pur.
+export type SeenWithHim = {
+  key: string;
+  label: string;
+  price: number | null;
+  origin: string | null;
+  // Sa ligne de sélection la plus récente : elle ouvre la fiche complète du bien.
+  itemId: string | null;
+  mention: string;
+  tone: FollowUpTone;
+};
+
+function sentMention(entry: FollowUpEntry, now: Date): string {
+  if (!entry.sent) return 'Déjà vu';
+  const when = formatRelativeDay(entry.sent.at, now);
+  if (entry.sent.how === 'presentation') return `Présenté ${when}`;
+  if (entry.sent.how === 'proposal') return `Proposé ${when}`;
+  return entry.sent.how === 'link' ? `Envoyé ${when}, par le lien` : `Envoyé ${when}`;
+}
+
+type SeenVisit = { id: string; visitedAt: string | null; disliked?: readonly string[] };
+
+function seenMention(
+  entry: FollowUpEntry,
+  visits: ReadonlyMap<string, SeenVisit>,
+  now: Date,
+): string {
+  if (entry.group === 'refused') {
+    const last = entry.answers.at(-1);
+    if (entry.visited || last?.answer !== 'no') {
+      // Ce qui l'a gêné à la visite (M139), en mots : « Refusé après la visite : le prix ».
+      const disliked = entry.visitIds
+        .map((id) => visits.get(id))
+        .filter((visit): visit is SeenVisit => visit?.visitedAt != null)
+        .sort((a, b) => (a.visitedAt as string).localeCompare(b.visitedAt as string))
+        .at(-1)?.disliked;
+      // Dans l'ordre du compte rendu (M139) : le quartier avant le prix.
+      const words = (Object.keys(DISLIKED_LABELS) as (keyof typeof DISLIKED_LABELS)[])
+        .filter((tag) => (disliked ?? []).includes(tag))
+        .map((tag) => DISLIKED_LABELS[tag].toLowerCase());
+      return words.length > 0
+        ? `Refusé après la visite : ${words.join(', ')}`
+        : 'Refusé après la visite';
+    }
+    const reasons = last.reasons.map((reason) => NO_REASON_LABELS[reason]);
+    return reasons.length > 0
+      ? `Refusé : ${reasons.join(', ')}`
+      : `Refusé ${formatRelativeDay(last.at, now)}`;
+  }
+  if (entry.group === 'visited') {
+    const dates = entry.visitIds
+      .map((id) => visits.get(id)?.visitedAt)
+      .filter((at): at is string => at != null)
+      .sort();
+    const last = dates.at(-1);
+    return last ? `Visité ${formatRelativeDay(last, now)}` : 'Visité';
+  }
+  const sent = sentMention(entry, now);
+  return entry.group === 'to_visit' ? `${sent} · visite à organiser` : sent;
+}
+
+export function seenWithHim(
+  entries: readonly FollowUpEntry[],
+  visits: readonly SeenVisit[],
+  now: Date = new Date(),
+): SeenWithHim[] {
+  const visitedAt = new Map(visits.map((visit) => [visit.id, visit]));
+  return entries
+    .filter((entry) => !entry.again && entry.group !== 'dismissed')
+    .map((entry) => ({
+      key: entry.key,
+      label: entry.label,
+      price: entry.price,
+      origin: followUpOrigin(entry),
+      itemId: entry.itemId,
+      mention: seenMention(entry, visitedAt, now),
+      tone: followUpPill(entry).tone,
+    }));
 }

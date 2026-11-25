@@ -95,3 +95,70 @@ describe('ce que les acquéreurs ont déjà vu, lu en base', () => {
     expect(await readRuledOut(supabase, 'agency-a')).toBeNull();
   });
 });
+
+// Lancement, mission 3 (suite, 25/11) — ce qui fait reconnaître un bien sous une autre annonce, lu
+// avec lui : l'identifiant chez le fournisseur et la ressemblance (les prix arrivent en texte de
+// l'API, M134) ; et quand la sélection lui est parvenue.
+describe('les marques d’un bien, et la sélection reçue', () => {
+  const marked: Record<string, unknown[]> = {
+    ...rows,
+    buyer_item_responses: [],
+    buyer_selections: [{ id: 's1', buyer_id: 'keller', presented_at: null }],
+    buyer_selection_items: [
+      {
+        id: 'i3',
+        selection_id: 's1',
+        source: 'listing',
+        reference: 'https://www.bienici.com/annonce/ag133861-559023029',
+        removed_at: null,
+        listed_price: '1698000',
+        property_id: 'se-735',
+        like_city: 'Mouans-Sartoux',
+        like_rooms: '6',
+        like_surface: '257',
+      },
+      { id: 'i2', selection_id: 's1', source: 'competitor', reference: 'c1', removed_at: null },
+    ],
+    comparables: [
+      {
+        id: 'c1',
+        listing_url: null,
+        city: 'Mougins',
+        rooms_count: 6,
+        surface_area: '283',
+        price: '1696000',
+      },
+    ],
+  };
+
+  it('pas encore reçue : aucune marque ne vaut, et la date est vide', async () => {
+    const { supabase } = client((table) => ({ data: marked[table] ?? [] }));
+    const read = await readSeenProperties(supabase, 'agency-a', 'keller');
+    expect(read?.receivedAt('s1')).toBeNull();
+    expect(read?.marks('keller')).toEqual([
+      {
+        key: 'listing:bienici:ag133861-559023029',
+        propertyId: 'se-735',
+        like: { city: 'Mouans-Sartoux', rooms: 6, surface: 257, price: 1_698_000 },
+      },
+      {
+        key: 'competitor:c1',
+        propertyId: null,
+        like: { city: 'Mougins', rooms: 6, surface: 283, price: 1_696_000 },
+      },
+    ]);
+    expect(read?.marks('rossi')).toEqual([]);
+  });
+
+  it('une réponse de sa part : la sélection lui est parvenue', async () => {
+    const answered: Record<string, unknown[]> = {
+      ...marked,
+      buyer_item_responses: [
+        { selection_item_id: 'i3', answer: 'maybe', answered_at: '2026-11-13T16:00:00Z' },
+      ],
+    };
+    const { supabase } = client((table) => ({ data: answered[table] ?? [] }));
+    const read = await readSeenProperties(supabase, 'agency-a', 'keller');
+    expect(read?.receivedAt('s1')).toBe('2026-11-13T16:00:00Z');
+  });
+});
