@@ -146,3 +146,26 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   complète d'un bien n'est plus ouverte depuis le bloc « Sa sélection » par aucune spec.
   « Offre d'achat » reste proposée dès la première visite, et le rangement des réponses par
   sélection (`answers-by-selection`) n'a toujours plus d'usage : à retirer.
+- 25/11 · Lancement 11 · Vu pendant le parcours sur le compte de Jean-Guy, pas corrigé :
+  - Live : la révélation d'un prix a mis 5 à 8 secondes à s'afficher (réseau du poste ce matin-là ?
+    à remesurer) ; le dernier écran (« Qu'est-ce qui vous manquerait ? ») défile en lui-même à
+    1512 × 771 ; sur « Merci », le logo n'est pas centré ; sur « Conclusion », « Enregistrer le
+    prix » et « Valider et continuer » ont le même poids (deux boutons blancs).
+  - Import d'une annonce : le message d'attente dit « aspirés pour vous » ; une photo entièrement
+    noire publiée par l'annonce (5 Ko) est gardée telle quelle et se voit dans la présentation.
+  - Biens idéaux : dans « Sélection actuelle », un concurrent à prospecter porte « Dans l'agence »
+    (« Son suivi » dit bien « Concurrent à prospecter »).
+  - « Confirmer la visite » : une heure déjà passée aujourd'hui est refusée avec « La visite se
+    confirme d'aujourd'hui à un an », qui ne dit pas que c'est l'heure ; une visite confirmée pour
+    plus tard reste comptée « à organiser » dans la ligne de « Son suivi ».
+  - Fiche acquéreur : pour une visite sur un mandat de l'agence, la prochaine étape dit « contactez
+    le propriétaire ou le confrère ».
+  - Le message au vendeur après une visite reprend le nom du dossier tel que tapé (« Bonjour
+    deborah, », sans majuscule).
+  - Un dossier conclu ne se supprime pas depuis l'écran (M93) : un rendez-vous conclu par erreur,
+    ou un dossier d'essai, reste dans le Suivi et dans le tableau du manager. À trancher par
+    Jean-Guy : un « Supprimer le dossier… » sur un dossier conclu ?
+  - Le Suivi compte les visites FAITES d'un acquéreur archivé (`visitCounts`), alors que Visites
+    ne les montre plus : voulu (la visite a eu lieu) ou non ? À trancher par Jean-Guy.
+  - geo.api.gouv.fr a dépassé son délai deux fois le 24/11 : garder en cache la liste des communes
+    d'un département éviterait l'appel.

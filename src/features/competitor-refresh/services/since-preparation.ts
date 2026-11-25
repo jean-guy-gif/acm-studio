@@ -19,6 +19,8 @@ export type SincePreparationCompetitor = {
   readOnCheck: boolean | null;
   // Montré au vendeur pendant le Live (M110) : sinon, « le vendeur verra » ne se dit pas.
   shownAtLive: boolean;
+  // Le jour où le concurrent est entré dans le dossier : son annonce a été lue ce jour-là.
+  importedAt?: string | null;
 };
 
 export type SincePreparationChange =
@@ -47,6 +49,24 @@ export type SincePreparation = {
   withListing: number;
 };
 
+// Les annonces demandent-elles une vérification ? Oui quand la dernière date de plus de 24 h (ou
+// n'a jamais eu lieu) ET qu'une annonce retenue est dans le dossier depuis plus de 24 h.
+// Lancement, mission 11 — une annonce entrée dans le dossier depuis moins de 24 h vient d'être lue :
+// trois concurrents importés dix minutes plus tôt faisaient dire « non vérifiées depuis plus de
+// 24 h ». Une date d'entrée inconnue ne rassure pas : le rappel reste.
+export function listingsUnverified(input: {
+  checkedAt: string | null;
+  importedAt: readonly (string | null | undefined)[];
+  now: Date;
+}): boolean {
+  const limit = input.now.getTime() - LISTINGS_CHECK_STALE_HOURS * 3_600_000;
+  if (input.checkedAt != null && new Date(input.checkedAt).getTime() >= limit) return false;
+  return (
+    input.importedAt.length === 0 ||
+    input.importedAt.some((at) => at == null || new Date(at).getTime() < limit)
+  );
+}
+
 // Le rappel au lancement du Live : un vrai dossier dont le Live n'a pas commencé, des concurrents
 // retenus qui ont une annonce, et aucune vérification depuis 24 h.
 export function listingsCheckStale(input: {
@@ -54,14 +74,16 @@ export function listingsCheckStale(input: {
   started: boolean;
   withListing: boolean;
   checkedAt: string | null;
+  // L'entrée dans le dossier de chaque concurrent retenu qui a une annonce.
+  importedAt?: readonly (string | null | undefined)[];
   now: Date;
 }): boolean {
   if (input.isExample || input.started || !input.withListing) return false;
-  if (input.checkedAt == null) return true;
-  return (
-    input.now.getTime() - new Date(input.checkedAt).getTime() >
-    LISTINGS_CHECK_STALE_HOURS * 3_600_000
-  );
+  return listingsUnverified({
+    checkedAt: input.checkedAt,
+    importedAt: input.importedAt ?? [],
+    now: input.now,
+  });
 }
 
 // Le jour où le prix actuel a été constaté pour la première fois après un autre prix.
@@ -116,8 +138,11 @@ export function sincePreparation(
   const read = withListing.filter((competitor) => competitor.readOnCheck === true).length;
   return {
     checkedAt,
-    stale:
-      checked == null || now.getTime() - checked.getTime() > LISTINGS_CHECK_STALE_HOURS * 3_600_000,
+    stale: listingsUnverified({
+      checkedAt,
+      importedAt: withListing.map((competitor) => competitor.importedAt),
+      now,
+    }),
     changes,
     unchanged,
     unread: checked ? withListing.length - read : 0,

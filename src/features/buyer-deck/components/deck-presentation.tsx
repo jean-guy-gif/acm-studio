@@ -46,6 +46,7 @@ import {
   statValue,
 } from '@/features/live-seller/components/live-stage';
 import type { LiveStageTheme } from '@/features/live-seller/components/live-comparative-shell';
+import { photoKey } from '@/lib/photo-url';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 
@@ -793,7 +794,9 @@ export function ItemScreen({
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {item.photos.map((photo, photoIndex) => (
             <RemoteImage
-              key={photo}
+              // Lancement 11 — sans le jeton d'un lien signé : l'image n'est pas remontée à chaque
+              // réponse (elle disparaissait une à trois secondes devant l'acquéreur).
+              key={photoKey(photo)}
               src={photo}
               alt=""
               eager={photoIndex === 0}

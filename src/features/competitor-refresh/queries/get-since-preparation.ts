@@ -89,6 +89,7 @@ export async function getSincePreparation(
               .map((row) => ({ observed_on: row.observed_on, price: Number(row.price) }))
           : [],
         readOnCheck: readOnCheck.get(comparable.id) ?? null,
+        importedAt: comparable.created_at,
       };
     }),
     checkedAt,

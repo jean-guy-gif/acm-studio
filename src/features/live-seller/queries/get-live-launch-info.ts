@@ -67,6 +67,9 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     presentation.project.presentationMode,
   );
   const resume = liveResume(pages, projected);
+  const retainedListings = comparables.filter(
+    (comparable) => comparable.is_selected && (comparable.listing_url ?? '').trim() !== '',
+  );
   return {
     competitorCount: projected?.comparables.length ?? 0,
     resume,
@@ -84,10 +87,9 @@ export async function getLiveLaunchInfo(projectId: string): Promise<LiveLaunchIn
     listingsCheckStale: listingsCheckStale({
       isExample: project?.is_example === true,
       started: resume.started,
-      withListing: comparables.some(
-        (comparable) => comparable.is_selected && (comparable.listing_url ?? '').trim() !== '',
-      ),
+      withListing: retainedListings.length > 0,
       checkedAt: project?.listings_checked_at ?? null,
+      importedAt: retainedListings.map((comparable) => comparable.created_at),
       now: new Date(),
     }),
   };

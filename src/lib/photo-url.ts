@@ -36,3 +36,16 @@ export function displayPhotoUrl(rawUrl: string | null): string | null {
   const file = servedDemoPhotoFile(rawUrl);
   return file ? `${DEMO_PHOTOS_PATH}/${file}` : rawUrl;
 }
+
+// Lancement, mission 11 — l'identité d'une photo d'un écran à l'autre. Une photo du stockage a un
+// lien signé, refait à chaque rendu du serveur : seul son jeton change. Une liste qui prenait
+// l'adresse entière pour clé remontait donc chaque image à chaque réponse de l'acquéreur, et les
+// photos du mandat disparaissaient une à trois secondes, devant lui. Sans son jeton, la clé ne
+// bouge plus : l'image reste à l'écran pendant que la nouvelle adresse se charge. Une photo de
+// portail garde son adresse entière pour clé (ses paramètres peuvent distinguer deux photos).
+const SIGNED_PHOTO_PATH = '/storage/v1/object/sign/';
+
+export function photoKey(rawUrl: string): string {
+  const at = rawUrl.indexOf('?');
+  return at > 0 && rawUrl.includes(SIGNED_PHOTO_PATH) ? rawUrl.slice(0, at) : rawUrl;
+}

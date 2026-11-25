@@ -758,6 +758,22 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   part en production. Durées : relecteur 7 à 12 min par mission (trois missions), une spec e2e de
   la fiche 45 s à 8 min.
 
+- 25/11 · Lancement 11 · Sur un compte réel, un acquéreur de test ne retient JAMAIS un vrai mandat
+  de l'agence : sa visite « faite » reste comptée sur la carte du Suivi de ce mandat même après
+  l'archivage de la fiche, et rien à l'écran ne l'annule. Lui donner des critères qui ne
+  correspondent qu'au dossier TEST, ou décocher les vrais mandats avant « Retenir la sélection ».
+- 25/11 · Lancement 11 · Un dossier TEST conclu ne s'archive plus depuis l'écran (« Supprimer le
+  dossier… » n'existe que sur un dossier en cours, M93). Pour un parcours de test sur un compte
+  réel : convenir AVANT avec Jean-Guy du retrait par la base, ou s'arrêter avant « Conclure ».
+- 25/11 · Lancement 11 · Dans le Chrome piloté, `element.click()` ne déclenche pas tous les
+  boutons (« Lancer devant le vendeur », le lien « Terminer le rendez-vous ») : un vrai clic aux
+  coordonnées, après une capture. « Terminer le rendez-vous » est un lien, pas un bouton.
+- 25/11 · Lancement 11 · Une photo noire dans une galerie n'est pas forcément un défaut
+  d'affichage : lire le poids du fichier (5 Ko pour 1 024 px de large : elle est noire à la source).
+- 25/11 · `npm test` sans `NEXT_PUBLIC_SUPABASE_URL` : 12 fichiers tombent à l'import (« Missing
+  required environment variable »), les autres passent. Lire la liste des FAIL avant de chercher
+  un défaut ; avec la variable (comme la CI), 463 fichiers verts.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme
