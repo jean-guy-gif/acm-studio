@@ -5,8 +5,10 @@ import { describe, expect, it } from 'vitest';
 import {
   DeckCardView,
   DeckHeader,
+  GESTURE_GUARD_MS,
   retainedLabel,
   type DeckCard,
+  type DeckNote,
 } from '@/features/ideal-properties/components/ideal-deck';
 
 // La refonte, lot C (maquettes REFONTE-3, 5 et 6) — « un bien à la fois », à l'écran.
@@ -29,7 +31,18 @@ const card = (over: Partial<DeckCard> = {}): DeckCard => ({
   ...over,
 });
 const noop = () => {};
-const render = (over: Partial<DeckCard> = {}, props: { full?: boolean } = {}) =>
+const FULL_NOTE: DeckNote = {
+  text: 'Sélection complète : pour proposer ce bien, retirez-en un dans toute la liste.',
+  retain: null,
+};
+const unsaved = (text: string, label: string, saving = false): DeckNote => ({
+  text,
+  retain: { label, saving, onRetain: noop },
+});
+const render = (
+  over: Partial<DeckCard> = {},
+  props: { full?: boolean; note?: DeckNote | null; status?: string | null } = {},
+) =>
   renderToStaticMarkup(
     createElement(DeckCardView, {
       card: card(over),
@@ -41,6 +54,8 @@ const render = (over: Partial<DeckCard> = {}, props: { full?: boolean } = {}) =>
       onPropose: noop,
       onDismiss: noop,
       onSkip: noop,
+      note: props.note ?? null,
+      status: props.status ?? null,
     }),
   );
 const tag = (html: string, testId: string) =>
@@ -118,7 +133,7 @@ describe('un bien à la fois', () => {
 
   // Une sélection déjà complète ne ferme pas le parcours : le bien se voit, s'écarte ou se passe.
   it('sélection complète : « Proposer » ne retient plus rien, le bien se voit quand même', () => {
-    const fullCard = render({}, { full: true });
+    const fullCard = render({}, { full: true, note: FULL_NOTE });
     expect(tag(fullCard, 'deck-propose')).toMatch(/ disabled=""/);
     expect(tag(render(), 'deck-propose')).not.toMatch(/ disabled=""/);
     expect(tag(fullCard, 'deck-dismiss')).not.toMatch(/ disabled=""/);
@@ -130,6 +145,74 @@ describe('un bien à la fois', () => {
     // Avec de la place : ni mention, ni « Passer ».
     expect(render()).not.toContain('data-testid="deck-full"');
     expect(render()).not.toContain('data-testid="deck-skip"');
+  });
+
+  // Relecture du lot C (bloquant) — un bien proposé n'est pas encore enregistré : l'écran le dit,
+  // et « Retenir la sélection » est là dès le premier, en contour (un seul bouton plein, M146).
+  it('des biens proposés, pas encore enregistrés : la ligne le dit, « Retenir la sélection » en contour', () => {
+    const html = render(
+      {},
+      {
+        note: unsaved(
+          '1 bien dans la sélection, pas encore enregistrée.',
+          'Retenir la sélection (1/3)',
+        ),
+      },
+    );
+    expect(html).toContain('>1 bien dans la sélection, pas encore enregistrée.<');
+    expect(html).toContain('data-testid="deck-unsaved"');
+    expect(tag(html, 'deck-retain-now')).not.toContain('btn-filled');
+    expect(html).toContain('>Retenir la sélection (1/3)<');
+    expect(html.match(/(^|[" ])btn-filled( |")/g)).toHaveLength(1);
+    // Il reste de la place : rien à passer.
+    expect(html).not.toContain('data-testid="deck-skip"');
+    // Sans rien de proposé : ni ligne ni bouton.
+    expect(render()).not.toContain('data-testid="deck-note"');
+    expect(render()).not.toContain('data-testid="deck-retain-now"');
+  });
+
+  it('complète et pas encore enregistrée : « Retenir la sélection » et « Passer ce bien »', () => {
+    const html = render(
+      {},
+      {
+        full: true,
+        note: unsaved(
+          'Sélection complète, pas encore enregistrée.',
+          'Retenir la sélection (3/3)',
+          true,
+        ),
+      },
+    );
+    expect(html).toContain('data-testid="deck-full"');
+    expect(html).toContain('data-testid="deck-skip"');
+    // Pendant l'enregistrement, le bouton le dit et n'entend plus rien.
+    expect(tag(html, 'deck-retain-now')).toMatch(/ disabled=""/);
+    expect(html).toContain('>Enregistrement…<');
+    expect(html.match(/(^|[" ])btn-filled( |")/g)).toHaveLength(1);
+  });
+
+  it('ce qui vient d’être enregistré se dit sur place', () => {
+    const html = render({}, { status: 'Sélection retenue : 2 biens.' });
+    expect(html).toMatch(
+      /role="status"[^>]*data-testid="deck-saved"[^>]*>Sélection retenue : 2 biens\.</,
+    );
+    expect(render()).not.toContain('data-testid="deck-saved"');
+  });
+
+  // Relecture du lot C — un second toucher parti trop vite ne décide pas du bien suivant : à son
+  // arrivée, un bien n'entend aucun geste pendant un court instant.
+  it('à son arrivée, le bien n’entend pas encore les gestes', () => {
+    expect(GESTURE_GUARD_MS).toBeGreaterThanOrEqual(300);
+    expect(tag(render(), 'deck-card')).toContain('data-ready="false"');
+  });
+
+  it('la photo dit aussi « 8 critères sur 8 » aux lecteurs d’écran', () => {
+    expect(tag(render(), 'deck-photo')).toContain(
+      'aria-label="Ouvrir la fiche : Maison · 8 pièces · 200 m² · Mougins, 8 critères sur 8"',
+    );
+    expect(tag(render({ criteria: null }), 'deck-photo')).toContain(
+      'aria-label="Ouvrir la fiche : Maison · 8 pièces · 200 m² · Mougins"',
+    );
   });
 
   it('tous les critères ne sont pas satisfaits : le nombre, sans la coche verte', () => {

@@ -302,7 +302,7 @@ describe('« Pourquoi celui-ci pour eux »', () => {
       { tone: 'must', label: 'Extérieur' },
       { tone: 'plain', label: 'Antibes' },
       { tone: 'plain', label: 'Parking' },
-      { tone: 'plain', label: 'Sans travaux à prévoir' },
+      { tone: 'plain', label: 'Pas de travaux annoncés' },
     ]);
   });
 
@@ -326,7 +326,7 @@ describe('« Pourquoi celui-ci pour eux »', () => {
       '1 chambre de plus',
       '25 m² de plus',
       'Parking',
-      'Sans travaux à prévoir',
+      'Pas de travaux annoncés',
     ]);
     // 68 m² pour 60 demandés : huit de plus ne font pas une raison.
     expect(why(buyer)?.some((pill) => pill.label.includes('m²'))).toBe(false);
@@ -347,7 +347,7 @@ describe('« Pourquoi celui-ci pour eux »', () => {
       { tone: 'must', label: 'DPE C' },
       { tone: 'plain', label: 'Extérieur' },
       { tone: 'plain', label: 'Parking' },
-      { tone: 'plain', label: 'Sans travaux à prévoir' },
+      { tone: 'plain', label: 'Pas de travaux annoncés' },
     ]);
     expect(why({ ...starred, mustHave: ['floor'] }, { features: { floor: 1 } })?.[0]).toEqual({
       tone: 'must',
@@ -369,7 +369,7 @@ describe('« Pourquoi celui-ci pour eux »', () => {
       'Antibes',
       'Extérieur',
       'Parking',
-      'Sans travaux à prévoir',
+      'Pas de travaux annoncés',
     ]);
     expect(JSON.stringify(all)).not.toMatch(/%|€|appartement/i);
   });
@@ -391,7 +391,7 @@ describe('« Pourquoi celui-ci pour eux »', () => {
       'Extérieur',
       'Antibes',
       'Parking',
-      'Sans travaux à prévoir',
+      'Pas de travaux annoncés',
     ]);
   });
 });

@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useTransition, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   alertError,
   alertOk,
   badgeBrand,
   badgeNeutral,
+  btnDanger,
   btnPrimary,
   btnSecondary,
   card,
@@ -36,6 +38,7 @@ import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
 import { dismissForBuyer, undoDismissal } from '@/features/buyer-dismissals/actions/dismiss';
 import { DismissControl } from '@/features/buyer-dismissals/components/dismiss-control';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
+import { useLeaveConfirm } from '@/features/buyer-notes/client/use-leave-confirm';
 import type { DismissReason } from '@/features/buyer-messages/templates/types';
 import type { SeenWithHim } from '@/features/buyers/services/buyer-follow-up';
 import {
@@ -49,11 +52,7 @@ import {
   type SeenMark,
   type SeenReason,
 } from '@/features/buyers/services/seen-properties';
-import {
-  DeckCardView,
-  DeckHeader,
-  type DeckCard,
-} from '@/features/ideal-properties/components/ideal-deck';
+import { DeckCardView, DeckHeader } from '@/features/ideal-properties/components/ideal-deck';
 import { importIdealListing } from '@/features/ideal-properties/actions/import-ideal-listing';
 import { saveIdealSelection } from '@/features/ideal-properties/actions/save-ideal-selection';
 import {
@@ -65,13 +64,16 @@ import {
   toVerifyLabels,
   type CategorizedCandidate,
 } from '@/features/ideal-properties/services/categorize-ideal';
+import {
+  agencyDeckCard,
+  deckSelectionNote,
+  marketDeckCard,
+  type DeckCard,
+  type DeckScope,
+} from '@/features/ideal-properties/services/deck-cards';
 import { deckPosition } from '@/features/ideal-properties/services/ideal-deck';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
-import {
-  budgetPill,
-  criteriaCount,
-  whyPills,
-} from '@/features/ideal-properties/services/why-pills';
+import { criteriaCount } from '@/features/ideal-properties/services/why-pills';
 import { SoftBanner, SoftWhy } from '@/features/soft-ranking/components/soft-why';
 import {
   orderBySoftScore,
@@ -239,10 +241,12 @@ export function IdealPropertiesPanel({
 }: {
   // La refonte, lot C (maquettes REFONTE-3, 5 et 6) — « un bien à la fois » : les mêmes biens, la
   // même sélection, les mêmes gestes (retenir, écarter pour lui), un par un. `initialView` : la
-  // page s'ouvre sur la liste, ou sur « un bien à la fois » (`?un=1`) ; `header` : l'en-tête de la
-  // page, montré avec la liste seulement ; `embedded` : dans le détail d'Acquéreurs (tablette,
-  // ordinateur), « un bien à la fois » seul, sous le nom de la personne.
-  initialView?: 'list' | 'deck';
+  // page s'ouvre sur la liste, sur « un bien à la fois » pour tous ses biens ouverts (`?un=1`), ou
+  // pour les seuls biens de la veille (`watch`, `?un=veille` : la tâche « 4 nouveaux biens » mène
+  // à « Bien 1 sur 4 ») ; `header` : l'en-tête de la page, montré avec la liste seulement ;
+  // `embedded` : dans le détail d'Acquéreurs (tablette, ordinateur), les biens de la veille un par
+  // un, sous le nom de la personne.
+  initialView?: 'list' | 'deck' | 'watch';
   header?: ReactNode;
   embedded?: { name: string; words: string | null; ficheHref: string } | null;
   // Mission 151 (partie B) — ce qui compte pour eux (planches 4 et 4 b) : les critères doux de la
@@ -321,20 +325,47 @@ export function IdealPropertiesPanel({
   const [saving, startSaving] = useTransition();
   // Mission 139 — écartés : cachés aussitôt ; ceux de cette visite de la page s'annulent encore.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set(dismissed ?? []));
-  const [justDismissed, setJustDismissed] = useState<{ key: string; label: string }[]>([]);
+  // `cardKey` : écarté depuis « un bien à la fois » — « Annuler » y ramène ce bien.
+  const [justDismissed, setJustDismissed] = useState<
+    { key: string; label: string; cardKey?: string }[]
+  >([]);
   const [undoError, setUndoError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [importNote, setImportNote] = useState<string | null>(null);
   // La refonte, lot C — « un bien à la fois » : la vue, les biens du parcours (figés au premier
   // geste, pour que « Bien 2 sur 4 » ne bouge pas quand un bien quitte les listes) et le rang de
   // celui qu'on regarde.
-  const [view, setView] = useState<'list' | 'deck'>(embedded ? 'deck' : initialView);
+  const [view, setView] = useState<'list' | 'deck'>(
+    embedded || initialView !== 'list' ? 'deck' : 'list',
+  );
+  const [deckScope, setDeckScope] = useState<DeckScope>(
+    embedded || initialView === 'watch' ? 'watch' : 'all',
+  );
   const [deckKeys, setDeckKeys] = useState<string[] | null>(null);
   const [deckIndex, setDeckIndex] = useState(0);
   const [deckPending, setDeckPending] = useState(false);
   const [deckError, setDeckError] = useState<string | null>(null);
   // Un seul écart à la fois, même touché deux fois de suite avant que l'écran ait répondu.
   const dismissing = useRef(false);
+  // Dans le détail d'Acquéreurs, l'adresse tient la personne sur ses biens (`personne`, `biens=1`) :
+  // écarter le dernier bien de la veille fait sortir sa tâche de la liste à la relecture de la
+  // page, et le parcours disparaissait sous le doigt (relecture du lot C). Posée ici quand la
+  // personne est arrivée sans elle (la première de la liste).
+  const held = embedded != null;
+  useEffect(() => {
+    if (!held) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('personne') === buyerId && url.searchParams.get('biens') === '1') {
+      return;
+    }
+    url.searchParams.set('personne', buyerId);
+    url.searchParams.set('biens', '1');
+    window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+  }, [held, buyerId]);
+  // Des biens proposés, pas encore enregistrés : quitter « un bien à la fois » par un lien (sa
+  // fiche, une autre personne, le menu) le demande d'abord, dans l'écran (M146 A) ; l'actualisation
+  // et la fermeture, par le navigateur (M93). Rien de proposé ne se perd sans le dire.
+  const leaveGuard = useLeaveConfirm(view === 'deck' && changed && selected.size > 0 && !saving);
   // Mission 152 (partie B) — la fiche complète ouverte, et le bien qu'elle retient.
   const sheet = usePropertySheet();
   const [sheetItem, setSheetItem] = useState<{
@@ -526,11 +557,9 @@ export function IdealPropertiesPanel({
         `Sélection retenue : ${result.selection.items.length} bien${result.selection.items.length > 1 ? 's' : ''}.`,
       );
       setBaseline([...selected.values()]);
-      // La refonte, lot C — dans le détail d'Acquéreurs, la sélection retenue mène à sa fiche : sa
-      // prochaine étape y est « Lui présenter sa sélection ». (La liste d'« à faire aujourd'hui »
-      // se relit avec l'enregistrement, et la tâche de la veille en sort : rester sur place
-      // laisserait le détail passer à la personne suivante.) L'import des annonces continue.
-      if (embedded) router.push(embedded.ficheHref);
+      // La refonte, lot C — dans le détail d'Acquéreurs aussi, on reste sur place (« sans changer
+      // de page ») : l'adresse tient la personne sur ses biens, la fin du parcours propose
+      // « Présenter ».
       // Les annonces du marché retenues s'importent comme des concurrents, par l'extension.
       if (result.toImport.length > 0) {
         let imported = 0;
@@ -552,7 +581,7 @@ export function IdealPropertiesPanel({
             : `${imported} annonce${imported > 1 ? 's' : ''} importée${imported > 1 ? 's' : ''} sur ${result.toImport.length} ; les autres gardent les données de la recherche.`,
         );
       }
-      if (!embedded) router.refresh();
+      router.refresh();
     });
   };
 
@@ -716,57 +745,44 @@ export function IdealPropertiesPanel({
   type DeckEntry = { card: DeckCard; item: SelectionItemInput; open: () => void };
   const marketDeckEntry = (entry: CategorizedCandidate, seenOn: string): DeckEntry => {
     const item = marketItem(entry, seenOn);
-    const budget = budgetPill(entry.candidate.price, budgetMax);
-    const count = criteriaCount(entry.criteriaOk, entry.criteriaTotal);
     return {
       item,
       open: () => openMarketSheet(item, entry.candidate, seenOn, marketRankLine(entry)),
-      card: {
+      card: marketDeckCard({
         key: keyOf(item),
         label: item.label,
-        photo: entry.candidate.photoUrls[0] ?? null,
-        price: entry.candidate.price,
+        entry,
         origin: seenOnLabel(seenOn),
-        criteria: count ? { label: count, allMet: entry.criteriaOk === entry.criteriaTotal } : null,
-        budget,
-        why: whyPills(
-          entry.why ?? [],
-          reasonsOf(entry.candidate.url, watchReasons[entry.candidate.url]),
-        ),
-        // L'écart au budget est déjà dit par sa pastille.
-        notes: [...entry.gaps, ...toVerifyLabels(entry)].filter((note) => note !== budget?.label),
-        listing: true,
-      },
+        budgetMax,
+        reasons: reasonsOf(entry.candidate.url, watchReasons[entry.candidate.url]),
+      }),
     };
   };
   const agencyDeckEntry = (hit: BuyerHit): DeckEntry => {
     const item = agencyItem(hit);
-    const budget = budgetPill(hit.candidate.price, budgetMax);
     const agencyReasons = reasonsOf(hit.candidate.key, {
       mentions: agencyMentions[hit.candidate.key] ?? [],
     });
-    const city = hit.candidate.city?.trim();
     return {
       item,
       open: () => openAgencySheet(item, whySummary(agencyReasons)),
-      card: {
+      card: agencyDeckCard({
         key: keyOf(item),
         label: item.label,
-        photo: null,
-        price: hit.candidate.price,
-        origin: `${SELECTION_SOURCE_LABELS[item.source]} · Pour : ${hit.candidate.sellerName}`,
-        criteria: null,
-        budget,
-        why: whyPills(city ? [{ tone: 'plain', label: city }] : [], agencyReasons),
-        notes: [hit.note, hit.condominiumNote].filter(
-          (note): note is string => note != null && note !== budget?.label,
-        ),
-        listing: false,
-      },
+        hit,
+        sourceLabel: SELECTION_SOURCE_LABELS[item.source],
+        budgetMax,
+        reasons: agencyReasons,
+      }),
     };
   };
-  const deckEntries: DeckEntry[] = [
-    ...(watch ? watchRanked.map(({ item: entry }) => marketDeckEntry(entry, watch.seenOn)) : []),
+  // Les biens de la veille : ceux de la tâche « N nouveaux biens » (« Bien 1 sur N »).
+  const watchDeckEntries: DeckEntry[] = watch
+    ? watchRanked.map(({ item: entry }) => marketDeckEntry(entry, watch.seenOn))
+    : [];
+  // Tous les biens ouverts de la page, dans son ordre (« Les voir un par un », depuis la liste).
+  const allDeckEntries: DeckEntry[] = [
+    ...watchDeckEntries,
     ...agencyRanked.map(({ item: { hit } }) => agencyDeckEntry(hit)),
     ...(market
       ? IDEAL_CATEGORIES.flatMap((category) =>
@@ -774,6 +790,7 @@ export function IdealPropertiesPanel({
         )
       : []),
   ];
+  const deckEntries = deckScope === 'watch' ? watchDeckEntries : allDeckEntries;
   // Le bien qu'on regarde : le premier du parcours, à partir du rang courant, qui est encore
   // ouvert (un bien retenu ou écarté entre-temps est passé). Sélection complète : chaque bien se
   // voit quand même — il s'écarte, ou se passe ; « Proposer » attend qu'une place se libère.
@@ -824,7 +841,7 @@ export function IdealPropertiesPanel({
         setHidden((current) => new Set([...current, result.key]));
         setJustDismissed((current) => [
           ...current.filter((other) => other.key !== result.key),
-          { key: result.key, label: item.label },
+          { key: result.key, label: item.label, cardKey: keyOf(item) },
         ]);
         advance();
       })
@@ -840,9 +857,13 @@ export function IdealPropertiesPanel({
   // garde (`?un=1`), pour une actualisation.
   const switchView = (next: 'list' | 'deck') => {
     setView(next);
+    // Depuis la liste : tous ses biens ouverts, pas seulement ceux de la veille.
+    if (next === 'deck') setDeckScope('all');
     setDeckKeys(null);
     setDeckIndex(0);
     setDeckError(null);
+    // Une erreur de la recherche du marché, dite sur la liste, ne suit pas le parcours.
+    setError(null);
     const url = new URL(window.location.href);
     if (next === 'deck') url.searchParams.set('un', '1');
     else url.searchParams.delete('un');
@@ -973,6 +994,33 @@ export function IdealPropertiesPanel({
     const lastDismissed = justDismissed.at(-1);
     const retained = [...selected.values()];
     const allLink = 'Toute la liste et le marché';
+    const retainLabel = `${RETAIN_BUTTON} (${retained.length}/${MAX_IDEAL_SELECTION})`;
+    // La sélection, au-dessus des deux gestes : pas encore enregistrée (« Retenir la sélection »
+    // dès le premier bien proposé), ou complète.
+    const selectionNote = deckSelectionNote({ count: retained.length, changed });
+    // Une lecture en échec n'est jamais lue comme « aucun bien » (M98).
+    const deckUnread = seenUnread || (deckScope === 'all' && mandatesUnread);
+    const leaveDialog = leaveGuard.pendingHref ? (
+      <ConfirmDialog
+        title="Quitter sans retenir la sélection ?"
+        text="Les biens que vous venez de proposer ne sont pas encore enregistrés : ils seront perdus. « Retenir la sélection » les garde."
+        onCancel={leaveGuard.stay}
+        cancelLabel="Rester"
+      >
+        <button
+          type="button"
+          className={btnDanger}
+          data-testid="deck-leave"
+          onClick={() => {
+            const href = leaveGuard.pendingHref;
+            leaveGuard.stay();
+            if (href) router.push(href);
+          }}
+        >
+          Quitter
+        </button>
+      </ConfirmDialog>
+    ) : null;
     // Dans le détail d'Acquéreurs, ce lien est en tête, à côté de « Ouvrir sa fiche ».
     const toList = embedded ? null : (
       <button
@@ -1058,6 +1106,12 @@ export function IdealPropertiesPanel({
             attendant, aucun bien ne lui est proposé ici.
           </p>
         ) : null}
+        {/* Comme sur la liste : des mandats illisibles ne sont pas des mandats absents (M98). */}
+        {deckScope === 'all' && mandatesUnread ? (
+          <p role="alert" className="text-sm font-semibold text-red-700" data-testid="deck-unread">
+            Vos mandats n’ont pas pu être lus : rechargez la page.
+          </p>
+        ) : null}
         {lastDismissed ? (
           <p
             className="text-sm text-[#5B6380] stage:text-white/70"
@@ -1085,6 +1139,14 @@ export function IdealPropertiesPanel({
                     setJustDismissed((current) =>
                       current.filter((other) => other.key !== lastDismissed.key),
                     );
+                    // « Annuler » ramène le bien : on le regarde de nouveau.
+                    const back = lastDismissed.cardKey
+                      ? deckOrder.indexOf(lastDismissed.cardKey)
+                      : -1;
+                    if (back >= 0 && back < deckAt) {
+                      setDeckKeys(deckOrder);
+                      setDeckIndex(back);
+                    }
                   })
                   .catch(() => setUndoError('Connexion perdue : réessayez.'));
               }}
@@ -1104,23 +1166,40 @@ export function IdealPropertiesPanel({
             card={deckEntry.card}
             full={full}
             pending={deckPending}
-            error={deckError}
-            keyboard={sheetView == null}
+            error={deckError ?? error}
+            keyboard={sheetView == null && leaveDialog == null}
             onOpen={deckEntry.open}
             onPropose={proposeCurrent}
             onDismiss={dismissCurrent}
             onSkip={advance}
             more={toList}
+            note={
+              selectionNote
+                ? {
+                    text: selectionNote.text,
+                    retain: selectionNote.retain
+                      ? { label: retainLabel, saving, onRetain: retain }
+                      : null,
+                  }
+                : null
+            }
+            status={saved ? [saved, importNote].filter(Boolean).join(' ') : importNote}
           />
         ) : (
           <div
             className={`${socleCardBordered} flex flex-col gap-3 p-5 xl:p-6`}
             data-testid="deck-end"
           >
-            <span className={socleKicker}>
+            <span className={socleKicker} data-testid="deck-end-kicker">
               {deckOrder.length > 0
-                ? 'Tous les biens sont vus'
-                : 'Aucun bien à voir pour l’instant'}
+                ? deckScope === 'watch'
+                  ? 'Tous les nouveaux biens sont vus'
+                  : 'Tous les biens sont vus'
+                : deckUnread
+                  ? 'Ses biens n’ont pas pu être lus'
+                  : deckScope === 'watch'
+                    ? 'Aucun nouveau bien à voir pour l’instant'
+                    : 'Aucun bien à voir pour l’instant'}
             </span>
             <p
               className="text-[21px] leading-snug font-bold text-brand-darker stage:text-white"
@@ -1165,9 +1244,7 @@ export function IdealPropertiesPanel({
                 onClick={retain}
                 data-testid="deck-retain"
               >
-                {saving
-                  ? 'Enregistrement…'
-                  : `${RETAIN_BUTTON} (${retained.length}/${MAX_IDEAL_SELECTION})`}
+                {saving ? 'Enregistrement…' : retainLabel}
               </button>
             ) : baseline.length > 0 ? (
               <>
@@ -1191,6 +1268,7 @@ export function IdealPropertiesPanel({
           </div>
         )}
         {sheetView}
+        {leaveDialog}
       </div>
     );
   }
@@ -1199,14 +1277,14 @@ export function IdealPropertiesPanel({
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
       {header}
       {/* La refonte, lot C — les mêmes biens, un par un : « Écarter » ou « Proposer ». */}
-      {deckEntries.length > 0 ? (
+      {allDeckEntries.length > 0 ? (
         <button
           type="button"
           className={`${btnSecondary} self-start`}
           data-testid="ideal-open-deck"
           onClick={() => switchView('deck')}
         >
-          Les voir un par un · {deckEntries.length}
+          Les voir un par un · {allDeckEntries.length}
         </button>
       ) : null}
       {dismissed == null ? (

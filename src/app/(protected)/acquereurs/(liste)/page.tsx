@@ -15,6 +15,7 @@ type BuyersPageProps = {
     etat?: string;
     tous?: string;
     personne?: string;
+    biens?: string;
   }>;
 };
 
@@ -27,5 +28,5 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
   if (showsAllBuyers(query)) {
     return <AllBuyers q={query.q} archive={query.archive} vue={query.vue} etat={query.etat} />;
   }
-  return <BuyersTodayView personne={query.personne} />;
+  return <BuyersTodayView personne={query.personne} biens={query.biens === '1'} />;
 }
