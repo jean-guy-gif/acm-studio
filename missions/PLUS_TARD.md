@@ -382,3 +382,13 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   - relire la phrase efface la proposition et ses corrections avant de savoir si la nouvelle
     lecture aboutit (une lecture en échec laisse l'écran vide, avec son message) ;
   - la branche « fiche neuve » de `NotesFlow` ne sert plus (seul « Compléter » l'appelle).
+- 26/11 · Refonte, lot E (relecture) · Notés, sans les corriger :
+  - Vendeurs lit les acquéreurs de l'agence deux fois à chaque affichage (dans les tâches du jour,
+    puis pour le dossier choisi) : une vingtaine de lectures de plus, sur téléphone aussi, où le
+    détail est caché. À mesurer, puis à partager si la page devient lente ;
+  - un dossier prêt pour le rendez-vous du jour n'a pas de carte dans « à faire aujourd'hui » :
+    sans la date du rendez-vous en base (une migration), il se rejoint en trois touchers (« Tous
+    mes vendeurs », puis l'onglet du Live) ;
+  - la tuile « Prix ou surface à vérifier » (M104) n'est pas le « Prix à revérifier » de la
+    maquette, qui parlerait des annonces à relire avant le rendez-vous (M152 A) : à trancher par
+    Jean-Guy.
