@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useTransition, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
@@ -101,7 +101,7 @@ const camera = (
   </svg>
 );
 
-const quietWide = `${socleBtnQuiet} h-12 w-full px-3 text-brand-darker`;
+const quietWide = `${socleBtnQuiet} h-12 w-full px-3 whitespace-nowrap text-brand-darker`;
 
 // « Ce que j'ai compris » : les pastilles, et la correction de celle qu'on a touchée.
 export function PhraseChips({
@@ -134,14 +134,14 @@ export function PhraseChips({
           <button
             key={chip.id}
             type="button"
-            className={`${CHIP[chip.tone]} max-w-full text-left ${chip.id === open ? 'outline-2 outline-offset-2 outline-brand-deep' : ''}`}
+            className={`${CHIP[chip.tone]} h-auto min-h-11 max-w-full py-2 text-left ${chip.id === open ? 'outline-2 outline-offset-2 outline-brand-deep' : ''}`}
             aria-expanded={chip.id === open}
             data-testid="phrase-chip"
             data-chip={chip.id}
             data-tone={chip.tone}
             onClick={() => onOpen(chip.id === open ? null : chip.id)}
           >
-            <span className="truncate">{chip.label}</span>
+            {chip.label}
           </button>
         ))}
       </div>
@@ -362,6 +362,20 @@ export function PhraseFlow({
   // Pendant la lecture aussi : partir laisserait une lecture comptée sans suite.
   const guard = useLeaveConfirm(busy || draft != null);
 
+  // La zone de la phrase prend la hauteur de son texte (quatre lignes au moins, puis elle défile) :
+  // une phrase dictée ne se lit pas à moitié.
+  useEffect(() => {
+    const fit = () => {
+      const element = area.current;
+      if (!element) return;
+      element.style.height = 'auto';
+      element.style.height = `${Math.min(element.scrollHeight + 4, 320)}px`;
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [text, manual]);
+
   async function read(notes: Extract<PreparedNotes, { ok: true }>, from: string | null) {
     const current = ++token.current;
     // Une lecture précédente, remplacée : dite « annulée » sur sa ligne.
@@ -542,7 +556,9 @@ export function PhraseFlow({
           className="w-full resize-none rounded-[20px] border-2 border-brand-deep bg-white p-4 text-lg leading-[1.45] text-brand-darker placeholder:text-[#8A90A6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand stage:border-white/40 stage:bg-white/10 stage:text-white"
           data-testid="phrase-text"
         />
-        <div className="grid grid-cols-2 gap-2.5">
+        {/* Deux moitiés, comme la maquette ; sur un écran étroit, « Dicter » prend sa largeur et
+            « Photo de mes notes » le reste : son libellé n'est jamais coupé. */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-2.5 min-[430px]:grid-cols-2">
           <button
             type="button"
             className={quietWide}
@@ -564,7 +580,7 @@ export function PhraseFlow({
             onClick={() => photoInput.current?.click()}
           >
             {camera}
-            <span className="truncate">Photo de mes notes</span>
+            Photo de mes notes
           </button>
         </div>
         {/* La dictée est celle de l'appareil : rien ne passe par l'outil. */}
