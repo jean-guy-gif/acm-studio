@@ -305,4 +305,16 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     12 px à 390 px de large (le bouton « Lire cette photo » du bloc des notes de démonstration
     sort de sa carte). D'avant la refonte, et seulement dans la démo : repris avec le lot D, qui
     refait cet écran.
+- 26/11 · Refonte, lot B · Vus en route, sans les corriger :
+  - deux fiches peuvent porter les mêmes initiales (« M. et Mme Rossi » et « M. et Mme Roux » :
+    MR) : le rond ne distingue pas, le nom oui ;
+  - une carte ne montre qu'une tâche par personne, la plus utile ; les autres se lisent dans son
+    détail (tablette, ordinateur) ou sur « Aujourd'hui » (téléphone) ;
+  - « N choses à faire aujourd'hui » compte les personnes ; la pastille d'« Aujourd'hui » compte
+    ses lignes : les deux nombres diffèrent, c'est voulu ;
+  - sur la fiche, le lien de retour reste « ← Acquéreurs » (la maquette 4 dessine un chevron),
+    et la carte du haut garde ses titres d'avant : seule « Prochaine étape » et les trois chiffres
+    ont pris le socle ;
+  - le bloc « Dernière visite » de la maquette 4 n'existe pas : la tuile « Visités » dit la
+    dernière visite, et sa ligne ouverte le compte rendu.
 
