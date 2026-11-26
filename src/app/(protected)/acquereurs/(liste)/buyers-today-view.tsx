@@ -14,8 +14,10 @@ import { proposedBuyerWords } from '@/features/buyer-deck/services/buyer-deck';
 import { readBuyers } from '@/features/buyers/queries/get-buyers';
 import { ALL_BUYERS_HREF } from '@/features/buyers/services/buyers-page';
 import {
+  buyerOthersNote,
   buyersToday,
   buyersTodayCount,
+  buyersTodayThings,
   buyerTaskKey,
   type BuyerTodayItem,
 } from '@/features/buyers/services/buyers-today';
@@ -86,12 +88,6 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
     read.buyers.find((buyer) => buyer.id === item.buyerId) ?? null;
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
   const unread = today.failed.length > 0;
-  const also = (item: BuyerTodayItem) =>
-    item.others.map((other) => ({
-      key: buyerTaskKey(other.task),
-      task: other.what,
-      late: other.late,
-    }));
 
   return (
     <div
@@ -109,7 +105,7 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
             <p className={socleSubtitle} data-testid="buyers-today-count">
               {unread && items.length === 0
                 ? 'Une partie des tâches n’a pas pu être lue'
-                : buyersTodayCount(items.length)}
+                : buyersTodayCount(buyersTodayThings(items))}
             </p>
           </div>
           <Link
@@ -182,7 +178,7 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
                   late={item.late}
                   tone={item.tone}
                   selected={item.buyerId === selected?.buyerId}
-                  also={also(item)}
+                  also={buyerOthersNote(item.others)}
                   keepScroll
                 />
               </li>

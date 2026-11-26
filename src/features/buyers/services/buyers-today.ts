@@ -211,7 +211,34 @@ export function buyersToday(tasks: readonly SuiviTask[], today: string): BuyerTo
   return [...items.values()];
 }
 
-// « 3 choses à faire aujourd'hui » : une par personne.
+// Dans la liste (tablette, ordinateur), la ligne d'une personne ne dit que sa première tâche : ses
+// autres choses à faire du jour se disent en une ligne, « + 2 autres choses à faire », et leur
+// retard en orange — rien de dû n'est caché ; le détail, à droite, les donne avec leurs gestes.
+export function buyerOthersNote(
+  others: readonly { late: string | null }[],
+): { text: string; late: string | null } | null {
+  const count = others.length;
+  if (count === 0) return null;
+  const late = others.filter((other) => other.late != null).length;
+  return {
+    text: count === 1 ? '+ 1 autre chose à faire' : `+ ${count} autres choses à faire`,
+    late:
+      late === 0
+        ? null
+        : count === 1
+          ? 'en retard'
+          : late === count
+            ? 'toutes en retard'
+            : `dont ${late} en retard`,
+  };
+}
+
+// Le nombre de choses à faire : toutes les tâches, celles qui suivent la première comprises.
+export function buyersTodayThings(items: readonly BuyerTodayItem[]): number {
+  return items.reduce((total, item) => total + 1 + item.others.length, 0);
+}
+
+// « 3 choses à faire aujourd'hui ».
 export function buyersTodayCount(count: number): string {
   return count === 0
     ? 'Rien à faire aujourd’hui'

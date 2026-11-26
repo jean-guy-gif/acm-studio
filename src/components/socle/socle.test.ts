@@ -186,7 +186,7 @@ describe('la carte « à faire »', () => {
 
   // Relecture du lot B — une personne qui a plusieurs choses à faire : rien de dû n'est caché
   // derrière sa première tâche.
-  it('ses autres choses à faire : sous son bouton dans la carte, « Aussi : … » dans la ligne', () => {
+  it('ses autres choses à faire : sous son bouton dans la carte, en une ligne dans la liste', () => {
     const card = renderToStaticMarkup(
       createElement(TaskCard, {
         name: 'M. et Mme Moreau',
@@ -200,31 +200,27 @@ describe('la carte « à faire »', () => {
       }),
     );
     expect(card.indexOf('Organiser la visite')).toBeLessThan(card.indexOf('data-testid="more"'));
-    const row = renderToStaticMarkup(
-      createElement(PersonRow, {
-        href: '/acquereurs?personne=1',
-        name: 'M. et Mme Moreau',
-        task: '4 nouveaux biens trouvés par la veille',
-        also: [
-          {
-            key: 'a',
-            task: 'Sélection envoyée le 22/11, pas de réponse',
-            late: 'en retard de 2 jours',
-          },
-          { key: 'b', task: 'Un point à proposer', late: null },
-        ],
-      }),
-    );
-    // La tâche de tête garde sa ligne à elle : les autres suivent, chacune la sienne.
-    expect(row).toMatch(
+    const row = (also: { text: string; late: string | null } | null) =>
+      renderToStaticMarkup(
+        createElement(PersonRow, {
+          href: '/acquereurs?personne=1',
+          name: 'M. et Mme Moreau',
+          task: '4 nouveaux biens trouvés par la veille',
+          also,
+        }),
+      );
+    const noted = row({ text: '+ 2 autres choses à faire', late: 'dont 1 en retard' });
+    // La tâche de tête garde sa ligne à elle : la note suit, sur la sienne.
+    expect(noted).toMatch(
       /data-testid="person-task"[^>]*>4 nouveaux biens trouvés par la veille<\/span>/,
     );
-    const notes = row.match(/data-testid="person-also"/g) ?? [];
-    expect(notes).toHaveLength(2);
-    expect(row).toContain('>Aussi : Sélection envoyée le 22/11, pas de réponse<');
+    expect(noted.match(/data-testid="person-also"/g) ?? []).toHaveLength(1);
+    expect(noted).toContain('>+ 2 autres choses à faire<');
     // Le retard d'une autre tâche se dit aussi, en orange.
-    expect(row.slice(row.indexOf('person-also'))).toContain('en retard de 2 jours');
-    expect(row).not.toContain('btn-filled');
+    expect(noted.slice(noted.indexOf('person-also'))).toContain('dont 1 en retard');
+    expect(noted).not.toContain('btn-filled');
+    // Une seule chose à faire : aucune note.
+    expect(row(null)).not.toContain('person-also');
   });
 
   // Le toucher d'une ligne est pris tout de suite : la ligne choisie n'a pas besoin de le dire.

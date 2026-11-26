@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   BUYER_TASK_KINDS,
   buyersToday,
+  buyerOthersNote,
   buyersTodayCount,
+  buyersTodayThings,
   buyerTaskKey,
   buyerTaskTone,
   buyerTaskWhat,
@@ -286,9 +288,33 @@ describe('une carte par personne', () => {
     expect(items[0]!.others).toHaveLength(1);
   });
 
-  it('« 3 choses à faire aujourd’hui » : une par personne', () => {
+  it('« 3 choses à faire aujourd’hui » : toutes les tâches, pas seulement la première de chacun', () => {
     expect(buyersTodayCount(0)).toBe('Rien à faire aujourd’hui');
     expect(buyersTodayCount(1)).toBe('1 chose à faire aujourd’hui');
     expect(buyersTodayCount(3)).toBe('3 choses à faire aujourd’hui');
+    const relaunch = task({ kind: 'buyer_relaunch', buyerId: 'mercier', dueOn: '2026-11-24' });
+    const items = buyersToday([watch, relaunch, recontact], TODAY);
+    expect(items).toHaveLength(2);
+    expect(buyersTodayThings(items)).toBe(3);
+    expect(buyersTodayThings([])).toBe(0);
+  });
+
+  // Relecture du lot B — dans la liste, une ligne par personne : ses autres tâches se disent en
+  // une ligne, leur retard compris. Rien de dû n'est caché derrière la première.
+  it('« + 2 autres choses à faire », et leur retard', () => {
+    const on = { late: null };
+    const late = { late: 'en retard de 2 jours' };
+    expect(buyerOthersNote([])).toBeNull();
+    expect(buyerOthersNote([on])).toEqual({ text: '+ 1 autre chose à faire', late: null });
+    expect(buyerOthersNote([late])).toEqual({ text: '+ 1 autre chose à faire', late: 'en retard' });
+    expect(buyerOthersNote([on, on])).toEqual({ text: '+ 2 autres choses à faire', late: null });
+    expect(buyerOthersNote([on, late, on])).toEqual({
+      text: '+ 3 autres choses à faire',
+      late: 'dont 1 en retard',
+    });
+    expect(buyerOthersNote([late, late])).toEqual({
+      text: '+ 2 autres choses à faire',
+      late: 'toutes en retard',
+    });
   });
 });

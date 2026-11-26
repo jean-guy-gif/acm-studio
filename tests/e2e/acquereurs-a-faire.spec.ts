@@ -45,15 +45,18 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     await expect(rows.first()).toBeVisible();
     const count = await rows.count();
     expect(count, 'La démo a plusieurs acquéreurs à traiter aujourd’hui').toBeGreaterThanOrEqual(4);
-    await expect(page.getByTestId('buyers-today-count')).toHaveText(
-      `${count} choses à faire aujourd’hui`,
-    );
     // Une carte par personne : personne ne paraît deux fois.
     const names = await rows.getByTestId('person-name').allInnerTexts();
     expect(new Set(names).size).toBe(names.length);
     // Les cartes du téléphone sont là, cachées : la même liste.
     await expect(page.getByTestId('task-card')).toHaveCount(count);
     await expect(page.getByTestId('task-card').first()).toBeHidden();
+    // Le nombre dit toutes les choses à faire : la première de chacun, et celles qui suivent.
+    const more = await page.getByTestId('task-card').getByTestId('buyers-today-other').count();
+    expect(more, 'Dans la démo, quelqu’un a plusieurs choses à faire').toBeGreaterThanOrEqual(1);
+    await expect(page.getByTestId('buyers-today-count')).toHaveText(
+      `${count + more} choses à faire aujourd’hui`,
+    );
 
     // La réponse du vendeur à l'offre des Keller est en tête (M138) ; elle est choisie d'emblée.
     await expect(rows.first().getByTestId('person-name')).toHaveText('Famille Keller');
@@ -80,8 +83,8 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     for (const text of await proposed.allInnerTexts()) {
       expect(text).toMatch(/^Un bien à proposer : la maison de .+ \(\d+\sm², [\d\s]+€\)$/);
     }
-    // Rien de dû n'est caché derrière la première tâche : « Aussi : … », dans la ligne.
-    await expect(moreau.getByTestId('person-also')).toHaveText(/^Aussi : .*un point à proposer/);
+    // Rien de dû n'est caché derrière la première tâche : la ligne dit qu'il y en a d'autres.
+    await expect(moreau.getByTestId('person-also')).toHaveText(/^\+ \d+ autres? choses? à faire$/);
   });
 
   await test.step('Choisir une autre personne ne quitte pas la page', async () => {
@@ -130,9 +133,13 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     await moreau.click();
     await expect(detail.getByTestId('buyers-today-name')).toHaveText('Famille Moreau');
     const others = detail.getByTestId('buyers-today-other');
-    await expect(others).toHaveCount(1);
-    await expect(others).toContainText('un point à proposer');
-    await expect(others.getByRole('button')).toHaveCount(1);
+    const noted = Number(/\d+/.exec(await moreau.getByTestId('person-also').innerText())?.[0]);
+    await expect(others).toHaveCount(noted);
+    await expect(others.filter({ hasText: 'un point à proposer' })).toHaveCount(1);
+    // Chacune a son geste, en contour : le seul bouton plein est celui de sa première tâche.
+    for (const other of await others.all()) {
+      await expect(other.locator('a, button').first()).toBeVisible();
+    }
     expect(await filledShown(page)).toEqual(['Organiser la visite']);
     await lambert.click();
     await expect(detail.getByTestId('buyers-today-name')).toHaveText('M. et Mme Lambert');
@@ -222,9 +229,12 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     // Les mêmes blocs qu'à droite sur ordinateur : la seconde chose à faire d'une personne est
     // dans sa carte, avec son geste, en contour.
     const moreau = cards.filter({ hasText: 'Famille Moreau' });
-    await expect(moreau.getByTestId('buyers-today-other')).toHaveCount(1);
-    await expect(moreau.getByTestId('buyers-today-other')).toContainText('un point à proposer');
-    await expect(moreau.getByTestId('buyers-today-other').getByRole('button')).toBeVisible();
+    const others = moreau.getByTestId('buyers-today-other');
+    expect(await others.count()).toBeGreaterThanOrEqual(1);
+    await expect(others.filter({ hasText: 'un point à proposer' })).toHaveCount(1);
+    for (const other of await others.all()) {
+      await expect(other.locator('a, button').first()).toBeVisible();
+    }
 
     // Un geste ouvert ne fait pas un second bouton plein (relecture du lot B). Le message de la
     // première carte, ouvert : son bouton reste le seul plein.
