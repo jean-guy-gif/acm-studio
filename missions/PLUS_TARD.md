@@ -336,4 +336,21 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   - dans une carte, les trois autres gestes de la réponse du vendeur à une offre (« Transmettre
     au notaire », « Voir l'offre », « Fait ») gardent les petits boutons d'avant ;
   - `OfferMessagePanel` garde un ton sombre que plus personne n'appelle : à retirer au nettoyage.
+- 26/11 · Refonte, lot C · Notés, sans les corriger :
+  - un bien de l'agence (mandat, concurrent à prospecter) n'a pas sa photo dans « un bien à la
+    fois » : la liste des biens idéaux ne la lit pas non plus. La lire demanderait une lecture de
+    plus par bien (les photos d'un mandat sont signées) ;
+  - « un bien à la fois » n'a que deux gestes (« Écarter », « Proposer ») : pas de « plus tard »
+    tant que la sélection a de la place. Si les conseillers le demandent, « Passer ce bien »
+    existe déjà pour la sélection complète ;
+  - dans l'ordre d'« Aujourd'hui », « Un bien à proposer » passe avant les biens de la veille :
+    une personne qui a les deux voit d'abord le mandat, et ses nouveaux biens derrière « Aussi
+    aujourd'hui », sur leur page. À revoir si Jean-Guy veut les biens de la veille en premier ;
+  - la démo remise à zéro ne montre « un bien à la fois » pour personne (seuls les Keller ont des
+    biens de la veille, et ils sont « Sous offre ») : un acquéreur de démo prêt, avec des biens
+    trouvés et une sélection vide, le montrerait d'emblée — à faire avec la démo, pas seule ;
+  - le marché, cherché depuis la liste, entre dans « un bien à la fois » de la même page, mais
+    pas dans le détail d'Acquéreurs (qui ne lance pas de recherche) ;
+  - Vercel n'a pas déployé un commit poussé sur `essai` (07 h 10, aucun déploiement créé) : un
+    commit vide l'a relancé. À surveiller si cela se reproduit.
 

@@ -220,6 +220,8 @@ export function DeckCardView({
       if (!root.current || root.current.offsetParent === null) return;
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      // Dans un menu ou une fenêtre ouverte par-dessus, les flèches sont à lui.
+      if (target?.closest('[role="menu"], [role="dialog"]')) return;
       if (event.key === 'Escape' && choosing) {
         setChoosing(false);
         return;
@@ -285,7 +287,9 @@ export function DeckCardView({
 
       <div className="flex flex-col gap-3.5 xl:grid xl:grid-cols-2 xl:gap-5">
         <div className="flex flex-col gap-1.5 xl:gap-2">
-          <div className="flex items-center justify-between gap-2.5 md:justify-start md:gap-3 xl:flex-col xl:items-start xl:gap-2">
+          {/* Le prix et sa pastille sur une ligne ; trop longs ensemble (une police plus large, « à
+              négocier »), la pastille passe dessous plutôt que de sortir de l'écran. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-2.5 gap-y-1.5 md:justify-start md:gap-x-3 xl:flex-col xl:flex-nowrap xl:items-start xl:gap-2">
             <span
               className="text-[28px] leading-tight font-extrabold tracking-[-0.5px] text-brand-darker xl:text-[32px] stage:text-white"
               data-testid="deck-price"

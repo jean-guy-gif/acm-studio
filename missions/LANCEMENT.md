@@ -136,7 +136,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 | --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
 | A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 0 h 30 (3 h 05) : attend le « oui » |
 | B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | sur l'essai depuis le 26/11 à 1 h 20, relu et corrigé à 2 h 50 (3 h 05) : attend le « oui » |
-| C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | à faire |
+| C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | sur l'essai depuis le 26/11 à 9 h 10 : attend le « oui » |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | à faire |
 | E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | à faire |
 | F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | à faire |
@@ -383,6 +383,75 @@ trois tuiles de la fiche (précise la Mission 10 bis et le Lancement 10, « bloc
 personne a toutes ses tâches du jour, la première en carte, les autres sous « Aussi aujourd'hui » ;
 un seul bouton plein, geste ouvert compris ; « Visites à organiser » sous les trois chiffres
 (remplace l'ordre du Lancement 6) ; le message préparé passe à la ligne.
+
+### Lot C — un bien à la fois (sur l'essai, attend le « oui » de Jean-Guy)
+
+À ouvrir sur l'essai : `https://acm-studio-essai.vercel.app/acquereurs`, puis la famille Keller
+(« 2 nouveaux biens trouvés par la veille ») : sur ordinateur et tablette, le bien s'affiche à
+droite ; sur téléphone, « Voir les biens » ouvre la page. La démo de l'essai est laissée dans cet
+état (la veille des Keller réveillée, une place libre dans leur sélection) : une démo remise à
+zéro les montre « Sous offre », sans bien à voir. Les captures :
+`missions/maquettes/REFONTE-C-telephone.png`, `-tablette.png`, `-ordinateur.png`, et les mêmes en
+`…-charte-start-academy.png`.
+
+Ce qui change, en comportement :
+
+- **Les nouveaux biens d'un acquéreur se voient un par un** (maquettes REFONTE-3, 5 et 6) : sa
+  photo et « 10 critères sur 10 », son prix et la pastille du budget (« 230 000 € sous le
+  budget », verte ; au-dessus, orange, jamais rouge), son libellé neutre, « affiché le … », puis
+  « Pourquoi celui-ci pour eux » en pastilles, et deux gestes : « Écarter » ou « Proposer ».
+  Jamais un pourcentage.
+- **« Pourquoi celui-ci pour eux », dans ses mots** : ses indispensables (★) satisfaits d'abord,
+  en orange (« Piscine », « Mouans-Sartoux ») ; ce que l'annonce dit de ce qui compte pour eux,
+  en vert (« « au calme » dans l'annonce » — le critère, jamais la citation) ; puis ses autres
+  souhaits satisfaits (« Extérieur », « 2 pièces de plus »). Ni le type ni le budget : le libellé
+  et la pastille du prix les disent déjà. Ce qui est à savoir (un écart, « Extérieur : à
+  vérifier ») reste dit dessous : « À savoir : … ».
+- **« Proposer » retient le bien dans la sélection** (trois au plus) : c'est le « Retenir » des
+  biens idéaux, rien ne part vers l'acquéreur. **« Écarter » demande sa raison**, en un toucher —
+  c'est « Écarter pour lui » : le bien ne lui sera plus proposé, veille comprise ; « Annuler »
+  reste offert juste après. Tous les biens vus : « Retenir la sélection », puis la présentation
+  ou son lien, comme aujourd'hui.
+- **Où** : sur tablette et ordinateur, dans le détail d'Acquéreurs, pour une personne dont la
+  première chose à faire est « N nouveaux biens trouvés par la veille » — sans changer de page ;
+  la sélection retenue mène à sa fiche, dont la prochaine étape est de la lui présenter. Sur
+  téléphone, le bouton « Voir les biens » de sa carte ouvre la page (`…/biens-ideaux?un=1`), sans
+  menu, avec son retour vers la fiche.
+- **Ce sont les biens idéaux** : les mêmes biens (ce que la veille a trouvé, ce que l'agence a
+  déjà, le marché s'il a été cherché), la même sélection, les mêmes règles. La page des biens
+  idéaux garde sa liste, à son adresse ; elle gagne « Les voir un par un · N », et « un bien à la
+  fois » y mène par « Toute la liste et le marché ».
+- **Sélection déjà complète** (trois biens retenus, pas encore présentés) : chaque bien se voit
+  quand même ; « Proposer » attend une place, l'écran dit comment la libérer (« retirez-en un dans
+  toute la liste ») et « Passer ce bien » mène au suivant.
+- **Au clavier**, sur ordinateur : flèche gauche pour écarter, flèche droite pour proposer.
+
+Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
+
+- « Proposer » ne fait qu'UN geste : retenir dans la sélection. La maquette n'en dit pas plus ;
+  envoyer le bien tout de suite à l'acquéreur serait un autre geste (la série de « Proposer ce
+  bien », pour un mandat).
+- La pastille dit « sous le budget », pas « sous leur budget » : un nom de fiche ne dit ni le
+  genre ni le nombre (la règle du lot B) ; le titre « Pourquoi celui-ci pour eux » est celui de
+  Jean-Guy, comme « Ce qui compte pour eux ».
+- Le lien de la fiche complète s'appelle « Voir l'annonce complète » (la maquette) : il ouvre la
+  fiche complète du bien (ses photos, ses caractéristiques, son texte), à lire seulement ; un
+  bien de l'agence dit « Voir la fiche du bien ».
+- Un bien de l'agence (un mandat, un concurrent à prospecter) n'a pas sa photo dans « un bien à
+  la fois » : la liste d'aujourd'hui ne la lit pas non plus ; elle est sur sa fiche.
+- Sur tablette, « Pourquoi celui-ci pour eux » n'a pas de cadre ni de titre visible (REFONTE-6) ;
+  le lien de l'annonce complète y reste, que la maquette ne dessinait pas.
+- La photo prend la hauteur que l'écran lui laisse (410 px au plus sur ordinateur, 290 sur
+  tablette) : sur un écran moins haut que la maquette, les deux gestes restent visibles.
+- **À dire à Jean-Guy** : dans l'ordre d'« Aujourd'hui », « Un bien à proposer » (un mandat de
+  l'agence) passe avant les biens de la veille. Une personne qui a les deux voit d'abord le
+  mandat ; ses nouveaux biens sont sous « Aussi aujourd'hui », et leur bouton ouvre la page.
+
+Les specs modifiées : aucune. Une nouvelle, `un-bien-a-la-fois.spec.ts` (deux parcours) : le
+détail sur ordinateur (le bien, la fiche complète, « Écarter » et sa raison, le clavier,
+« Proposer », la sélection complète, « Retenir la sélection » qui mène à la fiche), la tablette
+dans les deux sens, et la page sur téléphone (« Toute la liste », une place libérée, « Les voir
+un par un », « Proposer », la sélection enregistrée).
 
 ## Chaque soir
 
