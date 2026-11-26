@@ -19,6 +19,7 @@ import {
   readDemoLinkAnswers,
   removeDemoRunDossiers,
   resetDemoByScreen,
+  reveal,
   sideNav,
   unfoldBuyerSheet,
   uniqueDossierName,
@@ -541,7 +542,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(ready.getByTestId('prospecting-card')).toHaveCount(RETAINED);
       const colleaguesBefore = await colleagueCards().count();
       let flipped = 0;
-      await page.goto(`/builder/${projectId}`);
+      // La refonte, lot E — les concurrents à prospecter sont sous « Tout le dossier », que
+      // l'adresse ouvre : il reste ouvert à chaque rechargement.
+      await page.goto(`/builder/${projectId}?tout=1`);
       const exclusivityGroups = page.getByRole('group', { name: 'Exclusivité' });
       await expect(exclusivityGroups.first()).toBeVisible();
       for (const index of [0, 1]) {
@@ -1340,6 +1343,8 @@ async function expectTodayAlerts(page: Page): Promise<void> {
   expect(followUpId, 'La carte des Lambert-Duval n’a pas d’identifiant').toBeTruthy();
   await page.goto(`/builder/${followUpId}`);
   const block = page.getByTestId('property-buyers');
+  // La refonte, lot E — les acquéreurs de l'agence sont sous « Tout le dossier ».
+  await reveal(block);
   await expect(block.getByTestId('property-buyers-headline')).toContainText(
     '1 acquéreur prêt correspond à ce bien',
   );

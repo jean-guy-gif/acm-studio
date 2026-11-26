@@ -21,10 +21,12 @@ describe('le menu de l’application', () => {
     ]);
   });
 
+  // La refonte, lot E (REFONTE-7 et 8) — « Vendeurs » s'ouvre sur « à faire aujourd'hui »
+  // (`/vendeurs`) ; les autres adresses ne changent pas.
   it('Aide à partir de la tablette, Prospection sur ordinateur ; les adresses ne changent pas', () => {
     expect(NAV_ITEMS.map((item) => [item.label, item.href, item.from])).toEqual([
       ['Aujourd’hui', '/aujourdhui', 'phone'],
-      ['Vendeurs', '/builder', 'phone'],
+      ['Vendeurs', '/vendeurs', 'phone'],
       ['Acquéreurs', '/acquereurs', 'phone'],
       ['Visites', '/visites', 'phone'],
       ['Prospection', '/prospection', 'desktop'],
@@ -34,16 +36,23 @@ describe('le menu de l’application', () => {
     expect(NAV_ITEMS.filter((item) => item.pinned).map((item) => item.label)).toEqual(['Aide']);
   });
 
-  it('« Vendeurs » tient Préparation, Live et Suivi : il les surligne tous les trois', () => {
+  it('« Vendeurs » tient « à faire aujourd’hui », Préparation, Live et Suivi : il les surligne tous', () => {
     const sellers = NAV_ITEMS.find((item) => item.label === 'Vendeurs')!;
-    for (const path of ['/builder', '/builder/abc/concurrents', '/live', '/suivi']) {
+    for (const path of ['/vendeurs', '/builder', '/builder/abc/concurrents', '/live', '/suivi']) {
       expect(isNavItemActive(sellers, path), path).toBe(true);
     }
     for (const path of ['/acquereurs', '/builders', '/prospection', '/aujourdhui']) {
       expect(isNavItemActive(sellers, path), path).toBe(false);
     }
     // Une seule entrée surlignée par page.
-    for (const path of ['/builder/abc', '/live', '/suivi', '/acquereurs/x', '/visites']) {
+    for (const path of [
+      '/vendeurs',
+      '/builder/abc',
+      '/live',
+      '/suivi',
+      '/acquereurs/x',
+      '/visites',
+    ]) {
       expect(
         NAV_ITEMS.filter((item) => isNavItemActive(item, path)),
         path,
@@ -56,6 +65,7 @@ describe('le menu de l’application', () => {
   it('une page principale : un seul segment ; tout le reste est une page intérieure', () => {
     for (const path of [
       '/aujourdhui',
+      '/vendeurs',
       '/builder',
       '/live',
       '/suivi',

@@ -5,6 +5,8 @@ import { formatEuro, formatRelativeDay } from '@/lib/format';
 // Mission 143 (B4, maquette AUDIT-garcia.png) — la Vue d'ensemble dit vrai : cinq étapes, coché vert
 // = fait, bleu = maintenant, gris = plus tard ; lues sur les mêmes faits que la liste d'« Avant le
 // rendez-vous » (M91, M110) et que l'étape suivante (M110). Pur.
+// La refonte, lot E (maquette REFONTE-8) — « Son dossier » : leurs titres sont ceux de la maquette
+// (Le bien, Les concurrents, Le prix, Le rendez-vous, Conclure) ; ce que chacune dit ne change pas.
 
 export type OverviewStepKey = 'property' | 'competitors' | 'decision' | 'live' | 'conclude';
 export type OverviewStepStatus = 'done' | 'current' | 'later';
@@ -56,7 +58,7 @@ export function overviewSteps(
     {
       key: 'competitors',
       number: 2,
-      title: 'Concurrents',
+      title: 'Les concurrents',
       fact:
         input.exploitableCount >= MIN_READY_COMPARABLES
           ? plural(input.exploitableCount, 'retenu', 'retenus')
@@ -66,7 +68,7 @@ export function overviewSteps(
     {
       key: 'decision',
       number: 3,
-      title: 'Décision de prix',
+      title: 'Le prix',
       fact:
         input.hasDecision && input.decisionPrice != null
           ? formatEuro(input.decisionPrice)
@@ -78,7 +80,7 @@ export function overviewSteps(
     {
       key: 'live',
       number: 4,
-      title: input.documentOnly ? 'Étude de marché' : 'Live',
+      title: input.documentOnly ? 'Étude de marché' : 'Le rendez-vous',
       fact: input.documentOnly
         ? 'remise au vendeur, sans Live'
         : input.liveEndedAt

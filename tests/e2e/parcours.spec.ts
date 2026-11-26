@@ -416,6 +416,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(nextStep).toContainText('Faire le Live avec');
     await expect(nextStep.getByText(/^Lancer le Live/).first()).toBeVisible();
     await expect(page.getByTestId('next-step')).toHaveCount(0);
+    // La refonte, lot E — le reste de la Vue d'ensemble est sous « Tout le dossier » : ouvert,
+    // toujours un seul bouton plein.
+    await openFold(page, 'project-all');
+    await expectOneFilled(page, 'Vue d’ensemble, « Tout le dossier » ouvert');
     await page.goto('/builder?prets=1');
     await expect(page.getByText(dossierName)).toBeVisible();
     await expectOneFilled(page, 'Préparation, onglet Prêts');
@@ -866,8 +870,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       await expect(nav.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
     // « Vendeurs » tient Préparation, Live et Suivi : ils se rejoignent par ses trois onglets, en
-    // tête de chacune de leurs listes, et le menu garde « Vendeurs » surligné.
+    // tête de chacune de leurs listes, et le menu garde « Vendeurs » surligné. La refonte, lot E —
+    // « Vendeurs » s'ouvre sur « à faire aujourd'hui » ; « Tous mes vendeurs » mène aux listes.
     await nav.getByRole('link', { name: /^Vendeurs/ }).click();
+    await expect(page).toHaveURL(/\/vendeurs$/);
+    await page.getByTestId('sellers-all-link').click();
     await expect(page).toHaveURL(/\/builder$/);
     const tabs = page.getByTestId('seller-tabs');
     for (const [label, url] of [
@@ -1001,6 +1008,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await sideNav(page)
       .getByRole('link', { name: /^Vendeurs/ })
       .click();
+    // La refonte, lot E — « Vendeurs » s'ouvre sur « à faire aujourd'hui » ; « Tous mes vendeurs »
+    // mène aux listes et à leurs onglets.
+    await expect(page).toHaveURL(/\/vendeurs$/);
+    await page.getByTestId('sellers-all-link').click();
     await expect(page).toHaveURL(/\/builder$/);
     await page.getByTestId('seller-tabs').getByRole('link', { name: 'Live', exact: true }).click();
     await expect(page).toHaveURL(/\/live$/);
