@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import { alertOk, backLink, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
 import { getBuyer } from '@/features/buyers/queries/get-buyers';
 import { IdealPropertiesPanel } from '@/features/ideal-properties/components/ideal-properties-panel';
 import { loadIdealPanel } from '@/features/ideal-properties/queries/load-ideal-panel';
@@ -10,7 +10,10 @@ import { getProfile } from '@/lib/auth/get-profile';
 
 export const metadata: Metadata = { title: 'Biens idéaux — ACM Studio' };
 
-type Props = { params: Promise<{ buyerId: string }>; searchParams: Promise<{ un?: string }> };
+type Props = {
+  params: Promise<{ buyerId: string }>;
+  searchParams: Promise<{ un?: string; enregistre?: string }>;
+};
 
 // Mission 118 (partie B) — « Trouver les biens idéaux » pour un acquéreur, écran du conseiller :
 // l'agence d'abord (le rapprochement M86), puis le marché (lancé depuis l'écran), puis la
@@ -42,6 +45,12 @@ export default async function IdealPropertiesPage({ params, searchParams }: Prop
               Ce que l’agence a déjà, puis le marché en trois catégories ; retenez jusqu’à trois
               biens. Cet écran est pour vous : le dossier remis à l’acquéreur viendra ensuite.
             </p>
+            {/* La refonte, lot D — la fiche vient d'être créée par « Trouver ses biens ». */}
+            {query.enregistre ? (
+              <p role="status" className={alertOk} data-testid="buyer-saved">
+                Fiche enregistrée.
+              </p>
+            ) : null}
           </div>
         }
       />

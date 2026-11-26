@@ -36,6 +36,7 @@ import {
   draftMissing,
   editDraft,
   phraseChips,
+  typedNumber,
   type ChipTone,
   type PhraseChip,
   type PhraseDraft,
@@ -119,14 +120,26 @@ export function PhraseChips({
   starsLeft: boolean;
 }) {
   const current = chips.find((chip) => chip.id === open) ?? null;
+  const area = useRef<HTMLElement>(null);
+  // Une correction fermée rend le focus à sa pastille (le clavier ne se perd pas).
+  const close = (id: string) => {
+    onOpen(null);
+    window.requestAnimationFrame(() =>
+      area.current?.querySelector<HTMLButtonElement>(`[data-chip="${CSS.escape(id)}"]`)?.focus(),
+    );
+  };
   return (
-    <section className="flex flex-col gap-2.5" data-testid="phrase-understood">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[17px] font-extrabold text-brand-darker stage:text-white">
+    <section ref={area} className="flex flex-col gap-2.5" data-testid="phrase-understood">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        <h2 className="font-sans text-[17px] font-extrabold text-brand-darker stage:text-white">
           Ce que j’ai compris
         </h2>
-        <span className="text-[13px] text-[#5B6380] stage:text-white/60">
-          Touchez pour corriger
+        {/* M151 — tout ce que la lecture propose est à vérifier avant de créer la fiche. */}
+        <span
+          className="text-[13px] text-[#5B6380] stage:text-white/60"
+          data-testid="phrase-verify"
+        >
+          À vérifier : touchez pour corriger
         </span>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -139,9 +152,14 @@ export function PhraseChips({
             data-testid="phrase-chip"
             data-chip={chip.id}
             data-tone={chip.tone}
+            data-verify={chip.verify ? 'true' : 'false'}
             onClick={() => onOpen(chip.id === open ? null : chip.id)}
           >
             {chip.label}
+            {chip.tone === 'soft' ? (
+              <span className="sr-only"> (ce qui compte pour eux)</span>
+            ) : null}
+            {chip.verify ? <span className="sr-only"> (à vérifier)</span> : null}
           </button>
         ))}
       </div>
@@ -151,7 +169,7 @@ export function PhraseChips({
           chip={current}
           starsLeft={starsLeft}
           onEdit={onEdit}
-          onClose={() => onOpen(null)}
+          onClose={() => close(current.id)}
         />
       ) : null}
     </section>
@@ -195,11 +213,13 @@ function ChipCorrection({
   const submit = () => {
     if (editor.kind === 'text') apply({ type: 'text', field: editor.field, value: typed });
     if (editor.kind === 'number') {
-      const digits = typed.replace(/[^\d]/g, '');
-      apply({ type: 'number', field: editor.field, value: digits ? Number(digits) : null });
+      apply({ type: 'number', field: editor.field, value: typedNumber(typed) });
     }
   };
-  const removable = !(editor.kind === 'text' && (editor.field === 'name' || !editor.value));
+  // Le nom se corrige, il ne se retire pas (M117) ; « Commune à préciser » se saisit.
+  const removable =
+    chip.id !== 'cities:unknown' &&
+    !(editor.kind === 'text' && (editor.field === 'name' || !editor.value));
   return (
     <div
       className={`${socleCardBordered} flex flex-col gap-3 p-4`}
@@ -207,8 +227,16 @@ function ChipCorrection({
       data-chip={chip.id}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-[15px] font-extrabold text-brand-darker stage:text-white">
+        <h3 className="flex items-center gap-2 font-sans text-[15px] font-extrabold text-brand-darker stage:text-white">
           {chip.title}
+          {chip.verify ? (
+            <span
+              className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold whitespace-nowrap text-amber-800"
+              data-testid="chip-verify"
+            >
+              À vérifier
+            </span>
+          ) : null}
         </h3>
         <button
           type="button"
@@ -354,13 +382,16 @@ export function PhraseFlow({
   const [open, setOpen] = useState<string | null>(null);
   const [dictating, setDictating] = useState(false);
   const [saving, startSaving] = useTransition();
+  // La fiche est créée : la page des biens idéaux se charge ; rien ne se vide d'ici là (un toucher
+  // relancerait une lecture, ou créerait une seconde fiche).
+  const [leaving, setLeaving] = useState(false);
   const token = useRef(0);
   const area = useRef<HTMLTextAreaElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   // Pendant la lecture aussi : partir laisserait une lecture comptée sans suite.
-  const guard = useLeaveConfirm(busy || draft != null);
+  const guard = useLeaveConfirm((busy || draft != null) && !leaving);
 
   // La zone de la phrase prend la hauteur de son texte (quatre lignes au moins, puis elle défile) :
   // une phrase dictée ne se lit pas à moitié.
@@ -422,8 +453,11 @@ export function PhraseFlow({
     const files = [...(list ?? [])];
     if (files.length === 0) return;
     setError(null);
+    // La photo se prépare (réduite, ou lue dans un PDF) : l'écran attend déjà.
+    setBusy(true);
     const notes = await prepareFiles(kind, files);
     if (!notes.ok) {
+      setBusy(false);
       setError(
         notes.reason === 'heic'
           ? NOTE_HEIC_MESSAGE
@@ -473,13 +507,15 @@ export function PhraseFlow({
   function save() {
     if (!draft || !reading) return;
     setError(null);
-    const { fields, toVerify } = draftForm(draft);
+    const { fields, toVerify, kept } = draftForm(draft);
     const form = new FormData();
     for (const [name, value] of Object.entries(fields)) {
       if (Array.isArray(value)) value.forEach((item) => form.append(name, item));
       else form.set(name, value);
     }
     for (const name of toVerify) form.append('fields_to_verify', name);
+    // La trace dit les champs gardés, corrigés compris (M151).
+    for (const name of kept) form.append('fields_kept', name);
     if (reading.usageId) form.set('usage_id', reading.usageId);
     startSaving(async () => {
       const result = await saveBuyerFromNotes(form).catch(() => ({
@@ -495,10 +531,10 @@ export function PhraseFlow({
         );
         return;
       }
-      setReading(null);
-      setDraft(null);
-      // « Trouver ses biens » : ce que l'agence a déjà pour lui, et le marché à chercher.
-      router.push(`/acquereurs/${result.buyerId}/biens-ideaux`);
+      setLeaving(true);
+      // « Trouver ses biens » : ce que l'agence a déjà pour lui, et le marché à chercher ; la page
+      // dit « Fiche enregistrée. ».
+      router.push(`/acquereurs/${result.buyerId}/biens-ideaux?enregistre=1`);
     });
   }
 
@@ -654,7 +690,7 @@ export function PhraseFlow({
         </button>
       </div>
 
-      {error ? (
+      {error && !draft ? (
         <p role="alert" className={alertError} data-testid="notes-error">
           {error}
         </p>
@@ -686,6 +722,25 @@ export function PhraseFlow({
 
       {draft && reading ? (
         <>
+          {reading.from == null ? (
+            <div
+              className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[#5B6380] stage:text-white/60"
+              data-testid="phrase-from-photo"
+            >
+              <span>D’après la photo de vos notes.</span>
+              {text.trim() ? (
+                <button
+                  type="button"
+                  className={`${socleBtnQuiet} h-10 px-3.5 text-sm`}
+                  disabled={busy || saving || leaving}
+                  data-testid="phrase-read-instead"
+                  onClick={() => void onPhrase()}
+                >
+                  Lire ma phrase à la place
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           <PhraseChips
             chips={chips}
             open={open}
@@ -699,6 +754,7 @@ export function PhraseFlow({
               <button
                 type="button"
                 className={`${socleBtnQuiet} h-10 px-3.5 text-sm`}
+                disabled={busy || saving || leaving}
                 data-testid="phrase-reread"
                 onClick={() => void onPhrase()}
               >
@@ -737,6 +793,11 @@ export function PhraseFlow({
       <div className="mt-auto flex flex-col gap-2.5 pt-2">
         {draft ? (
           <>
+            {error ? (
+              <p role="alert" className={alertError} data-testid="notes-error">
+                {error}
+              </p>
+            ) : null}
             {missing.length > 0 ? (
               <p className="text-center text-sm text-[#7A2E08] stage:text-orange-300" role="status">
                 Il manque {missing.join(' et ')} : touchez la pastille orange.
@@ -745,11 +806,11 @@ export function PhraseFlow({
             <button
               type="button"
               className={`${socleBtnFilledBig} ${socleBigStep} w-full`}
-              disabled={saving || missing.length > 0}
+              disabled={saving || leaving || busy || missing.length > 0}
               data-testid="phrase-find"
               onClick={save}
             >
-              {saving ? 'Enregistrement…' : 'Trouver ses biens'}
+              {saving || leaving ? 'Enregistrement…' : 'Trouver ses biens'}
             </button>
           </>
         ) : (
