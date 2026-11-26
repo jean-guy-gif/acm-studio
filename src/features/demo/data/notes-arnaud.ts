@@ -74,3 +74,63 @@ export const DEMO_NOTES_OUTPUT = {
   ],
   personal_mentions_skipped: 2,
 } as const;
+
+// La refonte, lot D (maquette REFONTE-2) — « Nouvel acquéreur par une phrase » : dans l'agence de
+// démonstration, la phrase est d'avance dans l'écran, et sa lecture est simulée comme celle de la
+// photo — la réponse que le modèle donnerait sur cette phrase, chaque ligne d'origine prise dans la
+// phrase elle-même (un test le vérifie). Les mêmes acquéreurs inventés, dits en une phrase.
+export const DEMO_PHRASE_TEXT =
+  'M. et Mme Arnaud. Une maison de 4 pièces ou plus, 3 chambres, à Vence, Saint-Paul-de-Vence ou Tourrettes-sur-Loup, avec un jardin indispensable, au calme et sans vis-à-vis, jusqu’à 750 000 €.';
+
+export const DEMO_PHRASE_OUTPUT = {
+  name: 'M. et Mme Arnaud',
+  phone: null,
+  email: null,
+  purpose: null,
+  timeline: null,
+  language: null,
+  property_types: ['house'],
+  cities: ['Vence', 'Saint-Paul-de-Vence', 'Tourrettes-sur-Loup'],
+  budget_ideal: null,
+  budget_max: 750000,
+  rooms_min: 4,
+  bedrooms_min: 3,
+  surface_min: null,
+  outdoor: true,
+  parking: null,
+  pool: null,
+  floor_min: null,
+  elevator: null,
+  energy_rating_max: null,
+  works_accepted: null,
+  condominium_accepted: null,
+  must_have: ['outdoor'],
+  financing: null,
+  soft_criteria: [
+    { key: 'calme', words: 'au calme' },
+    { key: 'sans_vis_a_vis', words: 'sans vis-à-vis' },
+  ],
+  unclassified_wishes: [],
+  notes: null,
+  sources: [
+    { field: 'name', quote: 'M. et Mme Arnaud' },
+    { field: 'property_types', quote: 'Une maison de 4 pièces ou plus' },
+    { field: 'rooms_min', quote: 'Une maison de 4 pièces ou plus' },
+    { field: 'bedrooms_min', quote: '3 chambres' },
+    { field: 'cities', quote: 'à Vence, Saint-Paul-de-Vence ou Tourrettes-sur-Loup' },
+    { field: 'budget_max', quote: 'jusqu’à 750 000 €' },
+    { field: 'outdoor', quote: 'avec un jardin indispensable' },
+    { field: 'must_have:outdoor', quote: 'avec un jardin indispensable' },
+    { field: 'soft_criteria', quote: 'au calme et sans vis-à-vis' },
+  ],
+  personal_mentions_skipped: 0,
+} as const;
+
+// Ce que la lecture simulée rend : pour un texte, la réponse de la phrase — sauf le texte des notes
+// inventées (« Compléter depuis mes notes », « Coller un texte »), qui garde la sienne ; pour une
+// photo ou un fichier, celle des notes.
+export function demoNotesOutput(kind: 'photo' | 'file' | 'text', text: string | null) {
+  return kind === 'text' && !(text ?? '').includes('ARNAUD (M. et Mme)')
+    ? DEMO_PHRASE_OUTPUT
+    : DEMO_NOTES_OUTPUT;
+}

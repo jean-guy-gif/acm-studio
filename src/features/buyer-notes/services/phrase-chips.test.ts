@@ -10,7 +10,13 @@ import {
   type PhraseChip,
 } from '@/features/buyer-notes/services/phrase-chips';
 import type { CommuneCheck, NoteProposal } from '@/features/buyer-notes/types';
-import { DEMO_NOTES_OUTPUT } from '@/features/demo/data/notes-arnaud';
+import {
+  DEMO_NOTES_OUTPUT,
+  DEMO_NOTES_TEXT,
+  DEMO_PHRASE_OUTPUT,
+  DEMO_PHRASE_TEXT,
+  demoNotesOutput,
+} from '@/features/demo/data/notes-arnaud';
 
 // La refonte, lot D (maquette REFONTE-2) — « Ce que j'ai compris », en pastilles à corriger.
 
@@ -248,5 +254,59 @@ describe('« Trouver ses biens » : le formulaire de « Créer la fiche »', () 
     const { fields, toVerify } = draftForm(editDraft(draft, { type: 'remove', id: 'phone' }));
     expect(fields.phone).toBeUndefined();
     expect(toVerify).not.toContain('phone');
+  });
+});
+
+// La démo est le miroir du produit : une phrase d'avance dans l'écran, et sa lecture simulée.
+describe('la phrase de la démo, et ce que sa lecture simulée en comprend', () => {
+  const guarded = guardProposal(DEMO_PHRASE_OUTPUT);
+  const proposal: NoteProposal = {
+    ...guarded,
+    communes: (guarded.values.cities ?? []).map((name) => ({
+      read: name,
+      status: 'official',
+      name,
+    })),
+  };
+
+  it('passe les gardes de la vraie lecture : l’indispensable est dit ferme dans la phrase', () => {
+    expect(guarded.mustHave.map((star) => star.key)).toEqual(['outdoor']);
+    expect(guarded.values.outdoor).toBe(true);
+    expect(guarded.personalMentionsSkipped).toBe(0);
+  });
+
+  it('chaque ligne d’origine est dans la phrase, mot pour mot', () => {
+    for (const { quote } of DEMO_PHRASE_OUTPUT.sources) {
+      expect(DEMO_PHRASE_TEXT, quote).toContain(quote);
+    }
+    for (const soft of DEMO_PHRASE_OUTPUT.soft_criteria) {
+      expect(DEMO_PHRASE_TEXT, soft.words).toContain(soft.words);
+    }
+  });
+
+  it('ses pastilles, comme sur la maquette', () => {
+    expect(labels(phraseChips(draftFromProposal(proposal), proposal))).toEqual([
+      'M. et Mme Arnaud',
+      'Maison',
+      'Jusqu’à 750 000 €',
+      '4 pièces et plus',
+      '3 chambres et plus',
+      'Au calme',
+      'Sans vis-à-vis',
+      'Vence, Saint-Paul-de-Vence, Tourrettes-sur-Loup',
+      'Indispensable : extérieur',
+    ]);
+  });
+
+  it('une phrase rend sa lecture ; les notes inventées et leur photo gardent la leur', () => {
+    expect(demoNotesOutput('text', DEMO_PHRASE_TEXT)).toBe(DEMO_PHRASE_OUTPUT);
+    expect(demoNotesOutput('text', 'Une autre phrase')).toBe(DEMO_PHRASE_OUTPUT);
+    expect(demoNotesOutput('text', DEMO_NOTES_TEXT)).toBe(DEMO_NOTES_OUTPUT);
+    expect(demoNotesOutput('photo', null)).toBe(DEMO_NOTES_OUTPUT);
+    expect(demoNotesOutput('file', null)).toBe(DEMO_NOTES_OUTPUT);
+  });
+
+  it('rien d’elle ne dit « démo », aucun téléphone, aucune adresse', () => {
+    expect(DEMO_PHRASE_TEXT).not.toMatch(/d[ée]mo|\d{2} \d{2} \d{2}|rue|avenue|chemin/i);
   });
 });

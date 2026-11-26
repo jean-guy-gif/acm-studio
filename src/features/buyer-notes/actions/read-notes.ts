@@ -17,7 +17,7 @@ import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
 import { proposedCities, verifyCommunes } from '@/features/buyer-notes/services/verify-communes';
 import type { NoteProposal, NoteReadingCause } from '@/features/buyer-notes/types';
 import { geoProvider } from '@/features/competitor-search/services/geo-provider';
-import { DEMO_NOTES_OUTPUT } from '@/features/demo/data/notes-arnaud';
+import { demoNotesOutput } from '@/features/demo/data/notes-arnaud';
 import { demoDelay } from '@/features/demo/services/demo-delay';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { aiConfigured, aiModel, callStructured, type AiContentBlock } from '@/lib/ai/bedrock';
@@ -76,7 +76,11 @@ export async function readBuyerNotes(formData: FormData): Promise<ReadNotesResul
   // L'agence de démonstration : aucune lecture réelle, aucun budget (M114).
   if (isDemo) {
     await demoDelay();
-    return { ok: true, proposal: await finish(DEMO_NOTES_OUTPUT), usageId: null };
+    return {
+      ok: true,
+      proposal: await finish(demoNotesOutput(input.kind, input.text ?? null)),
+      usageId: null,
+    };
   }
 
   const model = aiModel();
