@@ -24,6 +24,13 @@ import { reconcileBuyer } from '@/features/meeting-conclusion/services/buyer-rec
 // Sous ce nombre d'acquéreurs prêts, rien au Live : ni pastille, ni bulle, ni écran (§ 9).
 export const LIVE_BUYERS_THRESHOLD = 5;
 
+// L'ancre du bloc « Acquéreurs de l'agence pour ce bien » sur la page du dossier, et l'adresse qui
+// y mène (le Suivi). La refonte, lot E — le bloc est sous « Tout le dossier » : `?tout=1` le déplie
+// d'abord, sinon le lien ne mènerait à rien de visible.
+export const PROPERTY_BUYERS_ANCHOR = 'acquereurs';
+export const propertyBuyersHref = (projectId: string): string =>
+  `/builder/${projectId}?tout=1#${PROPERTY_BUYERS_ANCHOR}`;
+
 // Le bien vendeur, par ses seuls faits : jamais l'adresse, jamais le nom du vendeur.
 export type BuyerLoopProperty = {
   propertyType: string | null;

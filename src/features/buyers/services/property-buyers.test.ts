@@ -6,8 +6,10 @@ import {
   buyerMatchesProperty,
   buyerReferencePrice,
   LIVE_BUYERS_THRESHOLD,
+  PROPERTY_BUYERS_ANCHOR,
   propertyBuyers,
   propertyBuyersHeadline,
+  propertyBuyersHref,
   type BuyerLoopProperty,
 } from '@/features/buyers/services/property-buyers';
 import type { Buyer } from '@/features/buyers/types';
@@ -361,5 +363,12 @@ describe('la démo de Vence', () => {
     expect(result.ready).toHaveLength(4);
     expect(result.ready.map((entry) => entry.buyer.name)).not.toContain('M. et Mme Lambert');
     expect(liveBuyersReveal(result, NOW)).toBeNull();
+  });
+});
+
+describe('l’adresse du bloc des acquéreurs, sur la page du dossier', () => {
+  it('ouvre « Tout le dossier », où le bloc est rangé (la refonte, lot E), puis y mène', () => {
+    expect(propertyBuyersHref('p1')).toBe('/builder/p1?tout=1#acquereurs');
+    expect(PROPERTY_BUYERS_ANCHOR).toBe('acquereurs');
   });
 });

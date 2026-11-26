@@ -14,7 +14,7 @@ import {
 
 // L'état du dossier, en une pastille : où il en est dans le parcours, ou son issue s'il est conclu
 // (M54, M90). La teinte n'est jamais seule : le mot le dit.
-export function dossierBadge(input: {
+export function projectBadge(input: {
   status: string;
   outcome: ConclusionOutcome | null;
   mandateType: MandateType | null;
@@ -37,11 +37,13 @@ export function dossierBadge(input: {
   return { label: 'En préparation', tone: 'plain' };
 }
 
-// Les trois chiffres (REFONTE-8) : les concurrents retenus, ce qui reste à vérifier sur eux (un prix
-// ou une surface importés « À vérifier », M104), les acquéreurs de l'agence prêts à visiter (M133).
+// Les trois chiffres (REFONTE-8) : les concurrents retenus — le nombre de l'étape « Les concurrents »
+// (les exploitables, M52 et M143), jamais deux nombres « retenus » sur un même écran —, ce qui reste
+// à vérifier sur eux (un prix ou une surface importés « À vérifier », M104), les acquéreurs de
+// l'agence prêts à visiter (M133).
 // Un chiffre qui n'a pas pu être lu le dit (M98), jamais un zéro ; un dossier d'exemple n'a pas
 // d'acquéreurs (M97), sa tuile n'est pas montrée.
-export function dossierTiles(input: {
+export function projectTiles(input: {
   retained: number;
   toVerify: number;
   // null : la lecture a échoué ; undefined : un dossier d'exemple.
@@ -51,13 +53,13 @@ export function dossierTiles(input: {
     {
       value: input.retained,
       label: input.retained > 1 ? 'Concurrents retenus' : 'Concurrent retenu',
-      testId: 'dossier-tile-retained',
+      testId: 'project-tile-retained',
     },
     {
       value: input.toVerify,
       label: 'Prix ou surface à vérifier',
       tone: input.toVerify > 0 ? 'watch' : 'plain',
-      testId: 'dossier-tile-to-verify',
+      testId: 'project-tile-to-verify',
     },
   ];
   if (input.readyBuyers !== undefined) {
@@ -67,14 +69,14 @@ export function dossierTiles(input: {
             value: '?',
             label: 'Acquéreurs prêts : non lus',
             tone: 'watch',
-            testId: 'dossier-tile-buyers',
+            testId: 'project-tile-buyers',
           }
         : {
             value: input.readyBuyers,
             label:
               input.readyBuyers > 1 ? 'Acquéreurs prêts à visiter' : 'Acquéreur prêt à visiter',
             tone: input.readyBuyers > 0 ? 'good' : 'plain',
-            testId: 'dossier-tile-buyers',
+            testId: 'project-tile-buyers',
           },
     );
   }

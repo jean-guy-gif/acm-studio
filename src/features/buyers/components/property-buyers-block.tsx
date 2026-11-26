@@ -9,12 +9,11 @@ import {
   NO_MATCHING_BUYER,
   NO_REFERENCE_PRICE,
   PROPERTY_BUYER_MISSING_LABELS,
+  PROPERTY_BUYERS_ANCHOR,
   propertyBuyersHeadline,
   type PropertyBuyer,
   type PropertyBuyers,
 } from '@/features/buyers/services/property-buyers';
-
-export const PROPERTY_BUYERS_ANCHOR = 'acquereurs';
 
 // Mission 133 — « Acquéreurs de l'agence pour ce bien », sur la Vue d'ensemble et « Avant le
 // rendez-vous » : la porte vendeur → acquéreurs de la boucle, pour le conseiller seul. Mission 134 —

@@ -5,12 +5,8 @@ import {
   readyBuyersArgument,
   readyBuyersCount,
 } from '@/features/meeting-conclusion/services/suivi-step-labels';
-import {
-  sortDueTasks,
-  taskLateDays,
-  type SuiviTask,
-  type SuiviTaskKind,
-} from '@/features/meeting-conclusion/services/suivi-tasks';
+import { taskLateDays, type SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
+import type { TodayBoard } from '@/features/today/services/today-board';
 
 // La refonte, lot E (maquettes REFONTE-7 et 8) — « À faire aujourd'hui », en tête de Vendeurs : une
 // carte par VENDEUR (un dossier), avec ce qu'il y a à faire et son bouton. Ce sont les tâches du
@@ -18,12 +14,6 @@ import {
 // la relance d'un vendeur à relancer, « Relancer plus tôt ? », le Point marché d'un mandat signé.
 // Aucune règle nouvelle ; un dossier en préparation n'a pas de tâche du jour (la date du
 // rendez-vous n'est pas en base) : il est sous « Tous mes vendeurs ». Pur.
-
-export const SELLER_TASK_KINDS: readonly SuiviTaskKind[] = [
-  'follow_up',
-  'follow_up_early',
-  'market_update',
-];
 
 // Ce que la ligne d'une tâche sait du dossier (le motif de relance, la signature du mandat).
 export type SellerTaskContext = { motiveLabel: string | null; signedOn: string | null };
@@ -93,16 +83,19 @@ export function sellerTaskTone(task: SuiviTask, lateDays: number): Tone {
   return 'plain';
 }
 
-// Une carte par vendeur : sa tâche la plus utile d'abord (l'ordre d'« Aujourd'hui »), les vendeurs
-// dans l'ordre de leur première tâche.
+// Une carte par vendeur : les tâches du bloc « Vendeurs » d'« Aujourd'hui », dans SON ordre — la
+// relance qui porte l'argument (des acquéreurs prêts) en tête (M145 B), puis les autres —, les
+// vendeurs dans l'ordre de leur première tâche, sa tâche la plus utile d'abord.
 export function sellersToday(
-  tasks: readonly SuiviTask[],
+  board: Pick<TodayBoard, 'blocks'>,
   contextOf: (projectId: string) => SellerTaskContext | undefined,
   today: string,
 ): SellerTodayItem[] {
-  const own = sortDueTasks(tasks.filter((task) => SELLER_TASK_KINDS.includes(task.kind)));
+  const tasks =
+    board.blocks.find((block) => block.key === 'sellers')?.lines.flatMap((line) => line.tasks) ??
+    [];
   const items = new Map<string, SellerTodayItem>();
-  for (const task of own) {
+  for (const task of tasks) {
     if (!task.projectId) continue;
     const lateDays = taskLateDays(task, today);
     const entry = {
@@ -128,15 +121,15 @@ export function sellersToday(
 
 // L'adresse d'un vendeur dans la liste (tablette, ordinateur) : son détail à droite.
 export function sellerTodayHref(item: Pick<SellerTodayItem, 'projectId'>): string {
-  return `/vendeurs?dossier=${item.projectId}`;
+  return `/vendeurs?vendeur=${item.projectId}`;
 }
 
 // Le vendeur du détail : celui de l'adresse, sinon le premier.
 export function selectedSeller(
   items: readonly SellerTodayItem[],
-  dossier: string | undefined,
+  projectId: string | undefined,
 ): SellerTodayItem | null {
-  return items.find((item) => item.projectId === dossier) ?? items[0] ?? null;
+  return items.find((item) => item.projectId === projectId) ?? items[0] ?? null;
 }
 
 // Ce qui distingue une tâche d'une autre chez le même vendeur : sa sorte et son échéance. Pour la

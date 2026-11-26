@@ -416,6 +416,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(nextStep).toContainText('Faire le Live avec');
     await expect(nextStep.getByText(/^Lancer le Live/).first()).toBeVisible();
     await expect(page.getByTestId('next-step')).toHaveCount(0);
+    // La refonte, lot E — le reste de la Vue d'ensemble est sous « Tout le dossier » : ouvert,
+    // toujours un seul bouton plein.
+    await openFold(page, 'project-all');
+    await expectOneFilled(page, 'Vue d’ensemble, « Tout le dossier » ouvert');
     await page.goto('/builder?prets=1');
     await expect(page.getByText(dossierName)).toBeVisible();
     await expectOneFilled(page, 'Préparation, onglet Prêts');

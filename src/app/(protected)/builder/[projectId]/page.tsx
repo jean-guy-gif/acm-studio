@@ -14,12 +14,12 @@ import { getSavedPricePositioning } from '@/features/price-positioning/services/
 import { archiveProjectAction } from '@/features/projects/actions/archive-project';
 import { ArchiveProjectButton } from '@/features/projects/components/archive-project-button';
 import {
-  DossierAllFold,
-  DossierHeader,
+  ProjectAllFold,
+  ProjectHeader,
   NextStepCard,
-} from '@/features/projects/components/dossier-summary';
+} from '@/features/projects/components/project-summary';
 import { OverviewSteps } from '@/features/projects/components/overview-steps';
-import { dossierBadge, dossierTiles } from '@/features/projects/services/dossier-summary';
+import { projectBadge, projectTiles } from '@/features/projects/services/project-summary';
 import { propertyLabel } from '@/features/projects/services/property-label';
 import { nextDossierAction } from '@/features/projects/services/dossier-steps';
 import {
@@ -31,6 +31,7 @@ import {
 import { openExampleDossier } from '@/features/welcome/actions/open-example-dossier';
 import { evaluateProjectReadiness } from '@/features/projects/services/project-readiness';
 import { readPhotoPaths } from '@/features/subject-property-photos/services/get-property-photos';
+import { competitorsWithPriceOrSurfaceToVerify } from '@/features/imported-fields/services/fields-to-verify';
 import { getSubjectProperty } from '@/features/subject-property/queries/get-subject-property';
 import { PropertyBuyersBlock } from '@/features/buyers/components/property-buyers-block';
 import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
@@ -176,7 +177,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         <Link href="/vendeurs" className={backLink}>
           ← Vendeurs
         </Link>
-        <DossierHeader
+        <ProjectHeader
           as="h1"
           name={project.seller_name}
           propertyText={propertyLabel(
@@ -189,7 +190,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
                 }
               : null,
           )}
-          badge={dossierBadge({
+          badge={projectBadge({
             status: project.status,
             outcome: conclusion?.outcome ?? null,
             mandateType: conclusion?.mandateType ?? null,
@@ -262,10 +263,12 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       {/* Trois chiffres (REFONTE-8) : ses concurrents retenus, ce qui reste à vérifier sur eux, les
           acquéreurs de l'agence prêts à visiter. */}
       <StatTiles
-        testId="dossier-tiles"
-        tiles={dossierTiles({
-          retained: retained.length,
-          toVerify: launch?.toVerifyCount ?? 0,
+        testId="project-tiles"
+        tiles={projectTiles({
+          // Le nombre de l'étape « Les concurrents » ; ce qui reste à vérifier, lu sur les concurrents
+          // déjà chargés (une lecture du lancement en échec ne dit jamais 0, M98).
+          retained: progress.exploitableCount,
+          toVerify: competitorsWithPriceOrSurfaceToVerify(comparables).length,
           readyBuyers:
             buyers === undefined ? undefined : buyers == null ? null : buyers.ready.length,
         })}
@@ -274,7 +277,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       {/* Mission 143 (B4) — cinq étapes qui disent vrai. */}
       <OverviewSteps steps={steps} />
 
-      <DossierAllFold open={tout === '1'}>
+      <ProjectAllFold open={tout === '1'}>
         {glance ? <MarketGlanceCard glance={glance} /> : null}
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-600 stage:text-white/70">
           <span>Autres actions :</span>
@@ -335,7 +338,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
             history={reopenings}
           />
         ) : null}
-      </DossierAllFold>
+      </ProjectAllFold>
     </div>
   );
 }

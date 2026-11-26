@@ -7,7 +7,7 @@ import { competitorsWithPriceOrSurfaceToVerify } from '@/features/imported-field
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
 import { getProject } from '@/features/projects/queries/get-project';
-import { dossierBadge, dossierTiles } from '@/features/projects/services/dossier-summary';
+import { projectBadge, projectTiles } from '@/features/projects/services/project-summary';
 import { overviewSteps } from '@/features/projects/services/overview-steps';
 import { evaluateProjectReadiness } from '@/features/projects/services/project-readiness';
 import { propertyLabel } from '@/features/projects/services/property-label';
@@ -20,7 +20,7 @@ import { createClient } from '@/lib/supabase/server';
 // état, ses trois chiffres et ses cinq étapes, lus sur les mêmes faits que la Vue d'ensemble (M143,
 // M104, M133), cadrés sur l'agence de l'appelant. null : un dossier introuvable, archivé ou d'une
 // autre agence.
-export async function loadDossierSummary(projectId: string) {
+export async function loadProjectSummary(projectId: string) {
   const [project, profile] = await Promise.all([getProject(projectId), getProfile()]);
   if (!project || !profile || project.status === 'archived') return null;
   const supabase = await createClient();
@@ -33,7 +33,6 @@ export async function loadDossierSummary(projectId: string) {
     // Mission 133 — jamais pour un dossier d'exemple.
     project.is_example ? undefined : getPropertyBuyers(profile.agency_id, projectId, new Date()),
   ]);
-  const retained = comparables.filter((comparable) => comparable.is_selected);
   const steps = overviewSteps(projectId, {
     status: project.status,
     hasProperty: readiness.hasProperty,
@@ -58,13 +57,13 @@ export async function loadDossierSummary(projectId: string) {
           }
         : null,
     ),
-    badge: dossierBadge({
+    badge: projectBadge({
       status: project.status,
       outcome: conclusion?.outcome ?? null,
       mandateType: conclusion?.mandateType ?? null,
     }),
-    tiles: dossierTiles({
-      retained: retained.length,
+    tiles: projectTiles({
+      retained: readiness.exploitableCount,
       toVerify: competitorsWithPriceOrSurfaceToVerify(comparables).length,
       readyBuyers: buyers === undefined ? undefined : buyers == null ? null : buyers.ready.length,
     }),
@@ -72,4 +71,4 @@ export async function loadDossierSummary(projectId: string) {
   };
 }
 
-export type DossierSummary = NonNullable<Awaited<ReturnType<typeof loadDossierSummary>>>;
+export type ProjectSummary = NonNullable<Awaited<ReturnType<typeof loadProjectSummary>>>;

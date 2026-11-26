@@ -17,13 +17,13 @@ import { parisDay } from '@/features/meeting-conclusion/services/follow-up-conta
 import { taskLine } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 import {
-  DossierAllLink,
-  DossierHeader,
+  ProjectAllLink,
+  ProjectHeader,
   NextStepCard,
-} from '@/features/projects/components/dossier-summary';
+} from '@/features/projects/components/project-summary';
 import { OverviewSteps } from '@/features/projects/components/overview-steps';
-import { countMyDossiers } from '@/features/projects/queries/count-my-dossiers';
-import { loadDossierSummary } from '@/features/projects/queries/load-dossier-summary';
+import { countSellerProjects } from '@/features/projects/queries/count-seller-projects';
+import { loadProjectSummary } from '@/features/projects/queries/load-project-summary';
 import {
   selectedSeller,
   sellersToday,
@@ -71,18 +71,14 @@ function TaskAction({
 // carte par vendeur, avec ce qu'il y a à faire et son bouton ; un seul bouton plein. Sur téléphone,
 // une colonne de cartes ; sur tablette et ordinateur, la liste à gauche et, à droite, son dossier —
 // sa prochaine étape, trois chiffres, « Son dossier », « Tout le dossier » —, sans changer de page
-// (`?dossier=`). Ce sont les tâches du bloc « Vendeurs » d'« Aujourd'hui » (« Mes tâches ») : mêmes
+// (`?vendeur=`). Ce sont les tâches du bloc « Vendeurs » d'« Aujourd'hui » (« Mes tâches ») : mêmes
 // règles, mêmes gestes. « Tous mes vendeurs » mène aux listes de Préparation, du Live et du Suivi.
-export async function SellersTodayView({ dossier }: { dossier?: string }) {
-  const [today, mine] = await Promise.all([getToday('mine'), countMyDossiers()]);
+export async function SellersTodayView({ selectedId }: { selectedId?: string }) {
+  const [today, all] = await Promise.all([getToday('mine'), countSellerProjects()]);
   if (!today) notFound();
   const day = parisDay(new Date());
-  const items = sellersToday(
-    today.board.blocks.flatMap((block) => block.lines.flatMap((line) => line.tasks)),
-    (projectId) => today.context.get(projectId),
-    day,
-  );
-  const selected = selectedSeller(items, dossier);
+  const items = sellersToday(today.board, (projectId) => today.context.get(projectId), day);
+  const selected = selectedSeller(items, selectedId);
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
   const unread = today.failed.length > 0;
   const things = items.reduce((total, item) => total + 1 + item.others.length, 0);
@@ -188,7 +184,7 @@ export async function SellersTodayView({ dossier }: { dossier?: string }) {
         <RowLink
           href="/builder"
           label="Tous mes vendeurs"
-          count={mine ?? undefined}
+          count={all ?? undefined}
           testId="sellers-all-link"
         />
       </section>
@@ -199,14 +195,14 @@ export async function SellersTodayView({ dossier }: { dossier?: string }) {
         aria-label={selected ? selected.name : 'Détail'}
         className="hidden min-w-0 flex-col gap-[18px] md:sticky md:top-0 md:flex md:max-h-screen md:self-start md:overflow-y-auto md:px-7 md:py-6 xl:gap-5 xl:px-10 xl:py-8"
         data-testid="sellers-today-detail"
-        data-dossier={selected?.projectId}
+        data-project={selected?.projectId}
       >
         {selected ? (
           <>
             <Suspense
               fallback={
                 <>
-                  <DossierHeader name={selected.name} propertyText={null} badge={null} />
+                  <ProjectHeader name={selected.name} badge={null} />
                   <NextTask item={selected} today={today} day={day} />
                   <p className="text-[15px] text-[#5B6380] stage:text-white/60" role="status">
                     Lecture de son dossier…
@@ -241,11 +237,14 @@ export async function SellersTodayView({ dossier }: { dossier?: string }) {
   );
 }
 
-// Sa prochaine étape : ce qu'il y a à faire aujourd'hui, et son geste — le seul bouton plein.
+// Ce qu'il y a à faire aujourd'hui, et son geste — le seul bouton plein. « À faire aujourd'hui »,
+// comme au lot B : la tâche du jour n'est pas toujours la prochaine étape du dossier (M110), qui se
+// lit sur sa page (un mandat signé y dit « Voir le Suivi »).
 function NextTask({ item, today, day }: { item: SellerTodayItem; today: Today; day: string }) {
   return (
     <NextStepCard
       testId="sellers-today-task"
+      kicker="À faire aujourd’hui"
       title={item.what}
       late={item.late}
       action={<TaskAction task={item.task} today={today} day={day} primary />}
@@ -264,11 +263,11 @@ async function SellerDossier({
   today: Today;
   day: string;
 }) {
-  const summary = await loadDossierSummary(item.projectId);
+  const summary = await loadProjectSummary(item.projectId);
   if (!summary) {
     return (
       <>
-        <DossierHeader name={item.name} propertyText={null} badge={null} />
+        <ProjectHeader name={item.name} badge={null} />
         <NextTask item={item} today={today} day={day} />
         <p role="alert" className={alertError}>
           Son dossier n’a pas pu être lu : rechargez la page.
@@ -278,15 +277,16 @@ async function SellerDossier({
   }
   return (
     <>
-      <DossierHeader
+      <ProjectHeader
         name={summary.name}
         propertyText={summary.propertyText}
         badge={summary.badge}
       />
       <NextTask item={item} today={today} day={day} />
-      <StatTiles testId="dossier-tiles" tiles={summary.tiles} />
+      <StatTiles testId="project-tiles" tiles={summary.tiles} />
       <OverviewSteps steps={summary.steps} />
-      <DossierAllLink href={`/builder/${item.projectId}`} />
+      {/* « Tout le dossier » s'ouvre déplié : son résumé vient d'être lu ici. */}
+      <ProjectAllLink href={`/builder/${item.projectId}?tout=1`} />
     </>
   );
 }

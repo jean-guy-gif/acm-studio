@@ -16,7 +16,7 @@ import {
 // chiffres, « Son dossier », « Tout le dossier » — sans changer de page ; sur téléphone, une colonne
 // de cartes, et le dossier est sa page. Les listes de Préparation, du Live et du Suivi sont derrière
 // « Tous mes vendeurs ». Joué sur la démo, remise à zéro : la relance des Lambert-Duval et le
-// premier Point marché de M. Lefebvre sont dus. Rien n'est écrit.
+// premier Point marché de M. Lefebvre sont dus. Rien n'est écrit, hors la remise à zéro de la démo.
 
 // Les boutons pleins visibles de l'écran (le repère `btn-filled`).
 const filledShown = (page: Page) =>
@@ -60,8 +60,9 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     await expect(row(page, 'M. et Mme Lambert-Duval').getByTestId('person-task')).toHaveText(
       /^À relancer : 1 acquéreur prêt correspond à l’appartement$/,
     );
+    // Un 29, 30 ou 31, le mois précédent est plus court : le point peut être en retard.
     await expect(row(page, 'M. Lefebvre').getByTestId('person-task')).toHaveText(
-      /^Mandat signé le \d{2}\/\d{2} · premier Point marché$/,
+      /^Mandat signé le \d{2}\/\d{2} · premier Point marché( · en retard de \d+ jours?)?$/,
     );
 
     // Le premier vendeur est choisi d'emblée ; son dossier à droite.
@@ -69,7 +70,7 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     await expect(first).toHaveAttribute('aria-current', 'true');
     const firstName = await first.getByTestId('person-name').innerText();
     const detail = page.getByTestId('sellers-today-detail');
-    await expect(detail.getByTestId('dossier-name')).toHaveText(firstName, { timeout: 30_000 });
+    await expect(detail.getByTestId('project-name')).toHaveText(firstName, { timeout: 30_000 });
     // Sa prochaine étape : la tâche du jour et son geste — le seul bouton plein de l'écran.
     await expect(detail.getByTestId('sellers-today-task-title')).toHaveText(
       await first.getByTestId('person-task').innerText(),
@@ -77,8 +78,8 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     expect((await filledShown(page)).length).toBe(1);
     await expectOneFilled(page, 'Vendeurs, à faire aujourd’hui (ordinateur)');
     // Trois chiffres, puis « Son dossier » (cinq étapes), puis « Tout le dossier ».
-    await expect(detail.getByTestId('dossier-tiles').locator(':scope > div')).toHaveCount(3);
-    await expect(detail.getByTestId('dossier-tile-retained')).toContainText(
+    await expect(detail.getByTestId('project-tiles').locator(':scope > div')).toHaveCount(3);
+    await expect(detail.getByTestId('project-tile-retained')).toContainText(
       /^\d+Concurrents? retenus?$/,
     );
     await expect(detail.getByTestId('overview-step')).toHaveCount(5);
@@ -89,8 +90,8 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
       'Le rendez-vous',
       'Conclure',
     ]);
-    const all = detail.getByTestId('dossier-all-link');
-    await expect(all).toHaveAttribute('href', /^\/builder\/[0-9a-f-]{36}$/);
+    const all = detail.getByTestId('project-all-link');
+    await expect(all).toHaveAttribute('href', /^\/builder\/[0-9a-f-]{36}\?tout=1$/);
     // Jamais un pourcentage ni « estimation ».
     expect(await detail.innerText()).not.toMatch(/%|estimation/i);
     await expectNoHorizontalScroll(page, 'Vendeurs, à faire aujourd’hui (1440 × 900)');
@@ -105,20 +106,20 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     const target = (await lambert.getAttribute('aria-current')) === 'true' ? lefebvre : lambert;
     const name = await target.getByTestId('person-name').innerText();
     await target.click();
-    await expect(page).toHaveURL(/\/vendeurs\?dossier=[0-9a-f-]{36}$/);
+    await expect(page).toHaveURL(/\/vendeurs\?vendeur=[0-9a-f-]{36}$/);
     await expect(target).toHaveAttribute('aria-current', 'true');
-    await expect(detail.getByTestId('dossier-name')).toHaveText(name, { timeout: 30_000 });
+    await expect(detail.getByTestId('project-name')).toHaveText(name, { timeout: 30_000 });
     await expect(page.locator('[data-probe="avant"]')).toHaveCount(0);
     expect((await filledShown(page)).length).toBe(1);
 
     // Le dossier des Lambert-Duval : à relancer ; « Tout le dossier » mène à sa page.
     await lambert.click();
-    await expect(detail.getByTestId('dossier-name')).toHaveText('M. et Mme Lambert-Duval', {
+    await expect(detail.getByTestId('project-name')).toHaveText('M. et Mme Lambert-Duval', {
       timeout: 30_000,
     });
-    await expect(detail.getByTestId('dossier-badge')).toHaveText('À relancer');
-    await expect(detail.getByTestId('dossier-property')).toHaveText(/^Appartement · /);
-    lambertId = new URL(page.url()).searchParams.get('dossier') ?? '';
+    await expect(detail.getByTestId('project-badge')).toHaveText('À relancer');
+    await expect(detail.getByTestId('project-property')).toHaveText(/^Appartement · /);
+    lambertId = new URL(page.url()).searchParams.get('vendeur') ?? '';
     expect(lambertId).toMatch(/^[0-9a-f-]{36}$/);
     // Son geste : la carte du Suivi s'ouvre sur la relance (M130 A), comme sur « Aujourd'hui ».
     await expect(
@@ -138,27 +139,29 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
 
   await test.step('Le dossier : sa prochaine étape, trois chiffres, ses étapes, « Tout le dossier »', async () => {
     await page.goto(`/builder/${lambertId}`);
-    await expect(page.getByTestId('dossier-name')).toHaveText('M. et Mme Lambert-Duval');
-    await expect(page.getByTestId('dossier-badge')).toHaveText('À relancer');
+    await expect(page.getByTestId('project-name')).toHaveText('M. et Mme Lambert-Duval');
+    await expect(page.getByTestId('project-badge')).toHaveText('À relancer');
     // La relance, avec son argument, est la prochaine étape (M145 B) : le seul bouton plein.
     const next = page.getByTestId('overview-next-step');
     await expect(next.getByRole('heading')).toHaveText('Relancer M. et Mme Lambert-Duval');
     await expectOneFilled(page, 'Le dossier d’un vendeur');
-    await expect(page.getByTestId('dossier-tiles').locator(':scope > div')).toHaveCount(3);
-    await expect(page.getByTestId('dossier-tile-buyers')).toContainText(
+    await expect(page.getByTestId('project-tiles').locator(':scope > div')).toHaveCount(3);
+    await expect(page.getByTestId('project-tile-buyers')).toContainText(
       /^1Acquéreur prêt à visiter$/,
     );
     await expect(page.getByTestId('overview-step')).toHaveCount(5);
     // Le reste du dossier est replié, rien n'est retiré.
-    const fold = page.getByTestId('dossier-all');
+    const fold = page.getByTestId('project-all');
     await expect(fold).not.toHaveAttribute('open', '');
     await reveal(page.getByTestId('property-buyers'));
     await expect(fold).toHaveAttribute('open', '');
+    // Le pli ouvert, toujours un seul bouton plein.
+    await expectOneFilled(page, 'Le dossier d’un vendeur, « Tout le dossier » ouvert');
     await expect(fold).toContainText('Autres actions');
     await expect(fold.getByTestId('market-study-link')).toBeVisible();
     // `?tout=1` l'ouvre d'office.
     await page.goto(`/builder/${lambertId}?tout=1`);
-    await expect(page.getByTestId('dossier-all')).toHaveAttribute('open', '');
+    await expect(page.getByTestId('project-all')).toHaveAttribute('open', '');
     await expectNoHorizontalScroll(page, 'Le dossier d’un vendeur (1440 × 900)');
   });
 
@@ -171,7 +174,7 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
       await page.goto('/vendeurs');
       const detail = page.getByTestId('sellers-today-detail');
       await expect(page.getByTestId('person-row').first()).toBeVisible();
-      await expect(detail.getByTestId('dossier-tiles')).toBeVisible({ timeout: 30_000 });
+      await expect(detail.getByTestId('project-tiles')).toBeVisible({ timeout: 30_000 });
       await expect(detail.getByTestId('overview-step')).toHaveCount(5);
       expect((await filledShown(page)).length).toBe(1);
       const label = `Vendeurs (${viewport.width} × ${viewport.height})`;
@@ -195,7 +198,7 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     // Son nom mène à son dossier : une page intérieure, sans menu du bas.
     await cards.filter({ hasText: 'M. et Mme Lambert-Duval' }).getByRole('link').first().click();
     await expect(page).toHaveURL(new RegExp(`/builder/${lambertId}$`));
-    await expect(page.getByTestId('dossier-tiles')).toBeVisible();
+    await expect(page.getByTestId('project-tiles')).toBeVisible();
     await expect(page.getByTestId('shell-menu')).toBeHidden();
     await expectOneFilled(page, 'Le dossier d’un vendeur (390 × 844)');
     await expectNoHorizontalScroll(page, 'Le dossier d’un vendeur (390 × 844)');
