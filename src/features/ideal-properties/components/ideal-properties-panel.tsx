@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition, type ReactNode } from 'react';
+import { useRef, useState, useTransition, type ReactNode } from 'react';
 
 import {
   alertError,
@@ -333,6 +333,8 @@ export function IdealPropertiesPanel({
   const [deckIndex, setDeckIndex] = useState(0);
   const [deckPending, setDeckPending] = useState(false);
   const [deckError, setDeckError] = useState<string | null>(null);
+  // Un seul écart à la fois, même touché deux fois de suite avant que l'écran ait répondu.
+  const dismissing = useRef(false);
   // Mission 152 (partie B) — la fiche complète ouverte, et le bien qu'elle retient.
   const sheet = usePropertySheet();
   const [sheetItem, setSheetItem] = useState<{
@@ -787,14 +789,23 @@ export function IdealPropertiesPanel({
   };
   // « Proposer » : le retenir dans la sélection (trois au plus, M118) — rien ne part vers
   // l'acquéreur avant « Retenir la sélection », puis la présentation ou son lien.
+  // Le geste ne fait que retenir : touché deux fois de suite (ou la flèche droite répétée), il ne
+  // retire jamais le bien qu'il vient de retenir.
   const proposeCurrent = () => {
     if (!deckEntry || full || deckPending) return;
-    toggle(deckEntry.item);
+    const { item } = deckEntry;
+    setSaved(null);
+    setSelected((current) => {
+      const key = keyOf(item);
+      if (current.has(key) || current.size >= MAX_IDEAL_SELECTION) return current;
+      return new Map(current).set(key, item);
+    });
     advance();
   };
   // « Écarter » : pour lui, avec sa raison (M139) ; il ne lui sera plus proposé, veille comprise.
   const dismissCurrent = (reason: DismissReason) => {
-    if (!deckEntry || deckPending) return;
+    if (!deckEntry || deckPending || dismissing.current) return;
+    dismissing.current = true;
     const { item } = deckEntry;
     setDeckError(null);
     setDeckPending(true);
@@ -811,12 +822,18 @@ export function IdealPropertiesPanel({
           return;
         }
         setHidden((current) => new Set([...current, result.key]));
-        setJustDismissed((current) => [...current, { key: result.key, label: item.label }]);
+        setJustDismissed((current) => [
+          ...current.filter((other) => other.key !== result.key),
+          { key: result.key, label: item.label },
+        ]);
         advance();
       })
       .catch(() => {
         setDeckPending(false);
         setDeckError('Connexion perdue : réessayez.');
+      })
+      .finally(() => {
+        dismissing.current = false;
       });
   };
   // Passer de la liste à « un bien à la fois » : la même page, la même sélection ; l'adresse le
