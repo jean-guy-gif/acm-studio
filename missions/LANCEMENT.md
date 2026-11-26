@@ -134,7 +134,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 
 | Lot | Contenu                                                                                           | Maquettes       | Durée prévue | État    |
 | --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
-| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 0 h 30 (3 h 05) : attend le « oui » |
+| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
 | B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | à faire |
 | C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | à faire |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | à faire |
@@ -188,7 +188,7 @@ avance avec elle, Jean-Guy corrige) :
    (`E2E_DEMO_EMAIL`, dans `.env.e2e.local`) : son propre compte n'existe pas dans la base d'essai.
 10. Le guide de prise en main nomme le menu d'aujourd'hui : il suit le nouveau menu avant le gel.
 
-### Lot A — le socle (sur l'essai, attend le « oui » de Jean-Guy)
+### Lot A — le socle (en production le 26/11 au soir)
 
 À ouvrir sur l'essai, avec le compte de démonstration des tests (question 9) :
 `https://acm-studio-essai.vercel.app/aujourdhui` (le menu aux trois tailles ; sur téléphone, le
