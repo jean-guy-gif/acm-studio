@@ -148,6 +148,7 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     await expectOneFilled(page, 'Vue d’ensemble, présentation directe');
     // La refonte, lot E — les acquéreurs de l'agence et l'Étude sont sous « Tout le dossier ».
     await reveal(page.getByTestId('property-buyers-headline'));
+    await expectOneFilled(page, 'Vue d’ensemble, présentation directe, « Tout le dossier » ouvert');
     await expect(page.getByTestId('property-buyers-headline')).toHaveText(
       '5 prêts à visiter · 1 autre correspond',
     );

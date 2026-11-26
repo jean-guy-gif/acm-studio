@@ -86,6 +86,7 @@ export function TodayTaskAction({
           href={href}
           label={label}
           primary={primary}
+          look={look}
           open={{ projectId: task.projectId, panel: 'relance' }}
         />
       </span>

@@ -211,6 +211,8 @@ export function LiveLaunchActions({
       role="group"
       aria-label="Avant de lancer le Live"
       data-testid="live-launch-confirm"
+      // La refonte, lot E — dans la carte de la prochaine étape, elle prend toute la largeur.
+      data-task-open
       className="flex max-w-md flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
     >
       {check.notices.map((notice) =>

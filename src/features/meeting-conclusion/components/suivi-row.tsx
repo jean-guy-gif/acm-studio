@@ -12,6 +12,7 @@ import {
   link,
   metaLabel,
 } from '@/components/ui/styles';
+import { propertyBuyersHref } from '@/features/buyers/services/property-buyers';
 import { RefreshPricesButton } from '@/features/competitor-refresh/components/refresh-prices-button';
 import { MarketUpdateList } from '@/features/market-update/components/market-update-panel';
 import type { MarketUpdateEntry } from '@/features/market-update/queries/list-market-updates';
@@ -556,7 +557,7 @@ export function SuiviRow({
                 </Link>
               ) : readyBuyers != null && readyBuyers > 0 ? (
                 <Link
-                  href={`/builder/${project.id}#acquereurs`}
+                  href={propertyBuyersHref(project.id)}
                   data-testid="suivi-link-buyers"
                   className={`${link} text-sm font-semibold`}
                 >
@@ -565,7 +566,7 @@ export function SuiviRow({
               ) : null}
               {followUpReadyBuyers != null && followUpReadyBuyers > 0 ? (
                 <Link
-                  href={`/builder/${project.id}#acquereurs`}
+                  href={propertyBuyersHref(project.id)}
                   data-testid="suivi-follow-up-buyers"
                   className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-800"
                 >

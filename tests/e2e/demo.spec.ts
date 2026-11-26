@@ -542,7 +542,9 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(ready.getByTestId('prospecting-card')).toHaveCount(RETAINED);
       const colleaguesBefore = await colleagueCards().count();
       let flipped = 0;
-      await page.goto(`/builder/${projectId}`);
+      // La refonte, lot E — les concurrents à prospecter sont sous « Tout le dossier », que
+      // l'adresse ouvre : il reste ouvert à chaque rechargement.
+      await page.goto(`/builder/${projectId}?tout=1`);
       const exclusivityGroups = page.getByRole('group', { name: 'Exclusivité' });
       await expect(exclusivityGroups.first()).toBeVisible();
       for (const index of [0, 1]) {

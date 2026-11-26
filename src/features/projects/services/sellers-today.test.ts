@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 import {
-  SELLER_TASK_KINDS,
   selectedSeller,
   sellersToday,
   sellerTaskButton,
@@ -11,6 +10,7 @@ import {
   sellerTaskWhat,
   sellerTodayHref,
 } from '@/features/projects/services/sellers-today';
+import { todayBoard } from '@/features/today/services/today-board';
 
 // La refonte, lot E (maquettes REFONTE-7 et 8) — « À faire aujourd'hui » de Vendeurs.
 
@@ -30,6 +30,9 @@ const point = task({
   sellerName: 'Mme Petit',
   lastPointOn: null,
 });
+// Le tableau d'« Aujourd'hui » : Vendeurs lit son bloc « Vendeurs », dans son ordre.
+const board = (...tasks: SuiviTask[]) => todayBoard(tasks, TODAY);
+
 const context = (projectId: string) =>
   projectId === 'p-lambert'
     ? { motiveLabel: 'Réfléchit au prix', signedOn: null }
@@ -90,13 +93,24 @@ describe('ce qu’il y a à faire, sans redire son nom', () => {
 
 describe('une carte par vendeur', () => {
   it('les seules tâches du bloc « Vendeurs » d’« Aujourd’hui »', () => {
-    expect([...SELLER_TASK_KINDS]).toEqual(['follow_up', 'follow_up_early', 'market_update']);
     const buyer = task({ kind: 'buyer_watch', buyerId: 'b1', projectId: '' });
     const offer = task({ kind: 'offer_answer', buyerId: 'b1', offerId: 'o1' });
     const prospect = task({ kind: 'prospect', projectId: 'p-petit', count: 3 });
-    const items = sellersToday([buyer, offer, prospect, relance, point], context, TODAY);
+    const items = sellersToday(board(buyer, offer, prospect, relance, point), context, TODAY);
     expect(items.map((item) => item.projectId)).toEqual(['p-lambert', 'p-petit']);
     expect(items.flatMap((item) => item.others)).toEqual([]);
+  });
+
+  it('dans l’ordre d’« Aujourd’hui » : la relance qui porte l’argument en tête (M145 B)', () => {
+    const older = { ...relance, dueOn: '2026-11-20' };
+    const argued = task({
+      kind: 'follow_up',
+      projectId: 'p-durand',
+      sellerName: 'Mme Durand',
+      readyBuyers: 2,
+    });
+    const items = sellersToday(board(older, point, argued), context, TODAY);
+    expect(items.map((item) => item.projectId)).toEqual(['p-durand', 'p-lambert', 'p-petit']);
   });
 
   it('un vendeur ne paraît qu’une fois : ses autres tâches suivent la première', () => {
@@ -106,7 +120,7 @@ describe('une carte par vendeur', () => {
       sellerName: 'Mme Petit',
       readyBuyers: 1,
     });
-    const items = sellersToday([point, early], context, TODAY);
+    const items = sellersToday(board(point, early), context, TODAY);
     expect(items).toHaveLength(1);
     expect(items[0]!.name).toBe('Mme Petit');
     expect(items[0]!.others).toHaveLength(1);
@@ -114,22 +128,22 @@ describe('une carte par vendeur', () => {
 
   it('le retard se dit à part, en orange', () => {
     const late = { ...relance, dueOn: '2026-11-23' };
-    const [item] = sellersToday([late], context, TODAY);
+    const [item] = sellersToday(board(late), context, TODAY);
     expect(item!.late).toBe('en retard de 3 jours');
     expect(item!.tone).toBe('watch');
   });
 
   it('sans dossier connu, aucune carte : rien n’est deviné', () => {
-    expect(sellersToday([{ ...relance, projectId: '' }], context, TODAY)).toEqual([]);
+    expect(sellersToday(board({ ...relance, projectId: '' }), context, TODAY)).toEqual([]);
   });
 
   it('le détail : le vendeur de l’adresse, sinon le premier', () => {
-    const items = sellersToday([relance, point], context, TODAY);
+    const items = sellersToday(board(relance, point), context, TODAY);
     expect(selectedSeller(items, 'p-petit')?.projectId).toBe('p-petit');
     expect(selectedSeller(items, 'inconnu')?.projectId).toBe('p-lambert');
     expect(selectedSeller(items, undefined)?.projectId).toBe('p-lambert');
     expect(selectedSeller([], 'p-petit')).toBeNull();
-    expect(sellerTodayHref({ projectId: 'p-petit' })).toBe('/vendeurs?dossier=p-petit');
+    expect(sellerTodayHref({ projectId: 'p-petit' })).toBe('/vendeurs?vendeur=p-petit');
   });
 
   it('deux tâches d’un même vendeur ne partagent pas leur clé', () => {

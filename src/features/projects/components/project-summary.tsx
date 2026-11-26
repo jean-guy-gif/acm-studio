@@ -9,15 +9,17 @@ import { socleCardBordered, socleKicker } from '@/components/ui/styles';
 // son nom et son bien, son état ; la prochaine étape et son bouton ; trois chiffres ; « Son
 // dossier » ; « Tout le dossier ». Des blocs d'affichage : aucune règle ici.
 
-// Son nom, son bien en une ligne (le libellé de la liste, M97), son état en pastille.
-export function DossierHeader({
+// Son nom, son bien en une ligne (le libellé de la liste, M97), son état en pastille. Un bien pas
+// encore lu (le temps de la lecture, ou une lecture en échec) n'a pas de ligne : jamais « non
+// renseigné » pour un bien qu'on ne connaît pas (M98) ; `null`, c'est un dossier sans bien vendeur.
+export function ProjectHeader({
   name,
   propertyText,
   badge,
   as: Title = 'h2',
 }: {
   name: string;
-  propertyText: string | null;
+  propertyText?: string | null;
   badge: { label: string; tone: Tone } | null;
   as?: 'h1' | 'h2';
 }) {
@@ -26,21 +28,23 @@ export function DossierHeader({
       <div className="flex min-w-0 flex-col gap-1">
         <Title
           className="text-[22px] leading-tight font-extrabold tracking-[-0.3px] text-brand-darker xl:text-[26px] xl:tracking-[-0.4px] stage:text-white"
-          data-testid="dossier-name"
+          data-testid="project-name"
         >
           {name}
         </Title>
-        <p
-          className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60"
-          data-testid="dossier-property"
-        >
-          {propertyText ?? 'Bien vendeur non renseigné'}
-        </p>
+        {propertyText === undefined ? null : (
+          <p
+            className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60"
+            data-testid="project-property"
+          >
+            {propertyText ?? 'Bien vendeur non renseigné'}
+          </p>
+        )}
       </div>
       {badge ? (
         <span
           className={`flex h-[34px] flex-none items-center self-start rounded-full px-3.5 text-sm font-bold ${MARK_TONES[badge.tone]}`}
-          data-testid="dossier-badge"
+          data-testid="project-badge"
         >
           {badge.label}
         </span>
@@ -53,13 +57,16 @@ export function DossierHeader({
 // l'écran (M146). Sur ordinateur, le bouton à droite (240 px) ; ailleurs, sous la phrase. Un geste
 // qui s'ouvre sur place (son message, ses boutons d'envoi) reprend toute la largeur.
 export function NextStepCard({
+  kicker = 'Prochaine étape',
   title,
   late = null,
   phrase = null,
   action,
   links = null,
-  testId = 'dossier-next-step',
+  testId = 'project-next-step',
 }: {
+  // Dans le détail de Vendeurs, la tâche du jour : « À faire aujourd'hui », comme au lot B.
+  kicker?: string;
   title: string;
   late?: string | null;
   phrase?: ReactNode;
@@ -74,7 +81,7 @@ export function NextStepCard({
       data-testid={testId}
     >
       <div className="flex min-w-0 flex-col gap-2">
-        <span className={socleKicker}>Prochaine étape</span>
+        <span className={socleKicker}>{kicker}</span>
         {/* Une phrase, dans la police du texte (REFONTE-8) ; un titre pour les lecteurs d'écran. */}
         <h2
           className="font-sans text-[21px] leading-snug font-bold text-brand-darker stage:text-white"
@@ -117,13 +124,13 @@ const chevron = (
   </svg>
 );
 
-// « Tout le dossier » : une ligne qui mène au dossier entier (le détail de Vendeurs).
-export function DossierAllLink({ href }: { href: string }) {
+// « Tout le dossier » : une ligne qui mène au dossier entier, déplié (le détail de Vendeurs).
+export function ProjectAllLink({ href }: { href: string }) {
   return (
     <Link
       href={href}
       className="flex h-[52px] items-center justify-between rounded-2xl border border-[#E3E6F0] bg-white px-4 text-base font-bold text-brand-darker hover:border-brand-deep stage:border-white/10 stage:bg-white/5 stage:text-white"
-      data-testid="dossier-all-link"
+      data-testid="project-all-link"
     >
       Tout le dossier
       {chevron}
@@ -134,11 +141,11 @@ export function DossierAllLink({ href }: { href: string }) {
 // Sur la page du dossier, « Tout le dossier » se déplie sur place : tout ce que la Vue d'ensemble
 // montrait sous ses étapes (M143) y est, rien n'est retiré. Ouvert d'office quand l'adresse le
 // demande (`?tout=1`).
-export function DossierAllFold({ open, children }: { open: boolean; children: ReactNode }) {
+export function ProjectAllFold({ open, children }: { open: boolean; children: ReactNode }) {
   return (
     <details
       className="group rounded-2xl border border-[#E3E6F0] bg-white open:bg-transparent stage:border-white/10 stage:bg-white/5"
-      data-testid="dossier-all"
+      data-testid="project-all"
       open={open}
     >
       <summary className="flex h-[52px] cursor-pointer list-none items-center justify-between px-4 text-base font-bold text-brand-darker group-open:border-b group-open:border-[#E3E6F0] stage:text-white [&::-webkit-details-marker]:hidden">
