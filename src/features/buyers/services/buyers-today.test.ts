@@ -4,6 +4,7 @@ import {
   BUYER_TASK_KINDS,
   buyersToday,
   buyersTodayCount,
+  buyerTaskKey,
   buyerTaskTone,
   buyerTaskWhat,
   tasksByBuyer,
@@ -109,6 +110,40 @@ describe('ce qu’il y a à faire, sans redire son nom', () => {
     [
       task({ kind: 'visit', buyerId: 'x', sellerName: 'M. Lefebvre', count: 1 }),
       'Visite demandée : le bien de M. Lefebvre',
+    ],
+    // Relecture du lot B — un bien sans type ni commune : « le bien », seul, ne dit pas lequel.
+    [
+      task({
+        kind: 'visit',
+        buyerId: 'x',
+        sellerName: 'M. Lefebvre',
+        property: { propertyType: null, city: null },
+      }),
+      'Visite demandée : le bien de M. Lefebvre',
+    ],
+    [
+      task({ kind: 'visit', buyerId: 'x', property: { propertyType: null, city: ' ' } }),
+      'Visite demandée : un bien de l’agence',
+    ],
+    // La commune seule, ou le type seul, suffit à le dire.
+    [
+      task({
+        kind: 'visit',
+        buyerId: 'x',
+        sellerName: 'M. Lefebvre',
+        property: { propertyType: null, city: 'Mougins' },
+      }),
+      'Visite demandée : le bien de Mougins',
+    ],
+    [
+      task({
+        kind: 'propose_buyers',
+        buyerId: 'x',
+        sellerName: 'Mme Navarro',
+        property: { propertyType: 'Autre', city: null },
+        figures: { surfaceArea: 118, price: 705_000 },
+      }),
+      'Un bien à proposer : le bien de Mme Navarro (118 m², 705 000 €)',
     ],
     [recontact, 'Aucun échange depuis 33 jours'],
     [
@@ -223,6 +258,26 @@ describe('une carte par personne', () => {
     expect(items.flatMap((item) => [item.task, ...item.others.map((o) => o.task)])).not.toContain(
       seller,
     );
+  });
+
+  // Relecture du lot B — la clé d'une ligne à l'écran : jamais le rang de la tâche.
+  it('deux tâches d’une même personne ne partagent pas leur clé', () => {
+    const relaunch = task({ kind: 'buyer_relaunch', buyerId: 'mercier', dueOn: '2026-11-24' });
+    const propose = (key: string) =>
+      task({ kind: 'propose_buyers', buyerId: 'mercier', propertyKey: key, projectId: key });
+    const keys = [
+      watch,
+      relaunch,
+      propose('project:p-vence'),
+      propose('project:p-mougins'),
+      task({ kind: 'visit', buyerId: 'mercier', projectId: 'p-vence' }),
+      task({ kind: 'visit', buyerId: 'mercier', projectId: 'p-mougins' }),
+      task({ kind: 'offer_answer', buyerId: 'mercier', offerId: 'o1' }),
+      task({ kind: 'offer_answer', buyerId: 'mercier', offerId: 'o2' }),
+    ].map(buyerTaskKey);
+    expect(new Set(keys).size).toBe(keys.length);
+    // La même tâche, relue : la même clé.
+    expect(buyerTaskKey({ ...relaunch })).toBe(buyerTaskKey(relaunch));
   });
 
   it('personne ne paraît deux fois', () => {

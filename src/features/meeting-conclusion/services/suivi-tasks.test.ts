@@ -163,6 +163,33 @@ describe('le démarchage et les visites', () => {
     expect(visit).toMatchObject({ dueOn: '2026-11-03', count: 2, buyerName: 'Famille Keller' });
     expect(taskLateDays(visit, '2026-11-05')).toBe(0);
   });
+
+  // La refonte, lot B — la tâche porte les acquéreurs de ses demandes, dans l'ordre des demandes :
+  // chacun a sa carte « à faire aujourd'hui » sur Acquéreurs. Une demande sans acquéreur connu n'en
+  // ajoute aucun : rien n'est deviné.
+  it('les visites demandées d’un mandat portent leurs acquéreurs, une entrée par demande', () => {
+    const tasks = dossierTasks(
+      input({
+        signedAt: '2026-10-23T09:00:00Z',
+        visits: [
+          { requestedAt: '2026-11-04T09:00:00Z', buyerName: 'M. et Mme Rossi', buyerId: 'rossi' },
+          { requestedAt: '2026-11-03T09:00:00Z', buyerName: 'Famille Keller', buyerId: 'keller' },
+          { requestedAt: '2026-11-04T15:00:00Z', buyerName: 'M. et Mme Rossi', buyerId: 'rossi' },
+          { requestedAt: '2026-11-05T09:00:00Z', buyerName: 'Sans fiche' },
+        ],
+      }),
+    );
+    const visit = tasks.find((task) => task.kind === 'visit')!;
+    expect(visit.count).toBe(4);
+    expect(visit.visitBuyers).toEqual([
+      { id: 'keller', name: 'Famille Keller' },
+      { id: 'rossi', name: 'M. et Mme Rossi' },
+      { id: 'rossi', name: 'M. et Mme Rossi' },
+    ]);
+    // La ligne d'« Aujourd'hui » ne change pas : le premier demandeur, le nombre de demandes.
+    expect(visit.buyerName).toBe('Famille Keller');
+    expect(visit.buyerId).toBeUndefined();
+  });
 });
 
 describe('« À faire aujourd’hui »', () => {

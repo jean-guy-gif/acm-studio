@@ -119,12 +119,15 @@ export const statusHref = (buyerId: string): string => `/acquereurs/${buyerId}?t
 
 // Les lignes de « Son suivi » : visités, envoyés en attente, refusés, toujours ; « Visites à
 // organiser » seulement quand il y en a une. Ce que le conseiller a écarté pour lui passe dans
-// « Tout le dossier ». L'ordre reste celui du point à faire avec lui (Lancement 6).
+// « Tout le dossier ». La refonte, lot B — les trois chiffres d'abord, côte à côte ; « Visites à
+// organiser », qui prend la ligne entière, vient dessous : l'ordre de la page est celui qu'on voit
+// (un lecteur d'écran et la touche Tab le suivent). Remplace l'ordre du Lancement 6, où elle
+// était la deuxième ligne.
 export type SuiviLine = Exclude<FollowUpGroup, 'dismissed'>;
 
 export function suiviLineGroups(toVisit: number): SuiviLine[] {
   return toVisit > 0
-    ? ['visited', 'to_visit', 'waiting', 'refused']
+    ? ['visited', 'waiting', 'refused', 'to_visit']
     : ['visited', 'waiting', 'refused'];
 }
 

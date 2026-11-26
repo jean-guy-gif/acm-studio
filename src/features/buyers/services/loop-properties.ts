@@ -8,6 +8,7 @@ import {
   type PropertyBuyers,
 } from '@/features/buyers/services/property-buyers';
 import type { Buyer } from '@/features/buyers/types';
+import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatEuro, formatSquareMeters } from '@/lib/format';
 
@@ -188,9 +189,35 @@ export function proposalTarget(
   return /^[aeiouyàâéèêëîïôûü]/i.test(seller) ? `${what} d’${seller}` : `${what} de ${seller}`;
 }
 
+// Les acquéreurs PRÊTS à qui le bien n'a pas été proposé : ceux que compte sa tâche.
+export function readyBuyersToPropose(loop: LoopBuyers): PropertyBuyer[] {
+  return loop.toPropose.filter((entry) => entry.ready);
+}
+
 // La tâche d'un nouveau bien : le nombre d'acquéreurs PRÊTS à qui il n'a pas été proposé.
 export function readyToPropose(loop: LoopBuyers): number {
-  return loop.toPropose.filter((entry) => entry.ready).length;
+  return readyBuyersToPropose(loop).length;
+}
+
+// La tâche d'un nouveau bien, « 4 acquéreurs pour la maison de Vence » : due à l'arrivée du bien,
+// jamais en retard ; aucune sans acquéreur prêt. La refonte, lot B — elle porte ces acquéreurs, les
+// mêmes que son compte : chacun a sa carte « à faire aujourd'hui » sur Acquéreurs.
+export function proposeTask(item: LoopProperty, loop: LoopBuyers): SuiviTask | null {
+  const ready = readyBuyersToPropose(loop);
+  if (ready.length === 0) return null;
+  return {
+    kind: 'propose_buyers',
+    projectId: item.projectId ?? '',
+    sellerName: item.sellerName ?? '',
+    dueOn: parisDay(new Date(item.bornAt)),
+    count: ready.length,
+    proposeBuyers: ready.map((entry) => ({ id: entry.buyer.id, name: entry.buyer.name })),
+    propertyKey: item.key,
+    propertyLabel: item.label,
+    origin: item.origin,
+    property: { propertyType: item.property.propertyType, city: item.property.city },
+    figures: { surfaceArea: item.property.surfaceArea, price: item.price },
+  };
 }
 
 // Le genre d'un bien, pour le dire dans une phrase.

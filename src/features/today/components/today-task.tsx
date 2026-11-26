@@ -59,6 +59,8 @@ export function TodayTaskAction({
         visitId={task.visitId ?? null}
         decision={task.decision}
         offerHref={href}
+        primary={primary}
+        look={look}
       />
     );
   }

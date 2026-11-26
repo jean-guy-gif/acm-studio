@@ -135,7 +135,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 | Lot | Contenu                                                                                           | Maquettes       | Durée prévue | État    |
 | --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
 | A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 0 h 30 (3 h 05) : attend le « oui » |
-| B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | à faire |
+| B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | sur l'essai depuis le 26/11 à 1 h 20 (1 h 40) : attend le « oui » |
 | C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | à faire |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | à faire |
 | E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | à faire |
@@ -267,6 +267,71 @@ production, tu notes » : la fin de sa phrase lui est demandée.
 entrées aux trois tailles remplace M145 B (les trois groupes), M149 (leurs titres) et M132 (la
 barre du haut et ☰) ; les trois onglets de « Vendeurs » ; le compte aux trois tailles (précise
 M125) ; la teinte qui suit la tâche.
+
+### Lot B — Acquéreurs : « à faire aujourd'hui » (sur l'essai, attend le « oui » de Jean-Guy)
+
+À ouvrir sur l'essai : `https://acm-studio-essai.vercel.app/acquereurs` (« à faire aujourd'hui » ;
+sur ordinateur et tablette, toucher une autre personne dans la liste), puis « Ouvrir sa fiche » (la
+fiche alignée sur le socle) et « Tous mes acquéreurs » (la liste d'avant). Les captures :
+`missions/maquettes/REFONTE-B-telephone.png`, `-tablette.png`, `-ordinateur.png` (l'essai tel
+qu'il est), les mêmes en `…-charte-start-academy.png` (la simulation aux couleurs de l'agence de
+Jean-Guy), et `REFONTE-B-fiche-telephone.png`, `-fiche-ordinateur.png`.
+
+Ce qui change, en comportement :
+
+- **Acquéreurs s'ouvre sur « à faire aujourd'hui »** : une carte par personne, avec ce qu'il y a
+  à faire et son bouton ; « N choses à faire aujourd'hui », une par personne. Ce sont les tâches
+  de la page « Aujourd'hui » (« Mes tâches » : mêmes règles, mêmes gestes), rangées par
+  acquéreur : la plus utile de chacun fait sa carte, ses autres tâches du jour se lisent dans son
+  détail. Aucune règle nouvelle. La page « Aujourd'hui » ne change pas.
+- **Sur téléphone**, une colonne de cartes, le bouton sous chaque personne ; le nom mène à sa
+  fiche. **Sur tablette et ordinateur**, la liste à gauche (340 et 420 px) et, à droite, la
+  personne choisie : son nom, sa recherche en une phrase, ce qu'il y a à faire et son geste,
+  « Ouvrir sa fiche » — sans changer de page.
+- **Un seul bouton plein** : celui de la première carte (sur téléphone), celui du détail
+  (ailleurs). La réponse du vendeur à une offre garde ses quatre gestes en contour, comme sur
+  « Aujourd'hui » : le plein va alors à la carte suivante.
+- **La liste entière** des fiches (ses vues, ses filtres, sa recherche, « Ce mois-ci ») est
+  derrière « Tous mes acquéreurs · N » ; elle porte « ← À faire aujourd'hui ». Un lien d'avant
+  (`?vue=agence`, `?q=`, `?etat=`, une fiche archivée) y mène toujours.
+- **La fiche** : « Prochaine étape » devient la carte du socle (blanche, son grand bouton plein,
+  le second geste en lien) ; « Son suivi » montre ses trois chiffres en tuiles — visités, envoyés
+  en attente, refusés —, qui s'ouvrent d'un toucher comme les lignes d'avant ; « Visites à
+  organiser », quand il y en a, garde sa ligne entière, dessous. Rien d'autre ne bouge sur la
+  fiche.
+
+Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
+
+- La phrase d'une carte ne redit ni le nom ni un pronom (« 4 nouveaux biens trouvés par la
+  veille », « Visite demandée : la maison de Mougins », « Aucun échange depuis 34 jours ») : un
+  nom de fiche ne dit ni le genre ni le nombre ; la maquette écrivait « pour eux », « Veut
+  visiter ».
+- Les gestes sont ceux d'aujourd'hui : « Organiser la visite », « Voir sa fiche », « Relancer »…
+  La maquette écrivait « Proposer un créneau », « L'appeler » : ce seraient d'autres gestes.
+- « Financement à valider avant de visiter », sur la maquette, n'est pas une tâche d'aujourd'hui :
+  ce serait une règle nouvelle. Elle n'est pas ajoutée.
+- Au lot B, le détail de droite montre la tâche et son geste ; « un bien à la fois » (maquettes 5
+  et 6) y vient au lot C.
+- Sur la fiche, le lien de retour garde « ← Acquéreurs », comme toutes les pages ; les titres
+  de la fiche ne sont pas refaits.
+
+Les specs modifiées (un emplacement ; ce qu'elles prouvent ne change pas) :
+
+| Spec                                | Ce qui a changé                                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `demo.spec.ts` (2 endroits)         | la liste des acquéreurs s'ouvre par `/acquereurs?tous=1` (avant : `/acquereurs`)                  |
+| `parcours.spec.ts` (1)              | idem                                                                                            |
+| `presentation-directe.spec.ts` (11) | idem                                                                                            |
+| `langue-de-l-acquereur.spec.ts` (1) | idem                                                                                            |
+| `acquereurs-a-faire.spec.ts`        | **nouvelle** : « à faire aujourd'hui » aux trois tailles, la personne choisie sans changer de page, le seul bouton plein, la fiche et ses trois tuiles, « Tous mes acquéreurs » et son retour |
+
+Tests : barrières vertes (4 415 tests) ; les specs concernées sur l'essai, le 26/11 de 0 h 45 à
+1 h 18 : 24 parcours sur 24, sans aléa.
+
+À écrire dans `docs/DECISIONS.md` à la mise en production du lot : « à faire aujourd'hui » en tête
+d'Acquéreurs, une carte par personne ; la liste derrière « Tous mes acquéreurs » (précise M117,
+M146 B) ; le détail à droite sur tablette et ordinateur ; la carte « Prochaine étape » et les
+trois tuiles de la fiche (précise la Mission 10 bis et le Lancement 10, « bloc plein »).
 
 ## Chaque soir
 

@@ -152,6 +152,13 @@ export function taskButtonClass(primary: boolean, look: TaskButtonLook = 'today'
     : `${primary ? btnPrimary : btnSecondary} self-start whitespace-nowrap sm:self-auto`;
 }
 
+// Le bouton qui conclut le geste ouvert d'une tâche (« J'ai relancé », « Envoyé ») : plein, sauf
+// dans une carte « à faire » qui ne mène pas l'écran — un seul bouton plein par écran, geste ouvert
+// compris. Sur « Aujourd'hui » (`today`), rien ne change.
+export function taskConfirmClass(primary: boolean, look: TaskButtonLook = 'today'): string {
+  return look === 'socle' && !primary ? btnSecondary : btnPrimary;
+}
+
 // Le bouton discret d'un en-tête (« Nouveau ») : 44 px, un contour gris.
 export const socleBtnQuiet =
   'inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-[#D5DAEA] bg-white px-4 text-[15px] font-bold text-brand-deep transition-colors hover:border-brand-deep disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/10 stage:text-white';

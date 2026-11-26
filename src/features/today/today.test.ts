@@ -12,6 +12,7 @@ import {
   followUpAlert,
   prospectBuyersTasks,
   withFollowUpAlerts,
+  withTaskProperty,
   type AlertCard,
   type FollowUpAlert,
 } from '@/features/today/services/mandate-alerts';
@@ -93,6 +94,34 @@ describe('le vendeur à relancer que veulent des acquéreurs prêts', () => {
       ['follow_up_early', 'p2', 1],
     ]);
     expect(result[1]).toMatchObject({ dueOn: TODAY, plannedOn: '2026-11-20' });
+  });
+
+  // M146 B (B5) — l'argument d'une relance dit le type du bien. La refonte, lot B — une visite
+  // demandée dit aussi le bien, pour la carte de son acquéreur.
+  it('le bien du dossier : sur la relance qui porte l’argument et sur la visite demandée, pas ailleurs', () => {
+    const propertyOf = new Map([
+      ['p1', { propertyType: 'Maison', city: 'Mougins', surfaceArea: 220 }],
+      ['p2', null],
+    ]);
+    const [argued, plain, visit, unknown, absent, point] = withTaskProperty(
+      [
+        task({ readyBuyers: 2 }),
+        task({}),
+        task({ kind: 'visit', count: 1 }),
+        task({ kind: 'visit', projectId: 'p2' }),
+        task({ kind: 'visit', projectId: 'p3' }),
+        task({ kind: 'market_update' }),
+      ],
+      propertyOf,
+    );
+    expect(argued!.property).toEqual({ propertyType: 'Maison', city: 'Mougins' });
+    expect(visit!.property).toEqual({ propertyType: 'Maison', city: 'Mougins' });
+    expect(visit!.count).toBe(1);
+    // Un bien non saisi, ou un dossier inconnu : ni type ni commune, jamais ceux d'un autre bien.
+    expect(unknown!.property).toEqual({ propertyType: null, city: null });
+    expect(absent!.property).toEqual({ propertyType: null, city: null });
+    expect(plain!.property).toBeUndefined();
+    expect(point!.property).toBeUndefined();
   });
 });
 

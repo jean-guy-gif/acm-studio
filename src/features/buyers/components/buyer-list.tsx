@@ -12,6 +12,7 @@ import {
   matchesBuyerName,
   type BuyerFilter,
 } from '@/features/buyers/services/buyer-filters';
+import { allBuyersSearch } from '@/features/buyers/services/buyers-page';
 
 // Une ligne de la liste, préparée au serveur (le tri par urgence, la prochaine étape, son retard).
 export type BuyerListRow = {
@@ -41,16 +42,10 @@ const chipActive = `${chip} border-brand bg-brand-soft text-brand-deep stage:bg-
 const chipIdle = `${chip} border-zinc-200 bg-white text-zinc-600 hover:border-brand hover:text-brand-deep stage:border-white/15 stage:bg-white/5 stage:text-white/70`;
 
 // L'adresse garde la vue, le filtre et la recherche, pour un lien envoyé (`?vue=agence`, `?q=`),
-// sans recharger la page.
+// sans recharger la page — et reste celle de la liste entière (`allBuyersSearch`).
 function keepInAddress(view: BuyerListView, filter: BuyerFilter, query: string) {
-  const params = new URLSearchParams(window.location.search);
-  const set = (key: string, value: string | null) =>
-    value ? params.set(key, value) : params.delete(key);
-  set('vue', view === 'agency' ? 'agence' : null);
-  set('etat', filter === 'all' ? null : filter);
-  set('q', query.trim() || null);
-  const search = params.toString();
-  window.history.replaceState(null, '', `${window.location.pathname}${search ? `?${search}` : ''}`);
+  const search = allBuyersSearch(window.location.search, { view, filter, query });
+  window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
 }
 
 // Mission 117 — la liste des acquéreurs. Mission 146 (partie B, I4, planche B2) — elle s'ouvre

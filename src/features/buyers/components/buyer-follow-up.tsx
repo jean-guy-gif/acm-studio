@@ -45,8 +45,9 @@ const chevron = 'w-3 shrink-0 text-xs';
 // La refonte, lot B (maquette REFONTE-4) — « puis trois chiffres » : chaque ligne du suivi est une
 // tuile du socle, son nombre en grand, ce qu'il compte dessous. Une tuile se touche pour s'ouvrir :
 // elle prend alors toute la largeur, ses biens dessous (Mission 10 bis : le détail d'une visite
-// n'apparaît qu'une fois sa ligne ouverte). « Visites à organiser », quand il y en a, a sa ligne
-// entière au-dessus des trois.
+// n'apparaît qu'une fois sa ligne ouverte), et les tuiles fermées restent côte à côte au-dessus
+// d'elle (la grille se resserre, `grid-flow-row-dense`). « Visites à organiser », quand il y en a,
+// a sa ligne entière SOUS les trois, dans la page comme à l'écran (`suiviLineGroups`).
 const tile =
   'min-w-0 rounded-2xl border border-[#E3E6F0] bg-white stage:border-white/10 stage:bg-white/5';
 const tileHead = 'relative flex flex-col gap-0.5 px-3 py-3.5 xl:px-[18px] xl:py-4';
@@ -232,7 +233,10 @@ export function BuyerFollowUp({
           Son suivi n’a pas pu être lu en entier : rechargez la page.
         </p>
       ) : null}
-      <div className="grid grid-cols-3 gap-2.5 pb-3 xl:gap-3.5" data-testid="buyer-follow-up-tiles">
+      <div
+        className="grid grid-flow-row-dense grid-cols-3 gap-2.5 pb-3 xl:gap-3.5"
+        data-testid="buyer-follow-up-tiles"
+      >
         {suiviLineGroups(of('to_visit').length).map((group) => {
           const list = of(group);
           const gist = suiviLineGist({
@@ -241,9 +245,8 @@ export function BuyerFollowUp({
             pills: list.map((entry) => followUpPill(entry).text),
             lastVisit,
           });
-          // « Visites à organiser » prend la ligne entière, SOUS les trois chiffres : ils restent
-          // côte à côte, quel que soit l'ordre des lignes dans le document.
-          const wide = group === 'to_visit' ? 'order-last col-span-3' : '';
+          // « Visites à organiser » prend la ligne entière, sous les trois chiffres.
+          const wide = group === 'to_visit' ? 'col-span-3' : '';
           // Une tuile sans bien ne s'ouvre pas : elle dit « aucun », en gris. Sauf si le suivi n'a
           // pas pu être lu en entier : on ne dit jamais « aucun » sur une lecture en échec (M98).
           if (list.length === 0) {

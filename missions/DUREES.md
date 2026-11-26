@@ -64,6 +64,7 @@ base d'essai.
 | ----- | ------- | ------ | ------------ | ------------------------ | ---------- |
 | 25/11 | La refonte : la mission lue, les huit maquettes relevées, `LANCEMENT.md` (la livraison au 27/11, les six lots, les dix questions) | Sensible | 20 min | 0 | 0 |
 | 25/11 – 26/11 | Refonte, lot A — le socle : le menu aux trois tailles, les onglets de « Vendeurs », le compte, les blocs ; le relecteur une passe (un bloquant levé) ; la suite complète sur le code final (37 sur 37) ; sur l'essai à 0 h 10, attend le « oui » ; puis le menu du téléphone sur les seules pages principales (maquettes 2, 3 et 4), à 0 h 30 | Sensible | 3 h 05 | 0 | 1 h 45 |
+| 26/11 | Refonte, lot B — Acquéreurs : « à faire aujourd'hui », une carte par personne (les tâches d'« Aujourd'hui », rangées par acquéreur), la liste et le détail sur tablette et ordinateur, la liste entière derrière « Tous mes acquéreurs », la fiche alignée sur le socle ; ses specs (24 parcours) ; sur l'essai à 1 h 20, attend le « oui » | Sensible | 1 h 40 | 0 | 35 min |
 
 Le soir du 25/11, après le total de 21 h 25 : la refonte, de 21 h 25 à 0 h 30 (3 h 05 d'horloge).
 La suite complète a tourné trois fois pour le lot A (avant la relecture, les specs touchées après,

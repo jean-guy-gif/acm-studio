@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import {
-  btnPrimary,
   btnSecondary,
   hintText,
   taskButtonClass,
+  taskConfirmClass,
   type TaskButtonLook,
 } from '@/components/ui/styles';
 import { prepareRelaunch, recordBuyerRelaunch } from '@/features/buyers/actions/relaunch';
@@ -83,7 +83,7 @@ export function BuyerRelaunchTask({
   };
 
   return (
-    <div className="flex w-full flex-col gap-2" data-testid="buyer-relaunch-panel">
+    <div className="flex w-full flex-col gap-2" data-testid="buyer-relaunch-panel" data-task-open>
       {prepared ? (
         <>
           <p
@@ -129,7 +129,7 @@ export function BuyerRelaunchTask({
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              className={btnPrimary}
+              className={taskConfirmClass(primary, look)}
               disabled={pending}
               data-testid="buyer-relaunch-record"
               onClick={() => {

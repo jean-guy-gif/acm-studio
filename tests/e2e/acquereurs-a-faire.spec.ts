@@ -13,7 +13,8 @@ import {
 // aujourd'hui » : une carte par personne, avec ce qu'il y a à faire et son bouton ; un seul bouton
 // plein. Sur ordinateur et tablette, la liste à gauche et le détail de la personne choisie à
 // droite, sans changer de page ; sur téléphone, une colonne de cartes. La liste entière est
-// derrière « Tous mes acquéreurs ». Joué sur la démo, remise à zéro : rien n'est écrit.
+// derrière « Tous mes acquéreurs ». Joué sur la démo, remise à zéro ; deux messages y sont préparés
+// (un lien chacun), rien n'est noté ni envoyé.
 
 // Les boutons pleins visibles de l'écran (le repère `btn-filled`).
 const filledShown = (page: Page) =>
@@ -63,14 +64,33 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     const detail = page.getByTestId('buyers-today-detail');
     await expect(detail.getByTestId('buyers-today-name')).toHaveText('Famille Keller');
     await expect(detail.getByTestId('buyers-today-task')).toContainText('Offre acceptée');
+    // Un seul bouton plein, et il y en a un : le premier geste de la personne choisie.
+    expect(await filledShown(page)).toEqual(['Prévenir l’acquéreur']);
     await expectOneFilled(page, 'Acquéreurs, à faire aujourd’hui (ordinateur)');
     await expectNoHorizontalScroll(page, 'Acquéreurs, à faire aujourd’hui (1440 × 900)');
+
+    // Une visite demandée sur un mandat et un bien à proposer font une carte par ACQUÉREUR : la
+    // tâche du mandat porte ses acquéreurs, et dit le bien.
+    const moreau = rows.filter({ hasText: 'Famille Moreau' });
+    await expect(moreau.getByTestId('person-task')).toHaveText(
+      /^Visite demandée : la maison de \p{Lu}/u,
+    );
+    const proposed = rows.getByTestId('person-task').filter({ hasText: /^Un bien à proposer/ });
+    expect(await proposed.count()).toBeGreaterThanOrEqual(2);
+    for (const text of await proposed.allInnerTexts()) {
+      expect(text).toMatch(/^Un bien à proposer : la maison de .+ \(\d+\sm², [\d\s]+€\)$/);
+    }
+    // Rien de dû n'est caché derrière la première tâche : « Aussi : … », dans la ligne.
+    await expect(moreau.getByTestId('person-also')).toHaveText(/^Aussi : .*un point à proposer/);
   });
 
   await test.step('Choisir une autre personne ne quitte pas la page', async () => {
     const lambert = page.getByTestId('person-row').filter({ hasText: 'M. et Mme Lambert' });
     await expect(lambert.getByTestId('person-task')).toContainText(/^Sélection envoyée le /);
     await expect(lambert.getByTestId('task-late')).toContainText('en retard');
+    // Le détail de la personne d'avant est marqué : il ne doit pas servir à la suivante.
+    const before = page.getByTestId('buyers-today-detail');
+    await before.evaluate((element) => element.setAttribute('data-probe', 'keller'));
     await lambert.click();
     await expect(page).toHaveURL(/\/acquereurs\?personne=[0-9a-f-]{36}$/);
     await expect(lambert).toHaveAttribute('aria-current', 'true');
@@ -80,12 +100,42 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     );
     const detail = page.getByTestId('buyers-today-detail');
     await expect(detail.getByTestId('buyers-today-name')).toHaveText('M. et Mme Lambert');
+    // Un détail NEUF par personne (relecture du lot B) : sans cela, le geste ouvert pour l'une —
+    // son message préparé, « J'ai relancé » — restait affiché sous le nom de la suivante.
+    await expect(page.locator('[data-testid="buyers-today-detail"][data-probe]')).toHaveCount(0);
+    expect(new URL(page.url()).searchParams.get('personne')).toBe(
+      await detail.getAttribute('data-person'),
+    );
     // Son geste est celui d'« Aujourd'hui » (la relance sur place, M135), en bouton plein : le seul.
     const relaunch = detail.getByTestId('buyer-relaunch-open');
     await expect(relaunch).toHaveText('Relancer');
     expect(await filledShown(page)).toEqual(['Relancer']);
     await relaunch.click();
     await expect(detail.getByTestId('buyer-relaunch-panel')).toBeVisible();
+    // Le geste ouvert prend la largeur de la carte : il ne tient pas dans la colonne du bouton.
+    const card = (await detail.getByTestId('buyers-today-task').boundingBox())!;
+    const panel = (await detail.getByTestId('buyer-relaunch-panel').boundingBox())!;
+    expect(panel.width).toBeGreaterThan(card.width * 0.8);
+
+    // Revenir à la première personne, puis à celle-ci : son geste est refermé, le détail est neuf.
+    await page.getByTestId('person-row').first().click();
+    await expect(detail.getByTestId('buyers-today-name')).toHaveText('Famille Keller');
+    await expect(detail.getByTestId('buyer-relaunch-panel')).toHaveCount(0);
+    await lambert.click();
+    await expect(detail.getByTestId('buyers-today-name')).toHaveText('M. et Mme Lambert');
+    await expect(detail.getByTestId('buyer-relaunch-open')).toBeVisible();
+
+    // Une personne qui a deux choses à faire les a toutes les deux, la seconde en contour.
+    const moreau = page.getByTestId('person-row').filter({ hasText: 'Famille Moreau' });
+    await moreau.click();
+    await expect(detail.getByTestId('buyers-today-name')).toHaveText('Famille Moreau');
+    const others = detail.getByTestId('buyers-today-other');
+    await expect(others).toHaveCount(1);
+    await expect(others).toContainText('un point à proposer');
+    await expect(others.getByRole('button')).toHaveCount(1);
+    expect(await filledShown(page)).toEqual(['Organiser la visite']);
+    await lambert.click();
+    await expect(detail.getByTestId('buyers-today-name')).toHaveText('M. et Mme Lambert');
     // « Ouvrir sa fiche » y mène ; la fiche ramène à « Acquéreurs ».
     await detail.getByTestId('buyers-today-open').click();
     await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}$/);
@@ -122,23 +172,39 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     await expect(page.getByTestId('buyer-row').first()).toBeVisible();
     await expect(page.getByTestId('buyer-view-mine')).toHaveAttribute('aria-pressed', 'true');
     await expectOneFilled(page, 'Tous mes acquéreurs');
+    // La liste garde son adresse (relecture du lot B) : un filtre posé puis retiré, la page
+    // actualisée, c'est toujours la liste — pas « à faire aujourd'hui ».
+    await page.getByTestId('buyer-filter-ready').click();
+    await expect(page).toHaveURL(/etat=ready/);
+    await page.getByTestId('buyer-filter-all').click();
+    await expect(page).toHaveURL(/\/acquereurs\?tous=1$/);
+    await page.reload();
+    await expect(page.getByTestId('buyer-row').first()).toBeVisible();
+    await expect(page.getByTestId('buyers-today')).toHaveCount(0);
     await page.getByTestId('buyers-back-to-today').click();
     await expect(page).toHaveURL(/\/acquereurs$/);
     await expect(page.getByTestId('person-row').first()).toBeVisible();
   });
 
-  await test.step('Tablette : la colonne d’icônes, la liste, le détail', async () => {
-    await page.setViewportSize({ width: 1024, height: 768 });
-    await page.goto('/acquereurs');
-    await expect(sideNav(page).getByRole('link')).toHaveCount(5);
-    await expect(page.getByTestId('person-row').first()).toBeVisible();
-    await expect(page.getByTestId('buyers-today-detail')).toBeVisible();
-    await expect(page.getByTestId('task-card').first()).toBeHidden();
-    // La liste et le détail tiennent côte à côte.
-    const list = (await page.getByTestId('person-row').first().boundingBox())!;
-    const detail = (await page.getByTestId('buyers-today-detail').boundingBox())!;
-    expect(detail.x).toBeGreaterThanOrEqual(list.x + list.width);
-    await expectNoHorizontalScroll(page, 'Acquéreurs, à faire aujourd’hui (1024 × 768)');
+  await test.step('Tablette, dans les deux sens : la colonne d’icônes, la liste, le détail', async () => {
+    for (const viewport of [
+      { width: 1024, height: 768 },
+      { width: 768, height: 1024 },
+    ]) {
+      const size = `${viewport.width} × ${viewport.height}`;
+      await page.setViewportSize(viewport);
+      await page.goto('/acquereurs');
+      await expect(sideNav(page).getByRole('link')).toHaveCount(5);
+      await expect(page.getByTestId('person-row').first()).toBeVisible();
+      await expect(page.getByTestId('buyers-today-detail')).toBeVisible();
+      await expect(page.getByTestId('task-card').first()).toBeHidden();
+      // La liste et le détail tiennent côte à côte.
+      const list = (await page.getByTestId('person-row').first().boundingBox())!;
+      const detail = (await page.getByTestId('buyers-today-detail').boundingBox())!;
+      expect(detail.x, size).toBeGreaterThanOrEqual(list.x + list.width);
+      expect(await filledShown(page), size).toEqual(['Prévenir l’acquéreur']);
+      await expectNoHorizontalScroll(page, `Acquéreurs, à faire aujourd’hui (${size})`);
+    }
   });
 
   await test.step('Téléphone : une colonne de cartes, un seul bouton plein, le menu en bas', async () => {
@@ -149,12 +215,34 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     await expect(page.getByTestId('person-row').first()).toBeHidden();
     await expect(page.getByTestId('buyers-today-detail')).toBeHidden();
     await expect(sideNav(page).getByRole('link')).toHaveCount(4);
-    // Un seul bouton plein : celui de la première carte qui n'a qu'un geste.
-    expect(await filledShown(page)).toHaveLength(1);
+    // Un seul bouton plein : le premier geste de la première carte.
+    expect(await filledShown(page)).toEqual(['Prévenir l’acquéreur']);
     await expectNoHorizontalScroll(page, 'Acquéreurs, à faire aujourd’hui (390 × 844)');
 
+    // Les mêmes blocs qu'à droite sur ordinateur : la seconde chose à faire d'une personne est
+    // dans sa carte, avec son geste, en contour.
+    const moreau = cards.filter({ hasText: 'Famille Moreau' });
+    await expect(moreau.getByTestId('buyers-today-other')).toHaveCount(1);
+    await expect(moreau.getByTestId('buyers-today-other')).toContainText('un point à proposer');
+    await expect(moreau.getByTestId('buyers-today-other').getByRole('button')).toBeVisible();
+
+    // Un geste ouvert ne fait pas un second bouton plein (relecture du lot B). Le message de la
+    // première carte, ouvert : son bouton reste le seul plein.
+    const keller = cards.first();
+    await keller.getByTestId('offer-answer-buyer').click();
+    await expect(keller.getByTestId('offer-answer-message-buyer')).toBeVisible({ timeout: 30_000 });
+    expect(await filledShown(page)).toEqual(['Prévenir l’acquéreur']);
+    // La relance d'une autre carte, ouverte jusqu'à « J'ai relancé » : il reste en contour.
+    const lambert = cards.filter({ hasText: 'M. et Mme Lambert' });
+    await lambert.getByTestId('buyer-relaunch-open').click();
+    await lambert.getByTestId('buyer-relaunch-prepare').click();
+    await expect(lambert.getByTestId('buyer-relaunch-message')).toBeVisible({ timeout: 30_000 });
+    await expect(lambert.getByTestId('buyer-relaunch-record')).toBeVisible();
+    expect(await filledShown(page)).toEqual(['Prévenir l’acquéreur']);
+    await expectNoHorizontalScroll(page, 'Acquéreurs, deux gestes ouverts (390 × 844)');
+
     // La personne mène à sa fiche : une page intérieure, sans menu, avec son retour.
-    await cards.filter({ hasText: 'M. et Mme Lambert' }).getByTestId('task-card-person').click();
+    await lambert.getByTestId('task-card-person').click();
     await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}$/);
     await expect(page.getByTestId('buyer-name')).toHaveText('M. et Mme Lambert');
     await expect(page.getByTestId('shell-menu')).toBeHidden();
