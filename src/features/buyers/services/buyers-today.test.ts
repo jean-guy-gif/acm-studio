@@ -5,11 +5,15 @@ import {
   buyersToday,
   buyerOthersNote,
   buyersTodayCount,
+  buyersTodayDetail,
   buyersTodayThings,
   buyerTaskKey,
   buyerTaskTone,
   buyerTaskWhat,
+  buyerTodayHref,
   tasksByBuyer,
+  watchDeckHref,
+  watchDetailHref,
 } from '@/features/buyers/services/buyers-today';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 
@@ -316,5 +320,96 @@ describe('une carte par personne', () => {
       text: '+ 2 autres choses à faire',
       late: 'toutes en retard',
     });
+  });
+});
+
+// La refonte, lot C — « un bien à la fois », dans le détail (tablette, ordinateur).
+describe('le détail : la personne choisie, et ses nouveaux biens un par un', () => {
+  const relaunch = task({
+    kind: 'buyer_relaunch',
+    buyerId: 'mercier',
+    buyerName: 'M. et Mme Mercier',
+    dueOn: '2026-11-24',
+  });
+  const known = (id: string) => ['mercier', 'fontaine', 'sans-tache'].includes(id);
+
+  it('la tâche de la veille mène à ses biens, et à eux seuls', () => {
+    expect(watchDeckHref(watch)).toBe('/acquereurs/mercier/biens-ideaux?un=veille');
+    // Une autre tâche garde son propre geste ; une veille sans acquéreur ne mène nulle part.
+    expect(watchDeckHref(relaunch)).toBeNull();
+    expect(watchDeckHref(task({ kind: 'buyer_watch' }))).toBeNull();
+    // Dans le détail (tablette, ordinateur), les mêmes biens se voient sur place.
+    expect(watchDetailHref(watch)).toBe('/acquereurs?personne=mercier&biens=1');
+    expect(watchDetailHref(relaunch)).toBeNull();
+    expect(watchDetailHref(task({ kind: 'buyer_watch' }))).toBeNull();
+  });
+
+  it('la ligne d’une personne dont la première tâche est la veille tient l’adresse sur ses biens', () => {
+    const [mercier, fontaine] = buyersToday([watch, recontact], TODAY);
+    expect(buyerTodayHref(mercier!)).toBe('/acquereurs?personne=mercier&biens=1');
+    expect(buyerTodayHref(fontaine!)).toBe('/acquereurs?personne=fontaine');
+  });
+
+  it('sans adresse : la première personne ; ses biens si sa première tâche est la veille', () => {
+    const items = buyersToday([watch, relaunch, recontact], TODAY);
+    const detail = buyersTodayDetail(items, {}, known);
+    expect(detail.selected?.buyerId).toBe('mercier');
+    expect(detail.deckBuyerId).toBe('mercier');
+    // Sous ses biens : ses autres choses à faire, jamais la veille (c'est le parcours lui-même).
+    expect(detail.beside.map((entry) => entry.task.kind)).toEqual(['buyer_relaunch']);
+    const other = buyersTodayDetail(items, { personne: 'fontaine' }, known);
+    expect(other.selected?.buyerId).toBe('fontaine');
+    expect(other.deckBuyerId).toBeNull();
+    expect(other.beside).toEqual([]);
+  });
+
+  // Relecture du lot C (bloquant) — écarter le dernier bien de la veille fait disparaître la tâche
+  // à la relecture de la page : l'adresse tient la personne sur ses biens.
+  it('l’adresse tient la personne sur ses biens quand la veille n’est plus sa première tâche', () => {
+    const items = buyersToday([relaunch, recontact], TODAY);
+    const detail = buyersTodayDetail(items, { personne: 'mercier', biens: true }, known);
+    expect(detail.selected?.buyerId).toBe('mercier');
+    expect(detail.deckBuyerId).toBe('mercier');
+    // Sa tâche du jour n'est plus la veille : elle suit ses biens, avec les autres.
+    expect(detail.beside.map((entry) => entry.task.kind)).toEqual(['buyer_relaunch']);
+    // Sans `biens=1`, son détail est celui de sa tâche.
+    expect(buyersTodayDetail(items, { personne: 'mercier' }, known).deckBuyerId).toBeNull();
+  });
+
+  it('l’adresse la tient encore quand elle n’a plus rien à faire : jamais une autre personne à sa place', () => {
+    const items = buyersToday([recontact], TODAY);
+    const detail = buyersTodayDetail(items, { personne: 'sans-tache', biens: true }, known);
+    expect(detail.deckBuyerId).toBe('sans-tache');
+    // Personne n'est surligné dans la liste ; rien d'autre à faire sous ses biens.
+    expect(detail.selected).toBeNull();
+    expect(detail.beside).toEqual([]);
+  });
+
+  it('une fiche inconnue de l’agence n’est jamais tenue : la première personne', () => {
+    const items = buyersToday([recontact], TODAY);
+    const detail = buyersTodayDetail(items, { personne: 'inconnue', biens: true }, known);
+    expect(detail.selected?.buyerId).toBe('fontaine');
+    expect(detail.deckBuyerId).toBeNull();
+    // Rien à faire, personne dans l'adresse : aucun détail.
+    expect(buyersTodayDetail([], {}, known)).toEqual({
+      selected: null,
+      deckBuyerId: null,
+      beside: [],
+    });
+  });
+
+  it('deux tâches de veille (ses biens, un bien trouvé pour plusieurs) : un seul parcours', () => {
+    const shared = task({
+      kind: 'buyer_watch',
+      projectId: '',
+      propertyKey: 'listing:x',
+      watchBuyers: [
+        { id: 'mercier', name: 'M. et Mme Mercier' },
+        { id: 'fontaine', name: 'M. Fontaine' },
+      ],
+    });
+    const items = buyersToday([watch, shared, relaunch], TODAY);
+    const detail = buyersTodayDetail(items, { personne: 'mercier', biens: true }, known);
+    expect(detail.beside.map((entry) => entry.task.kind)).toEqual(['buyer_relaunch']);
   });
 });

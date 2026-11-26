@@ -901,6 +901,53 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
   déploiements de l'essai, puis vert au troisième passage sur les deux réseaux ; aucun fichier du
   Live touché, journal d'erreurs vide. Le dire tel quel : deux rouges, un vert, la cause non
   établie.
+- 26/11 · Refonte, lot C · La démo n'est pas « vide » pour une personne : les Keller ont une
+  sélection en cours de trois biens, et un mandat qui leur correspond passe avant leurs biens de
+  la veille. Une spec qui suppose « 0 retenu sur 3 » ou « la veille en première tâche » tombe dès
+  la mise en place. Regarder l'état réel de la personne sur une démo neuve avant d'écrire, et
+  mettre la démo dans l'état voulu PAR L'ÉCRAN, comme le ferait le conseiller.
+- 26/11 · Refonte, lot C · Un écran pensé pour un cas « propre » (une sélection vide) doit être
+  regardé dans le cas « plein » : sélection complète, le parcours s'arrêtait avant de montrer le
+  premier bien. C'est la capture d'échec de la spec qui l'a montré.
+- 26/11 · Refonte, lot C · `toHaveText` lit le texte caché : un élément qui porte deux écritures
+  du même mot, une par taille d'écran (`md:hidden`, `hidden md:inline`), se lit avec
+  `{ useInnerText: true }` — `locator('visible=true')` garde l'élément, pas son texte visible.
+- 26/11 · Refonte, lot C · Mesurer que les gestes TIENNENT dans l'écran (`y + hauteur ≤ hauteur
+de la fenêtre`), pas seulement qu'ils existent : sur ordinateur, « Écarter » et « Proposer »
+  étaient 19 px sous l'écran. Une hauteur qui dépend de l'écran s'écrit avec lui
+  (`clamp(180px, calc(100dvh - 490px), 410px)`), pas en comptant sur un rétrécissement flex.
+- 26/11 · Refonte, lot C · Une barre fixée en bas avec des marges négatives suppose la marge de
+  la page : 4 px de trop sur téléphone. Les deux gardes du lot A (une barre du bas tient compte
+  du menu ; « biens retenus » est refusé) ont attrapé le nouvel écran dès le premier `npm test`.
+- 26/11 · Refonte, lot C · Un geste qui bascule (retenir / retirer) branché sur une touche du
+  clavier se joue deux fois si la touche est répétée avant le rendu : le second appel défait le
+  premier. Pour un geste « un sens seulement », écrire l'ajout seul (jamais la bascule), et un
+  verrou synchrone (`useRef`) devant un appel au serveur.
+- 26/11 · Refonte, lot C · Après une action serveur qui revalide, la page courante se relit : dans
+  une liste et son détail, la tâche qui portait le détail peut disparaître, et le détail passer à
+  la personne suivante en plein geste. Un détail que ses propres gestes peuvent vider de sa liste
+  se tient par L'ADRESSE (`?personne=…&biens=1`), jamais par la liste : c'est le relecteur qui l'a
+  vu (écarter le dernier bien de la veille faisait disparaître le parcours, « Annuler » avec lui),
+  la première réponse — mener ailleurs à la fin — ne couvrait qu'un des chemins.
+- 26/11 · Refonte, lot C · Un commit poussé sur `essai` peut ne déclencher aucun déploiement
+  (Vercel, 07 h 10) : si `/api/version` ne bouge pas en quatre minutes, lire la liste des
+  déploiements avant d'attendre plus ; un commit vide relance.
+- 26/11 · Refonte, lot C · Un geste qui a l'air fini (« Proposer ») mais ne change que la mémoire
+  de l'écran perd son travail sans rien dire au premier lien suivi. Trois choses ensemble : dire
+  que ce n'est pas enregistré, offrir l'enregistrement tout de suite (en contour), demander avant
+  de quitter (`useLeaveConfirm`, dans l'écran).
+- 26/11 · Refonte, lot C · Le second toucher d'un double toucher tombe sur ce qui vient
+  d'apparaître sous le doigt : le bien suivant (un second « Proposer »), une raison d'écarter (au
+  hasard). Un court silence après l'arrivée (0,4 s, `data-ready` pour que la spec attende comme la
+  main), et le bouton qui annule à la place exacte de celui qui ouvre. `dblclick()` de Playwright
+  le prouve.
+- 26/11 · Refonte, lot C · Comparer la PLACE de deux boutons (« Garder » où était « Écarter ») a
+  trouvé un défaut que rien d'autre ne voyait : sur ordinateur, les raisons ouvertes dans le flux
+  poussaient les gestes sous l'écran. Ce qui s'ouvre au-dessus d'un geste s'ouvre par-dessus
+  (`absolute`, `bottom-full`), sans rien déplacer.
+- 26/11 · Refonte, lot C · Les nombres d'une maquette sont une règle : « 4 nouveaux biens » sur la
+  ligne, « Bien 1 sur 4 » dans le détail. Le parcours montrait aussi les biens de l'agence
+  (« Bien 1 sur 4 » pour « 2 nouveaux biens ») ; relire les maquettes côte à côte, pas une à une.
 
 ## La base
 

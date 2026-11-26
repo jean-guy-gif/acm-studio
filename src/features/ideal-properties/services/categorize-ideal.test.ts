@@ -287,3 +287,111 @@ describe('la copropriété', () => {
     }
   });
 });
+
+// La refonte, lot C (maquettes REFONTE-3, 5 et 6) — « Pourquoi celui-ci pour eux » : ce que le
+// bien a de ce que la fiche demande, dans ses mots. Un indispensable (★) satisfait d'abord ; le
+// type et le budget ne se redisent pas (le libellé et la pastille du prix les disent déjà).
+describe('« Pourquoi celui-ci pour eux »', () => {
+  const why = (who: BuyerInput, over: Over = {}) => {
+    const verdict = judgeCandidate(who, candidate(over));
+    return verdict.kind === 'kept' ? verdict.why : null;
+  };
+
+  it('les indispensables satisfaits d’abord, puis les autres souhaits satisfaits', () => {
+    expect(why(buyer)).toEqual([
+      { tone: 'must', label: 'Extérieur' },
+      { tone: 'plain', label: 'Antibes' },
+      { tone: 'plain', label: 'Parking' },
+      { tone: 'plain', label: 'Pas de travaux annoncés' },
+    ]);
+  });
+
+  it('plus que demandé se dit : pièces, chambres, surface ; juste ce qui est demandé ne se redit pas', () => {
+    const bigger = why(buyer, {
+      roomsCount: 5,
+      surfaceArea: 85,
+      streamEstate: {
+        propertyId: 'p',
+        originSite: 'SeLoger',
+        onlineSince: null,
+        lastSeenAt: null,
+        priceDrops: [],
+        bedrooms: 3,
+      },
+    });
+    expect(bigger?.map((pill) => pill.label)).toEqual([
+      'Extérieur',
+      'Antibes',
+      '2 pièces de plus',
+      '1 chambre de plus',
+      '25 m² de plus',
+      'Parking',
+      'Pas de travaux annoncés',
+    ]);
+    // 68 m² pour 60 demandés : huit de plus ne font pas une raison.
+    expect(why(buyer)?.some((pill) => pill.label.includes('m²'))).toBe(false);
+  });
+
+  it('un indispensable se dit par son fait : la commune, les pièces, la surface, l’étage, le DPE', () => {
+    const starred: BuyerInput = {
+      ...buyer,
+      pool: true,
+      mustHave: ['cities', 'rooms', 'surface', 'pool', 'floor', 'energy_rating'],
+    };
+    expect(why(starred, { features: { hasPool: true } })).toEqual([
+      { tone: 'must', label: 'Antibes' },
+      { tone: 'must', label: '3 pièces' },
+      { tone: 'must', label: '68 m²' },
+      { tone: 'must', label: 'Piscine' },
+      { tone: 'must', label: '2e étage' },
+      { tone: 'must', label: 'DPE C' },
+      { tone: 'plain', label: 'Extérieur' },
+      { tone: 'plain', label: 'Parking' },
+      { tone: 'plain', label: 'Pas de travaux annoncés' },
+    ]);
+    expect(why({ ...starred, mustHave: ['floor'] }, { features: { floor: 1 } })?.[0]).toEqual({
+      tone: 'must',
+      label: '1er étage',
+    });
+  });
+
+  it('ce que l’annonce ne dit pas, ou contredit sans écarter, ne fait pas une raison', () => {
+    const labels = why(
+      { ...buyer, mustHave: [] },
+      { city: null, features: { parking: [], outdoor: null, condition: 'to_refresh' } },
+    )?.map((pill) => pill.label);
+    expect(labels).toEqual([]);
+  });
+
+  it('jamais le type ni le budget, jamais un pourcentage', () => {
+    const all = why({ ...buyer, mustHave: ['property_types', 'budget'] });
+    expect(all?.map((pill) => pill.label)).toEqual([
+      'Antibes',
+      'Extérieur',
+      'Parking',
+      'Pas de travaux annoncés',
+    ]);
+    expect(JSON.stringify(all)).not.toMatch(/%|€|appartement/i);
+  });
+
+  it('hors copropriété, quand ils n’en veulent pas', () => {
+    const noCondo = { ...buyer, condominiumAccepted: false, condominiumMustHave: true };
+    expect(why(noCondo, { features: { isCondominium: false } })).toContainEqual({
+      tone: 'must',
+      label: 'Hors copropriété',
+    });
+    expect(
+      why({ ...noCondo, condominiumMustHave: false }, { features: { isCondominium: false } }),
+    ).toContainEqual({ tone: 'plain', label: 'Hors copropriété' });
+  });
+
+  it('chaque bien rangé porte ses raisons', () => {
+    const all = categorizeIdeal(buyer, [candidate({})]);
+    expect(all.byCategory.strong[0]?.why.map((pill) => pill.label)).toEqual([
+      'Extérieur',
+      'Antibes',
+      'Parking',
+      'Pas de travaux annoncés',
+    ]);
+  });
+});

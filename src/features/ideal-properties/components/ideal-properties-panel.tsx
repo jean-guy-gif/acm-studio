@@ -2,19 +2,27 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react';
 
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   alertError,
   alertOk,
   badgeBrand,
   badgeNeutral,
+  btnDanger,
   btnPrimary,
   btnSecondary,
   card,
   hintText,
   link,
   sectionTitle,
+  socleBigStep,
+  socleBtnFilledBig,
+  socleBtnOutline,
+  socleCardBordered,
+  socleKicker,
+  socleStepLink,
 } from '@/components/ui/styles';
 import { pingExtension } from '@/features/browser-extension/client';
 import { missingExtensionIssue } from '@/features/browser-extension/extension-issue';
@@ -27,9 +35,11 @@ import { runPaidSearch } from '@/features/competitor-search/services/paid-search
 import { readPageViaExtension } from '@/features/competitor-search/services/read-page-via-extension';
 import { resumeMemory } from '@/features/competitor-search/services/stream-estate-summary';
 import { useDemoMode } from '@/features/demo/components/demo-mode-provider';
-import { undoDismissal } from '@/features/buyer-dismissals/actions/dismiss';
+import { dismissForBuyer, undoDismissal } from '@/features/buyer-dismissals/actions/dismiss';
 import { DismissControl } from '@/features/buyer-dismissals/components/dismiss-control';
 import { dismissalKey } from '@/features/buyer-dismissals/services/dismissal-key';
+import { useLeaveConfirm } from '@/features/buyer-notes/client/use-leave-confirm';
+import type { DismissReason } from '@/features/buyer-messages/templates/types';
 import type { SeenWithHim } from '@/features/buyers/services/buyer-follow-up';
 import {
   candidateTarget,
@@ -42,6 +52,7 @@ import {
   type SeenMark,
   type SeenReason,
 } from '@/features/buyers/services/seen-properties';
+import { DeckCardView, DeckHeader } from '@/features/ideal-properties/components/ideal-deck';
 import { importIdealListing } from '@/features/ideal-properties/actions/import-ideal-listing';
 import { saveIdealSelection } from '@/features/ideal-properties/actions/save-ideal-selection';
 import {
@@ -53,7 +64,17 @@ import {
   toVerifyLabels,
   type CategorizedCandidate,
 } from '@/features/ideal-properties/services/categorize-ideal';
+import {
+  agencyDeckCard,
+  deckEndKicker,
+  deckSelectionNote,
+  marketDeckCard,
+  type DeckCard,
+  type DeckScope,
+} from '@/features/ideal-properties/services/deck-cards';
+import { deckPosition } from '@/features/ideal-properties/services/ideal-deck';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
+import { criteriaCount } from '@/features/ideal-properties/services/why-pills';
 import { SoftBanner, SoftWhy } from '@/features/soft-ranking/components/soft-why';
 import {
   orderBySoftScore,
@@ -80,6 +101,7 @@ import {
   IDEAL_CATEGORY_HINTS,
   IDEAL_CATEGORY_LABELS,
   MAX_IDEAL_SELECTION,
+  SELECTION_SOURCE_LABELS,
   type IdealCategory,
 } from '@/features/ideal-properties/types';
 import {
@@ -88,6 +110,7 @@ import {
   type BuyerHit,
   type BuyerReconciliation,
 } from '@/features/meeting-conclusion/services/buyer-reconciliation';
+import { buyerInSentence } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import { PropertySheetView } from '@/features/property-sheet/components/property-sheet-view';
 import { usePropertySheet } from '@/features/property-sheet/components/use-property-sheet';
 import {
@@ -96,6 +119,7 @@ import {
 } from '@/features/property-sheet/services/property-sheet';
 import { sheetFactsFromSelectionListing } from '@/features/property-sheet/services/sheet-sources';
 import type { CompetitorCandidate } from '@/features/competitor-search/types';
+import { nameFromBuyer } from '@/features/visit-voucher/services/buyer-name';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 
@@ -212,7 +236,20 @@ export function IdealPropertiesPanel({
   softOpen = false,
   agencyMentions = {},
   watchReasons = {},
+  initialView = 'list',
+  header = null,
+  embedded = null,
 }: {
+  // La refonte, lot C (maquettes REFONTE-3, 5 et 6) — « un bien à la fois » : les mêmes biens, la
+  // même sélection, les mêmes gestes (retenir, écarter pour lui), un par un. `initialView` : la
+  // page s'ouvre sur la liste, sur « un bien à la fois » pour tous ses biens ouverts (`?un=1`), ou
+  // pour les seuls biens de la veille (`watch`, `?un=veille` : la tâche « 4 nouveaux biens » mène
+  // à « Bien 1 sur 4 ») ; `header` : l'en-tête de la page, montré avec la liste seulement ;
+  // `embedded` : dans le détail d'Acquéreurs (tablette, ordinateur), les biens de la veille un par
+  // un, sous le nom de la personne.
+  initialView?: 'list' | 'deck' | 'watch';
+  header?: ReactNode;
+  embedded?: { name: string; words: string | null; ficheHref: string } | null;
   // Mission 151 (partie B) — ce qui compte pour eux (planches 4 et 4 b) : les critères doux de la
   // fiche, en mots ; vide, rien ne change. `softOpen` : la lecture par l'IA est ouverte pour
   // l'agence ; `agencyMentions` : les mots trouvés dans les biens de l'agence avant la recherche
@@ -289,10 +326,47 @@ export function IdealPropertiesPanel({
   const [saving, startSaving] = useTransition();
   // Mission 139 — écartés : cachés aussitôt ; ceux de cette visite de la page s'annulent encore.
   const [hidden, setHidden] = useState<Set<string>>(() => new Set(dismissed ?? []));
-  const [justDismissed, setJustDismissed] = useState<{ key: string; label: string }[]>([]);
+  // `cardKey` : écarté depuis « un bien à la fois » — « Annuler » y ramène ce bien.
+  const [justDismissed, setJustDismissed] = useState<
+    { key: string; label: string; cardKey?: string }[]
+  >([]);
   const [undoError, setUndoError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [importNote, setImportNote] = useState<string | null>(null);
+  // La refonte, lot C — « un bien à la fois » : la vue, les biens du parcours (figés au premier
+  // geste, pour que « Bien 2 sur 4 » ne bouge pas quand un bien quitte les listes) et le rang de
+  // celui qu'on regarde.
+  const [view, setView] = useState<'list' | 'deck'>(
+    embedded || initialView !== 'list' ? 'deck' : 'list',
+  );
+  const [deckScope, setDeckScope] = useState<DeckScope>(
+    embedded || initialView === 'watch' ? 'watch' : 'all',
+  );
+  const [deckKeys, setDeckKeys] = useState<string[] | null>(null);
+  const [deckIndex, setDeckIndex] = useState(0);
+  const [deckPending, setDeckPending] = useState(false);
+  const [deckError, setDeckError] = useState<string | null>(null);
+  // Un seul écart à la fois, même touché deux fois de suite avant que l'écran ait répondu.
+  const dismissing = useRef(false);
+  // Dans le détail d'Acquéreurs, l'adresse tient la personne sur ses biens (`personne`, `biens=1`) :
+  // écarter le dernier bien de la veille fait sortir sa tâche de la liste à la relecture de la
+  // page, et le parcours disparaissait sous le doigt (relecture du lot C). Posée ici quand la
+  // personne est arrivée sans elle (la première de la liste).
+  const held = embedded != null;
+  useEffect(() => {
+    if (!held) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('personne') === buyerId && url.searchParams.get('biens') === '1') {
+      return;
+    }
+    url.searchParams.set('personne', buyerId);
+    url.searchParams.set('biens', '1');
+    window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+  }, [held, buyerId]);
+  // Des biens proposés, pas encore enregistrés : quitter « un bien à la fois » par un lien (sa
+  // fiche, une autre personne, le menu) le demande d'abord, dans l'écran (M146 A) ; l'actualisation
+  // et la fermeture, par le navigateur (M93). Rien de proposé ne se perd sans le dire.
+  const leaveGuard = useLeaveConfirm(view === 'deck' && changed && selected.size > 0 && !saving);
   // Mission 152 (partie B) — la fiche complète ouverte, et le bien qu'elle retient.
   const sheet = usePropertySheet();
   const [sheetItem, setSheetItem] = useState<{
@@ -484,6 +558,9 @@ export function IdealPropertiesPanel({
         `Sélection retenue : ${result.selection.items.length} bien${result.selection.items.length > 1 ? 's' : ''}.`,
       );
       setBaseline([...selected.values()]);
+      // La refonte, lot C — dans le détail d'Acquéreurs aussi, on reste sur place (« sans changer
+      // de page ») : l'adresse tient la personne sur ses biens, la fin du parcours propose
+      // « Présenter ».
       // Les annonces du marché retenues s'importent comme des concurrents, par l'extension.
       if (result.toImport.length > 0) {
         let imported = 0;
@@ -625,6 +702,176 @@ export function IdealPropertiesPanel({
   }
   const marketSeenLine = seenLine(countSeen([...marketSeen.values()]));
 
+  // Les listes telles que l'écran les range (ce qui compte pour eux, puis le %, puis le prix),
+  // pour la liste comme pour « un bien à la fois ».
+  const watchRanked = withRanks(
+    orderWithinGroups(
+      watchEntries,
+      (entry) => entry.category,
+      (entry) =>
+        scoreOf(entry.candidate.url) || softScoreOfReasons(watchReasons[entry.candidate.url]),
+    ),
+    (entry) => entry.category,
+  );
+  const agencyRanked = withRanks(
+    orderWithinGroups(
+      agencyHits,
+      ({ group }) => group,
+      ({ hit }) => scoreOf(hit.candidate.key),
+    ),
+    ({ group }) => group,
+  );
+  const marketShown = (category: IdealCategory): CategorizedCandidate[] =>
+    market
+      ? market.categorized.byCategory[category].filter(
+          (entry) => showMarket(entry) && afterWatch(entry.candidate),
+        )
+      : [];
+  // La raison du rang d'une annonce, en une ligne, pour sa fiche complète.
+  const marketRankLine = (entry: CategorizedCandidate): string =>
+    [
+      IDEAL_CATEGORY_LABELS[entry.category],
+      criteriaCount(entry.criteriaOk, entry.criteriaTotal),
+      ...entry.gaps,
+      ...toVerifyLabels(entry),
+      whySummary(reasonsOf(entry.candidate.url, watchReasons[entry.candidate.url])),
+    ]
+      .filter((part): part is string => part != null)
+      .join(' · ');
+
+  // La refonte, lot C — « un bien à la fois » : les biens ouverts de la page, dans son ordre — ce
+  // que la veille a trouvé, ce que l'agence a déjà, puis le marché s'il a été cherché. Chacun avec
+  // ce que sa carte dit : « N critères sur M », la pastille du budget, « Pourquoi celui-ci pour
+  // eux », et ce qui reste à savoir (ses écarts, jamais cachés).
+  type DeckEntry = { card: DeckCard; item: SelectionItemInput; open: () => void };
+  const marketDeckEntry = (entry: CategorizedCandidate, seenOn: string): DeckEntry => {
+    const item = marketItem(entry, seenOn);
+    return {
+      item,
+      open: () => openMarketSheet(item, entry.candidate, seenOn, marketRankLine(entry)),
+      card: marketDeckCard({
+        key: keyOf(item),
+        label: item.label,
+        entry,
+        origin: seenOnLabel(seenOn),
+        budgetMax,
+        reasons: reasonsOf(entry.candidate.url, watchReasons[entry.candidate.url]),
+      }),
+    };
+  };
+  const agencyDeckEntry = (hit: BuyerHit): DeckEntry => {
+    const item = agencyItem(hit);
+    const agencyReasons = reasonsOf(hit.candidate.key, {
+      mentions: agencyMentions[hit.candidate.key] ?? [],
+    });
+    return {
+      item,
+      open: () => openAgencySheet(item, whySummary(agencyReasons)),
+      card: agencyDeckCard({
+        key: keyOf(item),
+        label: item.label,
+        hit,
+        sourceLabel: SELECTION_SOURCE_LABELS[item.source],
+        budgetMax,
+        reasons: agencyReasons,
+      }),
+    };
+  };
+  // Les biens de la veille : ceux de la tâche « N nouveaux biens » (« Bien 1 sur N »).
+  const watchDeckEntries: DeckEntry[] = watch
+    ? watchRanked.map(({ item: entry }) => marketDeckEntry(entry, watch.seenOn))
+    : [];
+  // Tous les biens ouverts de la page, dans son ordre (« Les voir un par un », depuis la liste).
+  const allDeckEntries: DeckEntry[] = [
+    ...watchDeckEntries,
+    ...agencyRanked.map(({ item: { hit } }) => agencyDeckEntry(hit)),
+    ...(market
+      ? IDEAL_CATEGORIES.flatMap((category) =>
+          marketShown(category).map((entry) => marketDeckEntry(entry, market.seenOn)),
+        )
+      : []),
+  ];
+  const deckEntries = deckScope === 'watch' ? watchDeckEntries : allDeckEntries;
+  // Le bien qu'on regarde : le premier du parcours, à partir du rang courant, qui est encore
+  // ouvert (un bien retenu ou écarté entre-temps est passé). Sélection complète : chaque bien se
+  // voit quand même — il s'écarte, ou se passe ; « Proposer » attend qu'une place se libère.
+  const liveDeck = new Map(deckEntries.map((entry) => [entry.card.key, entry]));
+  const deckOrder = deckKeys ?? deckEntries.map((entry) => entry.card.key);
+  const deckAt = deckPosition(deckOrder, deckIndex, new Set(liveDeck.keys()));
+  const deckEntry =
+    deckAt < deckOrder.length ? (liveDeck.get(deckOrder[deckAt] as string) ?? null) : null;
+  const advance = () => {
+    setDeckKeys(deckOrder);
+    setDeckIndex(deckAt + 1);
+    setDeckError(null);
+  };
+  // « Proposer » : le retenir dans la sélection (trois au plus, M118) — rien ne part vers
+  // l'acquéreur avant « Retenir la sélection », puis la présentation ou son lien.
+  // Le geste ne fait que retenir : touché deux fois de suite (ou la flèche droite répétée), il ne
+  // retire jamais le bien qu'il vient de retenir.
+  const proposeCurrent = () => {
+    if (!deckEntry || full || deckPending) return;
+    const { item } = deckEntry;
+    setSaved(null);
+    setSelected((current) => {
+      const key = keyOf(item);
+      if (current.has(key) || current.size >= MAX_IDEAL_SELECTION) return current;
+      return new Map(current).set(key, item);
+    });
+    advance();
+  };
+  // « Écarter » : pour lui, avec sa raison (M139) ; il ne lui sera plus proposé, veille comprise.
+  const dismissCurrent = (reason: DismissReason) => {
+    if (!deckEntry || deckPending || dismissing.current) return;
+    dismissing.current = true;
+    const { item } = deckEntry;
+    setDeckError(null);
+    setDeckPending(true);
+    void dismissForBuyer(
+      buyerId,
+      { source: item.source, reference: item.reference },
+      item.label,
+      reason,
+    )
+      .then((result) => {
+        setDeckPending(false);
+        if (!result.ok) {
+          setDeckError(result.error);
+          return;
+        }
+        setHidden((current) => new Set([...current, result.key]));
+        setJustDismissed((current) => [
+          ...current.filter((other) => other.key !== result.key),
+          { key: result.key, label: item.label, cardKey: keyOf(item) },
+        ]);
+        advance();
+      })
+      .catch(() => {
+        setDeckPending(false);
+        setDeckError('Connexion perdue : réessayez.');
+      })
+      .finally(() => {
+        dismissing.current = false;
+      });
+  };
+  // Passer de la liste à « un bien à la fois » : la même page, la même sélection ; l'adresse le
+  // garde (`?un=1`), pour une actualisation.
+  const switchView = (next: 'list' | 'deck') => {
+    setView(next);
+    // Depuis la liste : tous ses biens ouverts, pas seulement ceux de la veille.
+    if (next === 'deck') setDeckScope('all');
+    setDeckKeys(null);
+    setDeckIndex(0);
+    setDeckError(null);
+    // Une erreur de la recherche du marché, dite sur la liste, ne suit pas le parcours.
+    setError(null);
+    const url = new URL(window.location.href);
+    if (next === 'deck') url.searchParams.set('un', '1');
+    else url.searchParams.delete('un');
+    window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+    window.scrollTo({ top: 0 });
+  };
+
   // Une annonce du marché : sa photo, son libellé neutre, son prix « affiché le », ses critères.
   const hitRow = (
     entry: CategorizedCandidate,
@@ -634,17 +881,7 @@ export function IdealPropertiesPanel({
   ) => {
     const item = marketItem(entry, seenOn);
     const photo = entry.candidate.photoUrls[0];
-    const rankLine = [
-      IDEAL_CATEGORY_LABELS[entry.category],
-      entry.criteriaTotal > 0
-        ? `${entry.criteriaOk} critère${entry.criteriaOk > 1 ? 's' : ''} sur ${entry.criteriaTotal}`
-        : null,
-      ...entry.gaps,
-      ...toVerifyLabels(entry),
-      whySummary(reasonsOf(entry.candidate.url, watchReasons[entry.candidate.url])),
-    ]
-      .filter((part): part is string => part != null)
-      .join(' · ');
+    const rankLine = marketRankLine(entry);
     const open = () => openMarketSheet(item, entry.candidate, seenOn, rankLine);
     return (
       <li
@@ -740,8 +977,313 @@ export function IdealPropertiesPanel({
     );
   };
 
+  // La fiche complète d'un bien, par-dessus la liste comme par-dessus « un bien à la fois ». Là,
+  // elle se lit seulement : c'est « Proposer » qui retient (un seul bouton plein, M146).
+  const sheetView =
+    sheet.state && (sheetItem || seenSheet) ? (
+      <PropertySheetView
+        state={sheet.state}
+        onClose={closeSheet}
+        backLabel="Ses biens idéaux"
+        budgetMax={budgetMax}
+        rankLine={sheetItem?.rankLine ?? null}
+        footer={sheetItem && view === 'list' ? sheetFooter(sheetItem.item) : undefined}
+      />
+    ) : null;
+
+  if (view === 'deck') {
+    const lastDismissed = justDismissed.at(-1);
+    const retained = [...selected.values()];
+    const allLink = 'Toute la liste et le marché';
+    const retainLabel = `${RETAIN_BUTTON} (${retained.length}/${MAX_IDEAL_SELECTION})`;
+    // La sélection, au-dessus des deux gestes : pas encore enregistrée (« Retenir la sélection »
+    // dès le premier bien proposé), ou complète.
+    const selectionNote = deckSelectionNote({ count: retained.length, changed });
+    // Une lecture en échec n'est jamais lue comme « aucun bien » (M98).
+    const deckUnread = seenUnread || (deckScope === 'all' && mandatesUnread);
+    const leaveDialog = leaveGuard.pendingHref ? (
+      <ConfirmDialog
+        title="Quitter sans retenir la sélection ?"
+        text="Les biens que vous venez de proposer ne sont pas encore enregistrés : ils seront perdus. « Retenir la sélection » les garde."
+        onCancel={leaveGuard.stay}
+        cancelLabel="Rester"
+      >
+        <button
+          type="button"
+          className={btnDanger}
+          data-testid="deck-leave"
+          onClick={() => {
+            const href = leaveGuard.pendingHref;
+            leaveGuard.stay();
+            if (href) router.push(href);
+          }}
+        >
+          Quitter
+        </button>
+      </ConfirmDialog>
+    ) : null;
+    // Dans le détail d'Acquéreurs, ce lien est en tête, à côté de « Ouvrir sa fiche ».
+    const toList = embedded ? null : (
+      <button
+        type="button"
+        className={socleStepLink}
+        data-testid="deck-all"
+        onClick={() => switchView('list')}
+      >
+        {allLink}
+      </button>
+    );
+    return (
+      <div
+        className={`flex flex-col gap-3.5 xl:gap-[18px] ${embedded ? 'flex-1' : 'min-h-[calc(100dvh-4rem)] md:min-h-0'}`}
+        data-testid="ideal-deck"
+      >
+        <DeckHeader
+          position={deckAt + 1}
+          total={deckOrder.length}
+          retained={selected.size}
+          max={MAX_IDEAL_SELECTION}
+          lead={
+            embedded ? (
+              <div className="flex min-w-0 flex-col gap-0.5 xl:gap-1">
+                <h2
+                  className="text-[22px] leading-tight font-extrabold tracking-[-0.3px] text-brand-darker xl:text-[26px] xl:tracking-[-0.4px] stage:text-white"
+                  data-testid="buyers-today-name"
+                >
+                  {embedded.name}
+                </h2>
+                {embedded.words ? (
+                  <p className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60">
+                    {embedded.words}
+                  </p>
+                ) : null}
+                {/* Dans le détail, la place est comptée : ses deux liens sur une ligne. */}
+                <div className="flex flex-wrap gap-x-4 text-sm font-bold text-brand-deep stage:text-brand">
+                  <Link
+                    href={embedded.ficheHref}
+                    className="hover:text-brand-darker"
+                    data-testid="buyers-today-open"
+                  >
+                    Ouvrir sa fiche
+                  </Link>
+                  <Link
+                    href={`/acquereurs/${buyerId}/biens-ideaux`}
+                    className="hover:text-brand-darker"
+                    data-testid="deck-all"
+                  >
+                    {allLink}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <Link
+                href={`/acquereurs/${buyerId}`}
+                className="flex h-11 items-center gap-1 text-[15px] font-bold text-brand-deep hover:text-brand-darker stage:text-brand"
+                aria-label={buyerName ? `Retour à la fiche de ${buyerName}` : 'Retour à sa fiche'}
+                data-testid="deck-back"
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-[18px] flex-none"
+                >
+                  <path d="M15 6l-6 6 6 6" />
+                </svg>
+                <span className="max-w-[9rem] truncate md:max-w-none">
+                  {(buyerName ? nameFromBuyer(buyerName) : '') || 'Sa fiche'}
+                </span>
+              </Link>
+            )
+          }
+        />
+        {dismissed == null ? (
+          <p role="alert" className="text-sm font-semibold text-red-700">
+            Ce qu’il a déjà reçu, visité ou refusé n’a pas pu être lu : rechargez la page. En
+            attendant, aucun bien ne lui est proposé ici.
+          </p>
+        ) : null}
+        {/* Comme sur la liste : des mandats illisibles ne sont pas des mandats absents (M98). */}
+        {deckScope === 'all' && mandatesUnread ? (
+          <p role="alert" className="text-sm font-semibold text-red-700" data-testid="deck-unread">
+            Vos mandats n’ont pas pu être lus : rechargez la page.
+          </p>
+        ) : null}
+        {lastDismissed ? (
+          <p
+            className="text-sm text-[#5B6380] stage:text-white/70"
+            role="status"
+            data-testid="deck-dismissed"
+          >
+            Écarté pour lui : {lastDismissed.label} ·{' '}
+            <button
+              type="button"
+              className="font-bold text-brand-deep underline stage:text-brand"
+              data-testid="deck-undo"
+              onClick={() => {
+                setUndoError(null);
+                void undoDismissal(buyerId, lastDismissed.key)
+                  .then((result) => {
+                    if (!result.ok) {
+                      setUndoError(result.error);
+                      return;
+                    }
+                    setHidden((current) => {
+                      const next = new Set(current);
+                      next.delete(lastDismissed.key);
+                      return next;
+                    });
+                    setJustDismissed((current) =>
+                      current.filter((other) => other.key !== lastDismissed.key),
+                    );
+                    // « Annuler » ramène le bien : on le regarde de nouveau.
+                    const back = lastDismissed.cardKey
+                      ? deckOrder.indexOf(lastDismissed.cardKey)
+                      : -1;
+                    if (back >= 0 && back < deckAt) {
+                      setDeckKeys(deckOrder);
+                      setDeckIndex(back);
+                    }
+                  })
+                  .catch(() => setUndoError('Connexion perdue : réessayez.'));
+              }}
+            >
+              Annuler
+            </button>
+          </p>
+        ) : null}
+        {undoError ? (
+          <p role="alert" className="text-sm font-semibold text-red-700">
+            {undoError}
+          </p>
+        ) : null}
+        {deckEntry ? (
+          <DeckCardView
+            key={deckEntry.card.key}
+            card={deckEntry.card}
+            full={full}
+            pending={deckPending}
+            error={deckError ?? error}
+            keyboard={sheetView == null && leaveDialog == null}
+            onOpen={deckEntry.open}
+            onPropose={proposeCurrent}
+            onDismiss={dismissCurrent}
+            onSkip={advance}
+            more={toList}
+            note={
+              selectionNote
+                ? {
+                    text: selectionNote.text,
+                    retain: selectionNote.retain
+                      ? { label: retainLabel, saving, onRetain: retain }
+                      : null,
+                  }
+                : null
+            }
+            status={saved ? [saved, importNote].filter(Boolean).join(' ') : importNote}
+          />
+        ) : (
+          <div
+            className={`${socleCardBordered} flex flex-col gap-3 p-5 xl:p-6`}
+            data-testid="deck-end"
+          >
+            <span className={socleKicker} data-testid="deck-end-kicker">
+              {deckEndKicker({
+                seen: deckOrder.length > 0,
+                scope: deckScope,
+                unread: deckUnread,
+              })}
+            </span>
+            <p
+              className="text-[21px] leading-snug font-bold text-brand-darker stage:text-white"
+              data-testid="deck-end-title"
+            >
+              {retained.length > 0
+                ? `Sélection${buyerName ? ` de ${buyerInSentence(buyerName)}` : ''} : ${retained.length} bien${retained.length > 1 ? 's' : ''} sur ${MAX_IDEAL_SELECTION}`
+                : 'Aucun bien dans la sélection'}
+            </p>
+            {retained.length > 0 ? (
+              <ul className="flex flex-col gap-1.5">
+                {retained.map((item, index) => (
+                  <li
+                    key={keyOf(item)}
+                    className="text-[15px] text-[#5B6380] stage:text-white/70"
+                    data-testid="deck-end-item"
+                  >
+                    <strong className="font-bold text-brand-darker stage:text-white">
+                      {String.fromCharCode(65 + index)}
+                    </strong>{' '}
+                    · {item.label}
+                    {item.listedPrice != null ? ` · ${formatEuro(item.listedPrice)}` : ''}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {error ? (
+              <p role="alert" className={alertError}>
+                {error}
+              </p>
+            ) : null}
+            {saved ? (
+              <p role="status" className={alertOk} data-testid="ideal-saved">
+                {saved} {importNote}
+              </p>
+            ) : null}
+            {changed && retained.length > 0 ? (
+              <button
+                type="button"
+                className={`${socleBtnFilledBig} ${socleBigStep}`}
+                disabled={saving}
+                onClick={retain}
+                data-testid="deck-retain"
+              >
+                {saving ? 'Enregistrement…' : retainLabel}
+              </button>
+            ) : baseline.length > 0 ? (
+              <>
+                <Link
+                  href={`/presentation/${buyerId}`}
+                  className={`${socleBtnFilledBig} ${socleBigStep}`}
+                  data-testid="deck-present"
+                >
+                  {presented ? 'Revoir la présentation' : 'Présenter'}
+                </Link>
+                <Link
+                  href={`/acquereurs/${buyerId}/dossier`}
+                  className={socleBtnOutline}
+                  data-testid="deck-dossier"
+                >
+                  Dossier acquéreur et lien
+                </Link>
+              </>
+            ) : null}
+            {toList}
+          </div>
+        )}
+        {sheetView}
+        {leaveDialog}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6" data-testid="ideal-properties">
+      {header}
+      {/* La refonte, lot C — les mêmes biens, un par un : « Écarter » ou « Proposer ». */}
+      {allDeckEntries.length > 0 ? (
+        <button
+          type="button"
+          className={`${btnSecondary} self-start`}
+          data-testid="ideal-open-deck"
+          onClick={() => switchView('deck')}
+        >
+          Les voir un par un · {allDeckEntries.length}
+        </button>
+      ) : null}
       {dismissed == null ? (
         <p role="alert" className="text-sm font-semibold text-red-700">
           Ce qu’il a déjà reçu, visité ou refusé n’a pas pu être lu : rechargez la page. En
@@ -872,16 +1414,9 @@ export function IdealPropertiesPanel({
             </p>
           </div>
           <ul className="flex flex-col gap-2">
-            {withRanks(
-              orderWithinGroups(
-                watchEntries,
-                (entry) => entry.category,
-                (entry) =>
-                  scoreOf(entry.candidate.url) ||
-                  softScoreOfReasons(watchReasons[entry.candidate.url]),
-              ),
-              (entry) => entry.category,
-            ).map(({ item: entry, rank }) => hitRow(entry, watch.seenOn, rank, 'ideal-watch-hit'))}
+            {watchRanked.map(({ item: entry, rank }) =>
+              hitRow(entry, watch.seenOn, rank, 'ideal-watch-hit'),
+            )}
           </ul>
         </section>
       ) : null}
@@ -920,14 +1455,7 @@ export function IdealPropertiesPanel({
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {withRanks(
-              orderWithinGroups(
-                agencyHits,
-                ({ group }) => group,
-                ({ hit }) => scoreOf(hit.candidate.key),
-              ),
-              ({ group }) => group,
-            ).map(({ item: { group, hit }, rank }) => {
+            {agencyRanked.map(({ item: { group, hit }, rank }) => {
               const item = agencyItem(hit);
               const agencyReasons = reasonsOf(hit.candidate.key, {
                 mentions: agencyMentions[hit.candidate.key] ?? [],
@@ -1088,9 +1616,7 @@ export function IdealPropertiesPanel({
               </p>
             ) : null}
             {IDEAL_CATEGORIES.map((category) => {
-              const entries = market.categorized.byCategory[category].filter(
-                (entry) => showMarket(entry) && afterWatch(entry.candidate),
-              );
+              const entries = marketShown(category);
               return (
                 <div
                   key={category}
@@ -1219,16 +1745,7 @@ export function IdealPropertiesPanel({
         </button>
         {full ? <span className={hintText}>{SELECTION_TOO_MANY}</span> : null}
       </div>
-      {sheet.state && (sheetItem || seenSheet) ? (
-        <PropertySheetView
-          state={sheet.state}
-          onClose={closeSheet}
-          backLabel="Ses biens idéaux"
-          budgetMax={budgetMax}
-          rankLine={sheetItem?.rankLine ?? null}
-          footer={sheetItem ? sheetFooter(sheetItem.item) : undefined}
-        />
-      ) : null}
+      {sheetView}
     </div>
   );
 }

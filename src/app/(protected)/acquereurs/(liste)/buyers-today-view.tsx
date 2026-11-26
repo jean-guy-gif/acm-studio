@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { LateNote, PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
 import {
@@ -17,10 +18,17 @@ import {
   buyerOthersNote,
   buyersToday,
   buyersTodayCount,
+  buyersTodayDetail,
   buyersTodayThings,
   buyerTaskKey,
+  buyerTodayHref,
+  watchDeckHref,
+  watchDetailHref,
   type BuyerTodayItem,
 } from '@/features/buyers/services/buyers-today';
+import type { Buyer } from '@/features/buyers/types';
+import { IdealPropertiesPanel } from '@/features/ideal-properties/components/ideal-properties-panel';
+import { loadIdealPanel } from '@/features/ideal-properties/queries/load-ideal-panel';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { taskLine } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
@@ -48,17 +56,22 @@ function TaskAction({
   today,
   day,
   primary,
+  onPlace = false,
 }: {
   task: SuiviTask;
   today: Today;
   day: string;
   primary: boolean;
+  // Dans le détail (tablette, ordinateur) : ses nouveaux biens se voient sur place.
+  onPlace?: boolean;
 }) {
   const line = taskLine(task, today.context.get(task.projectId) ?? NO_CONTEXT, day);
   return (
     <TodayTaskAction
       task={task}
-      href={line.href}
+      // La refonte, lot C — les nouveaux biens de la veille se voient « un bien à la fois » : sur
+      // place dans le détail, sur leur page depuis une carte (téléphone).
+      href={(onPlace ? watchDetailHref(task) : watchDeckHref(task)) ?? line.href}
       label={line.button}
       primary={primary}
       look="socle"
@@ -74,7 +87,15 @@ function TaskAction({
 // Une personne qui a plusieurs choses à faire les a toutes : la plus utile fait sa carte, les
 // autres suivent sous « Aussi aujourd'hui », chacune avec son geste. « Tous mes acquéreurs » mène
 // à la liste entière.
-export async function BuyersTodayView({ personne }: { personne?: string }) {
+// La refonte, lot C — la personne choisie a de nouveaux biens à voir : son détail les montre un
+// par un (tablette, ordinateur) ; `biens` : l'adresse la tient sur ses biens (`buyersTodayDetail`).
+export async function BuyersTodayView({
+  personne,
+  biens = false,
+}: {
+  personne?: string;
+  biens?: boolean;
+}) {
   const [today, profile, read] = await Promise.all([getToday('mine'), getProfile(), readBuyers()]);
   if (!today || !profile) notFound();
   const day = parisDay(new Date());
@@ -82,12 +103,15 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
     today.board.blocks.flatMap((block) => block.lines.flatMap((line) => line.tasks)),
     day,
   );
-  const selected = items.find((item) => item.buyerId === personne) ?? items[0] ?? null;
   const mine = read.buyers.filter((buyer) => buyer.advisorId === profile.id);
-  const buyerOf = (item: BuyerTodayItem) =>
-    read.buyers.find((buyer) => buyer.id === item.buyerId) ?? null;
+  const buyerById = (buyerId: string) => read.buyers.find((buyer) => buyer.id === buyerId) ?? null;
+  const detail = buyersTodayDetail(items, { personne, biens }, (id) => buyerById(id) != null);
+  const { selected } = detail;
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
   const unread = today.failed.length > 0;
+  const deckBuyer = detail.deckBuyerId ? buyerById(detail.deckBuyerId) : null;
+  // La personne du détail : celle de ses biens, sinon la personne choisie.
+  const detailId = deckBuyer?.id ?? selected?.buyerId ?? null;
 
   return (
     <div
@@ -157,7 +181,7 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
                   }
                   more={
                     item.others.length > 0 ? (
-                      <OtherTasks item={item} today={today} day={day} inCard />
+                      <OtherTasks tasks={item.others} today={today} day={day} inCard />
                     ) : null
                   }
                 />
@@ -172,12 +196,12 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
             {items.map((item) => (
               <li key={item.buyerId}>
                 <PersonRow
-                  href={`/acquereurs?personne=${item.buyerId}`}
+                  href={buyerTodayHref(item)}
                   name={item.name}
                   task={item.what}
                   late={item.late}
                   tone={item.tone}
-                  selected={item.buyerId === selected?.buyerId}
+                  selected={item.buyerId === detailId}
                   also={buyerOthersNote(item.others)}
                   keepScroll
                 />
@@ -198,21 +222,45 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
           d'une personne à la suivante (même page, seule l'adresse change) : le message préparé
           pour l'une, et « J'ai relancé », se retrouvaient sous le nom de l'autre. */}
       <section
-        key={selected?.buyerId ?? 'personne'}
-        aria-label={selected ? selected.name : 'Détail'}
-        className="hidden min-w-0 flex-col gap-[18px] md:sticky md:top-0 md:flex md:max-h-screen md:self-start md:overflow-y-auto md:px-7 md:py-6 xl:px-10 xl:py-8"
+        key={detailId ?? 'personne'}
+        aria-label={deckBuyer?.name ?? selected?.name ?? 'Détail'}
+        className={`hidden min-w-0 flex-col gap-[18px] md:sticky md:top-0 md:flex md:max-h-screen md:self-start md:overflow-y-auto md:px-7 md:py-6 xl:px-10 xl:py-8 ${deckBuyer ? 'md:h-screen' : ''}`}
         data-testid="buyers-today-detail"
-        data-person={selected?.buyerId}
+        data-person={detailId ?? undefined}
       >
-        {selected ? (
+        {deckBuyer ? (
+          <>
+            {/* Le bien prend la hauteur de l'écran, ses deux gestes en bas ; les autres choses à
+                faire de la personne suivent, en défilant. */}
+            <div className="flex min-h-full flex-none flex-col gap-[18px]">
+              <Suspense
+                fallback={
+                  <BuyerHeader
+                    buyerId={deckBuyer.id}
+                    name={deckBuyer.name}
+                    words={proposedBuyerWords(deckBuyer)}
+                    note="Lecture de ses nouveaux biens…"
+                  />
+                }
+              >
+                <BuyerDeck buyer={deckBuyer} profile={profile} />
+              </Suspense>
+            </div>
+            {detail.beside.length > 0 ? (
+              <OtherTasks tasks={detail.beside} today={today} day={day} />
+            ) : null}
+          </>
+        ) : selected ? (
           <BuyerTodayDetail
             item={selected}
             words={(() => {
-              const buyer = buyerOf(selected);
+              const buyer = buyerById(selected.buyerId);
               return buyer ? proposedBuyerWords(buyer) : null;
             })()}
             today={today}
             day={day}
+            // Des fiches illisibles : ses biens se lisent sur leur page, jamais un lien sans effet.
+            watchOnPlace={!read.failed}
           />
         ) : (
           <div className={`${socleCardBordered} flex flex-col gap-2 p-6`}>
@@ -242,36 +290,17 @@ function BuyerTodayDetail({
   words,
   today,
   day,
+  watchOnPlace,
 }: {
   item: BuyerTodayItem;
   words: string | null;
   today: Today;
   day: string;
+  watchOnPlace: boolean;
 }) {
   return (
     <>
-      {/* Sous 1024 px (une tablette en portrait), le détail est étroit : « Ouvrir sa fiche » passe
-          sous son nom et sa recherche, qui gardent toute la largeur. */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-        <div className="flex min-w-0 flex-col gap-1">
-          <h2
-            className="text-[22px] leading-tight font-extrabold tracking-[-0.3px] text-brand-darker xl:text-[26px] xl:tracking-[-0.4px] stage:text-white"
-            data-testid="buyers-today-name"
-          >
-            {item.name}
-          </h2>
-          {words ? (
-            <p className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60">{words}</p>
-          ) : null}
-        </div>
-        <Link
-          href={`/acquereurs/${item.buyerId}`}
-          className={`${socleBtnQuiet} flex-none self-start`}
-          data-testid="buyers-today-open"
-        >
-          Ouvrir sa fiche
-        </Link>
-      </div>
+      <BuyerHeader buyerId={item.buyerId} name={item.name} words={words} />
 
       <div
         className={`${socleCardBordered} ${ACTION_ROW} gap-4 p-6 xl:gap-8`}
@@ -289,7 +318,9 @@ function BuyerTodayDetail({
         </div>
       </div>
 
-      {item.others.length > 0 ? <OtherTasks item={item} today={today} day={day} /> : null}
+      {item.others.length > 0 ? (
+        <OtherTasks tasks={item.others} today={today} day={day} onPlace={watchOnPlace} />
+      ) : null}
     </>
   );
 }
@@ -298,15 +329,17 @@ function BuyerTodayDetail({
 // derrière sa première tâche. Dans le détail (tablette, ordinateur), une carte chacune ; dans la
 // carte du téléphone (`inCard`), sous son bouton.
 function OtherTasks({
-  item,
+  tasks,
   today,
   day,
   inCard = false,
+  onPlace = false,
 }: {
-  item: BuyerTodayItem;
+  tasks: BuyerTodayItem['others'];
   today: Today;
   day: string;
   inCard?: boolean;
+  onPlace?: boolean;
 }) {
   return (
     <div
@@ -318,7 +351,7 @@ function OtherTasks({
       data-testid="buyers-today-others"
     >
       <span className={socleKicker}>Aussi aujourd’hui</span>
-      {item.others.map((other) => (
+      {tasks.map((other) => (
         <div
           key={buyerTaskKey(other.task)}
           className={
@@ -339,10 +372,84 @@ function OtherTasks({
             {other.late ? <LateNote late={other.late} /> : null}
           </p>
           <div className={inCard ? 'flex flex-col [&>*]:w-full' : ACTION_SLOT}>
-            <TaskAction task={other.task} today={today} day={day} primary={false} />
+            <TaskAction
+              task={other.task}
+              today={today}
+              day={day}
+              primary={false}
+              onPlace={onPlace}
+            />
           </div>
         </div>
       ))}
     </div>
+  );
+}
+
+// Qui est la personne choisie : son nom, sa recherche en une phrase, « Ouvrir sa fiche ».
+function BuyerHeader({
+  buyerId,
+  name,
+  words,
+  note = null,
+}: {
+  buyerId: string;
+  name: string;
+  words: string | null;
+  // Pendant une lecture : ce qui arrive.
+  note?: string | null;
+}) {
+  return (
+    <>
+      {/* Sous 1024 px (une tablette en portrait), le détail est étroit : « Ouvrir sa fiche » passe
+          sous son nom et sa recherche, qui gardent toute la largeur. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2
+            className="text-[22px] leading-tight font-extrabold tracking-[-0.3px] text-brand-darker xl:text-[26px] xl:tracking-[-0.4px] stage:text-white"
+            data-testid="buyers-today-name"
+          >
+            {name}
+          </h2>
+          {words ? (
+            <p className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60">{words}</p>
+          ) : null}
+        </div>
+        <Link
+          href={`/acquereurs/${buyerId}`}
+          className={`${socleBtnQuiet} flex-none self-start`}
+          data-testid="buyers-today-open"
+        >
+          Ouvrir sa fiche
+        </Link>
+      </div>
+      {note ? (
+        <p className="text-[15px] text-[#5B6380] stage:text-white/60" role="status">
+          {note}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+// La refonte, lot C — « un bien à la fois », dans le détail : les biens idéaux de la personne
+// (la même lecture que sa page), montrés un par un sous son nom.
+async function BuyerDeck({
+  buyer,
+  profile,
+}: {
+  buyer: Buyer;
+  profile: Parameters<typeof loadIdealPanel>[1];
+}) {
+  const panel = await loadIdealPanel(buyer, profile);
+  return (
+    <IdealPropertiesPanel
+      {...panel}
+      embedded={{
+        name: buyer.name,
+        words: proposedBuyerWords(buyer),
+        ficheHref: `/acquereurs/${buyer.id}`,
+      }}
+    />
   );
 }

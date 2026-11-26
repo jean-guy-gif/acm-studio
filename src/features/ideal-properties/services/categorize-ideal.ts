@@ -33,6 +33,12 @@ import { formatEuro } from '@/lib/format';
 export type CriterionVerdict =
   { kind: 'ok' } | { kind: 'gap'; label: string } | { kind: 'unknown' };
 
+// La refonte, lot C — « Pourquoi celui-ci pour eux » (maquettes REFONTE-3, 5 et 6) : ce que le bien
+// a de ce que la fiche demande, dans ses mots. `must` : un indispensable (★) satisfait ; `said` :
+// ce que l'annonce dit de ce qui compte pour eux (ajouté à l'écran, M151 B) ; `plain` : un autre
+// souhait satisfait. Jamais un pourcentage.
+export type WhyPill = { tone: 'must' | 'said' | 'plain'; label: string };
+
 export type IdealVerdict =
   | {
       kind: 'kept';
@@ -48,6 +54,8 @@ export type IdealVerdict =
       // (un critère que l'annonce n'indique pas compte dans M, comme dans la grille du déroulé).
       criteriaOk: number;
       criteriaTotal: number;
+      // La refonte, lot C — les critères satisfaits, en mots : les indispensables d'abord.
+      why: WhyPill[];
     }
   | { kind: 'excluded'; reasons: string[] };
 
@@ -60,6 +68,7 @@ export type CategorizedCandidate = {
   percent: number | null;
   criteriaOk: number;
   criteriaTotal: number;
+  why: WhyPill[];
 };
 
 export type IdealCategorization = {
@@ -220,6 +229,64 @@ export function judgeCondominium(
   return isCondominium ? { kind: 'gap', label: IN_CONDOMINIUM } : { kind: 'ok' };
 }
 
+// Un critère SATISFAIT, dit comme une raison de proposer le bien — ou rien : le type et le budget
+// se lisent déjà dans le libellé et dans la pastille du prix ; des pièces, des chambres ou une
+// surface « juste comme demandé » ne font pas une raison, « de plus » si (10 m² au moins). Un
+// indispensable (★) se dit toujours, par son fait.
+const SURFACE_BONUS = 10;
+
+function metLabel(
+  criterion: BuyerCriterion,
+  buyer: BuyerInput,
+  candidate: CompetitorCandidate,
+  essential: boolean,
+): string | null {
+  const features = candidate.features;
+  switch (criterion) {
+    case 'property_types':
+    case 'budget':
+      return null;
+    case 'cities':
+      return candidate.city?.trim() || null;
+    case 'rooms': {
+      const rooms = candidate.roomsCount ?? 0;
+      if (essential) return plural(rooms, 'pièce', 'pièces');
+      const more = rooms - (buyer.roomsMin ?? rooms);
+      return more > 0 ? `${plural(more, 'pièce', 'pièces')} de plus` : null;
+    }
+    case 'bedrooms': {
+      const bedrooms = candidate.streamEstate?.bedrooms ?? 0;
+      if (essential) return plural(bedrooms, 'chambre', 'chambres');
+      const more = bedrooms - (buyer.bedroomsMin ?? bedrooms);
+      return more > 0 ? `${plural(more, 'chambre', 'chambres')} de plus` : null;
+    }
+    case 'surface': {
+      const surface = Math.round(candidate.surfaceArea ?? 0);
+      if (essential) return `${surface} m²`;
+      const more = surface - Math.round(buyer.surfaceMin ?? surface);
+      return more >= SURFACE_BONUS ? `${more} m² de plus` : null;
+    }
+    case 'outdoor':
+    case 'parking':
+    case 'pool':
+    case 'elevator':
+      return BUYER_CRITERION_LABELS[criterion];
+    case 'floor': {
+      if (!essential || features?.floor == null) return null;
+      return features.floor === 0
+        ? 'Rez-de-chaussée'
+        : `${features.floor}${features.floor === 1 ? 'er' : 'e'} étage`;
+    }
+    case 'energy_rating': {
+      const letter = dpeClass(candidate.energyClass);
+      return essential && letter ? `DPE ${letter}` : null;
+    }
+    case 'works':
+      // Les mots du dossier acquéreur (M122) : l'annonce n'en annonce pas — rien de plus n'est su.
+      return 'Pas de travaux annoncés';
+  }
+}
+
 const CRITERIA_ORDER: BuyerCriterion[] = [
   'property_types',
   'cities',
@@ -245,17 +312,20 @@ export function judgeCandidate(
   const reasons: string[] = [];
   const gaps: string[] = [];
   const toCheck: string[] = [];
+  const met: WhyPill[] = [];
   let criteriaOk = 0;
   let criteriaTotal = 0;
   for (const criterion of CRITERIA_ORDER) {
     const verdict = judgeCriterion(criterion, buyer, candidate);
     if (verdict == null) continue;
     criteriaTotal += 1;
+    const essential = mustHave.has(criterion);
     if (verdict.kind === 'ok') {
       criteriaOk += 1;
+      const label = metLabel(criterion, buyer, candidate, essential);
+      if (label) met.push({ tone: essential ? 'must' : 'plain', label });
       continue;
     }
-    const essential = mustHave.has(criterion);
     if (verdict.kind === 'gap') {
       // Mission 118 — un indispensable contredit écarte ; le budget indispensable est strict.
       if (essential) reasons.push(verdict.label);
@@ -272,8 +342,10 @@ export function judgeCandidate(
   if (condominium != null) {
     criteriaTotal += 1;
     const essential = buyer.condominiumMustHave === true;
-    if (condominium.kind === 'ok') criteriaOk += 1;
-    else if (condominium.kind === 'gap') (essential ? reasons : gaps).push(condominium.label);
+    if (condominium.kind === 'ok') {
+      criteriaOk += 1;
+      met.push({ tone: essential ? 'must' : 'plain', label: OUT_OF_CONDOMINIUM });
+    } else if (condominium.kind === 'gap') (essential ? reasons : gaps).push(condominium.label);
     else if (essential) toCheck.push(CONDOMINIUM_LABEL);
     else toVerify.push(CONDOMINIUM_LABEL);
   }
@@ -289,6 +361,11 @@ export function judgeCandidate(
     percent: percentOf(criteria, buyer, candidate),
     criteriaOk,
     criteriaTotal,
+    // Les indispensables d'abord, chacun dans l'ordre de la fiche.
+    why: [
+      ...met.filter((pill) => pill.tone === 'must'),
+      ...met.filter((pill) => pill.tone !== 'must'),
+    ],
   };
 }
 

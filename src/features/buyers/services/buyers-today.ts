@@ -244,3 +244,68 @@ export function buyersTodayCount(count: number): string {
     ? 'Rien à faire aujourd’hui'
     : `${count} ${count > 1 ? 'choses' : 'chose'} à faire aujourd’hui`;
 }
+
+// La refonte, lot C — les nouveaux biens trouvés par la veille se voient « un bien à la fois »
+// (maquette REFONTE-3) : sur téléphone, le bouton de la carte mène à ces biens-là (`?un=veille`,
+// « 4 nouveaux biens » → « Bien 1 sur 4 ») ; sur tablette et ordinateur, le détail de la personne
+// les montre sur place (REFONTE-5 et 6).
+export function watchDeckHref(task: SuiviTask): string | null {
+  return task.kind === 'buyer_watch' && task.buyerId
+    ? `/acquereurs/${task.buyerId}/biens-ideaux?un=veille`
+    : null;
+}
+
+// Dans le détail (tablette, ordinateur), les nouveaux biens d'une personne se voient sur place :
+// l'adresse la tient sur ses biens (`biens=1`).
+export function watchDetailHref(task: SuiviTask): string | null {
+  return task.kind === 'buyer_watch' && task.buyerId
+    ? `/acquereurs?personne=${task.buyerId}&biens=1`
+    : null;
+}
+
+// L'adresse d'une personne dans la liste : celle dont la première tâche est la veille s'ouvre sur
+// ses biens, et y reste tant que l'adresse le dit.
+export function buyerTodayHref(item: BuyerTodayItem): string {
+  return watchDetailHref(item.task) ?? `/acquereurs?personne=${item.buyerId}`;
+}
+
+export type BuyersTodayDetail = {
+  // La personne surlignée dans la liste : celle de l'adresse, sinon la première.
+  selected: BuyerTodayItem | null;
+  // La personne dont le détail montre « un bien à la fois » ; null : le détail de sa tâche.
+  deckBuyerId: string | null;
+  // Sous ses biens : ses autres choses à faire du jour — la veille, c'est le parcours lui-même.
+  beside: BuyerTodayItem['others'];
+};
+
+// Le détail (tablette, ordinateur). La personne choisie voit ses nouveaux biens un par un quand sa
+// première tâche est la veille. L'adresse la TIENT sur ses biens (`personne` et `biens=1`) : écarter
+// le dernier bien de la veille fait disparaître la tâche — parfois la personne — de la liste, à la
+// relecture de la page ; sans l'adresse, le parcours disparaissait sous le doigt (« Annuler », la
+// fin du parcours et la sélection en cours avec lui), et les gestes suivants pouvaient tomber sous
+// le nom d'une autre personne. `isBuyer` : la fiche existe dans l'agence (jamais une fiche devinée).
+export function buyersTodayDetail(
+  items: readonly BuyerTodayItem[],
+  address: { personne?: string; biens?: boolean },
+  isBuyer: (buyerId: string) => boolean,
+): BuyersTodayDetail {
+  const named = address.personne
+    ? (items.find((item) => item.buyerId === address.personne) ?? null)
+    : null;
+  const held =
+    address.biens && address.personne && isBuyer(address.personne) ? address.personne : null;
+  const selected = named ?? (held ? null : (items[0] ?? null));
+  const deckBuyerId =
+    held ?? (selected && selected.task.kind === 'buyer_watch' ? selected.buyerId : null);
+  if (!selected) return { selected, deckBuyerId, beside: [] };
+  if (deckBuyerId == null) return { selected, deckBuyerId, beside: selected.others };
+  const all = [
+    { task: selected.task, what: selected.what, late: selected.late },
+    ...selected.others,
+  ];
+  return {
+    selected,
+    deckBuyerId,
+    beside: all.filter((entry) => entry.task.kind !== 'buyer_watch'),
+  };
+}

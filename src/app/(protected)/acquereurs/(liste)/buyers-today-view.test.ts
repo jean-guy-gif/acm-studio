@@ -25,7 +25,9 @@ describe('« à faire aujourd’hui » d’Acquéreurs : ce que la vue garde', (
     const at = view.indexOf('data-testid="buyers-today-detail"');
     expect(at).toBeGreaterThan(-1);
     const section = view.slice(view.lastIndexOf('<section', at), at);
-    expect(section).toMatch(/key=\{selected\?\.buyerId \?\? '[a-z]+'\}/);
+    // La personne du détail : celle dont on voit les biens (lot C), sinon la personne choisie.
+    expect(section).toMatch(/key=\{detailId \?\? '[a-z]+'\}/);
+    expect(view).toContain('const detailId = deckBuyer?.id ?? selected?.buyerId ?? null;');
   });
 
   it('aucune ligne n’a son rang pour clé : une tâche faite ne lègue pas son geste à la suivante', () => {
@@ -41,8 +43,21 @@ describe('« à faire aujourd’hui » d’Acquéreurs : ce que la vue garde', (
   });
 
   it('les autres choses à faire d’une personne sont aux trois tailles : carte, ligne, détail', () => {
-    expect(view).toContain('<OtherTasks item={item} today={today} day={day} inCard />');
-    expect(view).toContain('<OtherTasks item={item} today={today} day={day} />');
+    expect(view).toContain('<OtherTasks tasks={item.others} today={today} day={day} inCard />');
+    expect(view).toContain(
+      '<OtherTasks tasks={item.others} today={today} day={day} onPlace={watchOnPlace} />',
+    );
     expect(view).toContain('also={buyerOthersNote(item.others)}');
+  });
+
+  // Relecture du lot C (bloquant) — écarter le dernier bien de la veille fait sortir la tâche de la
+  // liste : le détail reste sur les biens de la personne tant que l'adresse le dit, et ses autres
+  // choses à faire suivent, sous ses biens.
+  it('le détail tient la personne sur ses biens par l’adresse ; la règle est dans le service', () => {
+    expect(view).toContain('buyersTodayDetail(items, { personne, biens }');
+    expect(view).toContain('href={buyerTodayHref(item)}');
+    expect(view).toContain('<OtherTasks tasks={detail.beside} today={today} day={day} />');
+    // La vue ne décide plus seule de qui voit ses biens.
+    expect(view).not.toMatch(/task\.kind === 'buyer_watch'/);
   });
 });
