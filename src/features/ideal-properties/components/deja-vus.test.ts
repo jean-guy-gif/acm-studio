@@ -11,6 +11,7 @@ const panel = readFileSync(
   'utf8',
 );
 const page = readFileSync('src/app/(protected)/acquereurs/[buyerId]/biens-ideaux/page.tsx', 'utf8');
+const loader = readFileSync('src/features/ideal-properties/queries/load-ideal-panel.ts', 'utf8');
 
 describe('les biens idéaux : « Déjà vus avec lui »', () => {
   it('une annonce de la recherche se reconnaît avec tout son candidat', () => {
@@ -26,9 +27,13 @@ describe('les biens idéaux : « Déjà vus avec lui »', () => {
     );
   });
 
+  // La refonte, lot C — ce que la page lit est sorti dans `loadIdealPanel` (la même lecture sert
+  // « un bien à la fois » dans le détail d'Acquéreurs) : la page en passe tout au panneau.
   it('la page passe aussi les biens écartés pour lui, et les marques de ses sélections', () => {
-    expect(page).toContain('seen={seenFacts ?? []}');
-    expect(page).toContain('seenMarks={seenRead ? seenRead.marks(buyer.id) : []}');
+    expect(loader).toContain('seen: seenFacts ?? [],');
+    expect(loader).toContain('seenMarks: seenRead ? seenRead.marks(buyer.id) : [],');
+    expect(page).toContain('const panel = await loadIdealPanel(buyer, profile);');
+    expect(page).toMatch(/<IdealPropertiesPanel\s+\{\.\.\.panel\}/);
   });
 
   it('« Déjà vus avec lui » n’a pas de case « Retenir »', () => {
