@@ -43,6 +43,6 @@ describe('« à faire aujourd’hui » d’Acquéreurs : ce que la vue garde', (
   it('les autres choses à faire d’une personne sont aux trois tailles : carte, ligne, détail', () => {
     expect(view).toContain('<OtherTasks item={item} today={today} day={day} inCard />');
     expect(view).toContain('<OtherTasks item={item} today={today} day={day} />');
-    expect(view).toContain('also={also(item)}');
+    expect(view).toContain('also={buyerOthersNote(item.others)}');
   });
 });

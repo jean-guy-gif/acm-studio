@@ -87,15 +87,15 @@ export function TaskCard({
   );
 }
 
-// « Aussi : … » — une autre chose à faire pour la même personne, en une ligne ; son retard en
-// orange. Sur la carte d'une personne ou sous son nom dans la liste : rien de dû n'est caché.
-export function AlsoNote({ task, late = null }: { task: string; late?: string | null }) {
+// « + 2 autres choses à faire · dont 1 en retard » — sous la tâche d'une personne, dans la liste :
+// ses autres choses à faire du jour, en une ligne ; leur retard en orange. Rien de dû n'est caché.
+export function AlsoNote({ text, late = null }: { text: string; late?: string | null }) {
   return (
     <span
       className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60"
       data-testid="person-also"
     >
-      Aussi : {task}
+      {text}
       {late ? <LateNote late={late} /> : null}
     </span>
   );
@@ -123,7 +123,7 @@ export function PersonRow({
   tone = 'plain',
   selected = false,
   keepScroll = false,
-  also = [],
+  also = null,
   testId = 'person-row',
 }: {
   href: string;
@@ -132,8 +132,8 @@ export function PersonRow({
   late?: string | null;
   tone?: Tone;
   selected?: boolean;
-  // Ses autres choses à faire du jour, une ligne chacune (« Aussi : … »).
-  also?: readonly { key: string; task: string; late: string | null }[];
+  // Ses autres choses à faire du jour, en une ligne (« + 2 autres choses à faire »).
+  also?: { text: string; late: string | null } | null;
   // Choisir une personne ne quitte pas la page : la liste ne remonte pas en haut.
   keepScroll?: boolean;
   testId?: string;
@@ -165,9 +165,7 @@ export function PersonRow({
           {task}
           {late ? <LateNote late={late} /> : null}
         </span>
-        {also.map((other) => (
-          <AlsoNote key={other.key} task={other.task} late={other.late} />
-        ))}
+        {also ? <AlsoNote text={also.text} late={also.late} /> : null}
       </span>
       {selected ? null : <LinkPending />}
     </Link>
