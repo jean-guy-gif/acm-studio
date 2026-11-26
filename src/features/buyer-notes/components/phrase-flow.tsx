@@ -153,13 +153,18 @@ export function PhraseChips({
             data-chip={chip.id}
             data-tone={chip.tone}
             data-verify={chip.verify ? 'true' : 'false'}
+            // Pour les lecteurs d'écran : ce que la couleur dit (ce qui compte pour eux), et « à
+            // vérifier » ; le texte visible reste la seule pastille.
+            aria-label={[
+              chip.label,
+              chip.tone === 'soft' ? 'ce qui compte pour eux' : null,
+              chip.verify ? 'à vérifier' : null,
+            ]
+              .filter(Boolean)
+              .join(', ')}
             onClick={() => onOpen(chip.id === open ? null : chip.id)}
           >
             {chip.label}
-            {chip.tone === 'soft' ? (
-              <span className="sr-only"> (ce qui compte pour eux)</span>
-            ) : null}
-            {chip.verify ? <span className="sr-only"> (à vérifier)</span> : null}
           </button>
         ))}
       </div>

@@ -112,6 +112,9 @@ describe('« Ce que j’ai compris » : les pastilles à toucher', () => {
     // M151 — tout ce que la lecture propose est à vérifier (relecture du lot D).
     expect(html).toContain('>À vérifier : touchez pour corriger<');
     expect(html.match(/data-verify="true"/g)).toHaveLength(chips.length);
+    // Les lecteurs d'écran entendent ce que la couleur dit, et « à vérifier ».
+    expect(html).toContain('aria-label="Au calme, ce qui compte pour eux, à vérifier"');
+    expect(html).toContain('aria-label="M. et Mme Arnaud, à vérifier"');
     expect(html.match(/data-testid="phrase-chip"/g)).toHaveLength(chips.length);
     expect(html).toMatch(/data-chip="name"[^>]*data-tone="plain"/);
     expect(html).toMatch(/data-chip="soft:calme"[^>]*data-tone="soft"/);
