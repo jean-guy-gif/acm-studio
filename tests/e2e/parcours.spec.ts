@@ -1008,6 +1008,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await sideNav(page)
       .getByRole('link', { name: /^Vendeurs/ })
       .click();
+    // La refonte, lot E — « Vendeurs » s'ouvre sur « à faire aujourd'hui » ; « Tous mes vendeurs »
+    // mène aux listes et à leurs onglets.
+    await expect(page).toHaveURL(/\/vendeurs$/);
+    await page.getByTestId('sellers-all-link').click();
     await expect(page).toHaveURL(/\/builder$/);
     await page.getByTestId('seller-tabs').getByRole('link', { name: 'Live', exact: true }).click();
     await expect(page).toHaveURL(/\/live$/);
