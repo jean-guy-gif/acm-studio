@@ -9,6 +9,7 @@ import {
   btnSecondary,
   errorText,
   hintText,
+  taskButtonClass,
   type TaskButtonLook,
 } from '@/components/ui/styles';
 import { followUpShareHrefs } from '@/features/meeting-conclusion/services/follow-up-share';
@@ -175,10 +176,11 @@ export function OfferAnswerTask({
   decision: OfferDecision;
   // « Voir l'offre » : l'offre signée, et la réponse du vendeur.
   offerHref: string;
-  // La refonte, lot B — dans une carte « à faire » (`socle`), un seul bouton plein par écran : la
-  // carte qui mène l'écran (`primary`) a « Prévenir l'acquéreur » plein, puis le message ouvert ;
-  // les autres cartes restent en contour, message ouvert compris. Sur « Aujourd'hui », comme
-  // avant : en contour, le message ouvert en plein.
+  // La refonte, lot B — dans une carte « à faire » (`socle`), « Prévenir l'acquéreur » est le
+  // bouton de la carte, sur toute sa largeur, ses autres gestes dessous ; un seul bouton plein par
+  // écran : la carte qui mène l'écran (`primary`) l'a plein, puis le message ouvert ; les autres
+  // cartes restent en contour, message ouvert compris. Sur « Aujourd'hui », comme avant : quatre
+  // boutons en ligne, en contour, le message ouvert en plein.
   primary?: boolean;
   look?: TaskButtonLook;
 }) {
@@ -203,21 +205,35 @@ export function OfferAnswerTask({
     );
   }
 
+  const socle = look === 'socle';
+  const buyerButton = (
+    <button
+      type="button"
+      className={
+        socle
+          ? taskButtonClass(filled('buyer'), 'socle')
+          : filled('buyer')
+            ? btnPrimary
+            : btnSecondary
+      }
+      data-testid="offer-answer-buyer"
+      onClick={() => prepare('buyer')}
+    >
+      Prévenir l’acquéreur
+    </button>
+  );
+
   return (
     <div
-      className="flex w-full flex-col gap-2 sm:w-auto sm:items-end"
+      className={
+        socle ? 'flex w-full flex-col gap-2' : 'flex w-full flex-col gap-2 sm:w-auto sm:items-end'
+      }
       data-testid="offer-answer-task"
       data-task-open={open ? '' : undefined}
     >
+      {socle ? buyerButton : null}
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={filled('buyer') ? btnPrimary : btnSecondary}
-          data-testid="offer-answer-buyer"
-          onClick={() => prepare('buyer')}
-        >
-          Prévenir l’acquéreur
-        </button>
+        {socle ? null : buyerButton}
         {decision === 'accepted' ? (
           <button
             type="button"

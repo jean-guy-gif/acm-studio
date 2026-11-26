@@ -12,6 +12,7 @@ vi.mock('@/features/purchase-offer/actions/offer-answer', () => ({
 }));
 
 const { OfferAnswerTask } = await import('@/features/purchase-offer/components/offer-answer-task');
+const { btnSecondary, taskButtonClass } = await import('@/components/ui/styles');
 
 // La réponse du vendeur à une offre (M138), au repos : quels boutons sont pleins. Le message ouvert
 // se joue dans un vrai navigateur (spec `acquereurs-a-faire`).
@@ -46,6 +47,22 @@ describe('la réponse du vendeur à une offre, au repos', () => {
   it('dans une autre carte « à faire » : tout en contour', () => {
     expect(filled(render({ look: 'socle', primary: false }))).toEqual([]);
     expect(filled(render({ look: 'socle' }))).toEqual([]);
+  });
+
+  // Dans une carte « à faire », « Prévenir l'acquéreur » est LE bouton de la carte : celui du
+  // socle, sur toute la largeur — plein si la carte mène l'écran, en contour sinon.
+  it('dans une carte « à faire », le premier geste est le bouton du socle ; sur « Aujourd’hui », non', () => {
+    const buyerClass = (html: string) =>
+      /<button[^>]*class="([^"]*)"[^>]*data-testid="offer-answer-buyer"|<button[^>]*data-testid="offer-answer-buyer"[^>]*class="([^"]*)"/
+        .exec(html)
+        ?.slice(1)
+        .find(Boolean);
+    expect(buyerClass(render({ look: 'socle', primary: true }))).toBe(
+      taskButtonClass(true, 'socle'),
+    );
+    expect(buyerClass(render({ look: 'socle' }))).toBe(taskButtonClass(false, 'socle'));
+    expect(buyerClass(render({}))).toBe(btnSecondary);
+    expect(buyerClass(render({ primary: true }))).toBe(btnSecondary);
   });
 
   it('ses quatre gestes restent là, dans l’ordre', () => {
