@@ -238,6 +238,13 @@ export function DeckCardView({
   }, [keyboard, pending, choosing, full, onPropose]);
 
   const photo = card.photo && !broken ? displayPhotoUrl(card.photo) : null;
+  // La photo prend la place que l'écran lui laisse (290 px sur tablette, 410 sur ordinateur, comme
+  // les maquettes), jamais moins de 180 px : sur un écran moins haut, « Écarter » et « Proposer »
+  // restent visibles sans défiler. Sélection complète, la mention prend sa ligne : la photo cède
+  // sa hauteur.
+  const photoHeight = full
+    ? 'h-[250px] md:h-[clamp(180px,calc(100dvh_-_530px),290px)] xl:h-[clamp(180px,calc(100dvh_-_540px),410px)]'
+    : 'h-[250px] md:h-[clamp(180px,calc(100dvh_-_480px),290px)] xl:h-[clamp(180px,calc(100dvh_-_490px),410px)]';
   return (
     <div className="flex flex-1 flex-col gap-3.5 xl:gap-[18px]" data-testid="deck-card" ref={root}>
       {/* La photo, ou — pour un bien de l'agence, dont la photo se lit sur sa fiche — un bandeau. */}
@@ -246,7 +253,7 @@ export function DeckCardView({
         onClick={onOpen}
         aria-label={`Ouvrir la fiche : ${card.label}`}
         className={`relative block w-full flex-none overflow-hidden rounded-[20px] bg-[#E7EAF7] text-left stage:bg-white/10 ${
-          photo ? 'h-[250px] md:h-[290px] xl:h-[410px]' : 'h-[120px] md:h-[140px]'
+          photo ? photoHeight : 'h-[120px] md:h-[140px]'
         }`}
         data-testid="deck-photo"
       >
@@ -351,7 +358,7 @@ export function DeckCardView({
       {/* Les deux gestes : sous le pouce sur téléphone (fixés en bas de l'écran), en bas du détail
           ailleurs. « Écarter » demande sa raison ; « Garder » revient au bien. */}
       <div
-        className="sticky bottom-[var(--shell-bottom)] z-10 -mx-5 mt-auto flex flex-col gap-2 bg-[#F4F5FA]/95 px-5 pt-3 pb-4 backdrop-blur md:static md:mx-0 md:bg-transparent md:p-0 md:backdrop-blur-none stage:bg-transparent"
+        className="sticky bottom-[var(--shell-bottom)] z-10 mt-auto flex flex-col gap-2 bg-[#F4F5FA]/95 pt-3 pb-4 backdrop-blur md:static md:bg-transparent md:p-0 md:backdrop-blur-none stage:bg-transparent"
         data-testid="deck-actions"
       >
         {error ? (

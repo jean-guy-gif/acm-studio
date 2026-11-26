@@ -221,17 +221,21 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
       >
         {selected && deckBuyer ? (
           <>
-            <Suspense
-              fallback={
-                <BuyerHeader
-                  item={selected}
-                  words={proposedBuyerWords(deckBuyer)}
-                  note="Lecture de ses nouveaux biens…"
-                />
-              }
-            >
-              <BuyerDeck buyer={deckBuyer} profile={profile} />
-            </Suspense>
+            {/* Le bien prend la hauteur de l'écran, ses deux gestes en bas ; les autres choses à
+                faire de la personne suivent, en défilant. */}
+            <div className="flex min-h-full flex-none flex-col gap-[18px]">
+              <Suspense
+                fallback={
+                  <BuyerHeader
+                    item={selected}
+                    words={proposedBuyerWords(deckBuyer)}
+                    note="Lecture de ses nouveaux biens…"
+                  />
+                }
+              >
+                <BuyerDeck buyer={deckBuyer} profile={profile} />
+              </Suspense>
+            </div>
             {selected.others.length > 0 ? (
               <OtherTasks item={selected} today={today} day={day} />
             ) : null}

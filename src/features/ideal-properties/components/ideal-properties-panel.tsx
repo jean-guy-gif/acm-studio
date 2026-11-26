@@ -956,15 +956,8 @@ export function IdealPropertiesPanel({
     const lastDismissed = justDismissed.at(-1);
     const retained = [...selected.values()];
     const allLink = 'Toute la liste et le marché';
-    const toList = embedded ? (
-      <Link
-        href={`/acquereurs/${buyerId}/biens-ideaux`}
-        className={socleStepLink}
-        data-testid="deck-all"
-      >
-        {allLink}
-      </Link>
-    ) : (
+    // Dans le détail d'Acquéreurs, ce lien est en tête, à côté de « Ouvrir sa fiche ».
+    const toList = embedded ? null : (
       <button
         type="button"
         className={socleStepLink}
@@ -998,13 +991,23 @@ export function IdealPropertiesPanel({
                     {embedded.words}
                   </p>
                 ) : null}
-                <Link
-                  href={embedded.ficheHref}
-                  className="self-start text-sm font-bold text-brand-deep hover:text-brand-darker stage:text-brand"
-                  data-testid="buyers-today-open"
-                >
-                  Ouvrir sa fiche
-                </Link>
+                {/* Dans le détail, la place est comptée : ses deux liens sur une ligne. */}
+                <div className="flex flex-wrap gap-x-4 text-sm font-bold text-brand-deep stage:text-brand">
+                  <Link
+                    href={embedded.ficheHref}
+                    className="hover:text-brand-darker"
+                    data-testid="buyers-today-open"
+                  >
+                    Ouvrir sa fiche
+                  </Link>
+                  <Link
+                    href={`/acquereurs/${buyerId}/biens-ideaux`}
+                    className="hover:text-brand-darker"
+                    data-testid="deck-all"
+                  >
+                    {allLink}
+                  </Link>
+                </div>
               </div>
             ) : (
               <Link

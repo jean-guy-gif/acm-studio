@@ -111,9 +111,9 @@ test('un bien à la fois : écarter ou proposer, aux trois tailles', async ({ pa
     total = Number(/^Bien 1 sur (\d+)$/.exec(position)?.[1]);
     expect(total, `« ${position} »`).toBeGreaterThanOrEqual(2);
     // Leur sélection en cours a déjà deux biens : il reste une place.
-    await expect(deck.getByTestId('deck-retained').locator('visible=true')).toHaveText(
-      '2 retenus sur 3',
-    );
+    await expect(deck.getByTestId('deck-retained')).toHaveText('2 retenus sur 3', {
+      useInnerText: true,
+    });
     await expect(deck.getByTestId('deck-full')).toHaveCount(0);
     await expect(deck.getByTestId('deck-segments').locator('span')).toHaveCount(total);
     await expect(deck.getByTestId('deck-segments').locator('[data-reached="true"]')).toHaveCount(1);
@@ -187,9 +187,9 @@ test('un bien à la fois : écarter ou proposer, aux trois tailles', async ({ pa
     const kept = await deck.getByTestId('deck-label').innerText();
     // Au clavier : la flèche droite propose.
     await page.keyboard.press('ArrowRight');
-    await expect(deck.getByTestId('deck-retained').locator('visible=true')).toHaveText(
-      '3 retenus sur 3',
-    );
+    await expect(deck.getByTestId('deck-retained')).toHaveText('3 retenus sur 3', {
+      useInnerText: true,
+    });
     // La sélection est complète : les biens restants se voient quand même, un par un — « Proposer »
     // attend une place, « Passer ce bien » mène au suivant.
     for (let seen = 3; seen <= total; seen += 1) {
@@ -244,7 +244,9 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
       timeout: 30_000,
     });
     // Sur 150 px : « 3 sur 3 ». Leur sélection est complète : le bien se voit quand même.
-    await expect(deck.getByTestId('deck-retained').locator('visible=true')).toHaveText('3 sur 3');
+    await expect(deck.getByTestId('deck-retained')).toHaveText('3 sur 3', {
+      useInnerText: true,
+    });
     await expect(deck.getByTestId('deck-full')).toContainText('Sélection complète');
     await expect(deck.getByTestId('deck-propose')).toBeDisabled();
     await expect(deck.getByTestId('deck-criteria')).toHaveText(/^\d+ critères? sur \d+$/);
@@ -256,6 +258,8 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
     expect(Math.round(dismiss.y)).toBe(Math.round(propose.y));
     expect(Math.abs(dismiss.width - propose.width)).toBeLessThanOrEqual(1);
     expect(Math.round(propose.height)).toBe(58);
+    // Ils tiennent dans l'écran, sans défiler.
+    expect(propose.y + propose.height).toBeLessThanOrEqual(768);
     await expectNoHorizontalScroll(page, 'Un bien à la fois (1024 × 768)');
     await page.setViewportSize({ width: 768, height: 1024 });
     await expect(deck.getByTestId('deck-propose')).toBeVisible();
@@ -279,9 +283,9 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
     await expect(deck.getByTestId('deck-back')).toHaveText('Keller');
     await expect(deck.getByTestId('deck-back')).toHaveAttribute('href', fiche);
     await expect(deck.getByTestId('deck-position')).toHaveText(/^Bien 1 sur \d+$/);
-    await expect(deck.getByTestId('deck-retained').locator('visible=true')).toHaveText(
-      '3 retenus sur 3',
-    );
+    await expect(deck.getByTestId('deck-retained')).toHaveText('3 retenus sur 3', {
+      useInnerText: true,
+    });
     await expect(deck.getByTestId('deck-criteria')).toHaveText(/^\d+ critères? sur \d+$/);
     await expect(deck.getByTestId('deck-why')).toContainText('Pourquoi celui-ci pour eux');
     expect(await filledShown(page)).toEqual(['Proposer']);
@@ -315,9 +319,9 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
     await opener.click();
     await expect(page).toHaveURL(new RegExp(`${fiche}/biens-ideaux\\?un=1$`));
     await expect(deck.getByTestId('deck-position')).toHaveText(/^Bien 1 sur \d+$/);
-    await expect(deck.getByTestId('deck-retained').locator('visible=true')).toHaveText(
-      '2 retenus sur 3',
-    );
+    await expect(deck.getByTestId('deck-retained')).toHaveText('2 retenus sur 3', {
+      useInnerText: true,
+    });
     await expect(deck.getByTestId('deck-full')).toHaveCount(0);
   });
 
@@ -325,9 +329,9 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
     const deck = page.getByTestId('ideal-deck');
     const kept = await deck.getByTestId('deck-label').innerText();
     await deck.getByTestId('deck-propose').click();
-    await expect(deck.getByTestId('deck-retained').locator('visible=true')).toHaveText(
-      '3 retenus sur 3',
-    );
+    await expect(deck.getByTestId('deck-retained')).toHaveText('3 retenus sur 3', {
+      useInnerText: true,
+    });
     // Les biens suivants se passent, jusqu'à la fin.
     const total = Number(
       /sur (\d+)$/.exec(await deck.getByTestId('deck-position').innerText())?.[1],
