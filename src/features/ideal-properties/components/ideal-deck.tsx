@@ -397,7 +397,7 @@ export function DeckCardView({
       {/* Les deux gestes : sous le pouce sur téléphone (fixés en bas de l'écran), en bas du détail
           ailleurs. « Écarter » demande sa raison ; « Garder », à sa place, revient au bien. */}
       <div
-        className="sticky bottom-[var(--shell-bottom)] z-10 mt-auto flex flex-col gap-2 bg-[#F4F5FA]/95 pt-3 pb-4 backdrop-blur md:static md:bg-transparent md:p-0 md:backdrop-blur-none stage:bg-transparent"
+        className="sticky bottom-[var(--shell-bottom)] z-10 mt-auto flex flex-col gap-2 bg-[#F4F5FA]/95 pt-3 pb-4 backdrop-blur md:relative md:bottom-auto md:bg-transparent md:p-0 md:backdrop-blur-none stage:bg-transparent"
         data-testid="deck-actions"
       >
         {error ? (
@@ -449,8 +449,15 @@ export function DeckCardView({
             ) : null}
           </div>
         ) : null}
+        {/* Les raisons : sur téléphone, la barre du bas grandit vers le haut ; sur tablette et
+            ordinateur, elles s'ouvrent au-dessus des gestes, sans rien déplacer — « Garder » est
+            exactement où était « Écarter », et rien ne passe sous l'écran. */}
         {choosing ? (
-          <div className="flex flex-col gap-2.5" data-testid="deck-reasons" ref={reasons}>
+          <div
+            className="flex flex-col gap-2.5 md:absolute md:inset-x-0 md:bottom-full md:z-20 md:mb-3 md:rounded-[20px] md:border md:border-[#E3E6F0] md:bg-white md:p-4 md:shadow-[0_8px_24px_rgba(27,37,89,0.14)] md:stage:border-white/10 md:stage:bg-[#0b2233]"
+            data-testid="deck-reasons"
+            ref={reasons}
+          >
             <span className="text-[15px] font-bold text-brand-darker stage:text-white">
               Pourquoi l’écarter ?
             </span>
