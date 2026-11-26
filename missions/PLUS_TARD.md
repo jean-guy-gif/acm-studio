@@ -353,4 +353,22 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     pas dans le détail d'Acquéreurs (qui ne lance pas de recherche) ;
   - Vercel n'a pas déployé un commit poussé sur `essai` (07 h 10, aucun déploiement créé) : un
     commit vide l'a relancé. À surveiller si cela se reproduit.
+- 26/11 · Refonte, lot C (relecture) · Notés, sans les corriger :
+  - une veille illisible se lit comme « aucun bien de la veille », sur la liste des biens idéaux
+    (depuis la M136) comme dans « un bien à la fois » : `getBuyerWatchFinds` ne distingue pas
+    l'échec de l'absence. Les deux autres lectures (ce qu'il a déjà vu, les mandats) se disent ;
+  - dans le détail d'Acquéreurs, les biens idéaux de la personne choisie se lisent à chaque
+    relecture de la page, et sur téléphone aussi, où le détail est caché : la même lecture que sa
+    page, ni plus ni moins, mais faite pour rien sous 768 px. À revoir si la page d'Acquéreurs
+    devient lente (le serveur ne connaît pas la largeur de l'écran) ;
+  - « Proposer » nomme deux gestes voisins : ici, retenir dans la sélection ; pour un mandat,
+    l'envoi noté de « Proposer ce bien » (M134). L'en-tête dit « 2 retenus sur 3 » (la maquette),
+    la fiche complète de la liste « 2 biens sélectionnés sur 3 ». À unifier si cela gêne ;
+  - « Écarté pour lui » (les mots d'aujourd'hui, M139) voisine avec « Pourquoi celui-ci pour
+    eux » (la maquette) : un nom de fiche ne dit ni le genre ni le nombre ;
+  - la question « Quitter sans retenir la sélection ? » ne couvre pas le bouton « Précédent » du
+    navigateur (comme partout, M93), ni la liste des biens idéaux, qui n'a jamais demandé avant de
+    quitter une sélection cochée et non retenue ;
+  - une personne tenue sur ses biens par l'adresse, qui n'a plus rien à faire, n'a plus de ligne
+    dans la liste : le détail reste sous son nom, rien n'est surligné à gauche.
 

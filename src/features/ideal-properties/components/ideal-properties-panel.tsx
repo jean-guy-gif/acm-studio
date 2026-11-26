@@ -66,6 +66,7 @@ import {
 } from '@/features/ideal-properties/services/categorize-ideal';
 import {
   agencyDeckCard,
+  deckEndKicker,
   deckSelectionNote,
   marketDeckCard,
   type DeckCard,
@@ -1191,15 +1192,11 @@ export function IdealPropertiesPanel({
             data-testid="deck-end"
           >
             <span className={socleKicker} data-testid="deck-end-kicker">
-              {deckOrder.length > 0
-                ? deckScope === 'watch'
-                  ? 'Tous les nouveaux biens sont vus'
-                  : 'Tous les biens sont vus'
-                : deckUnread
-                  ? 'Ses biens n’ont pas pu être lus'
-                  : deckScope === 'watch'
-                    ? 'Aucun nouveau bien à voir pour l’instant'
-                    : 'Aucun bien à voir pour l’instant'}
+              {deckEndKicker({
+                seen: deckOrder.length > 0,
+                scope: deckScope,
+                unread: deckUnread,
+              })}
             </span>
             <p
               className="text-[21px] leading-snug font-bold text-brand-darker stage:text-white"

@@ -925,11 +925,29 @@ de la fenêtre`), pas seulement qu'ils existent : sur ordinateur, « Écarter »
   verrou synchrone (`useRef`) devant un appel au serveur.
 - 26/11 · Refonte, lot C · Après une action serveur qui revalide, la page courante se relit : dans
   une liste et son détail, la tâche qui portait le détail peut disparaître, et le détail passer à
-  la personne suivante en plein geste. La fin d'un geste qui vide sa propre tâche mène ailleurs
-  (ici : la fiche, où la prochaine étape l'attend).
+  la personne suivante en plein geste. Un détail que ses propres gestes peuvent vider de sa liste
+  se tient par L'ADRESSE (`?personne=…&biens=1`), jamais par la liste : c'est le relecteur qui l'a
+  vu (écarter le dernier bien de la veille faisait disparaître le parcours, « Annuler » avec lui),
+  la première réponse — mener ailleurs à la fin — ne couvrait qu'un des chemins.
 - 26/11 · Refonte, lot C · Un commit poussé sur `essai` peut ne déclencher aucun déploiement
   (Vercel, 07 h 10) : si `/api/version` ne bouge pas en quatre minutes, lire la liste des
   déploiements avant d'attendre plus ; un commit vide relance.
+- 26/11 · Refonte, lot C · Un geste qui a l'air fini (« Proposer ») mais ne change que la mémoire
+  de l'écran perd son travail sans rien dire au premier lien suivi. Trois choses ensemble : dire
+  que ce n'est pas enregistré, offrir l'enregistrement tout de suite (en contour), demander avant
+  de quitter (`useLeaveConfirm`, dans l'écran).
+- 26/11 · Refonte, lot C · Le second toucher d'un double toucher tombe sur ce qui vient
+  d'apparaître sous le doigt : le bien suivant (un second « Proposer »), une raison d'écarter (au
+  hasard). Un court silence après l'arrivée (0,4 s, `data-ready` pour que la spec attende comme la
+  main), et le bouton qui annule à la place exacte de celui qui ouvre. `dblclick()` de Playwright
+  le prouve.
+- 26/11 · Refonte, lot C · Comparer la PLACE de deux boutons (« Garder » où était « Écarter ») a
+  trouvé un défaut que rien d'autre ne voyait : sur ordinateur, les raisons ouvertes dans le flux
+  poussaient les gestes sous l'écran. Ce qui s'ouvre au-dessus d'un geste s'ouvre par-dessus
+  (`absolute`, `bottom-full`), sans rien déplacer.
+- 26/11 · Refonte, lot C · Les nombres d'une maquette sont une règle : « 4 nouveaux biens » sur la
+  ligne, « Bien 1 sur 4 » dans le détail. Le parcours montrait aussi les biens de l'agence
+  (« Bien 1 sur 4 » pour « 2 nouveaux biens ») ; relire les maquettes côte à côte, pas une à une.
 
 ## La base
 
