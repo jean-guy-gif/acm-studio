@@ -4,6 +4,7 @@ import type { CompetitorCandidate } from '@/features/competitor-search/types';
 import type { CategorizedCandidate } from '@/features/ideal-properties/services/categorize-ideal';
 import {
   agencyDeckCard,
+  deckEndKicker,
   deckSelectionNote,
   marketDeckCard,
 } from '@/features/ideal-properties/services/deck-cards';
@@ -221,5 +222,34 @@ describe('la ligne au-dessus des deux gestes', () => {
 
   it('une sélection vidée ne s’enregistre pas d’ici', () => {
     expect(deckSelectionNote({ count: 0, changed: true })).toBeNull();
+  });
+});
+
+describe('la fin du parcours', () => {
+  it('tous les biens vus : ceux de la veille, ou tous ceux de la page', () => {
+    expect(deckEndKicker({ seen: true, scope: 'watch', unread: false })).toBe(
+      'Tous les nouveaux biens sont vus',
+    );
+    expect(deckEndKicker({ seen: true, scope: 'all', unread: false })).toBe(
+      'Tous les biens sont vus',
+    );
+  });
+
+  it('rien à voir : dit comme tel', () => {
+    expect(deckEndKicker({ seen: false, scope: 'watch', unread: false })).toBe(
+      'Aucun nouveau bien à voir pour l’instant',
+    );
+    expect(deckEndKicker({ seen: false, scope: 'all', unread: false })).toBe(
+      'Aucun bien à voir pour l’instant',
+    );
+  });
+
+  // M98 — une lecture en échec n'est jamais lue comme une absence.
+  it('une lecture en échec ne se dit jamais « aucun bien »', () => {
+    for (const scope of ['watch', 'all'] as const) {
+      const kicker = deckEndKicker({ seen: false, scope, unread: true });
+      expect(kicker).toBe('Ses biens n’ont pas pu être lus');
+      expect(kicker).not.toMatch(/aucun/i);
+    }
   });
 });

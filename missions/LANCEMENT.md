@@ -136,7 +136,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 | --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
 | A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 0 h 30 (3 h 05) : attend le « oui » |
 | B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | sur l'essai depuis le 26/11 à 1 h 20, relu et corrigé à 2 h 50 (3 h 05) : attend le « oui » |
-| C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | sur l'essai depuis le 26/11 à 9 h 10 : attend le « oui » |
+| C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | sur l'essai depuis le 26/11 à 9 h 10, relu et corrigé à 10 h 15 : attend le « oui » |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | à faire |
 | E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | à faire |
 | F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | à faire |
@@ -391,8 +391,10 @@ un seul bouton plein, geste ouvert compris ; « Visites à organiser » sous les
 droite ; sur téléphone, « Voir les biens » ouvre la page. La démo de l'essai est laissée dans cet
 état (la veille des Keller réveillée, une place libre dans leur sélection) : une démo remise à
 zéro les montre « Sous offre », sans bien à voir. Les captures :
-`missions/maquettes/REFONTE-C-telephone.png`, `-tablette.png`, `-ordinateur.png`, et les mêmes en
-`…-charte-start-academy.png`.
+`missions/maquettes/REFONTE-C-telephone.png`, `-tablette.png`, `-ordinateur.png`, les mêmes en
+`…-charte-start-academy.png`, et deux états sur ordinateur : `REFONTE-C-ecarter-ordinateur.png`
+(les raisons d'« Écarter ») et `REFONTE-C-a-enregistrer-ordinateur.png` (un bien proposé, pas
+encore enregistré).
 
 Ce qui change, en comportement :
 
@@ -401,57 +403,110 @@ Ce qui change, en comportement :
   budget », verte ; au-dessus, orange, jamais rouge), son libellé neutre, « affiché le … », puis
   « Pourquoi celui-ci pour eux » en pastilles, et deux gestes : « Écarter » ou « Proposer ».
   Jamais un pourcentage.
+- **La tâche dit « 2 nouveaux biens », le parcours dit « Bien 1 sur 2 »** : depuis la tâche de la
+  veille (le détail sur tablette et ordinateur, « Voir les biens » sur téléphone), on voit ces
+  biens-là, et eux seuls, comme sur les maquettes (« 4 nouveaux biens » → « Bien 1 sur 4 »).
 - **« Pourquoi celui-ci pour eux », dans ses mots** : ses indispensables (★) satisfaits d'abord,
   en orange (« Piscine », « Mouans-Sartoux ») ; ce que l'annonce dit de ce qui compte pour eux,
   en vert (« « au calme » dans l'annonce » — le critère, jamais la citation) ; puis ses autres
-  souhaits satisfaits (« Extérieur », « 2 pièces de plus »). Ni le type ni le budget : le libellé
-  et la pastille du prix les disent déjà. Ce qui est à savoir (un écart, « Extérieur : à
-  vérifier ») reste dit dessous : « À savoir : … ».
+  souhaits satisfaits (« Extérieur », « 2 pièces de plus », « Pas de travaux annoncés »). Ni le
+  type ni le budget : le libellé et la pastille du prix les disent déjà. Ce qui est à savoir (un
+  écart, « Extérieur : à vérifier ») reste dit dessous : « À savoir : … ».
 - **« Proposer » retient le bien dans la sélection** (trois au plus) : c'est le « Retenir » des
-  biens idéaux, rien ne part vers l'acquéreur. **« Écarter » demande sa raison**, en un toucher —
-  c'est « Écarter pour lui » : le bien ne lui sera plus proposé, veille comprise ; « Annuler »
-  reste offert juste après. Tous les biens vus : « Retenir la sélection », puis la présentation
-  ou son lien, comme aujourd'hui.
-- **Où** : sur tablette et ordinateur, dans le détail d'Acquéreurs, pour une personne dont la
-  première chose à faire est « N nouveaux biens trouvés par la veille » — sans changer de page ;
-  la sélection retenue mène à sa fiche, dont la prochaine étape est de la lui présenter. Sur
-  téléphone, le bouton « Voir les biens » de sa carte ouvre la page (`…/biens-ideaux?un=1`), sans
-  menu, avec son retour vers la fiche.
-- **Ce sont les biens idéaux** : les mêmes biens (ce que la veille a trouvé, ce que l'agence a
-  déjà, le marché s'il a été cherché), la même sélection, les mêmes règles. La page des biens
-  idéaux garde sa liste, à son adresse ; elle gagne « Les voir un par un · N », et « un bien à la
-  fois » y mène par « Toute la liste et le marché ».
-- **Sélection déjà complète** (trois biens retenus, pas encore présentés) : chaque bien se voit
-  quand même ; « Proposer » attend une place, l'écran dit comment la libérer (« retirez-en un dans
-  toute la liste ») et « Passer ce bien » mène au suivant.
-- **Au clavier**, sur ordinateur : flèche gauche pour écarter, flèche droite pour proposer.
+  biens idéaux, rien ne part vers l'acquéreur. **Dès le premier bien proposé**, l'écran dit
+  « 2 biens dans la sélection, pas encore enregistrée » et offre « Retenir la sélection (2/3) »,
+  en contour ; quitter l'écran par un lien (sa fiche, une autre personne, le menu) avant de
+  l'avoir enregistrée le demande d'abord : « Quitter sans retenir la sélection ? », « Rester » ou
+  « Quitter ». Rien de proposé ne se perd sans le dire.
+- **« Écarter » demande sa raison**, en un toucher — c'est « Écarter pour lui » : le bien ne lui
+  sera plus proposé, veille comprise. Les raisons s'ouvrent au-dessus des deux gestes ;
+  « Garder », à la place exacte d'« Écarter », revient au bien. « Annuler », juste après, ramène
+  le bien à l'écran.
+- **Un second toucher parti trop vite ne décide de rien** : pendant un court instant après
+  l'arrivée d'un bien (0,4 s), les gestes n'entendent rien — deux touchers de suite sur
+  « Proposer » ne retiennent qu'un bien, deux sur « Écarter » n'écartent rien ; une flèche du
+  clavier tenue enfoncée non plus.
+- **Sans changer de page**, sur tablette et ordinateur : le détail d'Acquéreurs montre les biens de
+  la personne dont la première chose à faire est « N nouveaux biens trouvés par la veille », et
+  l'adresse la tient sur ses biens (`?personne=…&biens=1`) — quand le dernier bien est écarté, la
+  tâche quitte la liste, le détail reste sous son nom, avec « Annuler » et la fin du parcours.
+  Tous les biens vus : « Retenir la sélection », puis, sur place, « Présenter » et « Dossier
+  acquéreur et lien ». Sur téléphone, « Voir les biens » ouvre la page
+  (`…/biens-ideaux?un=veille`), sans menu, avec son retour vers la fiche.
+- **Ce sont les biens idéaux** : les mêmes biens, la même sélection, les mêmes règles. La page des
+  biens idéaux garde sa liste, à son adresse ; elle gagne « Les voir un par un · N » — tous ses
+  biens ouverts, un par un : ce que la veille a trouvé, ce que l'agence a déjà, le marché s'il a
+  été cherché —, et « un bien à la fois » y ramène par « Toute la liste et le marché ».
+- **Sélection déjà complète** (trois biens) : chaque bien se voit quand même ; « Proposer » attend
+  une place, l'écran dit comment la libérer (« retirez-en un dans toute la liste ») et « Passer
+  ce bien » mène au suivant.
+- **Au clavier**, sur ordinateur : flèche gauche pour écarter, flèche droite pour proposer, Échap
+  pour garder.
 
 Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
 
 - « Proposer » ne fait qu'UN geste : retenir dans la sélection. La maquette n'en dit pas plus ;
   envoyer le bien tout de suite à l'acquéreur serait un autre geste (la série de « Proposer ce
-  bien », pour un mandat).
+  bien », pour un mandat). Le même mot nomme donc deux gestes voisins (ici, et l'envoi noté d'un
+  mandat) : à renommer si cela gêne.
+- La sélection ne s'enregistre pas à chaque « Proposer » : chaque enregistrement crée une
+  sélection en base (M118), et trois « Proposer » en feraient trois. D'où la ligne « pas encore
+  enregistrée » et la question avant de quitter.
+- Le détail d'Acquéreurs ne montre que les biens de la veille ; les biens de l'agence (mandats,
+  concurrents à prospecter) et le marché se voient depuis la liste entière (« Les voir un par
+  un »). Deux portes pour la même tâche : depuis Acquéreurs, « un bien à la fois » ; depuis
+  « Aujourd'hui », la liste des biens idéaux, comme avant.
 - La pastille dit « sous le budget », pas « sous leur budget » : un nom de fiche ne dit ni le
   genre ni le nombre (la règle du lot B) ; le titre « Pourquoi celui-ci pour eux » est celui de
-  Jean-Guy, comme « Ce qui compte pour eux ».
+  Jean-Guy, comme « Ce qui compte pour eux » ; « Écarté pour lui » garde les mots d'aujourd'hui.
+- L'en-tête dit « 2 retenus sur 3 » (la maquette) ; la liste, elle, dit « 2 biens sélectionnés
+  sur 3 » sur la fiche complète, comme avant.
 - Le lien de la fiche complète s'appelle « Voir l'annonce complète » (la maquette) : il ouvre la
-  fiche complète du bien (ses photos, ses caractéristiques, son texte), à lire seulement ; un
-  bien de l'agence dit « Voir la fiche du bien ».
-- Un bien de l'agence (un mandat, un concurrent à prospecter) n'a pas sa photo dans « un bien à
-  la fois » : la liste d'aujourd'hui ne la lit pas non plus ; elle est sur sa fiche.
+  fiche complète du bien (ses photos, ses caractéristiques, son texte), à lire seulement — c'est
+  « Proposer » qui retient, un seul bouton plein ; un bien de l'agence dit « Voir la fiche du
+  bien ».
+- Un bien de l'agence (un mandat, un concurrent à prospecter) n'a ni sa photo ni son compte de
+  critères dans « un bien à la fois » : la liste d'aujourd'hui ne les lit pas non plus ; ils sont
+  sur sa fiche.
+- « Passer ce bien » n'existe que sélection complète : avec de la place, un bien se propose ou
+  s'écarte.
+- « un bien à la fois » ne redit pas les biens déjà vus avec lui (« 3 biens ne lui sont pas
+  reproposés ») : la liste entière le dit.
 - Sur tablette, « Pourquoi celui-ci pour eux » n'a pas de cadre ni de titre visible (REFONTE-6) ;
   le lien de l'annonce complète y reste, que la maquette ne dessinait pas.
 - La photo prend la hauteur que l'écran lui laisse (410 px au plus sur ordinateur, 290 sur
-  tablette) : sur un écran moins haut que la maquette, les deux gestes restent visibles.
+  tablette, jamais moins de 140) : sur un écran moins haut que la maquette, les deux gestes
+  restent visibles — mesuré à 1024 × 700, la fenêtre de Safari sur une tablette.
 - **À dire à Jean-Guy** : dans l'ordre d'« Aujourd'hui », « Un bien à proposer » (un mandat de
   l'agence) passe avant les biens de la veille. Une personne qui a les deux voit d'abord le
-  mandat ; ses nouveaux biens sont sous « Aussi aujourd'hui », et leur bouton ouvre la page.
+  mandat ; ses nouveaux biens sont sous « Aussi aujourd'hui », et leur bouton les ouvre sur
+  place, à droite (sur leur page, depuis un téléphone).
 
-Les specs modifiées : aucune. Une nouvelle, `un-bien-a-la-fois.spec.ts` (deux parcours) : le
-détail sur ordinateur (le bien, la fiche complète, « Écarter » et sa raison, le clavier,
-« Proposer », la sélection complète, « Retenir la sélection » qui mène à la fiche), la tablette
-dans les deux sens, et la page sur téléphone (« Toute la liste », une place libérée, « Les voir
-un par un », « Proposer », la sélection enregistrée).
+Les specs modifiées : aucune. Une nouvelle, `un-bien-a-la-fois.spec.ts` (deux parcours) : dans le
+détail sur ordinateur — le bien, la fiche complète, deux touchers de suite sur « Écarter » puis
+sur « Proposer », « Garder » à la place d'« Écarter », le clavier, « Annuler » qui ramène le bien,
+la ligne « pas encore enregistrée », la question avant de quitter (« Rester », puis « Quitter »),
+« Retenir la sélection » sans attendre la fin, le dernier bien de la veille écarté (le parcours
+reste), la fin sur place — ; sur tablette dans les deux sens et à 1024 × 700 ; et la page sur
+téléphone (« Voir les biens », « Toute la liste », une place libérée, « Les voir un par un »,
+« Proposer », la question avant de quitter, la sélection enregistrée).
+
+Le relecteur, une passe : deux bloquants, levés — dans le détail, des biens proposés se perdaient
+sans rien dire en quittant l'écran (la ligne « pas encore enregistrée », « Retenir la sélection »
+dès le premier bien, la question avant de quitter) ; écarter le dernier bien de la veille faisait
+disparaître le parcours sous le doigt (l'adresse tient la personne sur ses biens). Ses « à
+corriger », faits : le second toucher parti trop vite ; les mandats illisibles dits dans le
+parcours comme sur la liste (jamais « aucun bien » après une lecture en échec) ; on reste sur
+place après « Retenir » ; « Pas de travaux annoncés » (les mots du dossier acquéreur) au lieu de
+« Sans travaux à prévoir » ; les preuves qui manquaient (la carte d'un bien, le détail tenu par
+l'adresse, 1024 × 700). Reste noté dans `missions/PLUS_TARD.md` : une veille illisible, que la
+liste ne dit pas non plus.
+
+Les tests : 4 496 tests unitaires, barrières vertes. Sur l'essai, après les corrections : neuf
+parcours rejoués, verts au premier passage — `un-bien-a-la-fois` (deux), `acquereurs-a-faire`,
+`fiche-complete`, `jamais-repropose`, `classement`, `copropriete`, `demo`, `parcours`. Avant la
+relecture, dix-neuf parcours sur la première version (les mêmes, plus `langue-de-l-acquereur`,
+`presentation-directe` et `suivi-de-l-acquereur`).
 
 ## Chaque soir
 

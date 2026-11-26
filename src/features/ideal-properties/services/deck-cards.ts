@@ -139,3 +139,23 @@ export function deckSelectionNote({
   }
   return null;
 }
+
+// La fin du parcours, en un mot. Une lecture en échec n'est jamais lue comme « aucun bien » (M98) :
+// ce qu'il a déjà vu, ou les mandats de l'agence quand le parcours les montre (`unread`).
+export function deckEndKicker({
+  seen,
+  scope,
+  unread,
+}: {
+  // Le parcours avait des biens : ils sont tous vus.
+  seen: boolean;
+  scope: DeckScope;
+  unread: boolean;
+}): string {
+  if (seen)
+    return scope === 'watch' ? 'Tous les nouveaux biens sont vus' : 'Tous les biens sont vus';
+  if (unread) return 'Ses biens n’ont pas pu être lus';
+  return scope === 'watch'
+    ? 'Aucun nouveau bien à voir pour l’instant'
+    : 'Aucun bien à voir pour l’instant';
+}
