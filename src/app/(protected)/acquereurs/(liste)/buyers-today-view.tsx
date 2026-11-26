@@ -250,7 +250,9 @@ function BuyerTodayDetail({
 }) {
   return (
     <>
-      <div className="flex items-start justify-between gap-6">
+      {/* Sous 1024 px (une tablette en portrait), le détail est étroit : « Ouvrir sa fiche » passe
+          sous son nom et sa recherche, qui gardent toute la largeur. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
         <div className="flex min-w-0 flex-col gap-1">
           <h2
             className="text-[22px] leading-tight font-extrabold tracking-[-0.3px] text-brand-darker xl:text-[26px] xl:tracking-[-0.4px] stage:text-white"
@@ -264,7 +266,7 @@ function BuyerTodayDetail({
         </div>
         <Link
           href={`/acquereurs/${item.buyerId}`}
-          className={`${socleBtnQuiet} flex-none`}
+          className={`${socleBtnQuiet} flex-none self-start`}
           data-testid="buyers-today-open"
         >
           Ouvrir sa fiche

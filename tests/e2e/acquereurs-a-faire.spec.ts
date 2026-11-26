@@ -211,6 +211,12 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
       expect(detail.x, size).toBeGreaterThanOrEqual(list.x + list.width);
       expect(await filledShown(page), size).toEqual(['Prévenir l’acquéreur']);
       await expectNoHorizontalScroll(page, `Acquéreurs, à faire aujourd’hui (${size})`);
+      // En portrait, le détail est étroit : « Ouvrir sa fiche » passe sous le nom et la recherche,
+      // qui gardent la largeur ; en paysage, il reste à leur droite.
+      const name = (await page.getByTestId('buyers-today-name').boundingBox())!;
+      const open = (await page.getByTestId('buyers-today-open').boundingBox())!;
+      if (viewport.width < 1024) expect(open.y, size).toBeGreaterThan(name.y + name.height);
+      else expect(open.x, size).toBeGreaterThan(name.x + name.width);
     }
   });
 
