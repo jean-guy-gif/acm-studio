@@ -97,8 +97,8 @@ export function OfferMessagePanel({
           <p
             className={
               dark
-                ? 'rounded-xl bg-white/10 px-3 py-2 text-sm whitespace-pre-line text-white'
-                : 'rounded-xl bg-zinc-50 px-3 py-2 text-sm whitespace-pre-line text-zinc-700 stage:bg-white/5 stage:text-white/80'
+                ? 'rounded-xl bg-white/10 px-3 py-2 text-sm break-words whitespace-pre-line text-white'
+                : 'rounded-xl bg-zinc-50 px-3 py-2 text-sm break-words whitespace-pre-line text-zinc-700 stage:bg-white/5 stage:text-white/80'
             }
             data-testid={`offer-answer-message-${open}`}
           >

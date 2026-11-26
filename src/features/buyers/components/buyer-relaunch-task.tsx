@@ -87,7 +87,7 @@ export function BuyerRelaunchTask({
       {prepared ? (
         <>
           <p
-            className="rounded-xl bg-zinc-50 px-3 py-2 text-sm whitespace-pre-line text-zinc-700 stage:bg-white/5 stage:text-white/80"
+            className="rounded-xl bg-zinc-50 px-3 py-2 text-sm break-words whitespace-pre-line text-zinc-700 stage:bg-white/5 stage:text-white/80"
             data-testid="buyer-relaunch-message"
           >
             {prepared.message}
