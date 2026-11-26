@@ -324,8 +324,14 @@ function OtherTasks({
           }
           data-testid="buyers-today-other"
         >
+          {/* Dans la carte, la phrase d'une autre tâche se lit comme celle de la première : en
+              gris, sous le nom — c'est le bouton qui porte le geste. */}
           <p
-            className={`font-bold text-brand-darker stage:text-white ${inCard ? 'text-[15px]' : 'text-base'}`}
+            className={
+              inCard
+                ? 'text-[15px] text-[#5B6380] stage:text-white/60'
+                : 'text-base font-bold text-brand-darker stage:text-white'
+            }
           >
             {other.what}
             {other.late ? <LateNote late={other.late} /> : null}
