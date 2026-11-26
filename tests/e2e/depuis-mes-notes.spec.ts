@@ -303,9 +303,10 @@ test('nouvel acquéreur par une phrase : la fiche créée depuis la phrase', asy
   ]) {
     expect(traces, quote).not.toContain(quote);
   }
-  const toVerify = /"fields_to_verify":\[([^\]]*)\]/.exec(traces)?.[1] ?? '';
-  expect(toVerify).toContain('"name"');
-  expect(toVerify).toContain('"must_have"');
-  expect(toVerify).not.toContain('"budget_max"');
+  // La ligne de la fiche, telle que la base la rend (ses guillemets peuvent être échappés).
+  const toVerify = /fields_to_verify\\?":\[([^\]]*)\]/.exec(traces)?.[1] ?? '';
+  expect(toVerify, 'La fiche porte ses champs « À vérifier »').toMatch(/\bname\b/);
+  expect(toVerify).toMatch(/\bmust_have\b/);
+  expect(toVerify).not.toMatch(/\bbudget_max\b/);
   await archiveBuyer(page, buyerId);
 });
