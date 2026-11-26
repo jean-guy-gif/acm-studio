@@ -16,7 +16,7 @@ import { criteriaToBuyerDraft } from '@/features/buyers/services/buyer-criteria'
 import { PhraseFlow } from '@/features/buyer-notes/components/phrase-flow';
 import { getPosedAiCap } from '@/features/ai-budget/queries/get-ai-budgets';
 import { notesReadingOpen } from '@/features/buyer-notes/services/reading-gate';
-import { DEMO_NOTES_PHOTO, DEMO_NOTES_TEXT } from '@/features/demo/data/notes-arnaud';
+import { DEMO_NOTES_PHOTO, DEMO_PHRASE_TEXT } from '@/features/demo/data/notes-arnaud';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
 import { getProfile } from '@/lib/auth/get-profile';
 
@@ -96,7 +96,7 @@ export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) 
           <h1 className={socleTitle}>Que cherche-t-il ?</h1>
           <p className={socleSubtitle}>Écrivez-le comme il vous l’a dit. Une phrase suffit.</p>
         </div>
-        <PhraseFlow demo={isDemo ? { text: DEMO_NOTES_TEXT, photo: DEMO_NOTES_PHOTO } : null}>
+        <PhraseFlow demo={isDemo ? { text: DEMO_PHRASE_TEXT, photo: DEMO_NOTES_PHOTO } : null}>
           <BuyerQuickForm cities={await getAgencyCities()} />
         </PhraseFlow>
       </div>

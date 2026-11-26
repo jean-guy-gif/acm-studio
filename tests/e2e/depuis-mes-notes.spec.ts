@@ -35,6 +35,9 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
   test.setTimeout(6 * 60_000);
   await login(page, demoCredentials());
 
+  const understood = page.getByTestId('phrase-understood');
+  const chip = (id: string) => understood.locator(`[data-testid="phrase-chip"][data-chip="${id}"]`);
+
   await test.step('« Que cherche-t-il ? » : une phrase, « Dicter », « Photo de mes notes »', async () => {
     await page.goto('/acquereurs/nouveau');
     await expect(page.getByRole('heading', { name: 'Que cherche-t-il ?' })).toBeVisible();
@@ -65,16 +68,33 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
       'la dictée est celle de votre appareil',
     );
     await expect(flow.getByTestId('phrase-text')).toBeFocused();
-    // Les notes inventées, d'avance dans la phrase ; leur photo, à lire.
-    await expect(flow.getByTestId('phrase-text')).not.toHaveValue('');
+    // Une phrase, d'avance dans l'écran : « Voir ce que j'ai compris » la lit.
+    await expect(flow.getByTestId('phrase-text')).toHaveValue(/^M\. et Mme Arnaud\. Une maison/);
+    await flow.getByTestId('phrase-read').click();
+    await expect(page.getByTestId('notes-reading')).toContainText('Lecture de vos notes…');
+    await expect(chip('name')).toHaveText('M. et Mme Arnaud', { timeout: 20_000 });
+    await expect(chip('types')).toHaveText('Maison');
+    await expect(chip('budgetMax')).toHaveText(/^Jusqu’à 750\s000\s€$/);
+    await expect(chip('roomsMin')).toHaveText('4 pièces et plus');
+    await expect(chip('outdoor')).toHaveText('Indispensable : extérieur');
+    await expect(chip('soft:calme')).toHaveAttribute('data-tone', 'soft');
+    // La ligne d'origine d'une pastille est dans la phrase.
+    await chip('budgetMax').click();
+    await expect(page.getByTestId('chip-source')).toHaveText(/jusqu’à 750\s000\s€/);
+    await page.getByTestId('chip-correction').getByRole('button', { name: 'Fermer' }).click();
+    await expect(flow.getByTestId('phrase-find')).toHaveText('Trouver ses biens');
+    await expectOneFilled(page, 'La phrase comprise');
+    // La phrase retouchée : « Relire ma phrase » est offert, rien ne se relit seul.
+    await flow.getByTestId('phrase-text').press('End');
+    await flow.getByTestId('phrase-text').pressSequentially(' Un garage.');
+    await expect(flow.getByTestId('phrase-reread')).toHaveText('Relire ma phrase');
+    await expect(chip('name')).toHaveText('M. et Mme Arnaud');
+    // La photo des notes inventées remplace la lecture de la phrase.
     const photo = page.getByTestId('notes-demo-photo');
     await expect(photo.getByRole('img')).toHaveJSProperty('complete', true);
     await photo.getByRole('button', { name: 'Lire cette photo' }).click();
     await expect(page.getByTestId('notes-reading')).toContainText('Lecture de vos notes…');
   });
-
-  const understood = page.getByTestId('phrase-understood');
-  const chip = (id: string) => understood.locator(`[data-testid="phrase-chip"][data-chip="${id}"]`);
 
   await test.step('« Ce que j’ai compris » : la fiche proposée, en pastilles à vérifier', async () => {
     await expect(understood).toBeVisible({ timeout: 20_000 });

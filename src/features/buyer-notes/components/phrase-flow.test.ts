@@ -17,7 +17,7 @@ const { NOTES_AI_WARNING } = await import('@/features/buyer-notes/components/not
 const { guardProposal } = await import('@/features/buyer-notes/services/guard-proposal');
 const { draftFromProposal, phraseChips } =
   await import('@/features/buyer-notes/services/phrase-chips');
-const { DEMO_NOTES_OUTPUT, DEMO_NOTES_PHOTO, DEMO_NOTES_TEXT } =
+const { DEMO_NOTES_OUTPUT, DEMO_NOTES_PHOTO, DEMO_NOTES_TEXT, DEMO_PHRASE_TEXT } =
   await import('@/features/demo/data/notes-arnaud');
 
 // La refonte, lot D (maquette REFONTE-2) — « Nouvel acquéreur par une phrase », au repos, et les
@@ -66,12 +66,14 @@ describe('« Que cherche-t-il ? », avant la lecture', () => {
     expect(html).not.toContain('data-testid="phrase-dictate-hint"');
   });
 
-  it('dans l’agence de démonstration : les notes d’avance, et leur photo, sans le mot « démo »', () => {
-    const demo = renderToStaticMarkup(flow({ text: DEMO_NOTES_TEXT, photo: DEMO_NOTES_PHOTO }));
-    expect(demo).toContain('ARNAUD (M. et Mme)');
+  it('dans l’agence de démonstration : une phrase d’avance, et la photo des notes, sans le mot « démo »', () => {
+    const demo = renderToStaticMarkup(flow({ text: DEMO_PHRASE_TEXT, photo: DEMO_NOTES_PHOTO }));
+    expect(demo).toContain('M. et Mme Arnaud. Une maison de 4 pièces ou plus');
     expect(demo).toContain('Lire cette photo');
-    // Le texte tient dans la zone : dix lignes au plus.
-    expect(tag(demo, 'phrase-text')).toContain('rows="10"');
+    expect(tag(demo, 'phrase-text')).toContain('rows="4"');
+    // Un texte de plusieurs lignes (des notes collées) agrandit la zone : dix lignes au plus.
+    const pasted = renderToStaticMarkup(flow({ text: DEMO_NOTES_TEXT, photo: DEMO_NOTES_PHOTO }));
+    expect(tag(pasted, 'phrase-text')).toContain('rows="10"');
     // Rien à l'écran ne dit « démo » (M114) : ni un texte, ni le nom d'une image.
     const shown = [...demo.matchAll(/>([^<]+)</g), ...demo.matchAll(/ alt="([^"]*)"/g)]
       .map((match) => match[1])
