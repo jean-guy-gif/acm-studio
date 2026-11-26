@@ -35,12 +35,12 @@ export function OverviewSteps({ steps }: { steps: OverviewStep[] }) {
     <section className="@container flex flex-col gap-2.5" aria-labelledby="dossier-steps-title">
       <h3
         id="dossier-steps-title"
-        className="text-[17px] font-extrabold text-brand-darker stage:text-white"
+        className="font-sans text-[17px] font-extrabold text-brand-darker stage:text-white"
       >
         Son dossier
       </h3>
       <ol
-        className="grid grid-cols-1 gap-2 @lg:grid-cols-3 @lg:gap-2.5 @3xl:grid-cols-5"
+        className="grid grid-cols-1 gap-2 @lg:grid-cols-3 @lg:gap-2.5 @2xl:grid-cols-5"
         data-testid="overview-steps"
       >
         {steps.map((step) => (
