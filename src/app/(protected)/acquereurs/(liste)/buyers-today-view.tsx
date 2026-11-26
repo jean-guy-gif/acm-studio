@@ -16,6 +16,7 @@ import { ALL_BUYERS_HREF } from '@/features/buyers/services/buyers-page';
 import {
   buyersToday,
   buyersTodayCount,
+  buyerTaskKey,
   type BuyerTodayItem,
 } from '@/features/buyers/services/buyers-today';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
@@ -31,6 +32,13 @@ const NO_CONTEXT: TodayTaskContext = {
   signedOn: null,
   propertyLabel: null,
 };
+
+// Ce qu'il y a à faire et son geste, dans le détail : l'un sous l'autre ; sur ordinateur, côte à
+// côte, le bouton à droite sur 240 px. Un geste ouvert (son message, ses boutons d'envoi) reprend
+// toute la largeur, sous la phrase : il ne tient pas dans 240 px.
+const ACTION_ROW =
+  'flex flex-col xl:flex-row xl:items-center xl:justify-between xl:has-[[data-task-open]]:flex-col xl:has-[[data-task-open]]:items-stretch';
+const ACTION_SLOT = 'flex flex-col xl:w-60 xl:flex-none xl:has-[[data-task-open]]:w-auto';
 
 // Le geste d'une tâche : celui d'« Aujourd'hui », à l'allure du socle.
 function TaskAction({
@@ -61,7 +69,9 @@ function TaskAction({
 // plein. Sur téléphone, une colonne de cartes ; sur tablette et ordinateur, la liste à gauche et,
 // à droite, le détail de la personne choisie, sans changer de page (`?personne=`). Ce sont les
 // tâches d'« Aujourd'hui » (« Mes tâches »), rangées par acquéreur : mêmes règles, mêmes gestes.
-// « Tous mes acquéreurs » mène à la liste entière.
+// Une personne qui a plusieurs choses à faire les a toutes : la plus utile fait sa carte, les
+// autres suivent sous « Aussi aujourd'hui », chacune avec son geste. « Tous mes acquéreurs » mène
+// à la liste entière.
 export async function BuyersTodayView({ personne }: { personne?: string }) {
   const [today, profile, read] = await Promise.all([getToday('mine'), getProfile(), readBuyers()]);
   if (!today || !profile) notFound();
@@ -76,9 +86,12 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
     read.buyers.find((buyer) => buyer.id === item.buyerId) ?? null;
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
   const unread = today.failed.length > 0;
-  // Un seul bouton plein : celui de la première carte qui n'a qu'un geste (la réponse du vendeur à
-  // une offre en propose plusieurs, tous en contour, comme sur « Aujourd'hui »).
-  const lead = items.findIndex((item) => item.task.kind !== 'offer_answer');
+  const also = (item: BuyerTodayItem) =>
+    item.others.map((other) => ({
+      key: buyerTaskKey(other.task),
+      task: other.what,
+      late: other.late,
+    }));
 
   return (
     <div
@@ -131,7 +144,8 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
           </p>
         ) : null}
 
-        {/* Sur téléphone : une carte par personne, son bouton dessous ; le premier est plein. */}
+        {/* Sur téléphone : une carte par personne, son bouton dessous. Un seul bouton plein, celui
+            de la première carte : les autres cartes restent en contour, geste ouvert compris. */}
         {items.length > 0 ? (
           <ul className="flex flex-col gap-3 md:hidden" data-testid="buyers-today-cards">
             {items.map((item, index) => (
@@ -143,7 +157,12 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
                   tone={item.tone}
                   href={`/acquereurs/${item.buyerId}`}
                   action={
-                    <TaskAction task={item.task} today={today} day={day} primary={index === lead} />
+                    <TaskAction task={item.task} today={today} day={day} primary={index === 0} />
+                  }
+                  more={
+                    item.others.length > 0 ? (
+                      <OtherTasks item={item} today={today} day={day} inCard />
+                    ) : null
                   }
                 />
               </li>
@@ -163,6 +182,7 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
                   late={item.late}
                   tone={item.tone}
                   selected={item.buyerId === selected?.buyerId}
+                  also={also(item)}
                   keepScroll
                 />
               </li>
@@ -178,10 +198,15 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
         />
       </section>
 
+      {/* La clé : une personne, un détail NEUF. Sans elle, React gardait l'état du geste ouvert
+          d'une personne à la suivante (même page, seule l'adresse change) : le message préparé
+          pour l'une, et « J'ai relancé », se retrouvaient sous le nom de l'autre. */}
       <section
+        key={selected?.buyerId ?? 'personne'}
         aria-label={selected ? selected.name : 'Détail'}
         className="hidden min-w-0 flex-col gap-[18px] md:sticky md:top-0 md:flex md:max-h-screen md:self-start md:overflow-y-auto md:px-7 md:py-6 xl:px-10 xl:py-8"
         data-testid="buyers-today-detail"
+        data-person={selected?.buyerId}
       >
         {selected ? (
           <BuyerTodayDetail
@@ -251,7 +276,7 @@ function BuyerTodayDetail({
       </div>
 
       <div
-        className={`${socleCardBordered} flex flex-col gap-4 p-6 xl:flex-row xl:items-center xl:justify-between xl:gap-8`}
+        className={`${socleCardBordered} ${ACTION_ROW} gap-4 p-6 xl:gap-8`}
         data-testid="buyers-today-task"
       >
         <div className="flex min-w-0 flex-col gap-2">
@@ -261,30 +286,59 @@ function BuyerTodayDetail({
             {item.late ? <LateNote late={item.late} /> : null}
           </p>
         </div>
-        <div className="flex flex-col xl:w-60 xl:flex-none">
+        <div className={ACTION_SLOT}>
           <TaskAction task={item.task} today={today} day={day} primary />
         </div>
       </div>
 
-      {item.others.length > 0 ? (
-        <div className="flex flex-col gap-2.5" data-testid="buyers-today-others">
-          <span className={socleKicker}>Aussi aujourd’hui</span>
-          {item.others.map((other, index) => (
-            <div
-              key={`${other.task.kind}-${index}`}
-              className={`${socleCardBordered} flex flex-col gap-3 p-4 xl:flex-row xl:items-center xl:justify-between xl:gap-6`}
-            >
-              <p className="text-base font-bold text-brand-darker stage:text-white">
-                {other.what}
-                {other.late ? <LateNote late={other.late} /> : null}
-              </p>
-              <div className="flex flex-col xl:w-60 xl:flex-none">
-                <TaskAction task={other.task} today={today} day={day} primary={false} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
+      {item.others.length > 0 ? <OtherTasks item={item} today={today} day={day} /> : null}
     </>
+  );
+}
+
+// Ses autres choses à faire du jour, chacune avec son geste, en contour : rien de dû n'est caché
+// derrière sa première tâche. Dans le détail (tablette, ordinateur), une carte chacune ; dans la
+// carte du téléphone (`inCard`), sous son bouton.
+function OtherTasks({
+  item,
+  today,
+  day,
+  inCard = false,
+}: {
+  item: BuyerTodayItem;
+  today: Today;
+  day: string;
+  inCard?: boolean;
+}) {
+  return (
+    <div
+      className={
+        inCard
+          ? 'flex flex-col gap-3 border-t border-[#E3E6F0] pt-3 stage:border-white/10'
+          : 'flex flex-col gap-2.5'
+      }
+      data-testid="buyers-today-others"
+    >
+      <span className={socleKicker}>Aussi aujourd’hui</span>
+      {item.others.map((other) => (
+        <div
+          key={buyerTaskKey(other.task)}
+          className={
+            inCard ? 'flex flex-col gap-2' : `${socleCardBordered} ${ACTION_ROW} gap-3 p-4 xl:gap-6`
+          }
+          data-testid="buyers-today-other"
+        >
+          <p
+            className={`font-bold text-brand-darker stage:text-white ${inCard ? 'text-[15px]' : 'text-base'}`}
+          >
+            {other.what}
+            {other.late ? <LateNote late={other.late} /> : null}
+          </p>
+          <div className={inCard ? 'flex flex-col [&>*]:w-full' : ACTION_SLOT}>
+            <TaskAction task={other.task} today={today} day={day} primary={false} />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

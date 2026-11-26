@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import {
-  btnPrimary,
   btnSecondary,
   errorText,
   hintText,
   inputBase,
   taskButtonClass,
+  taskConfirmClass,
   type TaskButtonLook,
 } from '@/components/ui/styles';
 import {
@@ -95,7 +95,7 @@ export function BuyerReportTask({
     ? followUpShareHrefs(text, prepared.phone, prepared.email, prepared.subject)
     : null;
   return (
-    <div className="flex w-full flex-col gap-2" data-testid="buyer-report-panel">
+    <div className="flex w-full flex-col gap-2" data-testid="buyer-report-panel" data-task-open>
       {pending ? <p className={hintText}>Préparation du message…</p> : null}
       {prepared ? (
         <>
@@ -142,7 +142,7 @@ export function BuyerReportTask({
             ) : null}
             <button
               type="button"
-              className={btnPrimary}
+              className={taskConfirmClass(primary, look)}
               disabled={pending}
               data-testid="buyer-report-sent"
               onClick={() => {

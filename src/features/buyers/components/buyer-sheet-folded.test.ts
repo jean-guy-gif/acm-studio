@@ -91,9 +91,10 @@ describe('la fiche acquéreur, repliée', () => {
         at('data-testid="buyer-next-button"') + 200,
       ),
     ).toContain('socleBtnFilledBig');
-    // Ni le suivi ni « Tout le dossier » n'en portent.
-    expect(read('features', 'buyers', 'components', 'buyer-follow-up.tsx')).not.toContain(
-      'btn-filled',
+    // Ni le suivi ni « Tout le dossier » n'en portent : ni le repère, ni un style de bouton plein
+    // (ceux du socle comme `btnPrimary`).
+    expect(read('features', 'buyers', 'components', 'buyer-follow-up.tsx')).not.toMatch(
+      /btn-filled|socleBtnFilled|btnPrimary/,
     );
   });
 

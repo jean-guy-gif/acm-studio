@@ -26,6 +26,8 @@ import {
   socleBtnOutline,
   socleBtnQuiet,
   socleBtnQuietBig,
+  taskButtonClass,
+  taskConfirmClass,
 } from '@/components/ui/styles';
 
 // La refonte, lot A — les blocs du socle (maquettes REFONTE-1 à 8).
@@ -100,6 +102,21 @@ describe('les boutons du socle', () => {
     expect(socleBigPair).toBe('h-[58px] xl:h-14');
   });
 
+  // Relecture du lot B — un seul bouton plein par écran, geste ouvert compris : dans une carte « à
+  // faire » qui ne mène pas l'écran, le bouton qui conclut (« J'ai relancé », « Envoyé ») reste en
+  // contour. Sur « Aujourd'hui », rien ne change.
+  it('le bouton d’une tâche et celui qui conclut son geste : pleins pour la carte qui mène l’écran', () => {
+    const filled = (className: string) => /(^| )btn-filled( |$)/.test(className);
+    expect(filled(taskButtonClass(true, 'socle'))).toBe(true);
+    expect(filled(taskButtonClass(false, 'socle'))).toBe(false);
+    expect(filled(taskConfirmClass(true, 'socle'))).toBe(true);
+    expect(filled(taskConfirmClass(false, 'socle'))).toBe(false);
+    // « Aujourd'hui » : le bouton qui conclut un geste ouvert est plein, quelle que soit la ligne.
+    expect(taskConfirmClass(true)).toBe(btnPrimary);
+    expect(taskConfirmClass(false)).toBe(btnPrimary);
+    expect(taskConfirmClass(false, 'socle')).toBe(btnSecondary);
+  });
+
   it('les boutons d’avant ne changent pas : le Live, les documents et les liens publics les lisent', () => {
     expect(btnPrimary).toContain('rounded-xl');
     expect(btnPrimary).toContain('text-sm');
@@ -165,6 +182,66 @@ describe('la carte « à faire »', () => {
     expect(row(true)).toContain('border-brand-deep');
     expect(row(false)).not.toContain('aria-current');
     expect(row(false)).not.toContain('btn-filled');
+  });
+
+  // Relecture du lot B — une personne qui a plusieurs choses à faire : rien de dû n'est caché
+  // derrière sa première tâche.
+  it('ses autres choses à faire : sous son bouton dans la carte, « Aussi : … » dans la ligne', () => {
+    const card = renderToStaticMarkup(
+      createElement(TaskCard, {
+        name: 'M. et Mme Moreau',
+        task: 'Visite demandée : la maison de Mougins',
+        action: createElement(
+          'a',
+          { href: '/x', className: socleBtnFilled },
+          'Organiser la visite',
+        ),
+        more: createElement('div', { 'data-testid': 'more' }, 'Aussi aujourd’hui'),
+      }),
+    );
+    expect(card.indexOf('Organiser la visite')).toBeLessThan(card.indexOf('data-testid="more"'));
+    const row = renderToStaticMarkup(
+      createElement(PersonRow, {
+        href: '/acquereurs?personne=1',
+        name: 'M. et Mme Moreau',
+        task: '4 nouveaux biens trouvés par la veille',
+        also: [
+          {
+            key: 'a',
+            task: 'Sélection envoyée le 22/11, pas de réponse',
+            late: 'en retard de 2 jours',
+          },
+          { key: 'b', task: 'Un point à proposer', late: null },
+        ],
+      }),
+    );
+    // La tâche de tête garde sa ligne à elle : les autres suivent, chacune la sienne.
+    expect(row).toMatch(
+      /data-testid="person-task"[^>]*>4 nouveaux biens trouvés par la veille<\/span>/,
+    );
+    const notes = row.match(/data-testid="person-also"/g) ?? [];
+    expect(notes).toHaveLength(2);
+    expect(row).toContain('>Aussi : Sélection envoyée le 22/11, pas de réponse<');
+    // Le retard d'une autre tâche se dit aussi, en orange.
+    expect(row.slice(row.indexOf('person-also'))).toContain('en retard de 2 jours');
+    expect(row).not.toContain('btn-filled');
+  });
+
+  // Le toucher d'une ligne est pris tout de suite : la ligne choisie n'a pas besoin de le dire.
+  it('une ligne choisie ne porte pas le repère d’attente ; au repos, aucune ne l’affiche', () => {
+    const row = (selected: boolean) =>
+      renderToStaticMarkup(
+        createElement(PersonRow, {
+          href: '/x',
+          name: 'Mme Rossi',
+          task: 'Visite demandée',
+          selected,
+        }),
+      );
+    expect(row(false)).not.toContain('data-testid="link-pending"');
+    expect(row(true)).not.toContain('data-testid="link-pending"');
+    // Le contour d'attente se pose sur la ligne : elle le contient.
+    expect(row(false)).toMatch(/<a [^>]*class="relative /);
   });
 
   it('« Tous mes acquéreurs » : une ligne, son nombre, jamais un bouton plein', () => {

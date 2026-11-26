@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { initialsOf } from '@/components/socle/initials';
+import { LinkPending } from '@/components/socle/link-pending';
 import { MARK_TONES, type Tone } from '@/components/socle/tone';
 import { socleCard } from '@/components/ui/styles';
 
@@ -34,7 +35,7 @@ export function PersonMark({
 // La carte « à faire » : la personne, ce qu'il y a à faire, et son bouton sur toute la largeur. Le
 // bouton est donné par l'écran : plein pour la première carte, en contour pour les autres (un seul
 // bouton plein par écran). Avec une adresse, la personne mène à sa fiche ; un retard se dit à la
-// suite de la tâche, en orange.
+// suite de la tâche, en orange. `more` : ses autres choses à faire du jour, sous son bouton.
 export function TaskCard({
   name,
   task,
@@ -42,6 +43,7 @@ export function TaskCard({
   tone = 'plain',
   href,
   action,
+  more = null,
   testId = 'task-card',
 }: {
   name: string;
@@ -50,6 +52,7 @@ export function TaskCard({
   tone?: Tone;
   href?: string;
   action: React.ReactNode;
+  more?: React.ReactNode;
   testId?: string;
 }) {
   const person = (
@@ -79,7 +82,22 @@ export function TaskCard({
         <div className="flex items-center gap-3">{person}</div>
       )}
       <div className="flex flex-col [&>*]:w-full">{action}</div>
+      {more}
     </div>
+  );
+}
+
+// « Aussi : … » — une autre chose à faire pour la même personne, en une ligne ; son retard en
+// orange. Sur la carte d'une personne ou sous son nom dans la liste : rien de dû n'est caché.
+export function AlsoNote({ task, late = null }: { task: string; late?: string | null }) {
+  return (
+    <span
+      className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60"
+      data-testid="person-also"
+    >
+      Aussi : {task}
+      {late ? <LateNote late={late} /> : null}
+    </span>
   );
 }
 
@@ -94,7 +112,8 @@ export function LateNote({ late }: { late: string }) {
 }
 
 // La même personne, en ligne, dans la colonne de gauche (tablette et ordinateur) : un lien ; celle
-// dont le détail est ouvert à droite a un contour dans la couleur de l'agence. Un peu plus serrée
+// dont le détail est ouvert à droite a un contour dans la couleur de l'agence, et celle qu'on vient
+// de toucher le prend aussitôt, le temps que la page réponde (`LinkPending`). Un peu plus serrée
 // sur tablette (REFONTE-6 : rond de 40 px, textes de 16 et 14 px) que sur ordinateur (REFONTE-5).
 export function PersonRow({
   href,
@@ -104,6 +123,7 @@ export function PersonRow({
   tone = 'plain',
   selected = false,
   keepScroll = false,
+  also = [],
   testId = 'person-row',
 }: {
   href: string;
@@ -112,6 +132,8 @@ export function PersonRow({
   late?: string | null;
   tone?: Tone;
   selected?: boolean;
+  // Ses autres choses à faire du jour, une ligne chacune (« Aussi : … »).
+  also?: readonly { key: string; task: string; late: string | null }[];
   // Choisir une personne ne quitte pas la page : la liste ne remonte pas en haut.
   keepScroll?: boolean;
   testId?: string;
@@ -122,7 +144,7 @@ export function PersonRow({
       scroll={!keepScroll}
       aria-current={selected ? 'true' : undefined}
       data-testid={testId}
-      className={`flex items-center gap-3 rounded-2xl border-2 bg-white p-3 transition-colors xl:p-3.5 stage:bg-white/5 ${
+      className={`relative flex items-center gap-3 rounded-2xl border-2 bg-white p-3 transition-colors xl:p-3.5 stage:bg-white/5 ${
         selected
           ? 'border-brand-deep stage:border-brand'
           : 'border-white hover:border-[#D5DAEA] stage:border-transparent stage:hover:border-white/20'
@@ -143,7 +165,11 @@ export function PersonRow({
           {task}
           {late ? <LateNote late={late} /> : null}
         </span>
+        {also.map((other) => (
+          <AlsoNote key={other.key} task={other.task} late={other.late} />
+        ))}
       </span>
+      {selected ? null : <LinkPending />}
     </Link>
   );
 }

@@ -1,5 +1,9 @@
 import type { Tone } from '@/components/socle/tone';
-import { propertyFigures, propertyPhrase } from '@/features/buyers/services/loop-properties';
+import {
+  propertyFigures,
+  propertyKind,
+  propertyPhrase,
+} from '@/features/buyers/services/loop-properties';
 import { dayLabel, lateLabel } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import {
   addDays,
@@ -84,6 +88,18 @@ export function tasksByBuyer(task: SuiviTask): SuiviTask[] {
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
+// Le bien d'une tâche, en mots : « la maison de Mougins », « l'appartement d'Antibes ». Un bien
+// dont on ne sait ni le type ni la commune se dit par son vendeur (« le bien de M. Lefebvre ») —
+// « le bien », seul, ne dirait pas lequel ; sans vendeur non plus, « un bien de l'agence ».
+function taskProperty(task: SuiviTask): string {
+  const { property } = task;
+  if (property && (propertyKind(property.propertyType) !== 'other' || property.city?.trim())) {
+    return propertyPhrase(property);
+  }
+  const seller = task.sellerName.trim();
+  return seller ? `le bien de ${seller}` : 'un bien de l’agence';
+}
+
 // Ce qu'il y a à faire pour cette personne, avec les mots d'« Aujourd'hui », sans son nom ni
 // pronom (un nom de fiche ne dit ni le genre ni le nombre, M119).
 export function buyerTaskWhat(task: SuiviTask, today: string): string {
@@ -103,19 +119,14 @@ export function buyerTaskWhat(task: SuiviTask, today: string): string {
         .filter(Boolean)
         .join(' · ');
     case 'visit': {
-      const where = task.property
-        ? propertyPhrase(task.property)
-        : task.sellerName
-          ? `le bien de ${task.sellerName}`
-          : 'un bien de l’agence';
+      const where = taskProperty(task);
       return (task.count ?? 1) > 1
         ? `${task.count} visites demandées : ${where}`
         : `Visite demandée : ${where}`;
     }
     case 'propose_buyers': {
-      const what = task.property ? propertyPhrase(task.property) : 'un bien de l’agence';
       const figures = task.figures ? propertyFigures(task.figures) : null;
-      return `Un bien à proposer : ${what}${figures ? ` (${figures})` : ''}`;
+      return `Un bien à proposer : ${taskProperty(task)}${figures ? ` (${figures})` : ''}`;
     }
     case 'buyer_watch': {
       const count = task.count ?? 1;
@@ -140,6 +151,21 @@ export function buyerTaskWhat(task: SuiviTask, today: string): string {
     default:
       return '';
   }
+}
+
+// Ce qui distingue une tâche d'une autre chez la même personne : sa sorte, son dossier ou son bien,
+// son offre, sa visite, son échéance. Pour la clé d'une ligne à l'écran (jamais son rang : une
+// tâche faite disparaît, la suivante ne doit pas hériter de son geste ouvert).
+export function buyerTaskKey(task: SuiviTask): string {
+  return [
+    task.kind,
+    task.projectId,
+    task.propertyKey ?? '',
+    task.offerId ?? '',
+    task.visitId ?? '',
+    task.weekStart ?? '',
+    task.dueOn,
+  ].join('|');
 }
 
 // La teinte suit la tâche, comme sur les maquettes : orange pour ce qui est à regarder avant

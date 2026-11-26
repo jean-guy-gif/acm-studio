@@ -41,6 +41,7 @@ import {
   projectReadyBuyers,
   prospectBuyersTasks,
   withFollowUpAlerts,
+  withTaskProperty,
   type FollowUpAlert,
 } from '@/features/today/services/mandate-alerts';
 import { prospectingAlerts } from '@/features/today/services/prospecting-alerts';
@@ -293,19 +294,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
   // Mission 146 (partie B, B5) — l'argument d'une relance dit le type du bien.
   const propertyOf = new Map(dossiers.map((d) => [d.project.id, d.property]));
   const withAlerts = [
-    ...withFollowUpAlerts(dues, upcoming, followUpAlerts, today).map((task) =>
-      // La refonte, lot B — une visite demandée dit aussi le bien (« la maison de Mougins »), pour
-      // la carte de son acquéreur ; la ligne d'« Aujourd'hui » ne change pas.
-      (task.kind === 'follow_up' && task.readyBuyers) || task.kind === 'visit'
-        ? {
-            ...task,
-            property: {
-              propertyType: propertyOf.get(task.projectId)?.propertyType ?? null,
-              city: propertyOf.get(task.projectId)?.city ?? null,
-            },
-          }
-        : task,
-    ),
+    ...withTaskProperty(withFollowUpAlerts(dues, upcoming, followUpAlerts, today), propertyOf),
     ...prospectBuyersTasks([...cardAlerts.keys()], cardAlerts, today),
   ];
 
