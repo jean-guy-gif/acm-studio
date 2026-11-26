@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { card, emptyState, kickerLabel, pageSubtitle, pageTitle } from '@/components/ui/styles';
+import { ALL_BUYERS_HREF } from '@/features/buyers/services/buyers-page';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { nothingTodayLabel } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import { TodayCountSync } from '@/features/today/components/today-count';
@@ -81,7 +82,7 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
         </div>
         {today.readyBuyers != null ? (
           <Link
-            href="/acquereurs"
+            href={ALL_BUYERS_HREF}
             className={`${card} flex flex-col px-4 py-2.5`}
             data-testid="today-ready-buyers"
           >

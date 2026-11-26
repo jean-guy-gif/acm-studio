@@ -3,7 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { btnPrimary, btnSecondary, errorText, hintText, inputBase } from '@/components/ui/styles';
+import {
+  btnSecondary,
+  errorText,
+  hintText,
+  inputBase,
+  taskButtonClass,
+  taskConfirmClass,
+  type TaskButtonLook,
+} from '@/components/ui/styles';
 import {
   noteReportSent,
   prepareMeetingProposal,
@@ -19,12 +27,15 @@ export function BuyerReportTask({
   kind,
   label,
   primary = true,
+  look = 'today',
 }: {
   buyerId: string;
   kind: 'weekly_report' | 'meeting_proposed';
   label: string;
   // Mission 145 — un seul bouton plein par page (« Aujourd'hui ») : les autres en contour.
   primary?: boolean;
+  // La refonte, lot B — dans une carte « à faire », le bouton du socle.
+  look?: TaskButtonLook;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -54,7 +65,7 @@ export function BuyerReportTask({
     return (
       <button
         type="button"
-        className={`${primary ? btnPrimary : btnSecondary} self-start whitespace-nowrap sm:self-auto`}
+        className={taskButtonClass(primary, look)}
         data-testid={`buyer-report-open-${kind}`}
         onClick={() => {
           setOpen(true);
@@ -84,7 +95,7 @@ export function BuyerReportTask({
     ? followUpShareHrefs(text, prepared.phone, prepared.email, prepared.subject)
     : null;
   return (
-    <div className="flex w-full flex-col gap-2" data-testid="buyer-report-panel">
+    <div className="flex w-full flex-col gap-2" data-testid="buyer-report-panel" data-task-open>
       {pending ? <p className={hintText}>Préparation du message…</p> : null}
       {prepared ? (
         <>
@@ -131,7 +142,7 @@ export function BuyerReportTask({
             ) : null}
             <button
               type="button"
-              className={btnPrimary}
+              className={taskConfirmClass(primary, look)}
               disabled={pending}
               data-testid="buyer-report-sent"
               onClick={() => {

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { btnSecondary } from '@/components/ui/styles';
+import { btnSecondary, type TaskButtonLook } from '@/components/ui/styles';
 import { BuyerReportTask } from '@/features/buyer-messages/components/buyer-report-task';
 import { BuyerRelaunchTask } from '@/features/buyers/components/buyer-relaunch-task';
 import { SuiviTaskButton } from '@/features/meeting-conclusion/components/suivi-task-button';
@@ -27,11 +27,14 @@ export function TodayTaskAction({
   href,
   label,
   primary,
+  look = 'today',
 }: {
   task: SuiviTask;
   href: string;
   label: string;
   primary: boolean;
+  // La refonte, lot B — dans une carte « à faire » d'Acquéreurs, le bouton du socle.
+  look?: TaskButtonLook;
 }) {
   if (task.kind === 'buyer_watch' && !task.buyerId && task.watchBuyers) {
     return (
@@ -56,6 +59,8 @@ export function TodayTaskAction({
         visitId={task.visitId ?? null}
         decision={task.decision}
         offerHref={href}
+        primary={primary}
+        look={look}
       />
     );
   }
@@ -66,11 +71,12 @@ export function TodayTaskAction({
         kind={task.kind === 'buyer_weekly_report' ? 'weekly_report' : 'meeting_proposed'}
         label={label}
         primary={primary}
+        look={look}
       />
     );
   }
   if (task.kind === 'buyer_relaunch' && task.buyerId) {
-    return <BuyerRelaunchTask buyerId={task.buyerId} label={label} primary={primary} />;
+    return <BuyerRelaunchTask buyerId={task.buyerId} label={label} primary={primary} look={look} />;
   }
   if (task.kind === 'follow_up_early') {
     return (
@@ -90,6 +96,7 @@ export function TodayTaskAction({
       href={href}
       label={label}
       primary={primary}
+      look={look}
       open={
         task.kind === 'follow_up'
           ? { projectId: task.projectId, panel: 'relance' }

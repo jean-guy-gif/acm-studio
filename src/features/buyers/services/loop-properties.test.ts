@@ -8,6 +8,8 @@ import {
   mergeLoopProperties,
   proposalMessage,
   propertyPhrase,
+  proposeTask,
+  readyBuyersToPropose,
   readyToPropose,
   type LoopContacts,
   type LoopProperty,
@@ -184,6 +186,46 @@ describe('les acquéreurs d’un bien', () => {
     );
     expect(loop.toPropose).toHaveLength(3);
     expect(readyToPropose(loop)).toBe(2);
+  });
+
+  // La refonte, lot B — la tâche porte ses acquéreurs prêts, les mêmes que son compte : chacun a
+  // sa carte « à faire aujourd'hui » sur Acquéreurs.
+  it('la tâche d’un bien porte ses acquéreurs PRÊTS, et eux seuls', () => {
+    const first = buyer({ name: 'Famille Moreau' });
+    const second = buyer({ name: 'M. et Mme Roux' });
+    const notReady = buyer({ name: 'M. Fontaine', financing: 'in_progress' });
+    const sent = buyer({ name: 'Mme Faure' });
+    const bien = item({ key: 'project:p-vence', origin: 'mandate', projectId: 'p-vence' });
+    const contacts: LoopContacts = {
+      proposals: new Map([[bien.key, new Map([[sent.id, daysAgo(0)]])]]),
+    };
+    const loop = loopBuyers(bien, [first, second, notReady, sent], new Map(), contacts, NOW);
+    expect(readyBuyersToPropose(loop).map((entry) => entry.buyer.id)).toEqual([
+      first.id,
+      second.id,
+    ]);
+    const task = proposeTask(bien, loop)!;
+    expect(task.kind).toBe('propose_buyers');
+    expect(task.count).toBe(2);
+    expect(task.proposeBuyers).toEqual([
+      { id: first.id, name: 'Famille Moreau' },
+      { id: second.id, name: 'M. et Mme Roux' },
+    ]);
+    expect(task.proposeBuyers).toHaveLength(readyToPropose(loop));
+    // Le bien se dit comme avant : sa clé, son type et sa commune, sa surface et son prix.
+    expect([task.projectId, task.propertyKey, task.origin]).toEqual([
+      'p-vence',
+      'project:p-vence',
+      'mandate',
+    ]);
+    expect(task.property).toEqual({ propertyType: 'house', city: 'Vence' });
+    expect(task.figures).toEqual({ surfaceArea: 140, price: 779_000 });
+  });
+
+  it('sans acquéreur prêt à qui le proposer, aucune tâche', () => {
+    const waiting = buyer({ financing: 'in_progress' });
+    expect(proposeTask(item(), loopBuyers(item(), [waiting], new Map(), NONE, NOW))).toBeNull();
+    expect(proposeTask(item(), loopBuyers(item(), [], new Map(), NONE, NOW))).toBeNull();
   });
 });
 

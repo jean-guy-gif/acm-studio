@@ -3,7 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { btnPrimary, btnSecondary, hintText } from '@/components/ui/styles';
+import {
+  btnSecondary,
+  hintText,
+  taskButtonClass,
+  taskConfirmClass,
+  type TaskButtonLook,
+} from '@/components/ui/styles';
 import { prepareRelaunch, recordBuyerRelaunch } from '@/features/buyers/actions/relaunch';
 import { followUpShareHrefs } from '@/features/meeting-conclusion/services/follow-up-share';
 
@@ -17,12 +23,15 @@ export function BuyerRelaunchTask({
   buyerId,
   label,
   primary = true,
+  look = 'today',
 }: {
   buyerId: string;
   // « Relancer », ou « Envoyer un nouveau lien » quand le lien a expiré.
   label: string;
   // Mission 145 — un seul bouton plein par page (« Aujourd'hui ») : les autres en contour.
   primary?: boolean;
+  // La refonte, lot B — dans une carte « à faire », le bouton du socle.
+  look?: TaskButtonLook;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -41,7 +50,7 @@ export function BuyerRelaunchTask({
     return (
       <button
         type="button"
-        className={`${primary ? btnPrimary : btnSecondary} self-start whitespace-nowrap sm:self-auto`}
+        className={taskButtonClass(primary, look)}
         data-testid="buyer-relaunch-open"
         onClick={() => setOpen(true)}
       >
@@ -74,11 +83,11 @@ export function BuyerRelaunchTask({
   };
 
   return (
-    <div className="flex w-full flex-col gap-2" data-testid="buyer-relaunch-panel">
+    <div className="flex w-full flex-col gap-2" data-testid="buyer-relaunch-panel" data-task-open>
       {prepared ? (
         <>
           <p
-            className="rounded-xl bg-zinc-50 px-3 py-2 text-sm whitespace-pre-line text-zinc-700 stage:bg-white/5 stage:text-white/80"
+            className="rounded-xl bg-zinc-50 px-3 py-2 text-sm break-words whitespace-pre-line text-zinc-700 stage:bg-white/5 stage:text-white/80"
             data-testid="buyer-relaunch-message"
           >
             {prepared.message}
@@ -120,7 +129,7 @@ export function BuyerRelaunchTask({
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              className={btnPrimary}
+              className={taskConfirmClass(primary, look)}
               disabled={pending}
               data-testid="buyer-relaunch-record"
               onClick={() => {

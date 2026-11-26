@@ -305,4 +305,35 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     12 px à 390 px de large (le bouton « Lire cette photo » du bloc des notes de démonstration
     sort de sa carte). D'avant la refonte, et seulement dans la démo : repris avec le lot D, qui
     refait cet écran.
+- 26/11 · Refonte, lot B · Vus en route, sans les corriger :
+  - deux fiches peuvent porter les mêmes initiales (« M. et Mme Rossi » et « M. et Mme Roux » :
+    MR) : le rond ne distingue pas, le nom oui ;
+  - « N choses à faire aujourd'hui » compte toutes les tâches des acquéreurs ; la pastille
+    d'« Aujourd'hui » compte ses lignes, vendeurs compris : les deux nombres diffèrent ;
+  - sur la fiche, le lien de retour reste « ← Acquéreurs » (la maquette 4 dessine un chevron),
+    et la carte du haut garde ses titres d'avant : seule « Prochaine étape » et les trois chiffres
+    ont pris le socle ;
+  - le bloc « Dernière visite » de la maquette 4 n'existe pas : la tuile « Visités » dit la
+    dernière visite, et sa ligne ouverte le compte rendu.
+- 26/11 · Refonte, lot B, après la relecture · Notés, sans les corriger :
+  - sur « Aujourd'hui », les tâches d'une ligne groupée ont leur rang pour clé
+    (`aujourdhui/page.tsx`, la série) : une tâche faite peut léguer son geste ouvert à la suivante
+    de la série — le défaut que la relecture a trouvé sur Acquéreurs, en plus rare. D'avant la
+    refonte ;
+  - choisir une personne (tablette, ordinateur) relit toutes les tâches au serveur : 1,3 s sur
+    l'essai. Deux pistes : rendre d'avance le détail de chacun et changer côté navigateur, ou ne
+    relire que la personne. À décider avec le lot C, qui met « un bien à la fois » dans ce
+    détail ;
+  - deux mandats de même type dans la même commune se disent pareil (« la maison de Vence ») :
+    pour un bien à proposer, la surface et le prix les distinguent ; pour une visite demandée,
+    rien. Aucun cas dans les vrais dossiers pour l'instant ;
+  - les autres messages préparés (le lien du dossier acquéreur, du Point marché, de l'Étude,
+    « Confirmer la visite », « Proposer ce bien ») ont le même paragraphe que la relance, sans
+    passage à la ligne forcé : un lien long peut y faire défiler le téléphone de côté. À mesurer
+    geste ouvert, avec le lot F (Visites) et le lot C (« Proposer ce bien ») ;
+  - la relance demande deux touchers avant le message (« Relancer », puis « Préparer le
+    message ») : d'avant la refonte, le geste d'« Aujourd'hui » ;
+  - dans une carte, les trois autres gestes de la réponse du vendeur à une offre (« Transmettre
+    au notaire », « Voir l'offre », « Fait ») gardent les petits boutons d'avant ;
+  - `OfferMessagePanel` garde un ton sombre que plus personne n'appelle : à retirer au nettoyage.
 

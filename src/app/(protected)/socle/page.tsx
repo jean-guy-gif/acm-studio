@@ -82,7 +82,7 @@ export default function SoclePreviewPage() {
               </button>
             }
           />
-          <RowLink href="/acquereurs" label="Tous mes acquéreurs" count={12} />
+          <RowLink href="/acquereurs?tous=1" label="Tous mes acquéreurs" count={12} />
         </div>
       </section>
 

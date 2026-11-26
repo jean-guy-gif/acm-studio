@@ -867,6 +867,40 @@ visibilityProperty: true })`, jamais la seule boîte englobante.
 - 26/11 · Refonte, lot A · Un test qui lit le texte d'un fichier source casse au premier
   remaniement (`welcome.test.ts` cherchait `{ href: '/bienvenue', label: 'Aide'` dans le
   service) : prouver le comportement (`NAV_ITEMS`, `accountMenuFor`), pas l'écriture.
+- 26/11 · Refonte, lot B · Quand seule l'adresse change (`?personne=`), React garde l'état des
+  composants qui restent à la même place : le geste ouvert pour une personne (le message préparé,
+  « J'ai relancé ») restait sous le nom de la suivante. Une liste et son détail sur la même page :
+  une `key` par personne sur le détail, et jamais le rang pour clé d'une tâche. La preuve e2e :
+  marquer le nœud du détail (`data-probe`), choisir quelqu'un d'autre, le repère doit avoir
+  disparu — sans la clé, React réemploie le nœud et le repère reste.
+- 26/11 · Refonte, lot B · Une attente écrite en regardant une démo déjà utilisée ment : la veille
+  au soir la famille Moreau avait deux choses à faire, trois sur la démo remise à zéro que joue la
+  spec. Lire l'écran APRÈS une remise à zéro avant d'écrire l'attente, et compter sur l'écran
+  (« autant de lignes que le nombre annoncé ») plutôt que figer un nombre.
+- 26/11 · Refonte, lot B · `expectNoHorizontalScroll` se joue aussi geste OUVERT : c'est le
+  message préparé d'une relance (un lien de 70 caractères dans un paragraphe
+  `whitespace-pre-line`) qui faisait défiler le téléphone de 219 px, pas la page au repos.
+  `break-words` sur tout paragraphe qui peut porter un lien.
+- 26/11 · Refonte, lot B · Un seul bouton plein, c'est aussi les gestes ouverts : un panneau
+  ouvert dans une carte qui ne mène pas l'écran apportait son propre bouton plein (« J'ai
+  relancé »). Le style du bouton qui conclut se décide comme celui qui ouvre
+  (`taskConfirmClass`), et la spec compte les pleins panneaux ouverts.
+- 26/11 · Refonte, lot B · Une mise en page qui dépend d'un état tenu par un composant enfant (un
+  geste ouvert qui doit prendre la largeur) : l'enfant pose un repère (`data-task-open`), le
+  parent le lit en CSS (`has-[[data-task-open]]:`), sans état partagé.
+- 26/11 · Refonte, lot B · Sans `loading.tsx` (refusé, M128), un lien qui relit la page au serveur
+  ne dit rien pendant une seconde : `useLinkStatus` (Next 16), dans un petit composant client
+  posé DANS le lien, rend tout de suite le contour de la ligne choisie.
+- 26/11 · Refonte, lot B · Les captures d'un lot se prennent sur une démo remise à zéro (les specs
+  qui viennent de tourner y laissent des messages préparés, des relances notées) : un script hors
+  du dépôt rejoue « Remettre ma démo à zéro » par l'écran, et refuse toute autre adresse que
+  l'essai. Regarder aussi la tablette en portrait (768 px) : le détail y est deux fois plus
+  étroit qu'en paysage, et c'est une vraie taille d'iPad.
+- 26/11 · Refonte, lot B · « Le Live sans trou » sur la 4G rapide : rouge deux fois de suite à la
+  même étape (après « Valider », l'écran suivant n'arrivait pas en 60 s), juste après des
+  déploiements de l'essai, puis vert au troisième passage sur les deux réseaux ; aucun fichier du
+  Live touché, journal d'erreurs vide. Le dire tel quel : deux rouges, un vert, la cause non
+  établie.
 
 ## La base
 

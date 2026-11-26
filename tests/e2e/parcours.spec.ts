@@ -1068,7 +1068,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
 
     // La liste : la fiche, type, communes, budget, pièces ; la recherche par nom. Mission 146
     // (partie B, I4) — elle s'ouvre sur « Mes fiches », la recherche filtre en tapant.
-    await page.goto('/acquereurs');
+    await page.goto('/acquereurs?tous=1');
     await expect(page.getByTestId('buyer-view-mine')).toHaveAttribute('aria-pressed', 'true');
     const row = page.getByTestId('buyer-row').filter({ hasText: buyerName });
     await expect(row).toBeVisible();

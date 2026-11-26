@@ -149,7 +149,7 @@ describe('la fiche repliée : les lignes de « Son suivi »', () => {
   });
 
   it('« Visites à organiser » : une quatrième ligne, seulement quand il y en a une', () => {
-    expect(suiviLineGroups(2)).toEqual(['visited', 'to_visit', 'waiting', 'refused']);
+    expect(suiviLineGroups(2)).toEqual(['visited', 'waiting', 'refused', 'to_visit']);
   });
 
   it('fermées à l’ouverture ; s’ouvrent seules la visite à organiser, et la visite dont on sort', () => {

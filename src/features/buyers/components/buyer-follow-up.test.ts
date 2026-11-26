@@ -177,7 +177,9 @@ describe('« Son suivi », à l’écran', () => {
       competitorUrls: new Map(),
     });
     const html = render({ list });
-    const order = ['Visités', 'Visites à organiser', 'Envoyés, en attente', 'Refusés'].map(
+    // La refonte, lot B — les trois chiffres d'abord, « Visites à organiser » dessous : l'ordre de
+    // la page est celui de l'écran.
+    const order = ['Visités', 'Envoyés, en attente', 'Refusés', 'Visites à organiser'].map(
       (title) => html.indexOf(title),
     );
     expect(order.every((at) => at > 0)).toBe(true);

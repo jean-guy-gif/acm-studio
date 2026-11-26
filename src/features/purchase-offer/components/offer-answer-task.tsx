@@ -4,7 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { btnPrimary, btnSecondary, errorText, hintText } from '@/components/ui/styles';
+import {
+  btnPrimary,
+  btnSecondary,
+  errorText,
+  hintText,
+  taskButtonClass,
+  type TaskButtonLook,
+} from '@/components/ui/styles';
 import { followUpShareHrefs } from '@/features/meeting-conclusion/services/follow-up-share';
 import {
   markOfferAnswerDone,
@@ -91,8 +98,8 @@ export function OfferMessagePanel({
           <p
             className={
               dark
-                ? 'rounded-xl bg-white/10 px-3 py-2 text-sm whitespace-pre-line text-white'
-                : 'rounded-xl bg-zinc-50 px-3 py-2 text-sm whitespace-pre-line text-zinc-700 stage:bg-white/5 stage:text-white/80'
+                ? 'rounded-xl bg-white/10 px-3 py-2 text-sm break-words whitespace-pre-line text-white'
+                : 'rounded-xl bg-zinc-50 px-3 py-2 text-sm break-words whitespace-pre-line text-zinc-700 stage:bg-white/5 stage:text-white/80'
             }
             data-testid={`offer-answer-message-${open}`}
           >
@@ -160,6 +167,8 @@ export function OfferAnswerTask({
   visitId,
   decision,
   offerHref,
+  primary = false,
+  look = 'today',
 }: {
   offerId: string;
   buyerId: string;
@@ -167,11 +176,22 @@ export function OfferAnswerTask({
   decision: OfferDecision;
   // « Voir l'offre » : l'offre signée, et la réponse du vendeur.
   offerHref: string;
+  // La refonte, lot B — dans une carte « à faire » (`socle`), « Prévenir l'acquéreur » est le
+  // bouton de la carte, sur toute sa largeur, ses autres gestes dessous ; un seul bouton plein par
+  // écran : la carte qui mène l'écran (`primary`) l'a plein, puis le message ouvert ; les autres
+  // cartes restent en contour, message ouvert compris. Sur « Aujourd'hui », comme avant : quatre
+  // boutons en ligne, en contour, le message ouvert en plein.
+  primary?: boolean;
+  look?: TaskButtonLook;
 }) {
   const router = useRouter();
   const messages = useOfferMessages(offerId);
   const { open, prepare, pending, setPending, setError } = messages;
   const [done, setDone] = useState(false);
+  const filled = (target: 'buyer' | 'notary') =>
+    look === 'socle'
+      ? primary && (open === target || (open === null && target === 'buyer'))
+      : open === target;
 
   if (done) {
     return (
@@ -185,24 +205,39 @@ export function OfferAnswerTask({
     );
   }
 
+  const socle = look === 'socle';
+  const buyerButton = (
+    <button
+      type="button"
+      className={
+        socle
+          ? taskButtonClass(filled('buyer'), 'socle')
+          : filled('buyer')
+            ? btnPrimary
+            : btnSecondary
+      }
+      data-testid="offer-answer-buyer"
+      onClick={() => prepare('buyer')}
+    >
+      Prévenir l’acquéreur
+    </button>
+  );
+
   return (
     <div
-      className="flex w-full flex-col gap-2 sm:w-auto sm:items-end"
+      className={
+        socle ? 'flex w-full flex-col gap-2' : 'flex w-full flex-col gap-2 sm:w-auto sm:items-end'
+      }
       data-testid="offer-answer-task"
+      data-task-open={open ? '' : undefined}
     >
+      {socle ? buyerButton : null}
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={open === 'buyer' ? btnPrimary : btnSecondary}
-          data-testid="offer-answer-buyer"
-          onClick={() => prepare('buyer')}
-        >
-          Prévenir l’acquéreur
-        </button>
+        {socle ? null : buyerButton}
         {decision === 'accepted' ? (
           <button
             type="button"
-            className={open === 'notary' ? btnPrimary : btnSecondary}
+            className={filled('notary') ? btnPrimary : btnSecondary}
             data-testid="offer-answer-notary"
             onClick={() => prepare('notary')}
           >

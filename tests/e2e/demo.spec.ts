@@ -1362,7 +1362,7 @@ async function expectTodayAlerts(page: Page): Promise<void> {
 }
 
 async function expectDemoBuyers(page: Page): Promise<void> {
-  await page.goto('/acquereurs');
+  await page.goto('/acquereurs?tous=1');
   await expectUnspoken(page, 'Acquéreurs');
   const rows = page.getByTestId('buyer-row');
   // Mission 132 — neuf acquéreurs (les Wilson, M139) : Rossi, Keller, Wilson, six autour de Vence, cinq prêts à
@@ -1712,7 +1712,7 @@ async function expectDemoBuyers(page: Page): Promise<void> {
   } finally {
     await answering.close();
   }
-  await page.goto('/acquereurs');
+  await page.goto('/acquereurs?tous=1');
   await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
   // Lancement, mission 6 — ses réponses se lisent dans « Son suivi », un bien par ligne (Mission
   // 10 bis : ses lignes dépliées).

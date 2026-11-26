@@ -142,6 +142,23 @@ export const socleBtnFilled =
 export const socleBtnOutline =
   'inline-flex h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-brand-deep bg-white px-5 text-base font-bold text-brand-deep transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/40 stage:bg-transparent stage:text-white stage:hover:bg-white/10';
 
+// Le bouton d'une tâche, dans une carte « à faire » : plein pour la première, en contour pour les
+// autres, sur toute la largeur. Les gestes d'« Aujourd'hui » le prennent quand ils s'y affichent.
+export type TaskButtonLook = 'today' | 'socle';
+
+export function taskButtonClass(primary: boolean, look: TaskButtonLook = 'today'): string {
+  return look === 'socle'
+    ? `${primary ? socleBtnFilled : socleBtnOutline} w-full`
+    : `${primary ? btnPrimary : btnSecondary} self-start whitespace-nowrap sm:self-auto`;
+}
+
+// Le bouton qui conclut le geste ouvert d'une tâche (« J'ai relancé », « Envoyé ») : plein, sauf
+// dans une carte « à faire » qui ne mène pas l'écran — un seul bouton plein par écran, geste ouvert
+// compris. Sur « Aujourd'hui » (`today`), rien ne change.
+export function taskConfirmClass(primary: boolean, look: TaskButtonLook = 'today'): string {
+  return look === 'socle' && !primary ? btnSecondary : btnPrimary;
+}
+
 // Le bouton discret d'un en-tête (« Nouveau ») : 44 px, un contour gris.
 export const socleBtnQuiet =
   'inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-[#D5DAEA] bg-white px-4 text-[15px] font-bold text-brand-deep transition-colors hover:border-brand-deep disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/10 stage:text-white';
@@ -157,6 +174,10 @@ export const socleBtnQuietBig =
   'inline-flex items-center justify-center gap-2 rounded-2xl border border-[#D5DAEA] bg-white px-6 text-[17px] font-bold text-brand-darker transition-colors hover:border-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/10 stage:text-white';
 
 export const socleBigStep = 'h-[54px] xl:h-14';
+
+// Le lien sous le bouton d'une prochaine étape (« Voir les 3 biens suivants ») : 44 px, centré.
+export const socleStepLink =
+  'flex h-11 items-center justify-center text-center text-[15px] font-bold text-brand-deep hover:text-brand-darker stage:text-brand stage:hover:text-white';
 
 export const socleBigPair = 'h-[58px] xl:h-14';
 

@@ -78,6 +78,27 @@ export function withFollowUpAlerts(
   return [...withArgument, ...early];
 }
 
+// Mission 146 (partie B, B5) — l'argument d'une relance dit le type du bien (« correspond à la
+// maison »). La refonte, lot B — une visite demandée dit aussi le bien (« la maison de Mougins »),
+// pour la carte de son acquéreur ; la ligne d'« Aujourd'hui » ne change pas. `propertyOf` : le bien
+// vendeur de chaque dossier ; un bien inconnu ne dit ni type ni commune, jamais un autre bien.
+export function withTaskProperty(
+  tasks: SuiviTask[],
+  propertyOf: ReadonlyMap<
+    string,
+    { propertyType?: string | null; city?: string | null } | null | undefined
+  >,
+): SuiviTask[] {
+  return tasks.map((task) => {
+    if (!((task.kind === 'follow_up' && task.readyBuyers) || task.kind === 'visit')) return task;
+    const property = propertyOf.get(task.projectId);
+    return {
+      ...task,
+      property: { propertyType: property?.propertyType ?? null, city: property?.city ?? null },
+    };
+  });
+}
+
 // --- Les biens en prospection ---------------------------------------------------------------
 
 export type AlertCard = {

@@ -7,13 +7,12 @@ import {
   loadLoopProperties,
   type AgencyBuyers,
 } from '@/features/buyers/queries/get-property-buyers';
-import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import {
   isNewProperty,
   loopBuyers,
   loopProposalOf,
   mergeLoopProperties,
-  readyToPropose,
+  proposeTask,
   type BuyerLoopProposal,
   type LoopContacts,
   type LoopProperty,
@@ -129,20 +128,8 @@ export async function getLoopTasks(
       readyByProject.set(item.projectId, loop.ready.length);
     }
     if (!isNewProperty(item, now)) continue;
-    const count = readyToPropose(loop);
-    if (count === 0) continue;
-    tasks.push({
-      kind: 'propose_buyers',
-      projectId: item.projectId ?? '',
-      sellerName: item.sellerName ?? '',
-      dueOn: parisDay(new Date(item.bornAt)),
-      count,
-      propertyKey: item.key,
-      propertyLabel: item.label,
-      origin: item.origin,
-      property: { propertyType: item.property.propertyType, city: item.property.city },
-      figures: { surfaceArea: item.property.surfaceArea, price: item.price },
-    });
+    const task = proposeTask(item, loop);
+    if (task) tasks.push(task);
   }
   return { tasks, readyByProject, failed: false };
 }
