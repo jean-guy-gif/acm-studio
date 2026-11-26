@@ -75,8 +75,9 @@ export function NextStepCard({
     >
       <div className="flex min-w-0 flex-col gap-2">
         <span className={socleKicker}>Prochaine étape</span>
+        {/* Une phrase, dans la police du texte (REFONTE-8) ; un titre pour les lecteurs d'écran. */}
         <h2
-          className="text-[21px] leading-snug font-bold text-brand-darker stage:text-white"
+          className="font-sans text-[21px] leading-snug font-bold text-brand-darker stage:text-white"
           data-testid={`${testId}-title`}
         >
           {title}
