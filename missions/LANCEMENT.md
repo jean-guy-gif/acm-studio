@@ -137,7 +137,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 | A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 0 h 30 (3 h 05) : attend le « oui » |
 | B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | sur l'essai depuis le 26/11 à 1 h 20, relu et corrigé à 2 h 50 (3 h 05) : attend le « oui » |
 | C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | sur l'essai depuis le 26/11 à 9 h 10, relu et corrigé à 10 h 15 : attend le « oui » |
-| D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | sur l'essai depuis le 26/11 à 11 h 10 : attend le « oui » |
+| D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | sur l'essai depuis le 26/11 à 11 h 10, relu et corrigé à 18 h 35 : attend le « oui » |
 | E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | à faire |
 | F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | à faire |
 
@@ -611,6 +611,13 @@ l'écran ; le focus revient à la pastille ; « 1er étage », la surface comme 
 lit. Restent dans `missions/PLUS_TARD.md` : le même « vider avant de partir » dans « Compléter
 depuis mes notes » (M151) ; « deux ★ au plus » et « une ★ sur le budget exige un montant », tenus
 par l'écran, pas par le serveur, sur le chemin de la lecture des notes (comme pour la M151).
+
+Les tests : barrières vertes (4 558 tests unitaires, avec le lot E). Sur l'essai, après la
+relecture, la spec du lot, `depuis-mes-notes` : ses deux parcours verts, sur le code du lot D seul
+(`3d7f9747`) puis sur le dernier essai, qui porte aussi le lot E (`f9f929f2`). La spec avait trouvé
+deux attentes fausses d'elle-même, pas de l'écran : un texte réservé aux lecteurs d'écran, lu avec
+la pastille (il passe dans son nom accessible : le texte visible reste la pastille seule) ; la
+fiche lue en base, dont la sortie échappe les guillemets.
 
 ## Chaque soir
 
