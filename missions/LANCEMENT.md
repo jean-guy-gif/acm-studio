@@ -134,7 +134,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 
 | Lot | Contenu                                                                                           | Maquettes       | Durée prévue | État    |
 | --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
-| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | à faire |
+| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 0 h 30 (3 h 05) : attend le « oui » |
 | B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | à faire |
 | C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | à faire |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | à faire |
@@ -180,11 +180,93 @@ avance avec elle, Jean-Guy corrige) :
    Google ou à Apple : elle demanderait la juriste.
 7. Ce que les maquettes montrent et que la base n'a pas (la date et l'heure du rendez-vous) ne
    s'affiche pas : aucune migration.
-8. Les couleurs et la police restent celles de la charte de l'agence ; le bleu nuit et Nunito Sans
-   des maquettes sont la charte par défaut. Le mode sombre continue de marcher.
+8. Les couleurs et la police restent celles de la charte de chaque agence : le bleu nuit et Nunito
+   Sans des maquettes sont ceux de l'agence de Jean-Guy ; une autre agence garde les siens (par
+   défaut, le bleu de Start Academy, Montserrat et Rajdhani). Les gris, les fonds et les arrondis
+   sont ceux des maquettes. Le mode sombre continue de marcher.
 9. Pour regarder l'essai, Jean-Guy se connecte avec le compte de démonstration des tests
    (`E2E_DEMO_EMAIL`, dans `.env.e2e.local`) : son propre compte n'existe pas dans la base d'essai.
 10. Le guide de prise en main nomme le menu d'aujourd'hui : il suit le nouveau menu avant le gel.
+
+### Lot A — le socle (sur l'essai, attend le « oui » de Jean-Guy)
+
+À ouvrir sur l'essai, avec le compte de démonstration des tests (question 9) :
+`https://acm-studio-essai.vercel.app/aujourdhui` (le menu aux trois tailles ; sur téléphone, le
+rond du compte à droite du titre), `/builder` (les trois onglets de « Vendeurs ») et `/socle` (les
+blocs : la carte « à faire », les boutons, les pastilles, les tuiles ; ouvert sur l'essai
+seulement, retiré au lot F). Les captures : `missions/maquettes/REFONTE-A-telephone.png`,
+`-tablette.png`, `-ordinateur.png` (l'essai tel qu'il est, à la charte de l'agence de
+démonstration) ; les mêmes en `…-charte-start-academy.png` (une simulation : les couleurs et la
+police de l'agence de Jean-Guy, lues en production, posées sur l'essai — ce que verra son compte) ;
+`REFONTE-A-compte-telephone.png` (la feuille du compte sur téléphone).
+
+Ce qui change, en comportement :
+
+- **Le menu** : Aujourd'hui · Vendeurs · Acquéreurs · Visites, le même aux trois tailles — en bas
+  sur téléphone (72 px), en colonne d'icônes sur tablette (88 px, avec Aide en bas), complet sur
+  ordinateur (232 px, avec Prospection et Aide, le logo de l'agence en tête). La barre du haut et
+  ☰ disparaissent. La pastille d'« Aujourd'hui » reste, sur l'icône. Sur téléphone, le menu du bas
+  n'est que sur les pages principales ; une page intérieure (une fiche, un dossier, « Nouvel
+  acquéreur ») n'a que son lien de retour, comme sur les maquettes 2, 3 et 4.
+- **Vendeurs** n'a qu'une entrée : Préparation, Live et Suivi restent des pages, jointes par trois
+  onglets en tête de chacune de leurs listes (la scène du Live n'est pas touchée).
+- **Le compte** (Mon profil, Administration, Ma démo, Erreurs, Sombre / Clair, Déconnexion) : sa
+  carte en bas du menu sur ordinateur ; un rond à ses initiales en bas de la colonne sur tablette ;
+  un rond en haut à droite d'« Aujourd'hui » sur téléphone. La même feuille porte Prospection sous
+  1280 px et Aide sous 768 px, et dit qui est connecté là où le bouton n'est qu'un rond.
+- **Les blocs du socle** (`src/components/socle`, jetons `socle…` de `styles.ts`) : la carte « à
+  faire », la ligne d'une personne, « Tous mes … › », les boutons plein et contour (48 px) et les
+  grands boutons d'une décision (54 à 58 px), les pastilles (34 px) et celles à toucher (44 px),
+  les tuiles de chiffres. Aucun écran ne s'en sert encore, sauf l'aperçu : les lots B à F.
+- Le fond des pages prend le gris des maquettes ; les barres fixées en bas d'un écran (fiche du
+  bien, lecture des notes, « Inscrit : plus aucun courrier… ») se posent au-dessus du menu du
+  téléphone.
+
+Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
+
+- Le rond aux initiales prend la teinte de **ce qu'il y a à faire**, comme sur les maquettes
+  (orange : à regarder avant d'agir ; vert : une bonne nouvelle ; sinon la couleur de l'agence),
+  jamais celle du nom. Chaque écran dira la teinte de chaque sorte de tâche (lots B et E).
+- Les initiales : la fiche n'a pas de prénom, le rond prend la première lettre du premier mot et
+  celle du dernier (« Mme Rossi » → MR, « M. Fontaine » → MF) ; les maquettes écrivent LR, PF.
+- Sous 1280 px, ni logo ni nom d'agence au menu (comme sur les maquettes) : la feuille du compte
+  les dit.
+- Les titres sont en gras 700 : les polices de charte ne déclarent pas le 800 des maquettes
+  (`missions/PLUS_TARD.md`).
+
+Les specs modifiées (un libellé ou un emplacement ; ce qu'elles prouvent ne change pas) :
+
+| Spec                    | Ce qui a changé                                                                                           |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `support.ts`            | le compte s'ouvre par sa carte ou son rond (plus de ☰) ; « Aide » et « Prospection » se prennent au menu quand il les montre |
+| `parcours.spec.ts`      | « Vendeurs » à la place de « Suivi » et de « Live » au menu ; 6 entrées au lieu de 7 ; sur téléphone, le menu du bas à la place de ☰ (sur une page principale ; sur « Nouvel acquéreur », son lien de retour). **Ajouté** : Préparation, Live et Suivi joints par les onglets ; les flèches sautent ce que la feuille cache ; la feuille du compte sur téléphone, et « Prospection » par elle |
+| `bienvenue.spec.ts`     | « Vendeurs » à la place de « Préparation » ; le titre d'une étape                                         |
+| `demo.spec.ts`          | 6 entrées au lieu de 7                                                                                    |
+| `live-tablette.spec.ts` | 5 entrées au lieu de 7. **Ajouté** : la feuille du compte passe au-dessus de la page, sous une couche plein écran |
+
+Deux preuves d'avant n'ont plus d'objet (☰ visible, « un lien choisi replie le menu ») : le menu
+du téléphone ne se replie plus. « Live et Suivi au menu » est remplacé par les onglets.
+
+Relecteur, une passe : un bloquant (sur tablette, la feuille du compte passait sous les photos et
+la barre « Enregistrer »), levé — la colonne passe au-dessus de la page pendant que la feuille est
+ouverte, prouvé par une spec rouge avant la correction et verte après ; ses « à corriger » faits
+(la teinte du rond, le message d'opposition sur le menu du téléphone, l'aperçu fermé par liste
+d'autorisation, les preuves des onglets et de la feuille). Tests : barrières vertes (4 386
+tests) ; la suite complète sur l'essai, le 25/11 de 23 h 31 à 0 h 07 : 37 parcours sur 37, sans
+aléa ; puis, après la correction du menu du téléphone (les pages intérieures), les quatre specs
+concernées, 7 parcours, vertes — le parcours complet au second passage, le premier coupé par le
+réseau à l'export du comparatif (un aléa).
+
+Avant la première mise en production de la refonte, la version à laquelle revenir en cas de
+défaut (règle du 23/11) : la production sert `6bf564c6`, le déploiement Vercel du 25/11 à 21 h 30
+(`5NZwEMe1H4VBrVJXGBUJfXADXGpV`, prêt, proposé au retour arrière) ; le code de l'application y est
+celui de la mission 10 bis. Le message de Jean-Guy s'arrêtait à « Avant la première mise en
+production, tu notes » : la fin de sa phrase lui est demandée.
+
+À écrire dans `docs/DECISIONS.md` à la mise en production du lot (son « oui ») : le menu de quatre
+entrées aux trois tailles remplace M145 B (les trois groupes), M149 (leurs titres) et M132 (la
+barre du haut et ☰) ; les trois onglets de « Vendeurs » ; le compte aux trois tailles (précise
+M125) ; la teinte qui suit la tâche.
 
 ## Chaque soir
 

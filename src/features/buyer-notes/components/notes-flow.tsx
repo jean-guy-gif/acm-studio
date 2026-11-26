@@ -824,7 +824,7 @@ function NotesProposal({
           ) : null}
         </div>
       </div>
-      <div className="sticky bottom-0 z-10 -mx-1 flex items-center justify-end gap-2.5 border-t border-zinc-200 bg-white/95 px-3 py-3 backdrop-blur">
+      <div className="sticky bottom-[var(--shell-bottom)] z-10 -mx-1 flex items-center justify-end gap-2.5 border-t border-zinc-200 bg-white/95 px-3 py-3 backdrop-blur">
         <span className="mr-auto hidden text-sm text-zinc-500 sm:inline">
           Rien n’est enregistré avant votre accord
         </span>

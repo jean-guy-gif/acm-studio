@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Vendeurs sur ordinateur</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#26327F;text-decoration:none}a:hover{color:#1B2559}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #F4F5FA; color: #1B2559; font-family: 'Nunito Sans', system-ui, sans-serif; display: grid; grid-template-columns: 232px 420px minmax(0, 1fr)">
+
+  <nav aria-label="Menu" style="background: #FFFFFF; border-right: 1px solid #E3E6F0; padding: 28px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 700">
+    <div style="font-size: 20px; font-weight: 800; padding: 0 12px 22px">ACM Studio</div>
+    <a href="#" style="height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #5B6380">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Aujourd'hui</a>
+    <a href="#" aria-current="page" style="height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; background: #E7EAF7; color: #26327F">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/></svg>Vendeurs</a>
+    <a href="Ordi.dc.html" style="height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #5B6380">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Acquéreurs</a>
+    <a href="#" style="height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #5B6380">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Visites</a>
+    <a href="#" style="height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #5B6380">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Prospection</a>
+    <a href="#" style="margin-top: auto; height: 44px; padding: 0 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; color: #5B6380">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg>Aide</a>
+  </nav>
+
+  <section aria-label="À faire aujourd'hui" style="border-right: 1px solid #E3E6F0; padding: 32px 24px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.5px">Vendeurs</h1>
+        <p style="margin: 0; font-size: 15px; color: #5B6380">3 choses à faire aujourd'hui</p>
+      </div>
+      <button type="button" style="height: 44px; padding: 0 16px; border-radius: 14px; background: #FFFFFF; border: 1px solid #D5DAEA; color: #26327F; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouveau</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <a href="#" aria-current="true" style="background: #FFFFFF; border: 2px solid #26327F; border-radius: 16px; padding: 14px; display: flex; gap: 12px; align-items: center; color: #1B2559">
+        <span aria-hidden="true" style="flex: none; width: 44px; height: 44px; border-radius: 22px; background: #FDEBDD; color: #9A3A0A; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center">MG</span>
+        <span style="display: flex; flex-direction: column; gap: 1px">
+          <span style="font-size: 17px; font-weight: 700">M. et Mme Garnier</span>
+          <span style="font-size: 15px; color: #5B6380">Rendez-vous demain · 2 prix ont changé</span>
+        </span>
+      </a>
+      <a href="#" style="background: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 16px; padding: 14px; display: flex; gap: 12px; align-items: center; color: #1B2559">
+        <span aria-hidden="true" style="flex: none; width: 44px; height: 44px; border-radius: 22px; background: #E7EAF7; color: #26327F; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center">PL</span>
+        <span style="display: flex; flex-direction: column; gap: 1px">
+          <span style="font-size: 17px; font-weight: 700">M. Lambert</span>
+          <span style="font-size: 15px; color: #5B6380">Un concurrent a baissé de 20 000 €</span>
+        </span>
+      </a>
+      <a href="#" style="background: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 16px; padding: 14px; display: flex; gap: 12px; align-items: center; color: #1B2559">
+        <span aria-hidden="true" style="flex: none; width: 44px; height: 44px; border-radius: 22px; background: #E3F4EC; color: #0B6B4A; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center">CP</span>
+        <span style="display: flex; flex-direction: column; gap: 1px">
+          <span style="font-size: 17px; font-weight: 700">Mme Petit</span>
+          <span style="font-size: 15px; color: #5B6380">Mandat signé il y a 30 jours</span>
+        </span>
+      </a>
+    </div>
+
+    <a href="#" style="height: 52px; border-radius: 16px; background: #E7EAF7; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 700; color: #1B2559">
+      <span>Tous mes vendeurs</span>
+      <span style="display: flex; align-items: center; gap: 6px; color: #5B6380; font-weight: 600">18
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </span>
+    </a>
+  </section>
+
+  <main style="padding: 32px 40px; display: flex; flex-direction: column; gap: 20px; min-width: 0">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.4px">M. et Mme Garnier</h2>
+        <p style="margin: 0; font-size: 15px; color: #5B6380">Maison · 5 pièces · 140 m² · Antibes</p>
+      </div>
+      <span style="flex: none; height: 34px; padding: 0 14px; border-radius: 17px; background: #FDEBDD; color: #7A2E08; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Rendez-vous demain à 10 h</span>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E3E6F0; border-radius: 20px; padding: 24px; display: flex; align-items: center; justify-content: space-between; gap: 32px">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 13px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #5B6380">Prochaine étape</span>
+        <p style="margin: 0; font-size: 21px; font-weight: 700; line-height: 1.35">2 annonces concurrentes ont changé de prix depuis votre préparation.</p>
+        <a href="#" style="font-size: 15px; font-weight: 700">Voir l'aperçu côté vendeur</a>
+      </div>
+      <button type="button" style="flex: none; width: 240px; height: 56px; border: 0; border-radius: 16px; background: #26327F; color: #FFFFFF; font-size: 17px; font-weight: 700">Vérifier les annonces</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px">
+      <div style="background: #FFFFFF; border: 1px solid #E3E6F0; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 28px; font-weight: 800">6</span>
+        <span style="font-size: 15px; color: #5B6380">Concurrents retenus</span>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E6F0; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 28px; font-weight: 800; color: #9A3A0A">2</span>
+        <span style="font-size: 15px; color: #5B6380">Prix à revérifier</span>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E6F0; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 28px; font-weight: 800; color: #0B6B4A">5</span>
+        <span style="font-size: 15px; color: #5B6380">Acquéreurs prêts à visiter</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <h3 style="margin: 0; font-size: 17px; font-weight: 800">Son dossier</h3>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px">
+        <a href="#" style="background: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; color: #1B2559">
+          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 14px; background: #E3F4EC; color: #0B6B4A; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <span style="font-size: 16px; font-weight: 700">Le bien</span>
+          <span style="font-size: 14px; color: #5B6380">Vérifié</span>
+        </a>
+        <a href="#" style="background: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; color: #1B2559">
+          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 14px; background: #E3F4EC; color: #0B6B4A; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <span style="font-size: 16px; font-weight: 700">Les concurrents</span>
+          <span style="font-size: 14px; color: #5B6380">6 retenus</span>
+        </a>
+        <a href="#" style="background: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; color: #1B2559">
+          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 14px; background: #E3F4EC; color: #0B6B4A; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <span style="font-size: 16px; font-weight: 700">Le prix</span>
+          <span style="font-size: 14px; color: #5B6380">Votre analyse est saisie</span>
+        </a>
+        <a href="#" aria-current="step" style="background: #FFFFFF; border: 2px solid #26327F; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; color: #1B2559">
+          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 14px; background: #26327F; color: #FFFFFF; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center">4</span>
+          <span style="font-size: 16px; font-weight: 700">Le rendez-vous</span>
+          <span style="font-size: 14px; color: #5B6380">Demain à 10 h</span>
+        </a>
+        <a href="#" style="background: #FFFFFF; border: 2px solid #FFFFFF; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; color: #1B2559">
+          <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 14px; background: #E7EAF7; color: #5B6380; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center">5</span>
+          <span style="font-size: 16px; font-weight: 700">Conclure</span>
+          <span style="font-size: 14px; color: #5B6380">Après le rendez-vous</span>
+        </a>
+      </div>
+    </div>
+
+    <a href="#" style="margin-top: auto; height: 52px; padding: 0 16px; border-radius: 16px; background: #FFFFFF; border: 1px solid #E3E6F0; color: #1B2559; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: space-between">Tout le dossier
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

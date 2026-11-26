@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { SellerTabs } from '@/components/app-shell/seller-tabs';
 import {
   alertError,
   badgeNeutral,
@@ -49,6 +50,7 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
 
   return (
     <div className="flex flex-col gap-6 md:gap-8">
+      <SellerTabs current="/builder" />
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <span className={kickerLabel}>Dossiers vendeurs</span>

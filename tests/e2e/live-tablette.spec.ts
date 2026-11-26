@@ -222,7 +222,8 @@ test('la carte du conseiller et son menu tiennent sur tablette', async ({ page }
     const size = `${viewport.width} × ${viewport.height}`;
     await page.setViewportSize(viewport);
     await page.goto('/builder');
-    await expect(sideNav(page).getByRole('link')).toHaveCount(7);
+    // La refonte, lot A — sur tablette, la colonne d'icônes : quatre entrées et Aide.
+    await expect(sideNav(page).getByRole('link')).toHaveCount(5);
     const menu = await openAccountMenu(page);
     const entries = menu.getByRole('menuitem');
     expect(await entries.count(), `Menu de la carte vide en ${size}`).toBeGreaterThanOrEqual(5);
@@ -241,5 +242,43 @@ test('la carte du conseiller et son menu tiennent sur tablette', async ({ page }
     await expectNoHorizontalScroll(page, `Menu de la carte en ${size}`);
     await page.keyboard.press('Escape');
     await expect(menu).toHaveCount(0);
+
+    // La refonte, lot A — la feuille (240 px) déborde de la colonne d'icônes (88 px) : ouverte, elle
+    // passe AU-DESSUS de la page — son contenu, ses photos, sa barre « Enregistrer » (z-40) — et
+    // reste sous une couche plein écran (z-50 : confirmation, fiche d'un bien). Une sonde posée
+    // dans la page, à ces deux rangs, le prouve sans dépendre de ce que la page montre ce jour-là.
+    const sheet = await openAccountMenu(page);
+    const coveredBy = (rank: number) =>
+      page.evaluate((z) => {
+        const probe = document.createElement('div');
+        probe.style.cssText = `position:fixed;inset:0;z-index:${z}`;
+        document.querySelector('main')!.append(probe);
+        const covered = [
+          ...document.querySelectorAll<HTMLElement>(
+            '[data-testid="account-menu"] [role="menuitem"]',
+          ),
+        ]
+          .filter((entry) => entry.offsetParent !== null)
+          .filter((entry) => {
+            const box = entry.getBoundingClientRect();
+            return [0.1, 0.5, 0.9].some((part) => {
+              const top = document.elementFromPoint(
+                box.left + box.width * part,
+                box.top + box.height / 2,
+              );
+              return top === null || !entry.contains(top);
+            });
+          })
+          .map((entry) => entry.textContent?.trim() ?? '');
+        probe.remove();
+        return covered;
+      }, rank);
+    expect(await coveredBy(40), `La page recouvre la feuille du compte en ${size}`).toEqual([]);
+    expect(
+      (await coveredBy(50)).length,
+      `Une couche plein écran passe au-dessus de la feuille du compte en ${size}`,
+    ).toBe(await sheet.getByRole('menuitem').count());
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
   }
 });

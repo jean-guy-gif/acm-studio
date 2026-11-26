@@ -1,0 +1,169 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M148 · 7 — la frise</title><style>
+@font-face{font-family:Rajdhani;font-weight:600;src:url(../../src/features/branding/fonts/rajdhani/rajdhani-latin-600.woff2)}
+@font-face{font-family:Rajdhani;font-weight:700;src:url(../../src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2)}
+@font-face{font-family:Montserrat;font-weight:100 900;src:url(../../src/features/branding/fonts/montserrat/montserrat-latin.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+h1.sheet{font-size:22px;color:#27272a}
+.sub{font-size:13px;color:#3f3f46;max-width:1700px;line-height:1.5}
+.layout{display:flex;gap:28px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:22px}
+.rowf{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+.ft{font-size:13px;font-weight:800;color:#3f3f46;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.st{font-size:11px;font-weight:800;letter-spacing:.1em;border-radius:6px;padding:2px 7px;color:#fff}
+.st.av{background:#71717a}.st.ap{background:#12875a}
+.notes{width:430px;display:flex;flex-direction:column;gap:12px;flex:none}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#3a3000}
+.note b{color:#5b4a00}.note ol,.note ul{padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.note code{font-size:11.5px;background:#fff8d6;padding:0 3px;border-radius:3px}
+.pin{display:inline-flex;width:18px;height:18px;border-radius:50%;background:#e8cf5a;color:#5b4a00;font-size:10.5px;font-weight:800;align-items:center;justify-content:center;flex:none;font-style:normal;font-family:Montserrat}
+.avant{position:relative;width:512px;border:1px solid #a1a1aa;background:#1c4a72}
+.avant img{display:block;width:512px}
+.fold{position:absolute;left:0;right:0;border-top:3px solid #ef4444}
+.fold span{position:absolute;right:4px;top:-22px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px}
+.over{position:absolute;left:4px;bottom:6px;background:#ef4444;color:#fff;font-size:12px;font-weight:800;padding:3px 8px;border-radius:5px}
+/* La scène du Live */
+.scene{position:relative;overflow:hidden;color:#fff;background:linear-gradient(135deg,#2a6596 0%,#1f5683 45%,#173f63 100%);font-family:Montserrat,Arial,sans-serif;display:flex;flex-direction:column;border:1px solid #52525b}
+.scene.overflowing{outline:6px solid #ef4444}
+.hdr{flex:none;display:flex;align-items:center;gap:14px;padding:12px 28px 0;height:46px;font-size:13px}
+.hdr .ag{font-family:Rajdhani;font-weight:700;letter-spacing:.02em;font-size:14px}
+.hdr .k{color:#5ab4ff;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
+.hdr .sp{flex:1}.hdr .n{color:rgba(255,255,255,.5);font-size:12px}
+.hdr .ch{color:rgba(255,255,255,.8);font-size:12.5px}
+.prog{flex:none;margin:6px 28px 0;height:3px;border-radius:2px;background:rgba(255,255,255,.12)}
+.prog i{display:block;height:3px;border-radius:2px;background:#3aa0ff}
+.screen{flex:1;min-height:0;overflow:hidden;padding:14px 28px 12px;display:flex;flex-direction:column;gap:12px}
+.bar{flex:none;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(31,86,131,.96);border-top:1px solid rgba(255,255,255,.12)}
+.prev{border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:9px 16px;font-size:13.5px}
+.cta{background:#fff;color:#0f3a5c;border-radius:12px;padding:12px 26px;font-family:Rajdhani;font-weight:700;font-size:17px}
+.q{font-family:Rajdhani;font-weight:700;font-size:38px;line-height:1.02;letter-spacing:-.01em}
+.hint{font-size:15px;color:rgba(255,255,255,.72);line-height:1.35}
+.g2{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;min-height:0}
+.photo{position:relative;border-radius:16px;background-size:cover;background-position:center;min-height:0}
+.thumbs{position:absolute;left:10px;bottom:10px;display:flex;gap:6px}
+.thumbs i{width:46px;height:34px;border-radius:6px;border:2px solid rgba(255,255,255,.85);background-size:cover;background-position:center}
+.thumbs i.on{border-color:#fff;box-shadow:0 0 0 2px #3aa0ff}
+.lbl{font-family:Rajdhani;font-weight:600;font-size:19px;line-height:1.15}
+.lbl small{display:block;font-family:Montserrat;font-weight:400;font-size:13px;color:rgba(255,255,255,.6)}
+.panel{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+.fl{font-size:12.5px;color:rgba(255,255,255,.72)}
+.choice{border:2px solid rgba(255,255,255,.25);border-radius:12px;min-height:46px;display:flex;align-items:center;justify-content:center;font-family:Rajdhani;font-weight:600;font-size:18px;color:rgba(255,255,255,.85);text-align:center;padding:4px 10px;line-height:1.1}
+.choice.on{background:#fff;color:#0f3a5c;border-color:#fff}
+.choice.sm{min-height:40px;font-size:16px}
+.addc{font-size:13px;color:rgba(255,255,255,.7);text-decoration:underline;text-underline-offset:3px}
+.chg{display:grid;gap:7px}
+.chip{border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);padding:6px 10px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.chip .l{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.chip .v{font-family:Rajdhani;font-weight:600;font-size:16px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.g{border-color:rgba(52,211,153,.6);background:rgba(16,185,129,.16)}.chip.g .v{color:#6ee7b7}
+.chip.o{border-color:rgba(251,191,36,.6);background:rgba(245,158,11,.16)}.chip.o .v{color:#fcd34d}
+.legend{font-size:11px;color:rgba(255,255,255,.6);display:flex;justify-content:space-between;gap:10px}
+.legend b{font-weight:700}.legend .gk{color:#6ee7b7}.legend .ok{color:#fcd34d}
+.stl{font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.big{font-family:Rajdhani;font-weight:700;font-size:54px;line-height:.95;letter-spacing:-.01em}
+.mid{font-family:Rajdhani;font-weight:700;font-size:28px;line-height:1}
+.sv{font-family:Rajdhani;font-weight:600;font-size:18px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.tone-g{color:#6ee7b7}.tone-o{color:#fcd34d}.tone-r{color:#fca5a5}
+.bg-g{background:#34d399}.bg-o{background:#fbbf24}.bg-r{background:#f87171}
+.guess{border-left:5px solid;padding:4px 0 4px 12px;display:flex;flex-direction:column;gap:2px}
+.guess.g{border-color:#34d399}.guess.o{border-color:#fbbf24}.guess.r{border-color:#f87171}
+.gap{font-size:14px;font-weight:600}
+.dcard{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.dcard.sel{border:2px solid #fff}
+.dcard .ph{height:84px;background-size:cover;background-position:center}
+.dcard .tx{padding:7px 10px;display:flex;flex-direction:column;gap:2px;font-size:12px}
+.wire{border:2px dashed rgba(255,255,255,.35);border-radius:12px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12.5px;color:rgba(255,255,255,.8);padding:6px}
+/* Documents (synthèse) */
+.doc{background:#fff;color:#27272a;font-family:Montserrat,Arial,sans-serif;border:1px solid #a1a1aa}
+.dk{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#64748b}
+.dcardw{border:1px solid #e4e4e7;background:#fafafa;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.pair{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.pair b{font-family:Rajdhani;font-size:17px}
+.gt-g{color:#047857}.gt-o{color:#b45309}.gt-r{color:#b91c1c}
+.gb-g{border-left:5px solid #10b981}.gb-o{border-left:5px solid #f59e0b}.gb-r{border-left:5px solid #ef4444}
+/* La frise */
+.band{position:relative}
+.band .line{position:absolute;left:0;right:0;height:3px;background:#e4e4e7}
+.band .pd{position:absolute;width:12px;height:12px;border-radius:50%;background:#a1a1aa;transform:translate(-50%,-50%)}
+.band .mk{position:absolute;display:flex;flex-direction:column;align-items:center;font-size:10.5px;line-height:1.15;white-space:nowrap;text-align:center}
+.band .mk b{font-size:11px}
+.band .tick{position:absolute;width:2px}
+.band .lab{position:absolute;font-size:10.5px;line-height:1.15;white-space:nowrap;text-align:center;padding:1px 3px;background:#fff}
+.band .lab b{display:block;font-size:11px}
+.ends{display:flex;justify-content:space-between;font-size:11.5px;color:#71717a;margin-top:2px}
+.clash{outline:2px solid #ef4444;background:#fee2e2 !important}
+</style></head><body><h1 class="sheet">M148 · 7 — La synthèse : la frise de « L’analyse des prix » sans chevauchement, l’échelle couvre tout</h1><p class="sub">Le dossier 868af175 de l’essai (08/11, M. Thouvenin) : prix révélés 129 900, 134 000, 139 000 et 149 000 € ; repères Au début 149 000 €, Après le marché 129 000 €, Le plus dangereux 134 000 €, Prix des concurrents 127 992 €. Les frises ci-dessous sont dessinées par le navigateur avec les vraies largeurs de texte : à gauche le calcul de main, à droite la proposition. Une étiquette qui en touche une autre est entourée de rouge.</p>
+<div class="layout"><div class="col">
+<div class="rowf"><div><div class="ft"><span class="st av">AVANT</span>Écran et PDF (A4) — le dossier 868af175</div><div class="doc" style="width:794px;padding:28px"><div class="dcardw" style="background:#fff"><span class="dk">Les prix affichés des biens que vous avez vus</span><div class="band" data-mode="avant" data-case='{"prices":[129900,134000,139000,149000],"markers":[["Au début",149000,"#71717a"],["Après le marché",129000,"#0369a1"],["Le plus dangereux selon vous",134000,"#013a58"],["Prix des concurrents",127992,"#1e293b"]]}'></div><div class="ends"></div></div></div></div><div><div class="ft"><span class="st ap">APRÈS</span>Écran et PDF (A4) — le dossier 868af175</div><div class="doc" style="width:794px;padding:28px"><div class="dcardw" style="background:#fff"><span class="dk">Les prix affichés des biens que vous avez vus</span><div class="band" data-mode="apres" data-case='{"prices":[129900,134000,139000,149000],"markers":[["Au début",149000,"#71717a"],["Après le marché",129000,"#0369a1"],["Le plus dangereux selon vous",134000,"#013a58"],["Prix des concurrents",127992,"#1e293b"]]}'></div><div class="ends"></div></div></div></div></div>
+<div class="rowf"><div><div class="ft"><span class="st av">AVANT</span>Prix très proches (le cas du test)</div><div class="doc" style="width:794px;padding:28px"><div class="dcardw" style="background:#fff"><span class="dk">Les prix affichés des biens que vous avez vus</span><div class="band" data-mode="avant" data-case='{"prices":[140000,140500,141000,152000],"markers":[["Au début",140200,"#71717a"],["Après le marché",140600,"#0369a1"],["Le plus dangereux selon vous",140500,"#013a58"],["Prix des concurrents",140900,"#1e293b"]]}'></div><div class="ends"></div></div></div></div><div><div class="ft"><span class="st ap">APRÈS</span>Prix très proches (le cas du test)</div><div class="doc" style="width:794px;padding:28px"><div class="dcardw" style="background:#fff"><span class="dk">Les prix affichés des biens que vous avez vus</span><div class="band" data-mode="apres" data-case='{"prices":[140000,140500,141000,152000],"markers":[["Au début",140200,"#71717a"],["Après le marché",140600,"#0369a1"],["Le plus dangereux selon vous",140500,"#013a58"],["Prix des concurrents",140900,"#1e293b"]]}'></div><div class="ends"></div></div></div></div></div>
+<div class="rowf"><div><div class="ft"><span class="st ap">APRÈS</span>« Le chemin de votre prix » — deux repères au même prix</div><div class="doc" style="width:794px;padding:28px"><div class="dcardw" style="background:#fff"><span class="dk">Les étapes de votre prix</span><div class="band" data-mode="apres" data-case='{"prices":[129900,134000,139000,149000],"markers":[["Au début",149000,"#71717a"],["Après le marché",129000,"#0369a1"],["Convenu ensemble",129000,"#1e293b"]]}'></div><div class="ends"></div></div></div></div><div><div class="ft"><span class="st ap">APRÈS</span>Téléphone · 390 px (lien public)</div><div class="doc" style="width:390px;padding:14px"><div class="dcardw" style="background:#fff"><span class="dk">Les prix affichés</span><div class="band" data-mode="apres" data-case='{"prices":[129900,134000,139000,149000],"markers":[["Au début",149000,"#71717a"],["Après le marché",129000,"#0369a1"],["Le plus dangereux selon vous",134000,"#013a58"],["Prix des concurrents",127992,"#1e293b"]]}'></div><div class="ends"></div></div></div></div><div><div class="ft"><span class="st av">AVANT</span>Téléphone, avant</div><div class="doc" style="width:390px;padding:14px"><div class="dcardw" style="background:#fff"><span class="dk">Les prix affichés</span><div class="band" data-mode="avant" data-case='{"prices":[129900,134000,139000,149000],"markers":[["Au début",149000,"#71717a"],["Après le marché",129000,"#0369a1"],["Le plus dangereux selon vous",134000,"#013a58"],["Prix des concurrents",127992,"#1e293b"]]}'></div><div class="ends"></div></div></div></div></div>
+</div><div class="notes">
+<div class="note"><b>Ce qui casse aujourd’hui</b> (<code>PriceBand</code>, <code>seller-synthesis-document.tsx</code>) :<ol><li>Les repères sont placés sur l’échelle de TOUS les prix (repères compris), mais les bornes écrites dessous ne lisent que les prix des concurrents : « 129 900 € … 149 000 € » alors que deux repères sont à 127 992 et 129 000 € — ils paraissent hors de l’échelle.</li><li>Les étiquettes alternent dessus / dessous selon leur RANG dans la liste, jamais selon leur place : deux prix proches du même côté se recouvrent, et une étiquette près d’un bord sort de la frise (les 12 % de marge ne suffisent pas à « Le plus dangereux selon vous »).</li></ol></div>
+<div class="note"><b>Après</b> :<ol><li><i class="pin">1</i> L’échelle va du plus petit au plus grand de TOUT ce qui est montré (prix et repères), et ses bornes écrites sont ces deux montants : rien ne sort.</li><li><i class="pin">2</i> Deux repères au même montant n’ont qu’une étiquette : « Après le marché · Convenu ensemble 129 000 € ».</li><li><i class="pin">3</i> Chaque étiquette, rangée par montant, prend la première place libre : au-dessus de la frise, sinon au-dessous ; un trait la relie à son repère ; près d’un bord, elle s’ancre du côté où elle a la place (comme M115 au Live).</li><li><i class="pin">4</i> Si les étiquettes ne tiennent pas sur ces deux rangées (prix très proches), la frise porte des repères numérotés ①②③④ et la légende dessous dit chacun avec son montant — jamais deux textes l’un sur l’autre.</li><li><i class="pin">6</i> La frise ne coupe jamais une page (M113) ; la même règle vaut pour la frise du « chemin de votre prix ».</li></ol></div>
+<div class="note"><b>Le test</b> : un service pur (<code>band-labels</code>) range les étiquettes à partir de leur largeur estimée et de la largeur de la frise ; le test, avec des prix à 100 € les uns des autres et quatre repères, vérifie qu’aucune boîte n’en touche une autre à 390 px et à 794 px, et que l’échelle contient chaque prix et chaque repère. Les e2e lisent la synthèse de la démo et mesurent les boîtes dans le navigateur.</div>
+<div class="note"><b>Le Live</b> (« Analyse des prix ») n’a pas ce défaut : son échelle couvre déjà tous les repères et seul « Le plus dangereux » y est écrit, les autres dans la légende. Il ne change pas.</div>
+<div class="note"><b>125 000 €</b> : sur ce dossier, c’est l’« Analyse du conseiller », dans sa carte sous la frise ; ce n’est pas un repère de la frise — question 8.</div>
+</div></div><script>
+const euro = (v) => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(v).replace(/\u202f/g,'\u00a0') + '\u00a0€';
+function drawBand(el){
+  const c = JSON.parse(el.dataset.case); const mode = el.dataset.mode;
+  const W = el.clientWidth; const inner = mode === 'avant' ? W*0.76 : W; const off = mode === 'avant' ? W*0.12 : 0;
+  const values = [...c.prices, ...c.markers.map(m=>m[1])];
+  const lo = Math.min(...values), hi = Math.max(...values);
+  const x = (v) => off + (hi>lo ? (v-lo)/(hi-lo) : .5) * inner;
+  const line = 46 + (mode==='apres' ? 24 : 0);
+  el.innerHTML = '';
+  const add = (cls, style, html='') => { const d = document.createElement('div'); d.className = cls; Object.assign(d.style, style); d.innerHTML = html; el.appendChild(d); return d; };
+  add('line', {top: line+'px', left: off+'px', width: inner+'px'});
+  c.prices.forEach(v => add('pd', {left: x(v)+'px', top: (line+1)+'px'}));
+  const boxes = [];
+  if (mode === 'avant') {
+    // Le code de main : au-dessus, au-dessous, au-dessus… dans l'ordre des repères, centrés.
+    c.markers.forEach(([l,v,col],i) => { const below = i%2===1;
+      const d = add('lab', {top: below ? (line+14)+'px' : (line-44)+'px', left: x(v)+'px', transform:'translateX(-50%)', color: col}, '<span>'+l+'</span><b>'+euro(v)+'</b>');
+      add('tick', {left: x(v)+'px', top: below ? (line+2)+'px' : (line-12)+'px', height:'12px', background: col});
+      boxes.push(d); });
+    el.style.height = (line+50)+'px';
+  } else {
+    // Après : repères de même valeur fondus en un seul ; triés par valeur ; chaque étiquette prend
+    // la première voie libre (au-dessus 1, au-dessous 1, au-dessus 2, au-dessous 2) ; près d'un
+    // bord, elle s'ancre du côté où elle a la place (M115).
+    const groups = [];
+    [...c.markers].sort((a,b)=>a[1]-b[1]).forEach(m => { const g = groups.find(g => g.v === m[1]); if (g) { g.l.push(m[0]); } else groups.push({v:m[1], l:[m[0]], col:m[2]}); });
+    const lanes = [[],[]]; const laneTop = [line-40, line+14];
+    const placed = []; let crowded = false;
+    groups.forEach(g => {
+      const d = add('lab', {color: g.col, top:'0px', left:'0px'}, '<span>'+g.l.join(' · ')+'</span><b>'+euro(g.v)+'</b>');
+      const w = d.offsetWidth; let left = x(g.v) - w/2; left = Math.max(0, Math.min(W - w, left));
+      const lane = lanes.findIndex(bx => bx.every(b => left >= b.r + 8 || left + w <= b.l - 8));
+      if (lane < 0) crowded = true; else lanes[lane].push({l:left, r:left+w});
+      placed.push({d, g, left, lane});
+    });
+    if (!crowded) {
+      placed.forEach(({d, g, left, lane}) => { d.style.left = left+'px'; d.style.top = laneTop[lane]+'px';
+        const above = lane === 0; const t1 = above ? laneTop[lane]+30 : line+3; const t2 = above ? line-1 : laneTop[lane];
+        add('tick', {left: (x(g.v)-1)+'px', top: t1+'px', height: Math.max(4, t2-t1)+'px', background: g.col}); boxes.push(d); });
+    } else {
+      // Trop serré pour écrire chaque étiquette sur la frise : des repères numérotés, et la légende
+      // dessous, une ligne par repère. Deux numéros trop proches montent l'un au-dessus de l'autre.
+      placed.forEach(({d}) => d.remove());
+      const circles = [];
+      placed.forEach(({g}, i) => { let top = line-28; while (circles.some(c => Math.abs(c.x - x(g.v)) < 20 && c.top === top)) top -= 22;
+        circles.push({x: x(g.v), top});
+        const c = add('lab', {left: (x(g.v)-10)+'px', top: top+'px', width:'20px', height:'20px', borderRadius:'50%', background: g.col, color:'#fff', fontWeight:'800', fontSize:'11px', lineHeight:'18px', padding:'0'}, String(i+1));
+        boxes.push(c);
+        add('tick', {left: (x(g.v)-1)+'px', top: (top+20)+'px', height: Math.max(3, line-top-20)+'px', background: g.col}); });
+      const lg = add('lab', {left:'0px', top:(line+16)+'px', textAlign:'left', display:'flex', flexWrap:'wrap', gap:'4px 16px', width: W+'px', whiteSpace:'normal'},
+        placed.map(({g},i) => '<span style="color:'+g.col+'"><b style="display:inline-block;width:16px;height:16px;border-radius:50%;background:'+g.col+';color:#fff;text-align:center;font-size:10px;line-height:16px;margin-right:4px">'+(i+1)+'</b>'+g.l.join(' · ')+' : <b style="display:inline">'+euro(g.v)+'</b></span>').join(''));
+    }
+    el.style.height = (line+64)+'px';
+  }
+  // Contrôle : deux étiquettes qui se touchent sont entourées de rouge.
+  for (let i=0;i<boxes.length;i++) for (let j=i+1;j<boxes.length;j++) { const a = boxes[i].getBoundingClientRect(), b = boxes[j].getBoundingClientRect();
+    if (a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom) { boxes[i].classList.add('clash'); boxes[j].classList.add('clash'); el.dataset.clash = '1'; } }
+  const ends = el.nextElementSibling; ends.innerHTML = '<span>'+euro(mode==='avant' ? Math.min(...c.prices) : lo)+'</span><span>'+euro(mode==='avant' ? Math.max(...c.prices) : hi)+'</span>';
+  if (mode==='avant') { ends.style.margin = '2px 12% 0'; }
+}
+document.fonts.ready.then(() => document.querySelectorAll('.band').forEach(drawBand));
+</script></body></html>

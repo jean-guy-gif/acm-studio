@@ -1,0 +1,101 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M145-5 Aujourd’hui — états</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:28px;align-items:flex-start}
+h1.sheet{font-size:20px;color:#27272a}
+.sheet-sub{font-size:13px;color:#3f3f46;max-width:1700px;line-height:1.5}
+.row-wrap{display:flex;gap:24px;align-items:flex-start}
+.frame-title{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px}
+.frame{background:#f7f8fa;position:relative;overflow:hidden;border:1px solid #a1a1aa}
+.desk{width:1280px;min-height:800px;display:flex}
+.fold{position:absolute;left:0;right:0;top:800px;border-top:2px dashed #ef4444}
+.fold span{position:absolute;right:8px;top:-20px;font-size:11px;font-weight:700;color:#ef4444;background:#f7f8fa;padding:0 4px}
+.tab{width:1024px;height:768px;display:flex}
+.phone{width:390px;height:844px;display:flex;flex-direction:column}
+.side{width:236px;align-self:stretch;background:#fff;border-right:1px solid #e4e4e7;padding:22px 14px;display:flex;flex-direction:column;gap:2px;flex:none}
+.tab .side{width:206px;padding:18px 10px}
+.agency{font-size:14px;font-weight:800;letter-spacing:.06em;color:#00527a;text-transform:uppercase;padding:0 10px 18px;line-height:1.3}
+.nav{padding:8px 12px;border-radius:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.nav b{display:block;font-size:14px;font-weight:600}
+.nav small{display:block;font-size:11.5px;color:#71717a;margin-top:1px}
+.nav.on{background:#eaf5ff}
+.nav.on b{color:#013a58;font-weight:800}
+.badge{background:#ea7a1a;color:#fff;font-size:11px;font-weight:800;border-radius:10px;padding:2px 7px;flex:none}
+.group{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:#71717a;padding:14px 12px 4px}
+.account{margin-top:auto;border-top:1px solid #e4e4e7;padding:12px 10px 0;font-size:12px;color:#52525b;line-height:1.45}
+.account b{color:#18181b;font-size:12.5px}
+.main{flex:1;padding:22px 36px;overflow:hidden;display:flex;flex-direction:column;gap:12px}
+.tab .main{padding:22px 24px;gap:12px}
+.phone .main{padding:16px 14px;gap:12px}
+.kicker{font-size:11.5px;font-weight:800;letter-spacing:.14em;color:#71717a;text-transform:uppercase}
+.title{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:38px;font-weight:800;color:#013a58;line-height:1.05}
+.phone .title{font-size:30px}
+.subtitle{font-size:14px;color:#52525b;margin-top:4px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.kpis{display:flex;gap:10px}
+.kpi{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:8px 14px;min-width:120px}
+.kpi b{display:block;font-size:22px;color:#013a58}
+.kpi span{font-size:12px;color:#52525b}
+.block{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:10px 20px;box-shadow:0 1px 2px rgb(0 0 0 / .04)}
+.tab .block{padding:10px 16px}
+.phone .block{padding:10px 12px}
+.block h2{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:21px;font-weight:800;color:#013a58;display:flex;align-items:baseline;gap:8px;padding-bottom:2px}
+.block h2 small{font-family:Montserrat,Arial,sans-serif;font-size:12.5px;font-weight:600;color:#71717a}
+.task{display:flex;align-items:center;gap:14px;padding:8px 0;border-top:1px solid #f0f0f2;position:relative}
+.task:first-of-type{border-top:0}
+.phone .task{flex-wrap:wrap;gap:8px 10px;align-items:flex-start}
+.ico{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px}
+.ico.urgent{background:#12875a}
+.ico.seller{background:#ea7a1a}
+.ico.buyer{background:#00527a}
+.ico.prosp{background:#52525b}
+.txt{flex:1;min-width:0}
+.txt b{display:block;font-size:14.5px;font-weight:700;line-height:1.3}
+.txt span{display:block;font-size:12.5px;color:#52525b;margin-top:2px;line-height:1.4}
+.txt span.late{display:inline;color:#c2410c;font-weight:700}
+.txt span.tag,.txt span.chip{display:inline-block}
+.txt span.inl{display:inline}
+.btn{border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:700;white-space:nowrap;flex:none;border:1.5px solid #00527a;color:#00527a;background:#fff}
+.btn.full{background:#00527a;color:#fff}
+.phone .btn{width:100%;text-align:center;padding:12px;margin-left:40px;width:calc(100% - 40px)}
+.links{font-size:12.5px;color:#00527a;font-weight:600;display:flex;gap:12px;flex:none}
+.pin{position:absolute;right:-30px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:#e8cf5a;color:#5b4a00;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.ghost{opacity:.55}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;color:#5b4a00;background:#fef6c7;border:1px dashed #e8cf5a;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.done{font-size:12.5px;color:#52525b;padding:2px 4px}
+.done s{color:#71717a}
+.txt span.argue{display:inline-block;margin-top:3px;font-size:12px;font-weight:700;color:#0b6b46;background:#e6f4ec;border-radius:999px;padding:1px 9px}
+.done-block{background:#fafafa;box-shadow:none}
+.done-block .done{padding:4px 0}
+.series{margin:0 0 6px 44px;border-left:3px solid #eaf5ff;padding-left:14px}
+.sub{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;border-top:1px dashed #ececef}
+.sub:first-child{border-top:0}
+.sub b{flex:1;font-weight:600}
+.sub .btn{padding:6px 12px;font-size:12.5px}
+.notes{width:430px;display:flex;flex-direction:column;gap:12px;flex:none}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#3a3000}
+.note b{color:#5b4a00}
+.note ol{padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.note code{font-size:11.5px;background:#fff8d6;padding:0 3px;border-radius:3px}
+.topbar{height:52px;background:#fff;border-bottom:1px solid #e4e4e7;display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex:none}
+.topbar .agency{padding:0;font-size:12.5px}
+.burger{display:flex;align-items:center;gap:6px;font-size:22px;color:#013a58}
+.drawer{background:#fff;border-bottom:1px solid #e4e4e7;padding:8px 10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:0 8px 20px rgb(0 0 0 / .08)}
+.scrim{flex:1;background:rgb(24 24 27 / .25)}
+.fiche{width:1280px;height:560px;display:flex}
+.nextstep{background:#fff;border:2px solid #00527a;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;width:400px}
+.nextstep .k{font-size:11px;font-weight:800;letter-spacing:.12em;color:#71717a;text-transform:uppercase}
+.nextstep h3{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:22px;color:#013a58}
+.nextstep p{font-size:13px;color:#52525b;line-height:1.45}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;background:#e7f4ee;color:#12875a;margin-right:6px}
+.listrow{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:14px}
+.empty{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:16px 18px;font-size:14px;color:#52525b;line-height:1.5}
+.error{background:#fff;border:1px solid #f1c3bd;border-radius:14px;padding:12px 16px;font-size:13px;color:#a3291f;line-height:1.5}
+</style></head><body><h1 class="sheet">M145-5 · Aujourd’hui — les états</h1>
+<div class="row-wrap" style="flex-wrap:wrap;max-width:1700px">
+<div style="width:640px"><div class="frame-title">Rien à faire aujourd’hui</div><div class="empty"><b style="color:#013a58">Rien à faire aujourd’hui.</b><br>Prochaine tâche : Point marché de M. Lefebvre le 07/12.<br>✓ Fait aujourd’hui : <s>Relancer M. et Mme Lambert-Duval</s> · <s>Point marché de M. Lefebvre</s></div></div>
+<div style="width:640px"><div class="frame-title">Une lecture en échec (M98 : jamais lue comme « rien à faire »)</div><div class="error">Les tâches des acquéreurs n’ont pas pu être lues : rechargez la page.</div><div style="height:8px"></div><section class="block"><h2>Vendeurs<small>· 2</small></h2><div class="task"><span class="ico seller">!</span><div class="txt"><b>Relancer M. et Mme Lambert-Duval</b><span class="argue">« 1 acquéreur prêt correspond à votre bien »</span><span>réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui</span></div><span class="btn">Relancer</span></div><div class="task"><span class="ico seller">◷</span><div class="txt"><b>Point marché de M. Lefebvre</b><span>mandat signé le 07/10 · premier Point marché dû (tous les mois)</span></div><span class="btn">Faire le point</span></div></section><p style="font-size:12px;color:#52525b;margin-top:6px">La pastille du menu se tait (M130 A).</p></div>
+<div style="width:640px"><div class="frame-title">Conseiller sans aucun dossier</div><div class="empty">Inchangé : la connexion mène à « Bienvenue » (M97) tant qu’il n’a créé aucun dossier, sauf en mode expert. Ensuite, « Aujourd’hui ».</div></div>
+<div style="width:640px"><div class="frame-title">Lundi 09/11 : le point de la semaine revient, jusqu’au mercredi 11/11 au soir</div><section class="block"><h2>Acquéreurs<small>· …</small></h2><div class="task"><span class="ico buyer">7</span><div class="txt"><b>Envoyer le point de la semaine à 7 acquéreurs</b><span>semaine du 02/11 au 08/11 · M. et Mme Lambert, la famille Moreau, Mme Faure et 4 autres · jusqu’à mercredi</span></div><span class="btn">Voir les 7</span></div></section><p style="font-size:12px;color:#52525b;margin-top:6px">Les 7 acquéreurs du relevé du 07/11 (M. et Mme Rossi, prêts le jour de la démo, n’y entrent pas : leur fiche est créée après la semaine racontée). Jamais « en retard » : jeudi, il a disparu.</p></div>
+<div style="width:640px"><div class="frame-title">Le Suivi, après : plus de bloc « À faire aujourd’hui »</div><div class="empty" style="font-size:13px"><div class="kicker" style="margin-bottom:2px">Après le rendez-vous</div><div class="title" style="font-size:28px">Suivi</div><p style="margin:2px 0 10px">Chaque vendeur, et sa prochaine étape. <span style="color:#00527a;font-weight:600">Ce que vous avez à faire aujourd’hui : Aujourd’hui ›</span></p><p><b style="color:#18181b">Tous · 3 &nbsp; Mandats signés · 2 &nbsp; À relancer · 1 &nbsp; Vendus ailleurs · retirés · 0</b></p><p style="margin-top:8px">puis les cartes, inchangées (M130 A : prochaine étape, bouton, frise).</p></div></div>
+<div style="width:640px"><div class="frame-title">Une série avec des tâches en retard</div><section class="block"><h2>Vendeurs<small>· 1</small></h2><div class="task"><span class="ico seller">3</span><div class="txt"><b>Relancer 3 vendeurs</b><span>M. et Mme Lambert-Duval, Mme Petit, M. Durand · <span class="late">dont 2 en retard</span></span></div><span class="btn">Voir les 3</span></div></section><p style="font-size:12px;color:#52525b;margin-top:6px">Exemple de forme seulement (noms fictifs, pas dans la démo) : une série dit combien sont en retard, la plus en retard en tête quand on l’ouvre.</p></div>
+</div></body></html>

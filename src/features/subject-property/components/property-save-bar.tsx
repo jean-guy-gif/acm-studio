@@ -32,7 +32,7 @@ export function PropertySaveBar({
 }) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur md:left-64 stage:border-white/10 stage:bg-brand-deep/95"
+      className="fixed right-0 bottom-[var(--shell-bottom)] left-[var(--shell-left)] z-40 border-t border-zinc-200 bg-white/95 backdrop-blur stage:border-white/10 stage:bg-brand-deep/95"
       style={{
         paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
         paddingTop: '0.75rem',

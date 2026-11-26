@@ -1,0 +1,90 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>:root{--navy:#1d4466;--navy2:#0f2c45;--ink:#1d2530;--mute:#6b7682;--line:#e4e8ee;--bg:#f6f7f9;--sel:#e8f0fa;--green:#1f8a5b;--greenbg:#e6f5ee;--amber:#b4690e;--amberbg:#fdf1e1;--blue:#2563a8;--bluebg:#e8f0fa;--grey:#8a94a0;--greybg:#eef0f3;--red:#b4382f;--redbg:#fbe9e7}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.side{background:#fff;border-right:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;gap:6px}
+.brand{font-family:'Inter Display';font-weight:800;color:var(--navy);font-size:14px;letter-spacing:.02em;margin:0 0 22px 8px}
+.nav{padding:11px 14px;border-radius:10px}.nav b{display:block;font-weight:600;font-size:15px;color:#2c3440}.nav span{font-size:12px;color:var(--mute)}
+.nav.on{background:var(--sel)}.nav.on b{color:var(--navy)}
+.nav .new{font-size:9.5px;background:var(--amber);color:#fff;border-radius:5px;padding:1px 5px;margin-left:6px;vertical-align:2px;font-weight:700}
+.main{padding:30px 40px}
+h1{font-family:'Inter Display';font-size:30px;color:var(--navy);margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 20px}
+.kpis{display:flex;gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:150px;cursor:pointer}
+.kpi .n{font-family:'Inter Display';font-size:24px;font-weight:700}.kpi .l{font-size:12px;color:var(--mute)}
+.kpi.on{border-color:var(--navy);box-shadow:0 0 0 1px var(--navy) inset}
+.kpi.wide{min-width:240px;background:var(--navy);color:#fff;border:0}.kpi.wide .l{color:#ffffffb0}
+.badge{display:inline-block;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600}
+.b-green{background:var(--greenbg);color:var(--green)}.b-amber{background:var(--amberbg);color:var(--amber)}.b-blue{background:var(--bluebg);color:var(--blue)}.b-grey{background:var(--greybg);color:var(--grey)}.b-red{background:var(--redbg);color:var(--red)}
+.btn{display:inline-block;border:1px solid #cfd6df;background:#fff;border-radius:9px;padding:8px 13px;font-weight:600;font-size:13px;color:#26303b;white-space:nowrap}
+.btn.p{background:var(--navy);border-color:var(--navy);color:#fff}
+.mute{color:var(--mute)}
+</style><style>
+.crumb{font-size:12.5px;color:var(--mute);margin-bottom:6px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}
+.ready{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chk{background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.chk.ok::before{content:"✓ ";color:var(--green)}.chk.ko{border-color:#f0c9a0;background:var(--amberbg);color:var(--amber)}.chk.ko::before{content:"• "}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card h2{font-family:'Inter Display';font-size:16px;margin:0 0 2px;color:var(--ink)}
+.card .hint{font-size:12px;color:var(--mute);margin-bottom:14px}
+.num{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.num div{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.num b{display:block;font-family:'Inter Display';font-size:19px;white-space:nowrap}.num span{font-size:11.5px;color:var(--mute)}
+.lab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:4px 0 8px}
+.more{font-size:12.5px;color:var(--blue);font-weight:600;margin-top:12px;display:inline-block}
+.f{margin-bottom:14px}.f label{display:block;font-weight:600;font-size:13px;margin-bottom:5px}
+.in{border:1px solid #cfd6df;border-radius:9px;padding:9px 12px;font-size:15px;font-weight:700;display:flex;justify-content:space-between;white-space:nowrap}
+.in small{font-weight:500;color:var(--mute);font-size:12px}
+.ta{border:1px solid #cfd6df;border-radius:9px;padding:9px 12px;font-size:13px;color:#3a4552;min-height:58px}
+.warn{font-size:11.5px;color:var(--amber);font-weight:600;margin-top:5px}
+.note{font-size:11.5px;color:var(--mute);margin-top:5px}
+.seq{display:flex;flex-direction:column;gap:6px}
+.st{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:7px 10px;border-radius:8px;background:var(--bg)}
+.st em{font-style:normal;color:var(--mute);font-size:12px;white-space:nowrap}
+.tot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.tot b{font-family:'Inter Display';font-size:15px}
+.cta{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.btn.big{padding:12px 20px;font-size:15px}
+</style></head><body><div class="app">
+<aside class="side"><div class="brand">VOTRE AGENCE</div>
+<div class="nav on"><b>Préparation</b><span>Dossiers vendeurs</span></div>
+<div class="nav"><b>Live</b><span>Rendez-vous vendeur</span></div>
+<div class="nav"><b>Suivi</b><span>Après le rendez-vous</span></div>
+<div class="nav"><b>Prospection</b><span>Concurrents à démarcher</span></div>
+<div class="nav"><b>Administration</b><span>Agence et équipe</span></div></aside>
+<main class="main">
+<div class="crumb">Préparation › Martin · Maison 5 pièces · Vence</div>
+<div class="top"><div><h1>Avant le rendez-vous</h1><p class="sub" style="margin:0">Tout ce qu'il faut relire et décider, sur un seul écran.</p>
+<div class="ready"><span class="chk ok">Bien vendeur</span><span class="chk ok">6 concurrents retenus</span><span class="chk ok">Prix et surface pour les 6</span><span class="chk ko">Votre analyse de valeur à saisir</span></div></div>
+<span class="badge b-amber" style="margin-top:8px">Presque prêt</span></div>
+
+<div class="grid">
+<div class="card"><h2>Le marché en un coup d'œil</h2><div class="hint">Les 6 concurrents retenus, tels que le vendeur les découvrira.</div>
+<div class="num"><div><b>4 860 €/m²</b><span>Prix médian au m²</span></div><div><b>615–745 k€</b><span>Prix affichés</span></div><div><b>94 jours</b><span>Ancienneté médiane</span></div><div><b>3 sur 6</b><span>Ont déjà baissé</span></div></div>
+<div class="lab">Prix au m² des concurrents</div>
+<svg viewBox="0 0 560 92" width="100%" height="92" role="img" aria-label="Prix au m² des six concurrents autour de la médiane">
+<line x1="20" y1="46" x2="540" y2="46" stroke="#e4e8ee" stroke-width="2"/>
+<line x1="290" y1="18" x2="290" y2="74" stroke="#1d4466" stroke-dasharray="4 3"/>
+<text x="290" y="12" text-anchor="middle" font-size="11" fill="#1d4466" font-weight="700">médiane 4 860</text>
+<g fill="#2563a8"><circle cx="70" cy="46" r="7"/><circle cx="180" cy="46" r="7"/><circle cx="255" cy="46" r="7"/><circle cx="325" cy="46" r="7"/><circle cx="410" cy="46" r="7"/><circle cx="505" cy="46" r="7"/></g>
+<text x="70" y="88" text-anchor="middle" font-size="11" fill="#6b7682">4 210</text><text x="505" y="88" text-anchor="middle" font-size="11" fill="#6b7682">5 520</text>
+</svg>
+<span class="more">Voir l'analyse détaillée ▾</span></div>
+
+<div class="card"><h2>Votre décision</h2><div class="hint">Ce que vous direz au vendeur à la fin du Live.</div>
+<div class="f"><label>Prix des concurrents</label><div class="in">680 000 € <small>calculé, modifiable</small></div><div class="note">Prix médian au m² × 140 m². Affiché au vendeur.</div></div>
+<div class="f"><label>Votre analyse de valeur</label><div class="in" style="color:#9aa3ad;font-weight:500">Votre avis, en euros</div><div class="warn">Affiché au vendeur à la fin du Live</div></div>
+<div class="f"><label>Justification</label><div class="ta">Maison au calme, piscine refaite ; DPE D comme la moitié des concurrents.</div><div class="warn">Affiché au vendeur à la fin du Live</div></div>
+<span class="btn">Enregistrer la décision</span></div>
+</div>
+
+<div class="card" style="margin-top:16px"><h2>Ce que verra le vendeur</h2><div class="hint">Le déroulé du Live avec ce dossier.</div>
+<div class="grid" style="grid-template-columns:1fr 1fr;gap:6px 16px">
+<div class="seq"><div class="st">Introduction · Votre bien <em>2 écrans</em></div><div class="st">Votre valeur perçue <em>1 écran</em></div><div class="st">6 concurrents, un à la fois <em>24 écrans</em></div></div>
+<div class="seq"><div class="st">Le DPE face au marché <em>1 écran</em></div><div class="st">Le concurrent le plus dangereux · Analyse des prix <em>2 écrans</em></div><div class="st">Prix de commercialisation · Question de 1 à 10 <em>2 écrans</em></div></div>
+</div>
+<div class="tot"><div><b>32 écrans · 40 à 55 min environ</b><div class="note">1 concurrent sans DPE : il n'apparaît pas sur l'écran DPE.</div></div>
+<div class="cta" style="margin:0"><span class="btn">Aperçu côté vendeur</span><span class="btn p big">Lancer le Live →</span></div></div></div>
+</main></div></body></html>

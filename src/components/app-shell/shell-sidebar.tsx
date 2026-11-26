@@ -1,19 +1,27 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 import { AccountMenu, type ErrorsBadge } from '@/components/app-shell/account-menu';
 import { SidebarNav } from '@/components/app-shell/sidebar-nav';
 import { AppLogo } from '@/components/theme/app-logo';
-import { useTodayCount } from '@/features/today/components/today-count';
+import { isInnerPage } from '@/features/workspace-mode/services/workspace-mode';
 
-export const MOBILE_MENU_LABEL = 'Menu';
-
-// Le menu de gauche. Sous 768 px (décision de Jean-Guy, 06/11), il devient une barre compacte en
-// haut : le nom de l'agence (ou son logo) à gauche, et ☰ qui déplie les entrées du menu et la carte
-// du conseiller ; le contenu de la page commence juste dessous. À partir de 768 px, rien ne change :
-// la colonne de gauche, toujours dépliée. Mission 145 — plus d'interrupteur Vendeur | Acquéreur (le
-// menu a trois groupes) ; ☰ porte la pastille d'« Aujourd'hui ».
+// Le menu de l'application aux trois tailles — la refonte, lot A (maquettes REFONTE-1, 5 et 6).
+// Sur téléphone, une barre fixée en bas, quatre entrées (remplace M132, la barre du haut et ☰) ;
+// sur tablette, une colonne d'icônes de 88 px ; sur ordinateur, le menu complet de 232 px, le
+// logo de l'agence en tête. Le compte du conseiller (M125) est en bas de la colonne : un rond aux
+// initiales sur tablette, sa carte sur ordinateur ; sur téléphone, il est en haut d'« Aujourd'hui ».
+//
+// Sur téléphone, le menu du bas n'est que sur les pages principales : une page intérieure (une
+// fiche, un dossier, « Nouvel acquéreur ») n'a que son lien de retour, comme sur les maquettes
+// REFONTE-2, 3 et 4 ; la place du menu est alors rendue à la page (`--shell-bottom`, globals.css).
+//
+// Sur tablette, la feuille du compte (240 px) déborde de la colonne (88 px). La colonne passe donc
+// AU-DESSUS de la page pendant que la feuille est ouverte, et seulement alors
+// (`md:has-[[role=menu]]:z-[45]`) : elle recouvre le contenu et la barre « Enregistrer » (z-40), et
+// reste sous les couches plein écran (confirmation, fiche d'un bien : z-50). Fermée, la colonne
+// garde son rang : le menu « … » d'une carte de gauche se pose sur elle, jamais dessous.
 export function ShellSidebar({
   profileName,
   profileEmail,
@@ -33,53 +41,24 @@ export function ShellSidebar({
   errorsBadge: ErrorsBadge | null;
   demoEntry: boolean;
 }) {
-  const todayCount = useTodayCount();
-  const [open, setOpen] = useState(false);
-  const panelId = useId();
-
+  const inner = isInnerPage(usePathname());
   return (
-    <aside className="flex shrink-0 flex-col border-b border-zinc-200 bg-white px-4 py-2.5 md:sticky md:top-0 md:h-screen md:w-64 md:gap-4 md:border-r md:border-b-0 md:px-5 md:py-6 stage:border-white/10 stage:bg-white/[0.03]">
-      <div className="flex items-center gap-3 md:flex-col md:items-stretch md:gap-8">
-        <div className="flex min-w-0 flex-1 items-center md:flex-none">
-          <AppLogo
-            className="h-7 md:h-9"
-            lightUrl={logoLightUrl}
-            darkUrl={logoDarkUrl}
-            fallbackName={agencyName}
-          />
-        </div>
-        {todayCount != null && todayCount > 0 ? (
-          <span
-            className="rounded-full bg-orange-600 px-2 py-px text-xs font-bold text-white md:hidden"
-            data-testid="mobile-today-count"
-          >
-            {todayCount}
-          </span>
-        ) : null}
-        <button
-          type="button"
-          aria-label={MOBILE_MENU_LABEL}
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => setOpen((value) => !value)}
-          data-testid="mobile-menu-toggle"
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 text-xl text-zinc-700 hover:bg-zinc-100 md:hidden stage:border-white/15 stage:text-white/80 stage:hover:bg-white/10"
-        >
-          <span aria-hidden>{open ? '✕' : '☰'}</span>
-        </button>
+    <aside
+      data-testid="shell-menu"
+      data-shell-menu={inner ? 'inner' : 'main'}
+      className={`${inner ? 'max-md:hidden ' : ''}fixed inset-x-0 bottom-0 z-40 border-t border-[#E3E6F0] bg-white pb-[env(safe-area-inset-bottom)] md:sticky md:inset-x-auto md:top-0 md:bottom-auto md:z-auto md:flex md:h-screen md:w-[var(--shell-left)] md:shrink-0 md:flex-col md:gap-4 md:border-t-0 md:border-r md:px-2 md:py-5 xl:px-4 xl:py-7 md:has-[[role=menu]]:z-[45] print:hidden stage:border-white/10 stage:bg-[#0b2233]`}
+    >
+      <div className="hidden px-3 pb-2 xl:block">
+        <AppLogo
+          className="h-9"
+          lightUrl={logoLightUrl}
+          darkUrl={logoDarkUrl}
+          fallbackName={agencyName}
+        />
       </div>
-
-      {/* Sous 768 px, replié tant que ☰ n'est pas touché ; un lien choisi le replie. */}
-      <div
-        id={panelId}
-        data-testid="shell-menu-panel"
-        onClick={(event) => {
-          if ((event.target as HTMLElement).closest('a')) setOpen(false);
-        }}
-        className={`${open ? 'flex' : 'hidden'} flex-col gap-4 pt-3 pb-1 md:flex md:flex-1 md:justify-between md:pt-0 md:pb-0`}
-      >
-        <SidebarNav />
-        {/* Mission 125 — tout ce qui n'est pas le travail passe derrière la carte du conseiller. */}
+      <SidebarNav />
+      {/* Mission 125 — tout ce qui n'est pas le travail passe derrière le compte du conseiller. */}
+      <div className="hidden md:block">
         <AccountMenu
           profileName={profileName}
           profileEmail={profileEmail}

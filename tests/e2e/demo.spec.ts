@@ -185,8 +185,8 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       // Vendeurs, avec l'argument ; le premier Point marché de M. Lefebvre ; la pastille du menu.
       await expectTodayAlerts(page);
       // Mission 125 — « Ma démo » est au menu de la carte, dans l'agence de démo ; pas « Erreurs »,
-      // réservé aux opérateurs ; le menu de gauche a ses sept espaces, en trois groupes (M145).
-      await expect(sideNav(page).getByRole('link')).toHaveCount(7);
+      // réservé aux opérateurs ; le menu a ses six entrées sur ordinateur (la refonte, lot A).
+      await expect(sideNav(page).getByRole('link')).toHaveCount(6);
       const menu = await openAccountMenu(page);
       await expect(menu.getByRole('menuitem', { name: /^Ma démo/ })).toBeVisible();
       await expect(menu.getByRole('menuitem', { name: /^Erreurs/ })).toHaveCount(0);

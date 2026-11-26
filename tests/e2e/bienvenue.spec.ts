@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './test';
 
-import { chooseInMoreMenu, expectOneFilled, goViaAccountMenu, login } from './support';
+import { chooseInMoreMenu, expectOneFilled, goViaAccountMenu, login, sideNav } from './support';
 
 // Mission 97 — le junior autonome : « Bienvenue », le dossier d'exemple, et le Live.
 // Le compte de test a déjà des dossiers : il arrive donc sur la Préparation, et revient à
@@ -35,7 +35,7 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
   await archiveExamples(page);
 
   try {
-    await test.step('« Aide », dans le menu de la carte, ouvre « Bienvenue »', async () => {
+    await test.step('« Aide », au menu, ouvre « Bienvenue »', async () => {
       await goViaAccountMenu(page, 'Aide');
       await expect(page).toHaveURL(/\/bienvenue$/);
       await expect(page.getByRole('heading', { name: /^Bienvenue/ })).toBeVisible();
@@ -127,7 +127,9 @@ test('Bienvenue → dossier d’exemple → Live', async ({ page }) => {
     });
 
     await test.step('Les concurrents fictifs : aucun mot banni, surfaces au m²', async () => {
-      await page.getByRole('link', { name: /^Préparation/ }).click();
+      await sideNav(page)
+        .getByRole('link', { name: /^Vendeurs/ })
+        .click();
       await page.goto(`${projectUrl}/comparables`);
       await expect(page.getByRole('heading', { name: /Concurrents retenus \(5\)/ })).toBeVisible();
       const text = await page.locator('main').innerText();

@@ -162,7 +162,9 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       expect(dialog.message()).toContain('ne sont pas enregistrées');
       void dialog.dismiss();
     });
-    await page.getByRole('link', { name: /^Suivi/ }).click();
+    await sideNav(page)
+      .getByRole('link', { name: /^Vendeurs/ })
+      .click();
     await expect(page).toHaveURL(new RegExp(`/builder/${projectId}/property`));
     await expect(field('Surface')).toHaveValue('65');
 
@@ -848,32 +850,44 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
   // statut, archivage.
   await test.step('La fiche acquéreur : créer, retrouver, rapprocher, statut, archiver', async () => {
     const buyerName = `Acquéreur ${dossierName}`;
-    // Mission 145 (partie B) — un seul menu en trois groupes, sans interrupteur (remplace M118) :
-    // Aujourd'hui, puis Vendeurs, Acquéreurs, Les deux.
+    // La refonte, lot A — un seul menu, sans interrupteur (M145) : Aujourd'hui, Vendeurs,
+    // Acquéreurs, Visites ; sur ordinateur, Prospection et Aide s'y ajoutent.
     await expect(page.getByTestId('workspace-switch')).toHaveCount(0);
     const nav = sideNav(page);
-    await expect(nav.getByRole('link')).toHaveCount(7);
+    await expect(nav.getByRole('link')).toHaveCount(6);
     for (const label of [
       'Aujourd’hui',
-      'Préparation',
-      'Live',
-      'Suivi',
+      'Vendeurs',
       'Acquéreurs',
       'Visites',
       'Prospection',
+      'Aide',
     ]) {
       await expect(nav.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
-    for (const group of ['Vendeurs', 'Les deux']) await expect(nav).toContainText(group);
+    // « Vendeurs » tient Préparation, Live et Suivi : ils se rejoignent par ses trois onglets, en
+    // tête de chacune de leurs listes, et le menu garde « Vendeurs » surligné.
+    await nav.getByRole('link', { name: /^Vendeurs/ }).click();
+    await expect(page).toHaveURL(/\/builder$/);
+    const tabs = page.getByTestId('seller-tabs');
+    for (const [label, url] of [
+      ['Suivi', /\/suivi$/],
+      ['Live', /\/live$/],
+      ['Préparation', /\/builder$/],
+    ] as const) {
+      await tabs.getByRole('link', { name: label, exact: true }).click();
+      await expect(page).toHaveURL(url);
+      await expect(tabs.getByRole('link')).toHaveText(['Préparation', 'Live', 'Suivi']);
+      await expect(tabs.locator('[aria-current="page"]')).toHaveText(label);
+      await expect(nav.locator('[aria-current="page"]')).toHaveText(/^Vendeurs/);
+    }
     await nav.getByRole('link', { name: /^Acquéreurs/ }).click();
     await expect(page).toHaveURL(/\/acquereurs$/);
     // Mission 125 — le reste est derrière la carte du conseiller, qui se ferme par Échap et par un
     // clic dehors.
-    await expect(nav.getByRole('link', { name: /^(Administration|Aide|Mon profil)/ })).toHaveCount(
-      0,
-    );
+    await expect(nav.getByRole('link', { name: /^(Administration|Mon profil)/ })).toHaveCount(0);
     const accountMenu = await openAccountMenu(page);
-    for (const label of ['Mon profil', 'Administration', 'Aide', 'Sombre', 'Déconnexion']) {
+    for (const label of ['Mon profil', 'Administration', 'Sombre', 'Déconnexion']) {
       await expect(
         accountMenu.getByRole('menuitem', { name: new RegExp(`^${label}`) }),
       ).toBeVisible();
@@ -881,6 +895,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(accountMenu.getByRole('menuitem').first()).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(accountMenu.getByRole('menuitem', { name: /^Administration/ })).toBeFocused();
+    // Sur ordinateur, Prospection et Aide sont au menu : la feuille ne les montre pas, et les
+    // flèches les sautent — après Administration, « Sombre ».
+    await expect(accountMenu.getByRole('menuitem', { name: /^(Prospection|Aide)/ })).toHaveCount(0);
+    await page.keyboard.press('ArrowDown');
+    await expect(accountMenu.getByRole('menuitem', { name: /^Sombre/ })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(accountMenu).toHaveCount(0);
     await expect(page.getByTestId('account-card')).toBeFocused();
@@ -902,9 +921,10 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page).toHaveURL(/\/acquereurs\/nouveau$/);
     const quick = page.getByTestId('buyer-quick-form');
     await expectNoHorizontalScroll(page, 'Saisie rapide (390 × 844)');
-    // Sous 768 px, le menu est une barre compacte : le champ Nom se voit sans défiler.
-    await expect(page.getByTestId('mobile-menu-toggle')).toBeVisible();
-    await expect(sideNav(page)).toBeHidden();
+    // Sous 768 px, le menu du bas n'est que sur les pages principales : « Nouvel acquéreur », page
+    // intérieure, n'a que son lien de retour, et le champ Nom se voit sans défiler.
+    await expect(page.getByTestId('shell-menu')).toBeHidden();
+    await expect(page.getByRole('link', { name: /^←/ }).first()).toBeVisible();
     await expect(quick.locator('input[name="name"]')).toBeInViewport({ ratio: 1 });
     await quick.locator('input[name="name"]').fill(buyerName);
     await quick.locator('input[name="phone"]').fill('06 39 98 90 11');
@@ -947,16 +967,44 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByTestId('today-page')).toContainText(
       `Reprendre contact avec ${buyerName}`,
     );
-    // Sur téléphone, la première ligne du jour se voit sans défiler ; ☰ déplie le menu et la
-    // carte du conseiller, un lien choisi le replie.
+    // Sur téléphone, la première ligne du jour se voit sans défiler ; le compte du conseiller
+    // s'ouvre par le rond en haut d'« Aujourd'hui », et « Vendeurs », dans le menu du bas, mène au
+    // Live par son onglet.
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByTestId('today-line').first()).toBeInViewport({ ratio: 1 });
     await expectNoHorizontalScroll(page, 'Aujourd’hui (390 × 844)');
-    await page.getByTestId('mobile-menu-toggle').click();
-    await expect(page.getByTestId('account-card')).toBeVisible();
-    await sideNav(page).getByRole('link', { name: /^Live/ }).click();
+    // Sur une page principale, le menu est en bas, quatre entrées, entier dans la fenêtre.
+    await expect(sideNav(page).getByRole('link')).toHaveCount(4);
+    await expect(page.getByTestId('shell-menu')).toBeInViewport({ ratio: 1 });
+    await expect(page.getByTestId('account-avatar')).toBeVisible();
+    // La feuille du compte, sur téléphone : qui est connecté, et ce que le menu du bas ne montre
+    // pas (Prospection, Aide) avec le reste ; Échap la referme, et « Prospection » y mène.
+    const phoneSheet = await openAccountMenu(page);
+    await expect(phoneSheet.getByTestId('account-identity')).toBeVisible();
+    for (const label of [
+      'Mon profil',
+      'Administration',
+      'Prospection',
+      'Aide',
+      'Sombre',
+      'Déconnexion',
+    ]) {
+      await expect(
+        phoneSheet.getByRole('menuitem', { name: new RegExp(`^${label}`) }),
+      ).toBeVisible();
+    }
+    await expect(phoneSheet).toBeInViewport({ ratio: 1 });
+    await page.keyboard.press('Escape');
+    await expect(phoneSheet).toHaveCount(0);
+    await goViaAccountMenu(page, 'Prospection');
+    await expect(page).toHaveURL(/\/prospection$/);
+    await sideNav(page)
+      .getByRole('link', { name: /^Vendeurs/ })
+      .click();
+    await expect(page).toHaveURL(/\/builder$/);
+    await page.getByTestId('seller-tabs').getByRole('link', { name: 'Live', exact: true }).click();
     await expect(page).toHaveURL(/\/live$/);
-    await expect(sideNav(page)).toBeHidden();
+    await expect(sideNav(page).getByRole('link')).toHaveCount(4);
     await page.setViewportSize({ width: 1280, height: 720 });
     // « J'ai eu l'acquéreur aujourd'hui » : il redevient prêt, la tâche s'en va.
     await page.goto(buyerUrl);

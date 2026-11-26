@@ -124,3 +124,75 @@ export const badgeRejected =
 
 export const badgeBrand =
   'inline-flex items-center rounded-full border border-brand/25 bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand-deep stage:border-brand/40 stage:bg-brand/15 stage:text-brand';
+
+/* ----------------------------------------------------------------------------
+ * Le socle de la refonte (lot A — maquettes REFONTE-1 à 8)
+ *
+ * Les blocs communs aux trois tailles. La couleur de l'agence reste celle de sa charte (M55) :
+ * le bleu nuit des maquettes est `brand-deep`, son bleu pâle `brand-soft`. Les gris, les fonds et
+ * les arrondis sont ceux des maquettes. Les jetons d'avant ne changent pas : le Live, les
+ * documents et les liens publics ne lisent pas ceux-ci.
+ * ------------------------------------------------------------------------- */
+
+// Le bouton plein : 48 px, coins de 14 px. Un seul par écran (M143, M146) : `btn-filled` le compte.
+export const socleBtnFilled =
+  'btn-filled inline-flex h-12 items-center justify-center gap-2 rounded-[14px] bg-brand-deep px-5 text-base font-bold text-white transition-colors hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:hover:bg-white stage:hover:text-brand-deep';
+
+// Le bouton en contour : la même taille, un trait de 1,5 px dans la couleur de l'agence.
+export const socleBtnOutline =
+  'inline-flex h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-brand-deep bg-white px-5 text-base font-bold text-brand-deep transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/40 stage:bg-transparent stage:text-white stage:hover:bg-white/10';
+
+// Le bouton discret d'un en-tête (« Nouveau ») : 44 px, un contour gris.
+export const socleBtnQuiet =
+  'inline-flex h-11 items-center justify-center gap-2 rounded-[14px] border border-[#D5DAEA] bg-white px-4 text-[15px] font-bold text-brand-deep transition-colors hover:border-brand-deep disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/10 stage:text-white';
+
+// Les grands boutons d'une décision (la prochaine étape, « Écarter » et « Proposer ») : coins de
+// 16 px, texte de 17 px. Leur hauteur est celle de l'écran : `socleBigStep` pour le bouton d'une
+// prochaine étape (54 px, 56 sur ordinateur), `socleBigPair` pour la paire d'un bien (58 px, 56
+// sur ordinateur).
+export const socleBtnFilledBig =
+  'btn-filled inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-deep px-6 text-[17px] font-bold text-white transition-colors hover:bg-brand-darker focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:hover:bg-white stage:hover:text-brand-deep';
+
+export const socleBtnQuietBig =
+  'inline-flex items-center justify-center gap-2 rounded-2xl border border-[#D5DAEA] bg-white px-6 text-[17px] font-bold text-brand-darker transition-colors hover:border-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 stage:border-white/15 stage:bg-white/10 stage:text-white';
+
+export const socleBigStep = 'h-[54px] xl:h-14';
+
+export const socleBigPair = 'h-[58px] xl:h-14';
+
+// La carte : blanche, coins de 20 px. Avec une ombre légère (téléphone) ou un filet (le détail).
+export const socleCard =
+  'rounded-[20px] bg-white shadow-[0_1px_2px_rgba(27,37,89,0.06)] stage:bg-white/5 stage:shadow-none';
+
+export const socleCardBordered =
+  'rounded-[20px] border border-[#E3E6F0] bg-white stage:border-white/10 stage:bg-white/5';
+
+// Le titre d'une page du socle et sa ligne (« Acquéreurs », « 3 choses à faire aujourd'hui »).
+export const socleTitle =
+  'text-[30px] leading-tight font-extrabold tracking-[-0.5px] text-brand-darker stage:text-white';
+
+export const socleSubtitle = 'text-[15px] text-[#5B6380] stage:text-white/60';
+
+// Le sur-titre d'un bloc (« PROCHAINE ÉTAPE »).
+export const socleKicker =
+  'text-[13px] font-extrabold tracking-[0.6px] text-[#5B6380] uppercase stage:text-white/50';
+
+// Les pastilles (34 px) : neutre, verte (ce qui correspond), orange (à regarder, indispensable).
+// La couleur ne porte jamais le sens seule : le texte le dit.
+const pillBase = 'inline-flex h-[34px] items-center gap-1.5 rounded-full px-3 text-sm font-bold';
+
+export const pillNeutral = `${pillBase} bg-brand-soft text-brand-darker stage:bg-brand/15 stage:text-white`;
+
+export const pillGreen = `${pillBase} bg-[#E3F4EC] text-[#0B6B4A] stage:bg-emerald-400/15 stage:text-emerald-300`;
+
+export const pillOrange = `${pillBase} bg-[#FDEBDD] text-[#7A2E08] stage:bg-orange-400/15 stage:text-orange-300`;
+
+// Les pastilles à toucher (44 px, « Ce que j'ai compris ») : un bouton chacune.
+const chipBase =
+  'inline-flex h-11 items-center rounded-full border px-3.5 text-[15px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+
+export const chipNeutral = `${chipBase} border-[#D5DAEA] bg-white font-semibold text-brand-darker hover:border-brand-deep stage:border-white/15 stage:bg-white/10 stage:text-white`;
+
+export const chipGreen = `${chipBase} border-[#B5DFCB] bg-[#E3F4EC] font-bold text-[#0B6B4A] stage:border-emerald-400/30 stage:bg-emerald-400/15 stage:text-emerald-300`;
+
+export const chipOrange = `${chipBase} border-[#F3C9A6] bg-[#FDEBDD] font-bold text-[#7A2E08] stage:border-orange-400/30 stage:bg-orange-400/15 stage:text-orange-300`;

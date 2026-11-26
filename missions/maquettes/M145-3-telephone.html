@@ -1,0 +1,100 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>M145-3 Aujourd’hui — téléphone</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Inter,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:24px;display:flex;flex-direction:column;gap:28px;align-items:flex-start}
+h1.sheet{font-size:20px;color:#27272a}
+.sheet-sub{font-size:13px;color:#3f3f46;max-width:1700px;line-height:1.5}
+.row-wrap{display:flex;gap:24px;align-items:flex-start}
+.frame-title{font-size:13px;font-weight:700;color:#3f3f46;margin-bottom:6px}
+.frame{background:#f7f8fa;position:relative;overflow:hidden;border:1px solid #a1a1aa}
+.desk{width:1280px;min-height:800px;display:flex}
+.fold{position:absolute;left:0;right:0;top:800px;border-top:2px dashed #ef4444}
+.fold span{position:absolute;right:8px;top:-20px;font-size:11px;font-weight:700;color:#ef4444;background:#f7f8fa;padding:0 4px}
+.tab{width:1024px;height:768px;display:flex}
+.phone{width:390px;height:844px;display:flex;flex-direction:column}
+.side{width:236px;align-self:stretch;background:#fff;border-right:1px solid #e4e4e7;padding:22px 14px;display:flex;flex-direction:column;gap:2px;flex:none}
+.tab .side{width:206px;padding:18px 10px}
+.agency{font-size:14px;font-weight:800;letter-spacing:.06em;color:#00527a;text-transform:uppercase;padding:0 10px 18px;line-height:1.3}
+.nav{padding:8px 12px;border-radius:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.nav b{display:block;font-size:14px;font-weight:600}
+.nav small{display:block;font-size:11.5px;color:#71717a;margin-top:1px}
+.nav.on{background:#eaf5ff}
+.nav.on b{color:#013a58;font-weight:800}
+.badge{background:#ea7a1a;color:#fff;font-size:11px;font-weight:800;border-radius:10px;padding:2px 7px;flex:none}
+.group{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:#71717a;padding:14px 12px 4px}
+.account{margin-top:auto;border-top:1px solid #e4e4e7;padding:12px 10px 0;font-size:12px;color:#52525b;line-height:1.45}
+.account b{color:#18181b;font-size:12.5px}
+.main{flex:1;padding:22px 36px;overflow:hidden;display:flex;flex-direction:column;gap:12px}
+.tab .main{padding:22px 24px;gap:12px}
+.phone .main{padding:16px 14px;gap:12px}
+.kicker{font-size:11.5px;font-weight:800;letter-spacing:.14em;color:#71717a;text-transform:uppercase}
+.title{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:38px;font-weight:800;color:#013a58;line-height:1.05}
+.phone .title{font-size:30px}
+.subtitle{font-size:14px;color:#52525b;margin-top:4px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.kpis{display:flex;gap:10px}
+.kpi{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:8px 14px;min-width:120px}
+.kpi b{display:block;font-size:22px;color:#013a58}
+.kpi span{font-size:12px;color:#52525b}
+.block{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:10px 20px;box-shadow:0 1px 2px rgb(0 0 0 / .04)}
+.tab .block{padding:10px 16px}
+.phone .block{padding:10px 12px}
+.block h2{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:21px;font-weight:800;color:#013a58;display:flex;align-items:baseline;gap:8px;padding-bottom:2px}
+.block h2 small{font-family:Montserrat,Arial,sans-serif;font-size:12.5px;font-weight:600;color:#71717a}
+.task{display:flex;align-items:center;gap:14px;padding:8px 0;border-top:1px solid #f0f0f2;position:relative}
+.task:first-of-type{border-top:0}
+.phone .task{flex-wrap:wrap;gap:8px 10px;align-items:flex-start}
+.ico{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px}
+.ico.urgent{background:#12875a}
+.ico.seller{background:#ea7a1a}
+.ico.buyer{background:#00527a}
+.ico.prosp{background:#52525b}
+.txt{flex:1;min-width:0}
+.txt b{display:block;font-size:14.5px;font-weight:700;line-height:1.3}
+.txt span{display:block;font-size:12.5px;color:#52525b;margin-top:2px;line-height:1.4}
+.txt span.late{display:inline;color:#c2410c;font-weight:700}
+.txt span.tag,.txt span.chip{display:inline-block}
+.txt span.inl{display:inline}
+.btn{border-radius:10px;padding:9px 16px;font-size:13.5px;font-weight:700;white-space:nowrap;flex:none;border:1.5px solid #00527a;color:#00527a;background:#fff}
+.btn.full{background:#00527a;color:#fff}
+.phone .btn{width:100%;text-align:center;padding:12px;margin-left:40px;width:calc(100% - 40px)}
+.links{font-size:12.5px;color:#00527a;font-weight:600;display:flex;gap:12px;flex:none}
+.pin{position:absolute;right:-30px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:#e8cf5a;color:#5b4a00;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.ghost{opacity:.55}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;color:#5b4a00;background:#fef6c7;border:1px dashed #e8cf5a;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.done{font-size:12.5px;color:#52525b;padding:2px 4px}
+.done s{color:#71717a}
+.txt span.argue{display:inline-block;margin-top:3px;font-size:12px;font-weight:700;color:#0b6b46;background:#e6f4ec;border-radius:999px;padding:1px 9px}
+.done-block{background:#fafafa;box-shadow:none}
+.done-block .done{padding:4px 0}
+.series{margin:0 0 6px 44px;border-left:3px solid #eaf5ff;padding-left:14px}
+.sub{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;border-top:1px dashed #ececef}
+.sub:first-child{border-top:0}
+.sub b{flex:1;font-weight:600}
+.sub .btn{padding:6px 12px;font-size:12.5px}
+.notes{width:430px;display:flex;flex-direction:column;gap:12px;flex:none}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:#3a3000}
+.note b{color:#5b4a00}
+.note ol{padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.note code{font-size:11.5px;background:#fff8d6;padding:0 3px;border-radius:3px}
+.topbar{height:52px;background:#fff;border-bottom:1px solid #e4e4e7;display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex:none}
+.topbar .agency{padding:0;font-size:12.5px}
+.burger{display:flex;align-items:center;gap:6px;font-size:22px;color:#013a58}
+.drawer{background:#fff;border-bottom:1px solid #e4e4e7;padding:8px 10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:0 8px 20px rgb(0 0 0 / .08)}
+.scrim{flex:1;background:rgb(24 24 27 / .25)}
+.fiche{width:1280px;height:560px;display:flex}
+.nextstep{background:#fff;border:2px solid #00527a;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;width:400px}
+.nextstep .k{font-size:11px;font-weight:800;letter-spacing:.12em;color:#71717a;text-transform:uppercase}
+.nextstep h3{font-family:Rajdhani,Montserrat,Arial,sans-serif;font-size:22px;color:#013a58}
+.nextstep p{font-size:13px;color:#52525b;line-height:1.45}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;background:#e7f4ee;color:#12875a;margin-right:6px}
+.listrow{background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:14px}
+.empty{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:16px 18px;font-size:14px;color:#52525b;line-height:1.5}
+.error{background:#fff;border:1px solid #f1c3bd;border-radius:14px;padding:12px 16px;font-size:13px;color:#a3291f;line-height:1.5}
+</style></head><body><h1 class="sheet">M145-3 · Aujourd’hui — téléphone 390 × 844</h1>
+<p class="sheet-sub">La barre compacte de la M132, sans l’interrupteur. Chaque ligne : le titre, le détail, puis son bouton sur toute la largeur (44 px). La page défile ; rien n’est caché derrière « Voir » : il n’y a plus que 8 lignes.</p>
+<div class="row-wrap">
+<div><div class="frame-title">La page (haut)</div><div class="frame phone"><div class="topbar"><span class="agency">Agence Horizon Côte d’Azur</span><span class="burger"><span class="badge">8</span>☰</span></div><div class="main"><div class="head"><div><div class="kicker">Samedi 7 novembre</div><div class="title">Aujourd’hui</div><div class="subtitle">8 choses à faire, la plus urgente en premier.</div></div></div><div style="display:flex;gap:8px;font-size:12.5px;font-weight:600;color:#00527a"><span class="kpi" style="min-width:0;padding:6px 10px"><b style="display:inline;font-size:15px">6</b> acquéreurs prêts à visiter ›</span></div><section class="block"><h2>Urgent<small>· une vente en cours</small></h2><div class="task"><span class="ico urgent">€</span><div class="txt"><b>Le vendeur a accepté l’offre de la famille Keller</b><span>acceptée le 07/11 · prévenir l’acquéreur, puis transmettre au notaire · <span class="inl" style="color:#00527a;font-weight:600">Transmettre au notaire · Fait</span></span></div><span class="btn full">Prévenir la famille Keller</span></div></section><section class="block"><h2>Vendeurs<small>· 2</small></h2><div class="task"><span class="ico seller">!</span><div class="txt"><b>Relancer M. et Mme Lambert-Duval</b><span class="argue">« 1 acquéreur prêt correspond à votre bien »</span><span>réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui</span></div><span class="btn">Relancer</span></div><div class="task"><span class="ico seller">◷</span><div class="txt"><b>Point marché de M. Lefebvre</b><span>mandat signé le 07/10 · premier Point marché dû (tous les mois)</span></div><span class="btn">Faire le point</span></div></section><section class="block"><h2>Acquéreurs<small>· 3</small></h2><div class="task"><span class="ico buyer">4</span><div class="txt"><b>4 acquéreurs pour la maison de Vence (135 m², 713 000 €)</b><span>mandat signé de M. et Mme Lopez · la famille Moreau, Mme Faure, M. Girard et Mme Chevalier, M. et Mme Roux · prêts à visiter</span></div><span class="btn">Proposer ce bien</span></div><div class="task"><span class="ico buyer">!</span><div class="txt"><b>Relancer M. et Mme Lambert</b><span>sélection envoyée le 04/11, pas de réponse · <span class="late">en retard d’un jour</span></span></div><span class="btn">Relancer</span></div><div class="task"><span class="ico buyer">4</span><div class="txt"><b>Proposer un point à 4 acquéreurs prêts à visiter</b><span>M. et Mme Roux, M. Girard et Mme Chevalier, Mme Faure, la famille Moreau · à l’agence ou en visio</span></div><span class="btn">Voir les 4</span></div></section><section class="block"><h2>Prospection<small>· courriers et passages</small></h2><div class="task"><span class="ico prosp">3</span><div class="txt"><b>Démarcher 3 biens : des acquéreurs prêts y correspondent</b><span class="argue">« 4, 4 et 3 acquéreurs prêts correspondent »</span><span>mandat simple chez un confrère · par courrier ou passage, jamais par téléphone</span></div><span class="btn">Voir les 3</span></div><div class="task"><span class="ico prosp">✉</span><div class="txt"><b>Démarcher 6 autres concurrents de 2 mandats</b><span>M. Lefebvre : 4 · M. et Mme Lopez : 2 · courrier au propriétaire, dossier au confrère</span></div><span class="btn">Prospecter</span></div></section></div></div></div>
+<div><div class="frame-title">☰ ouvert : les trois groupes</div><div class="frame phone"><div class="topbar"><span class="agency">Agence Horizon Côte d’Azur</span><span class="burger">☰</span></div><div class="drawer"><div class="nav on"><div><b>Aujourd’hui</b><small>Ce qu’il y a à faire</small></div><span class="badge">8</span></div><div class="group">VENDEURS</div><div class="nav"><div><b>Préparation</b><small>Dossiers vendeurs</small></div></div><div class="nav"><div><b>Live</b><small>Rendez-vous vendeur</small></div></div><div class="nav"><div><b>Suivi</b><small>Après le rendez-vous</small></div></div><div class="group">ACQUÉREURS</div><div class="nav"><div><b>Acquéreurs</b><small>Ce que chacun cherche</small></div></div><div class="nav"><div><b>Visites</b><small>À planifier, faites, retours</small></div></div><div class="group">LES DEUX</div><div class="nav"><div><b>Prospection</b><small>Courriers et passages</small></div></div><div class="account" style="margin-top:8px"><b>Natacha Start Academia</b> · Mon compte et l’agence ▾</div></div><div class="scrim"></div></div></div>
+<div class="notes"><div class="note"><b>Avant :</b> barre compacte avec l’interrupteur Vendeur | Acquéreur et ☰ ; arrivée sur Préparation ; le Suivi montre 3 tâches puis « Voir les 14 autres ». <b>Après :</b> ☰ porte la pastille (7) ; il déplie Aujourd’hui et les trois groupes ; arrivée sur Aujourd’hui.</div>
+<div class="note"><b>Relancer M. et Mme Lambert</b> (acquéreur) ouvre la relance de la M135 : message, et « L’appeler » à son numéro. Les seuls appels de la page : les acquéreurs, et le vendeur qui nous a reçus et a donné son numéro (Lambert-Duval, réponse 2). Aucun vers un propriétaire prospecté.</div></div>
+</div></body></html>
