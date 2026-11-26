@@ -773,13 +773,13 @@ export function IdealPropertiesPanel({
       : []),
   ];
   // Le bien qu'on regarde : le premier du parcours, à partir du rang courant, qui est encore
-  // ouvert (un bien retenu ou écarté entre-temps est passé). Sélection complète : le parcours
-  // s'arrête, rien de plus ne peut être retenu.
+  // ouvert (un bien retenu ou écarté entre-temps est passé). Sélection complète : chaque bien se
+  // voit quand même — il s'écarte, ou se passe ; « Proposer » attend qu'une place se libère.
   const liveDeck = new Map(deckEntries.map((entry) => [entry.card.key, entry]));
   const deckOrder = deckKeys ?? deckEntries.map((entry) => entry.card.key);
   const deckAt = deckPosition(deckOrder, deckIndex, new Set(liveDeck.keys()));
   const deckEntry =
-    !full && deckAt < deckOrder.length ? (liveDeck.get(deckOrder[deckAt] as string) ?? null) : null;
+    deckAt < deckOrder.length ? (liveDeck.get(deckOrder[deckAt] as string) ?? null) : null;
   const advance = () => {
     setDeckKeys(deckOrder);
     setDeckIndex(deckAt + 1);
@@ -1089,6 +1089,7 @@ export function IdealPropertiesPanel({
             onOpen={deckEntry.open}
             onPropose={proposeCurrent}
             onDismiss={dismissCurrent}
+            onSkip={advance}
             more={toList}
           />
         ) : (
@@ -1097,11 +1098,9 @@ export function IdealPropertiesPanel({
             data-testid="deck-end"
           >
             <span className={socleKicker}>
-              {full
-                ? 'Sélection complète'
-                : deckOrder.length > 0
-                  ? 'Tous les biens sont vus'
-                  : 'Aucun bien à voir pour l’instant'}
+              {deckOrder.length > 0
+                ? 'Tous les biens sont vus'
+                : 'Aucun bien à voir pour l’instant'}
             </span>
             <p
               className="text-[21px] leading-snug font-bold text-brand-darker stage:text-white"
