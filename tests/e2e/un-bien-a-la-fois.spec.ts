@@ -1,4 +1,4 @@
-import { expect, test, type Page } from './test';
+import { expect, test, type Locator, type Page } from './test';
 
 import {
   demoCredentials,
@@ -33,16 +33,27 @@ const kellerRow = (page: Page) =>
 
 const WATCH_TASK = /^(\d+) nouveaux? biens? trouvés? par la veille$/;
 
+// Un bien qui vient d'arriver n'entend aucun geste pendant un court instant — un second toucher
+// parti trop vite ne décide jamais du bien suivant. La spec attend, comme la main.
+const ready = (deck: Locator) =>
+  expect(deck.getByTestId('deck-card')).toHaveAttribute('data-ready', 'true');
+
+// Le même endroit à l'écran, au pixel près.
+const samePlace = (
+  a: { x: number; y: number; width: number },
+  b: { x: number; y: number; width: number },
+) => Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1 && Math.abs(a.width - b.width) <= 1;
+
 // La veille des Keller reprend (M136, M138) : leur offre tombe, ils reviennent « En visite ». Deux
 // tâches passent avant celle de la veille, dans l'ordre d'« Aujourd'hui » : la réponse du vendeur à
 // leur offre (« Fait » la range) et le mandat de l'agence qui leur correspond (« Un bien à
 // proposer ») — écarté pour eux ici, par la liste des biens idéaux, comme le ferait le conseiller.
-// Leur sélection en cours est complète (trois biens) : `freeSlot` en retire un, par la liste, pour
-// qu'un nouveau bien puisse être retenu. Rend l'adresse de leur fiche et le nombre de biens
+// Leur sélection en cours est complète (trois biens) : `freeSlots` en retire, par la liste, pour
+// que de nouveaux biens puissent être retenus. Rend l'adresse de leur fiche et le nombre de biens
 // trouvés par la veille.
 async function wakeKellerWatch(
   page: Page,
-  { freeSlot }: { freeSlot: boolean },
+  { freeSlots }: { freeSlots: 0 | 1 | 2 },
 ): Promise<{ fiche: string; found: number }> {
   await page.goto('/acquereurs?tous=1');
   await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
@@ -61,15 +72,18 @@ async function wakeKellerWatch(
     await expect(mandates).toHaveCount(left - 1, { timeout: 30_000 });
   }
   await expect(page.getByTestId('ideal-current-item')).toHaveCount(3);
-  if (freeSlot) {
-    await page
-      .locator('[data-testid="ideal-current-item"][data-letter="C"]')
-      .getByRole('checkbox')
-      .uncheck();
+  if (freeSlots > 0) {
+    for (const letter of ['C', 'B'].slice(0, freeSlots)) {
+      await page
+        .locator(`[data-testid="ideal-current-item"][data-letter="${letter}"]`)
+        .getByRole('checkbox')
+        .uncheck();
+    }
     await page.getByTestId('ideal-retain').click();
-    await expect(page.getByTestId('ideal-saved')).toContainText('Sélection retenue : 2 biens.', {
-      timeout: 60_000,
-    });
+    await expect(page.getByTestId('ideal-saved')).toContainText(
+      freeSlots === 2 ? 'Sélection retenue : 1 bien.' : 'Sélection retenue : 2 biens.',
+      { timeout: 60_000 },
+    );
   }
 
   await page.goto('/acquereurs');
@@ -84,7 +98,9 @@ async function wakeKellerWatch(
   return { fiche, found };
 }
 
-test('un bien à la fois : écarter ou proposer, aux trois tailles', async ({ page }) => {
+test('un bien à la fois, dans le détail : écarter, proposer, retenir, sans changer de page', async ({
+  page,
+}) => {
   test.setTimeout(8 * 60_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await login(page, demoCredentials());
@@ -92,30 +108,31 @@ test('un bien à la fois : écarter ou proposer, aux trois tailles', async ({ pa
 
   const { found } =
     await test.step('La veille des Keller reprend : l’offre tombée, les tâches qui passent avant traitées', () =>
-      wakeKellerWatch(page, { freeSlot: true }));
+      wakeKellerWatch(page, { freeSlots: 2 }));
 
-  let total = 0;
+  const detail = page.getByTestId('buyers-today-detail');
+  const deck = detail.getByTestId('ideal-deck');
+  let first = '';
 
-  await test.step('Ordinateur : le détail de la personne montre ses biens, un à la fois', async () => {
+  await test.step('Ordinateur : le détail de la personne montre ses nouveaux biens, un à la fois', async () => {
     await kellerRow(page).click();
-    const detail = page.getByTestId('buyers-today-detail');
-    const deck = detail.getByTestId('ideal-deck');
     await expect(deck).toBeVisible({ timeout: 30_000 });
+    // L'adresse tient la personne sur ses biens.
+    await expect(page).toHaveURL(/\/acquereurs\?personne=[0-9a-f-]{36}&biens=1$/);
     // Son nom et sa recherche restent en tête ; « Ouvrir sa fiche » y mène.
     await expect(deck.getByTestId('buyers-today-name')).toHaveText('Famille Keller');
     await expect(deck.getByTestId('buyers-today-open')).toHaveAttribute(
       'href',
       /^\/acquereurs\/[0-9a-f-]{36}$/,
     );
-    const position = await deck.getByTestId('deck-position').innerText();
-    total = Number(/^Bien 1 sur (\d+)$/.exec(position)?.[1]);
-    expect(total, `« ${position} »`).toBeGreaterThanOrEqual(2);
-    // Leur sélection en cours a déjà deux biens : il reste une place.
-    await expect(deck.getByTestId('deck-retained')).toHaveText('2 retenus sur 3', {
+    // La ligne dit « 2 nouveaux biens » : le parcours est celui de ces deux biens.
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 1 sur ${found}`);
+    // Leur sélection en cours a un bien : il reste deux places, rien à enregistrer.
+    await expect(deck.getByTestId('deck-retained')).toHaveText('1 retenu sur 3', {
       useInnerText: true,
     });
-    await expect(deck.getByTestId('deck-full')).toHaveCount(0);
-    await expect(deck.getByTestId('deck-segments').locator('span')).toHaveCount(total);
+    await expect(deck.getByTestId('deck-note')).toHaveCount(0);
+    await expect(deck.getByTestId('deck-segments').locator('span')).toHaveCount(found);
     await expect(deck.getByTestId('deck-segments').locator('[data-reached="true"]')).toHaveCount(1);
 
     // Le bien : sa photo, « N critères sur M », son prix et sa pastille, son libellé neutre.
@@ -125,6 +142,7 @@ test('un bien à la fois : écarter ou proposer, aux trois tailles', async ({ pa
     await expect(deck.getByTestId('deck-budget')).toHaveText(/budget/i);
     await expect(deck.getByTestId('deck-label')).toHaveText(/^Maison · /);
     await expect(deck.getByTestId('deck-origin')).toHaveText(/^affiché le \d{2}\/\d{2}\/\d{4}$/);
+    first = await deck.getByTestId('deck-label').innerText();
     // « Pourquoi celui-ci pour eux », dans ses mots : leur indispensable d'abord.
     const why = deck.getByTestId('deck-why');
     await expect(why).toContainText('Pourquoi celui-ci pour eux');
@@ -146,7 +164,6 @@ test('un bien à la fois : écarter ou proposer, aux trois tailles', async ({ pa
   });
 
   await test.step('« Voir l’annonce complète » ouvre sa fiche, à lire seulement', async () => {
-    const deck = page.getByTestId('buyers-today-detail').getByTestId('ideal-deck');
     await deck.getByTestId('deck-open-sheet').locator('visible=true').click();
     const sheet = page.getByTestId('property-sheet');
     await expect(sheet).toBeVisible({ timeout: 30_000 });
@@ -156,98 +173,209 @@ test('un bien à la fois : écarter ou proposer, aux trois tailles', async ({ pa
     await expect(sheet).toHaveCount(0);
   });
 
-  await test.step('« Écarter » demande sa raison, en un geste ; « Garder » revient au bien', async () => {
-    const deck = page.getByTestId('buyers-today-detail').getByTestId('ideal-deck');
-    const first = await deck.getByTestId('deck-label').innerText();
-    await deck.getByTestId('deck-dismiss').click();
+  await test.step('« Écarter » demande sa raison ; un second toucher parti trop vite ne choisit rien', async () => {
+    await ready(deck);
+    const dismissAt = (await deck.getByTestId('deck-dismiss').boundingBox())!;
+    // Deux touchers de suite sur « Écarter » : les raisons s'ouvrent, et restent ouvertes — le
+    // second ne tombe ni sur une raison, ni sur « Garder », qui a pris sa place.
+    await deck.getByTestId('deck-dismiss').dblclick();
     await expect(deck.getByTestId('deck-reasons')).toContainText('Pourquoi l’écarter ?');
+    await page.waitForTimeout(600);
+    await expect(deck.getByTestId('deck-reasons')).toBeVisible();
+    await expect(deck.getByTestId('deck-label')).toHaveText(first);
+    expect(samePlace(dismissAt, (await deck.getByTestId('deck-keep').boundingBox())!)).toBe(true);
+    // Aucun bouton plein pendant le choix d'une raison.
+    expect(await filledShown(page)).toEqual([]);
+    await ready(deck);
     await deck.getByTestId('deck-keep').click();
     await expect(deck.getByTestId('deck-reasons')).toHaveCount(0);
     await expect(deck.getByTestId('deck-label')).toHaveText(first);
+
     // Au clavier : la flèche gauche ouvre les raisons.
+    await ready(deck);
     await page.keyboard.press('ArrowLeft');
     await expect(deck.getByTestId('deck-reasons')).toBeVisible();
+    await ready(deck);
     await deck.getByTestId('deck-reason-sector').click();
     // Le bien suivant ; l'écart se lit, et s'annule encore.
-    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 2 sur ${total}`, {
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 2 sur ${found}`, {
       timeout: 30_000,
     });
     await expect(deck.getByTestId('deck-label')).not.toHaveText(first);
     await expect(deck.getByTestId('deck-dismissed')).toContainText(`Écarté pour lui : ${first}`);
-    await expect(deck.getByTestId('deck-undo')).toBeVisible();
     // La liste suit : un bien de la veille en moins à voir pour eux.
     await expect(kellerRow(page).getByTestId('person-task')).toHaveText(
-      new RegExp(`^${found - 1} nouveaux? biens? trouvés? par la veille$`),
+      '1 nouveau bien trouvé par la veille',
+      { timeout: 30_000 },
+    );
+    // « Annuler » ramène le bien : on le regarde de nouveau.
+    await deck.getByTestId('deck-undo').click();
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 1 sur ${found}`, {
+      timeout: 30_000,
+    });
+    await expect(deck.getByTestId('deck-label')).toHaveText(first);
+    await expect(deck.getByTestId('deck-dismissed')).toHaveCount(0);
+    await expect(kellerRow(page).getByTestId('person-task')).toHaveText(
+      `${found} nouveaux biens trouvés par la veille`,
       { timeout: 30_000 },
     );
   });
 
-  await test.step('« Proposer » le retient dans la sélection ; complète, les biens suivants se passent', async () => {
-    const deck = page.getByTestId('buyers-today-detail').getByTestId('ideal-deck');
-    const kept = await deck.getByTestId('deck-label').innerText();
-    // Au clavier : la flèche droite propose.
-    await page.keyboard.press('ArrowRight');
-    await expect(deck.getByTestId('deck-retained')).toHaveText('3 retenus sur 3', {
+  await test.step('« Proposer » retient un bien, un seul ; rien de proposé ne se perd sans le dire', async () => {
+    // Deux touchers de suite sur « Proposer » : un seul bien retenu, jamais le suivant avec lui.
+    await ready(deck);
+    await deck.getByTestId('deck-propose').dblclick();
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 2 sur ${found}`);
+    await page.waitForTimeout(600);
+    await expect(deck.getByTestId('deck-retained')).toHaveText('2 retenus sur 3', {
       useInnerText: true,
     });
-    // La sélection est complète : les biens restants se voient quand même, un par un — « Proposer »
-    // attend une place, « Passer ce bien » mène au suivant.
-    for (let seen = 3; seen <= total; seen += 1) {
-      await expect(deck.getByTestId('deck-position')).toHaveText(`Bien ${seen} sur ${total}`);
-      await expect(deck.getByTestId('deck-propose')).toBeDisabled();
-      await expect(deck.getByTestId('deck-full')).toContainText('Sélection complète');
-      // La flèche droite ne retient plus rien.
-      await page.keyboard.press('ArrowRight');
-      await expect(deck.getByTestId('deck-position')).toHaveText(`Bien ${seen} sur ${total}`);
-      await deck.getByTestId('deck-skip').click();
-    }
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 2 sur ${found}`);
+    // Le bien proposé n'est pas encore enregistré : l'écran le dit, « Retenir la sélection » est là,
+    // en contour — le seul bouton plein reste « Proposer ».
+    await expect(deck.getByTestId('deck-unsaved')).toHaveText(
+      '2 biens dans la sélection, pas encore enregistrée.',
+    );
+    await expect(deck.getByTestId('deck-retain-now')).toHaveText('Retenir la sélection (2/3)');
+    expect(await filledShown(page)).toEqual(['Proposer']);
+    const propose = (await deck.getByTestId('deck-propose').boundingBox())!;
+    expect(propose.y + propose.height).toBeLessThanOrEqual(900);
+
+    // Quitter par un lien le demande d'abord, dans l'écran : « Rester » garde tout.
+    await deck.getByTestId('buyers-today-open').click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Quitter sans retenir la sélection ?');
+    await dialog.getByRole('button', { name: 'Rester' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page).toHaveURL(/\/acquereurs\?personne=[0-9a-f-]{36}&biens=1$/);
+    await expect(deck.getByTestId('deck-retained')).toHaveText('2 retenus sur 3', {
+      useInnerText: true,
+    });
+    // Une autre personne : la même question ; « Quitter » y mène, et le bien proposé est perdu,
+    // comme annoncé.
+    const other = page.getByTestId('person-row').filter({ hasNotText: 'Famille Keller' }).first();
+    const otherName = await other.getByTestId('person-name').innerText();
+    await other.click();
+    await expect(dialog).toContainText('ne sont pas encore enregistrés');
+    await dialog.getByTestId('deck-leave').click();
+    await expect(detail.getByTestId('buyers-today-name')).toHaveText(otherName, {
+      timeout: 30_000,
+    });
+    await kellerRow(page).click();
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 1 sur ${found}`, {
+      timeout: 30_000,
+    });
+    await expect(deck.getByTestId('deck-retained')).toHaveText('1 retenu sur 3', {
+      useInnerText: true,
+    });
+    await expect(deck.getByTestId('deck-label')).toHaveText(first);
+
+    // De nouveau proposé, puis retenu sans attendre la fin : la sélection est enregistrée, on reste
+    // sur place.
+    await ready(deck);
+    await deck.getByTestId('deck-propose').click();
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 2 sur ${found}`);
+    await deck.getByTestId('deck-retain-now').click();
+    await expect(deck.getByTestId('deck-saved')).toContainText('Sélection retenue : 2 biens.', {
+      timeout: 60_000,
+    });
+    await expect(deck.getByTestId('deck-note')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/acquereurs\?personne=[0-9a-f-]{36}&biens=1$/);
+    await expect(kellerRow(page).getByTestId('person-task')).toHaveText(
+      '1 nouveau bien trouvé par la veille',
+      { timeout: 30_000 },
+    );
+  });
+
+  await test.step('Le dernier bien de la veille écarté : le parcours reste, sous son nom, et s’annule encore', async () => {
+    const last = await deck.getByTestId('deck-label').innerText();
+    await ready(deck);
+    await deck.getByTestId('deck-dismiss').click();
+    await ready(deck);
+    await deck.getByTestId('deck-reason-other').click();
+    // La tâche de la veille quitte la liste ; le détail, lui, reste sur ses biens.
+    await expect(
+      kellerRow(page)
+        .getByTestId('person-task')
+        .filter({ hasText: /par la veille$/ }),
+    ).toHaveCount(0, { timeout: 30_000 });
+    await expect(deck).toBeVisible();
+    await expect(deck.getByTestId('buyers-today-name')).toHaveText('Famille Keller');
+    await expect(page).toHaveURL(/\/acquereurs\?personne=[0-9a-f-]{36}&biens=1$/);
     const end = deck.getByTestId('deck-end');
-    await expect(end).toContainText('Tous les biens sont vus', { timeout: 30_000 });
+    await expect(end.getByTestId('deck-end-kicker')).toHaveText('Tous les nouveaux biens sont vus');
+    await expect(end.getByTestId('deck-end-title')).toHaveText(
+      'Sélection de la famille Keller : 2 biens sur 3',
+    );
+    // Rien à enregistrer : la suite est de présenter. « Annuler » est toujours là.
+    expect(await filledShown(page)).toEqual(['Présenter']);
+    await expect(deck.getByTestId('deck-dismissed')).toContainText(`Écarté pour lui : ${last}`);
+    await deck.getByTestId('deck-undo').click();
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 2 sur ${found}`, {
+      timeout: 30_000,
+    });
+    await expect(deck.getByTestId('deck-label')).toHaveText(last);
+    await expect(kellerRow(page).getByTestId('person-task')).toHaveText(
+      '1 nouveau bien trouvé par la veille',
+      { timeout: 30_000 },
+    );
+
+    // Au clavier : la flèche droite propose. La sélection est complète, le parcours fini.
+    await ready(deck);
+    await page.keyboard.press('ArrowRight');
     await expect(end.getByTestId('deck-end-title')).toHaveText(
       'Sélection de la famille Keller : 3 biens sur 3',
     );
     await expect(end.getByTestId('deck-end-item')).toHaveCount(3);
-    await expect(end.getByTestId('deck-end-item').last()).toContainText(kept);
+    await expect(end.getByTestId('deck-end-item').last()).toContainText(last);
     // Le seul bouton plein : « Retenir la sélection ».
     expect(await filledShown(page)).toEqual(['Retenir la sélection (3/3)']);
     await end.getByTestId('deck-retain').click();
-    // La sélection retenue mène à sa fiche : sa prochaine étape est de la lui présenter.
-    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}$/, { timeout: 60_000 });
-    await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
-    await expect(page.getByTestId('buyer-next-step')).toContainText(/sélection/i);
+    await expect(end.getByTestId('ideal-saved')).toContainText('Sélection retenue : 3 biens.', {
+      timeout: 60_000,
+    });
+    // Sans changer de page : sous son nom, la suite est de la présenter, ou d'envoyer son lien.
+    await expect(page).toHaveURL(/\/acquereurs\?personne=[0-9a-f-]{36}&biens=1$/);
+    await expect(deck.getByTestId('buyers-today-name')).toHaveText('Famille Keller');
+    await expect(end.getByTestId('deck-present')).toHaveText('Présenter');
+    await expect(end.getByTestId('deck-dossier')).toBeVisible();
+    expect(await filledShown(page)).toEqual(['Présenter']);
   });
 
-  await test.step('La liste entière dit la même chose : le bien retenu, les biens écartés', async () => {
-    await page.goto(`${new URL(page.url()).pathname}/biens-ideaux`);
+  await test.step('La liste entière dit la même chose : les biens retenus, plus rien de la veille', async () => {
+    await deck.getByTestId('deck-all').click();
+    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\/biens-ideaux$/);
     await expect(page.getByTestId('ideal-title')).toBeVisible();
-    // La sélection enregistrée, et plus rien de la veille à voir.
     await expect(page.getByTestId('ideal-current-item')).toHaveCount(3);
     await expect(page.getByTestId('ideal-watch-hit')).toHaveCount(0);
   });
 });
 
-test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => {
+test('un bien à la fois, sur tablette et sur téléphone', async ({ page }) => {
   test.setTimeout(8 * 60_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await login(page, demoCredentials());
   await resetDemoByScreen(page);
 
-  const { fiche } = await test.step('La veille des Keller reprend', () =>
-    wakeKellerWatch(page, { freeSlot: false }));
+  const { fiche, found } = await test.step('La veille des Keller reprend', () =>
+    wakeKellerWatch(page, { freeSlots: 0 }));
 
   await test.step('Tablette : la liste, et le bien dans le détail, ses deux gestes en bas', async () => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/acquereurs');
     await kellerRow(page).click();
     const deck = page.getByTestId('buyers-today-detail').getByTestId('ideal-deck');
-    await expect(deck.getByTestId('deck-position')).toHaveText(/^Bien 1 sur \d+$/, {
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 1 sur ${found}`, {
       timeout: 30_000,
     });
     // Sur 150 px : « 3 sur 3 ». Leur sélection est complète : le bien se voit quand même.
     await expect(deck.getByTestId('deck-retained')).toHaveText('3 sur 3', {
       useInnerText: true,
     });
-    await expect(deck.getByTestId('deck-full')).toContainText('Sélection complète');
+    await expect(deck.getByTestId('deck-full')).toContainText(
+      'Sélection complète : pour proposer ce bien, retirez-en un dans toute la liste.',
+    );
+    await expect(deck.getByTestId('deck-retain-now')).toHaveCount(0);
     await expect(deck.getByTestId('deck-propose')).toBeDisabled();
     await expect(deck.getByTestId('deck-criteria')).toHaveText(/^\d+ critères? sur \d+$/);
     await expect(deck.getByTestId('deck-why-pill').first()).toBeVisible();
@@ -258,23 +386,24 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
     expect(Math.round(dismiss.y)).toBe(Math.round(propose.y));
     expect(Math.abs(dismiss.width - propose.width)).toBeLessThanOrEqual(1);
     expect(Math.round(propose.height)).toBe(58);
-    // Ils tiennent dans l'écran, sans défiler.
+    // Ils tiennent dans l'écran, sans défiler — dans la fenêtre de Safari aussi (1024 × 700).
     expect(propose.y + propose.height).toBeLessThanOrEqual(768);
     await expectNoHorizontalScroll(page, 'Un bien à la fois (1024 × 768)');
+    await page.setViewportSize({ width: 1024, height: 700 });
+    const lower = (await deck.getByTestId('deck-propose').boundingBox())!;
+    expect(lower.y + lower.height).toBeLessThanOrEqual(700);
     await page.setViewportSize({ width: 768, height: 1024 });
     await expect(deck.getByTestId('deck-propose')).toBeVisible();
     await expectNoHorizontalScroll(page, 'Un bien à la fois (768 × 1024)');
   });
 
-  await test.step('Téléphone : la carte mène à la page, un bien à la fois, sans menu', async () => {
+  await test.step('Téléphone : la carte mène à ses nouveaux biens, un à la fois, sans menu', async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/acquereurs');
     const card = page.getByTestId('task-card').filter({ hasText: 'Famille Keller' });
-    await expect(card.getByTestId('person-task')).toHaveText(
-      /^\d+ nouveaux? biens? trouvés? par la veille$/,
-    );
+    await expect(card.getByTestId('person-task')).toHaveText(WATCH_TASK);
     await card.getByRole('link', { name: 'Voir les biens' }).click();
-    await expect(page).toHaveURL(new RegExp(`${fiche}/biens-ideaux\\?un=1$`));
+    await expect(page).toHaveURL(new RegExp(`${fiche}/biens-ideaux\\?un=veille$`));
     const deck = page.getByTestId('ideal-deck');
     await expect(deck).toBeVisible();
     // Une page intérieure : le retour vers sa fiche, sans menu du bas, sans le titre de la liste.
@@ -282,7 +411,8 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
     await expect(page.getByTestId('ideal-title')).toHaveCount(0);
     await expect(deck.getByTestId('deck-back')).toHaveText('Keller');
     await expect(deck.getByTestId('deck-back')).toHaveAttribute('href', fiche);
-    await expect(deck.getByTestId('deck-position')).toHaveText(/^Bien 1 sur \d+$/);
+    // « 2 nouveaux biens » : ces deux-là.
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 1 sur ${found}`);
     await expect(deck.getByTestId('deck-retained')).toHaveText('3 retenus sur 3', {
       useInnerText: true,
     });
@@ -296,11 +426,18 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
     expect(propose.y + propose.height).toBeLessThanOrEqual(844);
     expect(propose.y).toBeGreaterThan(844 / 2);
     await expectNoHorizontalScroll(page, 'Un bien à la fois (390 × 844)');
-    // Les raisons d'écarter tiennent dans l'écran ; « Garder » revient au bien.
+    // Les raisons d'écarter tiennent dans l'écran ; « Garder », à la place d'« Écarter », revient
+    // au bien.
+    await ready(deck);
     await deck.getByTestId('deck-dismiss').click();
     await expect(deck.getByTestId('deck-reasons')).toBeVisible();
     await expectNoHorizontalScroll(page, 'Un bien à la fois, les raisons (390 × 844)');
+    const keep = (await deck.getByTestId('deck-keep').boundingBox())!;
+    expect(samePlace(dismiss, keep)).toBe(true);
+    expect(keep.y + keep.height).toBeLessThanOrEqual(844);
+    await ready(deck);
     await deck.getByTestId('deck-keep').click();
+    await expect(deck.getByTestId('deck-reasons')).toHaveCount(0);
   });
 
   await test.step('« Toute la liste et le marché » : une place libérée, puis « Les voir un par un »', async () => {
@@ -314,47 +451,74 @@ test('un bien à la fois, sur téléphone et sur tablette', async ({ page }) => 
       .locator('[data-testid="ideal-current-item"][data-letter="C"]')
       .getByRole('checkbox')
       .uncheck();
+    // Depuis la liste : tous ses biens ouverts, ceux de la veille en tête.
     const opener = page.getByTestId('ideal-open-deck');
     await expect(opener).toHaveText(/^Les voir un par un · \d+$/);
+    const all = Number(/(\d+)$/.exec(await opener.innerText())?.[1]);
+    expect(all).toBeGreaterThanOrEqual(found);
     await opener.click();
     await expect(page).toHaveURL(new RegExp(`${fiche}/biens-ideaux\\?un=1$`));
-    await expect(deck.getByTestId('deck-position')).toHaveText(/^Bien 1 sur \d+$/);
+    await expect(deck.getByTestId('deck-position')).toHaveText(`Bien 1 sur ${all}`);
     await expect(deck.getByTestId('deck-retained')).toHaveText('2 retenus sur 3', {
       useInnerText: true,
     });
-    await expect(deck.getByTestId('deck-full')).toHaveCount(0);
+    // La sélection n'est plus celle qui est enregistrée : l'écran le dit déjà.
+    await expect(deck.getByTestId('deck-unsaved')).toHaveText(
+      '2 biens dans la sélection, pas encore enregistrée.',
+    );
   });
 
-  await test.step('« Proposer », puis « Retenir la sélection » : la sélection est enregistrée', async () => {
+  await test.step('« Proposer », puis « Retenir la sélection » sans attendre la fin', async () => {
     const deck = page.getByTestId('ideal-deck');
     const kept = await deck.getByTestId('deck-label').innerText();
+    await ready(deck);
     await deck.getByTestId('deck-propose').click();
     await expect(deck.getByTestId('deck-retained')).toHaveText('3 retenus sur 3', {
       useInnerText: true,
     });
-    // Les biens suivants se passent, jusqu'à la fin.
     const total = Number(
       /sur (\d+)$/.exec(await deck.getByTestId('deck-position').innerText())?.[1],
     );
+    // Complète, pas encore enregistrée : la ligne le dit, avec « Retenir la sélection » — en
+    // contour, les deux gestes toujours dans l'écran.
+    await expect(deck.getByTestId('deck-full')).toHaveText(
+      'Sélection complète, pas encore enregistrée.',
+    );
+    await expect(deck.getByTestId('deck-retain-now')).toHaveText('Retenir la sélection (3/3)');
+    expect(await filledShown(page)).toEqual(['Proposer']);
+    const propose = (await deck.getByTestId('deck-propose').boundingBox())!;
+    expect(propose.y + propose.height).toBeLessThanOrEqual(844);
+    await expectNoHorizontalScroll(page, 'Un bien à la fois, à enregistrer (390 × 844)');
+    // Revenir à sa fiche le demande d'abord : « Rester ».
+    await deck.getByTestId('deck-back').click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('Quitter sans retenir la sélection ?');
+    await dialog.getByRole('button', { name: 'Rester' }).click();
+    await expect(page).toHaveURL(new RegExp(`${fiche}/biens-ideaux\\?un=1$`));
+    // Retenue sans attendre la fin du parcours.
+    await deck.getByTestId('deck-retain-now').click();
+    await expect(deck.getByTestId('deck-saved')).toContainText('Sélection retenue : 3 biens.', {
+      timeout: 60_000,
+    });
+    await expect(deck.getByTestId('deck-retain-now')).toHaveCount(0);
+    // Les biens suivants se passent, jusqu'à la fin.
     for (let seen = 2; seen <= total; seen += 1) {
       await expect(deck.getByTestId('deck-position')).toHaveText(`Bien ${seen} sur ${total}`);
+      await expect(deck.getByTestId('deck-propose')).toBeDisabled();
+      await ready(deck);
       await deck.getByTestId('deck-skip').click();
     }
     const end = deck.getByTestId('deck-end');
+    await expect(end.getByTestId('deck-end-kicker')).toHaveText('Tous les biens sont vus');
     await expect(end.getByTestId('deck-end-title')).toHaveText(
       'Sélection de la famille Keller : 3 biens sur 3',
     );
     await expect(end.getByTestId('deck-end-item').last()).toContainText(kept);
-    expect(await filledShown(page)).toEqual(['Retenir la sélection (3/3)']);
-    await expectNoHorizontalScroll(page, 'Un bien à la fois, la fin (390 × 844)');
-    await end.getByTestId('deck-retain').click();
-    await expect(end.getByTestId('ideal-saved')).toContainText('Sélection retenue : 3 biens.', {
-      timeout: 60_000,
-    });
     // Enregistrée : la suite est de la présenter, ou d'envoyer son lien.
     await expect(end.getByTestId('deck-present')).toHaveText('Présenter');
     await expect(end.getByTestId('deck-dossier')).toBeVisible();
     expect(await filledShown(page)).toEqual(['Présenter']);
+    await expectNoHorizontalScroll(page, 'Un bien à la fois, la fin (390 × 844)');
     // L'adresse garde la vue : une actualisation rouvre « un bien à la fois ».
     await page.reload();
     await expect(page.getByTestId('ideal-deck')).toBeVisible();

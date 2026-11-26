@@ -10,12 +10,14 @@ import {
   pillOrange,
   socleBigPair,
   socleBtnFilledBig,
+  socleBtnQuiet,
   socleBtnQuietBig,
   socleCardBordered,
 } from '@/components/ui/styles';
 import { DISMISS_REASON_LABELS } from '@/features/buyer-messages/report';
 import { DISMISS_REASONS, type DismissReason } from '@/features/buyer-messages/templates/types';
 import type { WhyPill } from '@/features/ideal-properties/services/categorize-ideal';
+import type { DeckCard } from '@/features/ideal-properties/services/deck-cards';
 import { formatEuro } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
 
@@ -24,23 +26,7 @@ import { displayPhotoUrl } from '@/lib/photo-url';
 // eux » en pastilles, puis « Écarter » ou « Proposer ». Un composant d'affichage : les biens, la
 // sélection et les gestes sont ceux des biens idéaux (M118, M139), tenus par le panneau.
 
-export type DeckCard = {
-  key: string;
-  // Le libellé neutre (type · pièces · surface · commune) : jamais un titre ni une adresse.
-  label: string;
-  photo: string | null;
-  price: number | null;
-  // « affiché le 24/11/2026 », « Dans l'agence · mandat signé ».
-  origin: string | null;
-  // « 8 critères sur 8 » ; `allMet` : tous satisfaits (la coche verte).
-  criteria: { label: string; allMet: boolean } | null;
-  budget: { tone: 'good' | 'watch'; label: string } | null;
-  why: WhyPill[];
-  // Ce qui est à savoir avant de proposer : les écarts, ce qui reste à vérifier. Jamais caché.
-  notes: string[];
-  // Une annonce du marché, ou un bien de l'agence : le lien de la fiche complète le dit.
-  listing: boolean;
-};
+export type { DeckCard };
 
 const PILL: Record<WhyPill['tone'], string> = {
   must: pillOrange,
@@ -173,6 +159,19 @@ function SheetLink({
   );
 }
 
+// Un second toucher parti trop vite ne décide jamais du bien suivant : pendant ce temps après
+// l'arrivée d'un bien — ou l'ouverture des raisons —, les gestes n'entendent rien. (Deux touchers
+// de suite sur « Proposer » retenaient aussi le bien d'après ; sur « Écarter », le second tombait
+// sur une raison, au hasard.)
+export const GESTURE_GUARD_MS = 400;
+
+// Ce que la ligne au-dessus des deux gestes dit de la sélection, et son bouton.
+export type DeckNote = {
+  text: string;
+  // « Retenir la sélection (2/3) », en contour : rien de proposé ne se perd sans le dire.
+  retain: { label: string; saving: boolean; onRetain: () => void } | null;
+};
+
 // Un bien, et ses deux gestes. « Écarter » demande sa raison, en un toucher (M139) ; « Proposer »
 // le retient dans la sélection (trois au plus, M118). Au clavier, sur ordinateur : flèche gauche
 // pour écarter, flèche droite pour proposer.
@@ -187,6 +186,8 @@ export function DeckCardView({
   onDismiss,
   onSkip,
   more = null,
+  note = null,
+  status = null,
 }: {
   card: DeckCard;
   // La sélection est complète : « Proposer » ne peut plus rien retenir.
@@ -202,11 +203,34 @@ export function DeckCardView({
   onSkip?: () => void;
   // Sous le bien, avant les deux gestes : le lien vers toute la liste.
   more?: ReactNode;
+  // La sélection, au-dessus des deux gestes : complète, ou pas encore enregistrée.
+  note?: DeckNote | null;
+  // Ce qui vient d'être enregistré (« Sélection retenue : 2 biens. »).
+  status?: string | null;
 }) {
   const [choosing, setChoosing] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const reasons = useRef<HTMLDivElement>(null);
   const [broken, setBroken] = useState(false);
+  // Les gestes n'entendent rien pendant `GESTURE_GUARD_MS` après l'arrivée du bien (le composant
+  // est neuf à chaque bien : sa clé) et après l'ouverture ou la fermeture des raisons.
+  const [turn, setTurn] = useState(0);
+  const [readyTurn, setReadyTurn] = useState(-1);
+  const ready = readyTurn === turn;
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReadyTurn(turn), GESTURE_GUARD_MS);
+    return () => window.clearTimeout(timer);
+  }, [turn]);
+  const openReasons = () => {
+    if (!ready || pending) return;
+    setTurn((current) => current + 1);
+    setChoosing(true);
+  };
+  const keep = () => {
+    if (!ready) return;
+    setTurn((current) => current + 1);
+    setChoosing(false);
+  };
 
   useEffect(() => {
     if (choosing) reasons.current?.querySelector('button')?.focus();
@@ -216,19 +240,24 @@ export function DeckCardView({
     if (!keyboard) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      // Une touche tenue enfoncée ne décide pas de plusieurs biens ; Maj + flèche sélectionne.
+      if (event.repeat || event.shiftKey) return;
       // Un bien caché (le détail, sous 768 px) n'entend pas le clavier.
       if (!root.current || root.current.offsetParent === null) return;
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
       // Dans un menu ou une fenêtre ouverte par-dessus, les flèches sont à lui.
       if (target?.closest('[role="menu"], [role="dialog"]')) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       if (event.key === 'Escape' && choosing) {
         setChoosing(false);
+        setTurn((current) => current + 1);
         return;
       }
-      if (pending || choosing) return;
+      if (pending || choosing || !ready) return;
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
+        setTurn((current) => current + 1);
         setChoosing(true);
       } else if (event.key === 'ArrowRight' && !full) {
         event.preventDefault();
@@ -237,23 +266,29 @@ export function DeckCardView({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [keyboard, pending, choosing, full, onPropose]);
+  }, [keyboard, pending, choosing, full, onPropose, ready]);
 
   const photo = card.photo && !broken ? displayPhotoUrl(card.photo) : null;
   // La photo prend la place que l'écran lui laisse (290 px sur tablette, 410 sur ordinateur, comme
-  // les maquettes), jamais moins de 180 px : sur un écran moins haut, « Écarter » et « Proposer »
-  // restent visibles sans défiler. Sélection complète, la mention prend sa ligne : la photo cède
-  // sa hauteur.
-  const photoHeight = full
-    ? 'h-[250px] md:h-[clamp(180px,calc(100dvh_-_530px),290px)] xl:h-[clamp(180px,calc(100dvh_-_540px),410px)]'
-    : 'h-[250px] md:h-[clamp(180px,calc(100dvh_-_480px),290px)] xl:h-[clamp(180px,calc(100dvh_-_490px),410px)]';
+  // les maquettes), jamais moins de 140 px : sur un écran moins haut (la fenêtre de Safari sur une
+  // tablette, 1024 × 700), « Écarter » et « Proposer » restent visibles sans défiler. Quand la
+  // sélection a sa ligne (complète, ou pas encore enregistrée), la photo lui cède sa hauteur.
+  const photoHeight =
+    note != null || status != null
+      ? 'h-[250px] md:h-[clamp(140px,calc(100dvh_-_540px),290px)] xl:h-[clamp(140px,calc(100dvh_-_550px),410px)]'
+      : 'h-[250px] md:h-[clamp(140px,calc(100dvh_-_480px),290px)] xl:h-[clamp(140px,calc(100dvh_-_490px),410px)]';
   return (
-    <div className="flex flex-1 flex-col gap-3.5 xl:gap-[18px]" data-testid="deck-card" ref={root}>
+    <div
+      className="flex flex-1 flex-col gap-3.5 xl:gap-[18px]"
+      data-testid="deck-card"
+      data-ready={ready ? 'true' : 'false'}
+      ref={root}
+    >
       {/* La photo, ou — pour un bien de l'agence, dont la photo se lit sur sa fiche — un bandeau. */}
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Ouvrir la fiche : ${card.label}`}
+        aria-label={`Ouvrir la fiche : ${card.label}${card.criteria ? `, ${card.criteria.label}` : ''}`}
         className={`relative block w-full flex-none overflow-hidden rounded-[20px] bg-[#E7EAF7] text-left stage:bg-white/10 ${
           photo ? photoHeight : 'h-[120px] md:h-[140px]'
         }`}
@@ -360,7 +395,7 @@ export function DeckCardView({
       {more}
 
       {/* Les deux gestes : sous le pouce sur téléphone (fixés en bas de l'écran), en bas du détail
-          ailleurs. « Écarter » demande sa raison ; « Garder » revient au bien. */}
+          ailleurs. « Écarter » demande sa raison ; « Garder », à sa place, revient au bien. */}
       <div
         className="sticky bottom-[var(--shell-bottom)] z-10 mt-auto flex flex-col gap-2 bg-[#F4F5FA]/95 pt-3 pb-4 backdrop-blur md:static md:bg-transparent md:p-0 md:backdrop-blur-none stage:bg-transparent"
         data-testid="deck-actions"
@@ -370,26 +405,49 @@ export function DeckCardView({
             {error}
           </p>
         ) : null}
-        {/* Sélection complète : « Proposer » n'a plus de place. Le bien se voit quand même — il
-            s'écarte, ou se passe — et l'écran dit comment en retenir un autre. */}
-        {full && !choosing ? (
+        {status ? (
           <p
-            className="flex flex-wrap items-center gap-x-2 text-sm text-[#5B6380] stage:text-white/60"
-            data-testid="deck-full"
+            role="status"
+            className="text-sm font-semibold text-[#0B6B4A] stage:text-emerald-300"
+            data-testid="deck-saved"
           >
-            Sélection complète : pour proposer ce bien, retirez-en un dans toute la liste.
-            {onSkip ? (
+            {status}
+          </p>
+        ) : null}
+        {/* La sélection : des biens proposés, pas encore enregistrés — « Retenir la sélection » est
+            là dès le premier ; ou complète — « Proposer » n'a plus de place, le bien se voit quand
+            même (il s'écarte, ou se passe) et l'écran dit comment en retenir un autre. */}
+        {note && !choosing ? (
+          <div
+            className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-[#5B6380] stage:text-white/60"
+            data-testid="deck-note"
+          >
+            <span data-testid={full ? 'deck-full' : 'deck-unsaved'}>{note.text}</span>
+            {note.retain ? (
+              <button
+                type="button"
+                disabled={note.retain.saving || pending}
+                className={`${socleBtnQuiet} h-10 px-3.5 text-sm`}
+                data-testid="deck-retain-now"
+                onClick={note.retain.onRetain}
+              >
+                {note.retain.saving ? 'Enregistrement…' : note.retain.label}
+              </button>
+            ) : null}
+            {full && onSkip ? (
               <button
                 type="button"
                 disabled={pending}
-                className="font-bold text-brand-deep underline stage:text-brand"
+                className="flex h-10 items-center font-bold text-brand-deep underline stage:text-brand"
                 data-testid="deck-skip"
-                onClick={onSkip}
+                onClick={() => {
+                  if (ready) onSkip();
+                }}
               >
                 Passer ce bien
               </button>
             ) : null}
-          </p>
+          </div>
         ) : null}
         {choosing ? (
           <div className="flex flex-col gap-2.5" data-testid="deck-reasons" ref={reasons}>
@@ -404,51 +462,66 @@ export function DeckCardView({
                   disabled={pending}
                   className={chipNeutral}
                   data-testid={`deck-reason-${reason}`}
-                  onClick={() => onDismiss(reason)}
+                  onClick={() => {
+                    if (ready) onDismiss(reason);
+                  }}
                 >
                   {DISMISS_REASON_LABELS[reason]}
                 </button>
               ))}
-              <button
-                type="button"
-                disabled={pending}
-                className="flex h-11 items-center px-2 text-[15px] font-bold text-brand-deep stage:text-brand"
-                data-testid="deck-keep"
-                onClick={() => setChoosing(false)}
-              >
-                Garder
-              </button>
             </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 xl:flex xl:items-center xl:justify-between xl:gap-5">
-            <p className="hidden text-sm text-[#5B6380] xl:block stage:text-white/60">
-              Au clavier : flèche gauche pour écarter, flèche droite pour proposer.
-            </p>
-            <div className="contents xl:flex xl:gap-3">
-              <button
-                type="button"
-                disabled={pending}
-                className={`${socleBtnQuietBig} ${socleBigPair} xl:w-[190px]`}
-                data-testid="deck-dismiss"
-                onClick={() => setChoosing(true)}
-              >
-                {cross}
-                Écarter
-              </button>
-              <button
-                type="button"
-                disabled={pending || full}
-                className={`${socleBtnFilledBig} ${socleBigPair} xl:w-[190px]`}
-                data-testid="deck-propose"
-                onClick={onPropose}
-              >
-                {check('size-5')}
-                Proposer
-              </button>
-            </div>
+        ) : null}
+        <div className="grid grid-cols-2 gap-3 xl:flex xl:items-center xl:justify-between xl:gap-5">
+          <p className="hidden text-sm text-[#5B6380] xl:block stage:text-white/60">
+            {choosing
+              ? 'Au clavier : Échap pour garder ce bien.'
+              : 'Au clavier : flèche gauche pour écarter, flèche droite pour proposer.'}
+          </p>
+          <div className="contents xl:flex xl:gap-3">
+            {choosing ? (
+              <>
+                {/* À la place d'« Écarter » : un second toucher, parti trop vite, ne tombe jamais
+                    sur une raison. */}
+                <button
+                  type="button"
+                  disabled={pending}
+                  className={`${socleBtnQuietBig} ${socleBigPair} xl:w-[190px]`}
+                  data-testid="deck-keep"
+                  onClick={keep}
+                >
+                  Garder
+                </button>
+                <span aria-hidden="true" className="hidden xl:block xl:w-[190px]" />
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={pending}
+                  className={`${socleBtnQuietBig} ${socleBigPair} xl:w-[190px]`}
+                  data-testid="deck-dismiss"
+                  onClick={openReasons}
+                >
+                  {cross}
+                  Écarter
+                </button>
+                <button
+                  type="button"
+                  disabled={pending || full}
+                  className={`${socleBtnFilledBig} ${socleBigPair} xl:w-[190px]`}
+                  data-testid="deck-propose"
+                  onClick={() => {
+                    if (ready) onPropose();
+                  }}
+                >
+                  {check('size-5')}
+                  Proposer
+                </button>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

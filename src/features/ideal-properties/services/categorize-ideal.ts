@@ -282,7 +282,8 @@ function metLabel(
       return essential && letter ? `DPE ${letter}` : null;
     }
     case 'works':
-      return 'Sans travaux à prévoir';
+      // Les mots du dossier acquéreur (M122) : l'annonce n'en annonce pas — rien de plus n'est su.
+      return 'Pas de travaux annoncés';
   }
 }
 

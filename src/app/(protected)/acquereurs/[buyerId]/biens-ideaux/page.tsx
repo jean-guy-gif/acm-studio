@@ -16,7 +16,8 @@ type Props = { params: Promise<{ buyerId: string }>; searchParams: Promise<{ un?
 // l'agence d'abord (le rapprochement M86), puis le marché (lancé depuis l'écran), puis la
 // sélection. Une fiche archivée est introuvable : un acquéreur archivé ne cherche plus. Ce que la
 // page lit est dans `loadIdealPanel`. La refonte, lot C — `?un=1` l'ouvre sur « un bien à la
-// fois » (maquette REFONTE-3) : les mêmes biens, la même sélection, un par un.
+// fois » (maquette REFONTE-3) : les mêmes biens, la même sélection, un par un ; `?un=veille`, sur
+// les seuls biens trouvés par la veille (la tâche « 4 nouveaux biens » mène à « Bien 1 sur 4 »).
 export default async function IdealPropertiesPage({ params, searchParams }: Props) {
   const [{ buyerId }, query] = await Promise.all([params, searchParams]);
   const [buyer, profile] = await Promise.all([getBuyer(buyerId), getProfile()]);
@@ -27,7 +28,7 @@ export default async function IdealPropertiesPage({ params, searchParams }: Prop
     <div className="flex max-w-4xl flex-col">
       <IdealPropertiesPanel
         {...panel}
-        initialView={query.un != null ? 'deck' : 'list'}
+        initialView={query.un === 'veille' ? 'watch' : query.un != null ? 'deck' : 'list'}
         header={
           <div className="flex flex-col gap-2 md:mb-2">
             <Link href={`/acquereurs/${buyer.id}`} className={backLink}>
