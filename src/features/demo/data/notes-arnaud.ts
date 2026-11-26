@@ -128,9 +128,19 @@ export const DEMO_PHRASE_OUTPUT = {
 
 // Ce que la lecture simulée rend : pour un texte, la réponse de la phrase — sauf le texte des notes
 // inventées (« Compléter depuis mes notes », « Coller un texte »), qui garde la sienne ; pour une
-// photo ou un fichier, celle des notes.
+// photo ou un fichier, celle des notes. Pour un texte, seules restent les lignes d'origine qu'il
+// contient vraiment (« d'après : … » ne cite jamais un mot absent de ce qui a été tapé) : la garde
+// de la vraie lecture fait alors le reste (un ★ sans sa ligne ferme ne passe pas, M151).
 export function demoNotesOutput(kind: 'photo' | 'file' | 'text', text: string | null) {
-  return kind === 'text' && !(text ?? '').includes('ARNAUD (M. et Mme)')
-    ? DEMO_PHRASE_OUTPUT
-    : DEMO_NOTES_OUTPUT;
+  const said = text ?? '';
+  const output =
+    kind === 'text' && !said.includes('ARNAUD (M. et Mme)')
+      ? DEMO_PHRASE_OUTPUT
+      : DEMO_NOTES_OUTPUT;
+  if (kind !== 'text') return output;
+  return {
+    ...output,
+    sources: output.sources.filter((source) => said.includes(source.quote)),
+    soft_criteria: output.soft_criteria.filter((soft) => said.includes(soft.words)),
+  };
 }

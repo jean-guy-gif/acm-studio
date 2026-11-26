@@ -512,7 +512,7 @@ relecture, dix-neuf parcours sur la première version (les mêmes, plus `langue-
 
 À ouvrir sur l'essai : `https://acm-studio-essai.vercel.app/acquereurs/nouveau` (ou « + » en haut
 d'Acquéreurs). La phrase des Arnaud est d'avance dans l'écran : « Voir ce que j'ai compris », puis
-touchez une pastille. Les captures : `missions/maquettes/REFONTE-D-telephone.png`,
+touchez une pastille. Les captures, prises sur le code relu : `missions/maquettes/REFONTE-D-telephone.png`,
 `-tablette.png`, `-ordinateur.png`, les mêmes en `…-charte-start-academy.png`, et deux états sur
 téléphone : `REFONTE-D-avant-telephone.png` (avant la lecture) et
 `REFONTE-D-corriger-telephone.png` (une pastille touchée).
@@ -522,8 +522,8 @@ Ce qui change, en comportement :
 - **« Nouvel acquéreur » est une phrase** (maquette REFONTE-2) : « Que cherche-t-il ? », « Écrivez-le
   comme il vous l'a dit. Une phrase suffit. », une zone de texte, « Dicter » et « Photo de mes
   notes ». Le bouton plein dit « Voir ce que j'ai compris » ; la lecture faite, « Ce que j'ai
-  compris » s'affiche en pastilles — « Touchez pour corriger » — et le bouton plein devient
-  « Trouver ses biens ».
+  compris » s'affiche en pastilles — « À vérifier : touchez pour corriger » — et le bouton plein
+  devient « Trouver ses biens ».
 - **C'est la lecture des notes de la mission 8** (M151), telle quelle : la même action, les mêmes
   gardes (aucune mention personnelle relevée, « 2 mentions personnelles n'ont pas été relevées »),
   le même forfait, le même avertissement validé avant tout envoi, mot pour mot. Rien n'est
@@ -534,26 +534,35 @@ Ce qui change, en comportement :
   en vert, ce qui compte pour eux (« Au calme ») ; en orange, ses indispensables (« Indispensable :
   extérieur »). Ce qui manque pour créer la fiche tient sa place en pointillé orange (« Son
   nom ? », « Sa commune ? ») et « Trouver ses biens » attend.
-- **Toucher pour corriger** : une valeur se retape (le nom, un montant, les communes), le type se
-  choisit, un équipement se dit « Souhaité » ou « Indispensable » (deux au plus), toute pastille se
-  retire. La correction montre la ligne d'où elle vient (« d'après : « jusqu'à 750 000 € » »),
-  jamais gardée. Un champ que le conseiller a corrigé lui-même ne porte plus « À vérifier » sur la
-  fiche ; les autres le portent, comme après toute lecture.
-- **« Trouver ses biens » crée la fiche** et ouvre ses biens idéaux : ce que l'agence a déjà pour
-  lui, la recherche du marché à lancer, puis « Les voir un par un ».
+- **Toucher pour corriger** : une valeur se retape (le nom, un montant — « 1,5 M » ou « 750 k » se
+  lisent —, les communes), le type se choisit, un équipement se dit « Souhaité » ou
+  « Indispensable » (deux au plus) ; une pastille se retire, sauf le nom (il se corrige) et
+  « Commune à préciser » (elle se saisit). Un plafond retiré emporte son étoile (« une ★ sur le
+  budget exige un montant », M132). La correction montre la ligne d'où elle vient (« d'après :
+  « jusqu'à 750 000 € » »), jamais gardée, et « À vérifier » tant que le champ n'est pas retapé.
+  Un champ retapé par le conseiller ne porte plus « À vérifier » sur la fiche ; les autres le
+  portent, comme après toute lecture.
+- **Les communes** : une commune lue sous un autre nom le dit (« Tourrettes-sur-Loup : lu
+  « Tourettes » ») ; une commune que le service des communes n'a pas pu vérifier reste en
+  pointillé, « … : à vérifier » (M104, M151).
+- **« Trouver ses biens » crée la fiche** et ouvre ses biens idéaux, qui disent « Fiche
+  enregistrée. » : ce que l'agence a déjà pour lui, la recherche du marché à lancer, puis « Les
+  voir un par un ». Rien ne se vide pendant que la page se charge.
 - **« Dicter »** met le curseur dans la phrase et dit comment faire : c'est la dictée de l'appareil
   (le micro du clavier) ; rien ne passe par l'outil.
 - **« Photo de mes notes »** ouvre l'appareil photo ; « ou déposer un fichier (PDF, image) » reste.
-  La phrase accepte aussi un texte collé de plusieurs lignes : sa zone grandit avec lui.
+  Lue, la photo le dit (« D'après la photo de vos notes. ») et offre « Lire ma phrase à la
+  place ». La phrase accepte aussi un texte collé de plusieurs lignes : sa zone grandit avec lui.
 - **La saisie rapide** (M132) reste, derrière « Saisir à la main ». Là où la lecture des notes
   n'est pas ouverte pour l'agence, « Nouvel acquéreur » est la saisie rapide, comme avant. Depuis
   le rapprochement (« Enregistrer cette recherche »), le formulaire complet, comme avant.
-- **« Compléter depuis mes notes »**, sur une fiche existante, ne change pas (l'écran de
-  vérification champ par champ de la M151).
+- **« Compléter depuis mes notes »**, sur une fiche existante, garde l'écran de vérification champ
+  par champ de la M151.
 - **Démo** : la phrase « M. et Mme Arnaud. Une maison de 4 pièces ou plus… » est d'avance dans
   l'écran ; sa lecture est simulée, chaque ligne d'origine prise dans la phrase. La photo des notes
   inventées garde sa lecture (ses cinq souhaits, son financement, ses deux mentions personnelles
-  non relevées).
+  non relevées). Un texte qui n'est ni l'un ni l'autre ne cite plus aucune ligne : « d'après » ne
+  cite jamais un mot absent de ce qui a été tapé.
 
 Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
 
@@ -561,16 +570,47 @@ Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
   maquette montre l'écran une fois la phrase comprise ; une lecture compte dans le forfait, elle
   ne part donc qu'à la demande, jamais à chaque lettre tapée. La phrase retouchée ensuite, l'écran
   offre « Relire ma phrase », en contour.
-- « Trouver ses biens » mène à la LISTE de ses biens idéaux, pas à « un bien à la fois » : pour un
-  acquéreur neuf, les biens du marché demandent une recherche, comptée dans le forfait, que le
-  conseiller lance lui-même ; les biens de l'agence n'ont ni photo ni compte de critères dans « un
-  bien à la fois » (lot C).
+- « Trouver ses biens » mène à la LISTE de ses biens idéaux, pas à « un bien à la fois » (la
+  maquette menait à « un bien à la fois ») : pour un acquéreur neuf, les biens du marché demandent
+  une recherche, comptée dans le forfait, que le conseiller lance lui-même ; les biens de l'agence
+  n'ont ni photo ni compte de critères dans « un bien à la fois » (lot C).
 - Le nom a sa pastille, que la maquette ne dessine pas : il est obligatoire pour créer la fiche,
   comme une commune (M117).
 - Pour une fiche neuve, l'écran de vérification champ par champ (la planche 2 de la M151) laisse
-  la place aux pastilles ; « À vérifier » reste sur la fiche créée, avec « Tout est juste ».
+  la place aux pastilles ; « À vérifier » se lit dans l'en-tête et sur chaque pastille touchée, et
+  reste sur la fiche créée, avec « Tout est juste ». Le bouton qui écrit dit « Trouver ses biens »
+  (la maquette), plus « Créer la fiche ».
+- « Touchez pour corriger » (la maquette) devient « À vérifier : touchez pour corriger » : la M151
+  veut que chaque champ proposé se dise « À vérifier ».
+- Dans la démo, la phrase est d'avance dans l'écran ; la photo des notes inventées est dessous (la
+  M151 la proposait en premier).
 - Sur tablette et ordinateur, les mêmes blocs dans une colonne de 560 px (la maquette n'existe que
   pour le téléphone).
+- **À dire à Jean-Guy, pour la juriste** : l'avertissement validé (« Ne photographiez pas
+  d'information sur la santé… ») ne parle que de photos ; une phrase dictée part aussi à la
+  lecture. Le texte n'est pas touché.
+
+La spec modifiée : `depuis-mes-notes` (l'écran de la fiche neuve a changé). Ce qu'elle prouvait
+l'est encore, à son nouvel endroit : la lecture de la photo, la fiche proposée « À vérifier » (dans
+l'en-tête et sur la pastille touchée), la ligne d'origine, les mentions personnelles non relevées,
+« Cette proposition n'est pas gardée », la confirmation avant de quitter (un lien, puis
+« Annuler »), la fiche créée — « Fiche enregistrée. », ses communes, « À vérifier · N », « Ce qui
+compte pour eux » —, aucune ligne des notes gardée en base, « Tout est juste ». S'y ajoutent : la
+phrase lue, « Dicter », « Saisir à la main », un montant retapé (« À vérifier » tombe sur lui
+seul), une pastille retirée, le focus rendu, les trois tailles ; et un second parcours, la fiche
+créée depuis la phrase (ce qu'elle a compris est écrit, aucune ligne de la phrase n'est gardée, le
+champ retapé n'est plus à vérifier).
+
+Le relecteur, une passe (sur Opus : la limite de Fable était atteinte) : deux bloquants, levés —
+une commune non vérifiée s'affichait comme reconnue (et une commune corrigée perdait « lu : … ») ;
+une étoile « budget » restait sans plafond. Ses « à corriger », faits : « À vérifier » ne tombe
+que sur un champ retapé, et la trace (`ai_usage`) compte les champs gardés, corrigés compris ; rien
+ne se vide avant de partir ; après une photo, l'écran le dit et la phrase se lit à la place ; la
+spec reprouve tout ce qu'elle prouvait ; « À vérifier » et « Fiche enregistrée. » sont de retour à
+l'écran ; le focus revient à la pastille ; « 1er étage », la surface comme partout, « 1,5 M » se
+lit. Restent dans `missions/PLUS_TARD.md` : le même « vider avant de partir » dans « Compléter
+depuis mes notes » (M151) ; « deux ★ au plus » et « une ★ sur le budget exige un montant », tenus
+par l'écran, pas par le serveur, sur le chemin de la lecture des notes (comme pour la M151).
 
 ## Chaque soir
 

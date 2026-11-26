@@ -236,6 +236,28 @@ describe('saveBuyerFromNotes', () => {
     expect(close).toMatchObject({ outcome: 'created', buyer_id: 'b-1' });
   });
 
+  // La refonte, lot D — « Nouvel acquéreur par une phrase » : un champ corrigé par le conseiller ne
+  // porte plus « À vérifier », mais la trace le compte parmi les champs gardés (des noms, relus).
+  it('la trace dit les champs gardés envoyés à part, corrigés compris ; jamais un nom hors liste', async () => {
+    state.respond = (calls) =>
+      calls.some((call) => call.method === 'insert') ? { data: { id: 'b-1' } } : {};
+    const form = proposalForm();
+    for (const name of ['name', 'cities', 'budget_max', 'phone', 'inventé', 'sources'])
+      form.append('fields_kept', name);
+    expect(await saveBuyerFromNotes(form)).toEqual({ ok: true, buyerId: 'b-1' });
+    const insert = fake.calls.find((call) => call.method === 'insert')?.args[0] as Record<
+      string,
+      unknown
+    >;
+    expect(insert.fields_to_verify).toEqual(['name', 'cities', 'budget_max']);
+    const close = fake.calls.find((call) => call.method === 'update')?.args[0] as Record<
+      string,
+      unknown
+    >;
+    expect(close.fields_kept).toEqual(['name', 'cities', 'budget_max', 'phone']);
+    expect(everythingWritten()).not.toContain('inventé');
+  });
+
   it('« Compléter » : une fiche d’une autre agence ou archivée n’est pas touchée', async () => {
     const form = proposalForm();
     form.set('buyer_id', 'b-autre');

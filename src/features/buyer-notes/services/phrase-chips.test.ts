@@ -299,14 +299,97 @@ describe('la phrase de la démo, et ce que sa lecture simulée en comprend', () 
   });
 
   it('une phrase rend sa lecture ; les notes inventées et leur photo gardent la leur', () => {
-    expect(demoNotesOutput('text', DEMO_PHRASE_TEXT)).toBe(DEMO_PHRASE_OUTPUT);
-    expect(demoNotesOutput('text', 'Une autre phrase')).toBe(DEMO_PHRASE_OUTPUT);
-    expect(demoNotesOutput('text', DEMO_NOTES_TEXT)).toBe(DEMO_NOTES_OUTPUT);
+    expect(demoNotesOutput('text', DEMO_PHRASE_TEXT)).toEqual(DEMO_PHRASE_OUTPUT);
+    expect(demoNotesOutput('text', DEMO_NOTES_TEXT)).toEqual(DEMO_NOTES_OUTPUT);
     expect(demoNotesOutput('photo', null)).toBe(DEMO_NOTES_OUTPUT);
     expect(demoNotesOutput('file', null)).toBe(DEMO_NOTES_OUTPUT);
   });
 
+  // Relecture du lot D — « d'après » ne cite jamais un mot absent de ce qui a été tapé.
+  it('un autre texte : aucune ligne d’origine inventée, et donc aucun indispensable', () => {
+    const other = demoNotesOutput('text', 'Une autre phrase, sans rien de particulier.');
+    expect(other.sources).toEqual([]);
+    expect(other.soft_criteria).toEqual([]);
+    const guardedOther = guardProposal(other);
+    expect(guardedOther.mustHave).toEqual([]);
+    expect(guardedOther.sources).toEqual({});
+  });
+
   it('rien d’elle ne dit « démo », aucun téléphone, aucune adresse', () => {
     expect(DEMO_PHRASE_TEXT).not.toMatch(/d[ée]mo|\d{2} \d{2} \d{2}|rue|avenue|chemin/i);
+  });
+});
+
+// Relecture du lot D — ce que la lecture des notes disait des communes (M151) et des ★ (M132)
+// tient sur les pastilles ; « À vérifier » ne tombe que sur un champ retapé.
+describe('relecture du lot D', () => {
+  const draft = draftFromProposal(arnaud);
+
+  it('une commune non vérifiée se dit, en pointillé ; une commune corrigée dit ce qui a été lu', () => {
+    const proposal: NoteProposal = {
+      ...arnaud,
+      values: { ...arnaud.values, cities: ['Vence', 'Tourrettes-sur-Loup'] },
+      communes: [
+        { read: 'Vence', status: 'unverified', name: 'Vence' },
+        { read: 'Tourettes', status: 'corrected', name: 'Tourrettes-sur-Loup' },
+      ],
+    };
+    const cities = chip(phraseChips(draftFromProposal(proposal), proposal), 'cities');
+    expect(cities.tone).toBe('missing');
+    expect(cities.label).toBe('Vence, Tourrettes-sur-Loup : à vérifier');
+    expect(cities.hint).toContain('Tourrettes-sur-Loup : lu « Tourettes »');
+    expect(cities.hint).toContain('« Vence » : commune non vérifiée');
+    // Retapées par le conseiller : plus rien à dire.
+    const fixed = editDraft(draftFromProposal(proposal), {
+      type: 'text',
+      field: 'cities',
+      value: 'Vence, Tourrettes-sur-Loup',
+    });
+    const after = chip(phraseChips(fixed, proposal), 'cities');
+    expect(after.tone).toBe('plain');
+    expect(after.hint).toBeUndefined();
+  });
+
+  it('le plafond retiré ou vidé emporte la ★ du budget (M132) ; les communes vidées, la leur', () => {
+    const starred = { ...draft, stars: ['budget', 'cities'] as typeof draft.stars };
+    expect(editDraft(starred, { type: 'remove', id: 'budgetMax' }).stars).toEqual(['cities']);
+    expect(editDraft(starred, { type: 'number', field: 'budgetMax', value: null }).stars).toEqual([
+      'cities',
+    ]);
+    expect(
+      editDraft(starred, { type: 'number', field: 'budgetMax', value: 700_000 }).stars,
+    ).toEqual(['budget', 'cities']);
+    expect(editDraft(starred, { type: 'text', field: 'cities', value: ' ' }).stars).toEqual([
+      'budget',
+    ]);
+    // Jamais une ★ sur le budget sans plafond dans le formulaire.
+    const { fields } = draftForm(editDraft(starred, { type: 'remove', id: 'budgetMax' }));
+    expect(fields.budget_max).toBeUndefined();
+    expect(fields.must_have).toEqual(['cities']);
+  });
+
+  it('dire ou retirer une ★, retirer un souhait : ce que la lecture a proposé reste « À vérifier »', () => {
+    const withPool = { ...draft, values: { ...draft.values, pool: true } };
+    const starred = editDraft(withPool, { type: 'star', star: 'pool', on: true });
+    expect(draftForm(starred).toVerify).toContain('must_have');
+    const lessSoft = editDraft(draft, { type: 'remove', id: 'soft:calme' });
+    expect(draftForm(lessSoft).toVerify).toContain('soft_criteria');
+    // « Commune à préciser » ne se retire pas : rien ne change.
+    expect(editDraft(draft, { type: 'remove', id: 'cities:unknown' })).toBe(draft);
+  });
+
+  it('la trace compte les champs gardés, corrigés compris', () => {
+    const edited = editDraft(draft, { type: 'number', field: 'budgetMax', value: 720_000 });
+    const { toVerify, kept } = draftForm(edited);
+    expect(toVerify).not.toContain('budget_max');
+    expect(kept).toContain('budget_max');
+    expect(kept).toEqual(expect.arrayContaining(toVerify));
+  });
+
+  it('« 1er étage », une surface comme partout ailleurs (M74)', () => {
+    const values = { ...draft.values, floorMin: 1, surfaceMin: 120 };
+    const chips = phraseChips({ ...draft, values }, arnaud);
+    expect(chip(chips, 'floorMin').label).toBe('1er étage et plus');
+    expect(plain(chip(chips, 'surfaceMin').label)).toBe('120 m² et plus');
   });
 });
