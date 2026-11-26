@@ -1,16 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import {
-  backLink,
-  badgeNeutral,
-  btnPrimary,
-  card,
-  kickerLabel,
-  link,
-  pageSubtitle,
-  pageTitle,
-} from '@/components/ui/styles';
+import { StatTiles } from '@/components/socle/stat-tiles';
+import { backLink, link, socleBigStep, socleBtnFilledBig } from '@/components/ui/styles';
+import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import { MarketGlanceCard } from '@/features/before-meeting/components/market-glance-card';
 import {
   buildMarketGlance,
@@ -20,7 +13,14 @@ import { getComparables } from '@/features/comparables/queries/get-comparables';
 import { getSavedPricePositioning } from '@/features/price-positioning/services/get-saved-price-positioning';
 import { archiveProjectAction } from '@/features/projects/actions/archive-project';
 import { ArchiveProjectButton } from '@/features/projects/components/archive-project-button';
+import {
+  DossierAllFold,
+  DossierHeader,
+  NextStepCard,
+} from '@/features/projects/components/dossier-summary';
 import { OverviewSteps } from '@/features/projects/components/overview-steps';
+import { dossierBadge, dossierTiles } from '@/features/projects/services/dossier-summary';
+import { propertyLabel } from '@/features/projects/services/property-label';
 import { nextDossierAction } from '@/features/projects/services/dossier-steps';
 import {
   followUpNextStep,
@@ -53,16 +53,21 @@ import { LiveLaunchActions } from '@/features/live-seller/components/live-launch
 import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
-import { statusLabel } from '@/features/projects/status-label';
 import { getProfile } from '@/lib/auth/get-profile';
 import { formatRelativeDay } from '@/lib/format';
 
 type ProjectPageProps = {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ tout?: string }>;
 };
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
-  const { projectId } = await params;
+// La refonte, lot E (maquette REFONTE-8) — le dossier d'un vendeur, comme la fiche d'un acquéreur :
+// son état, UNE prochaine étape (le seul bouton plein, M143), trois chiffres, « Son dossier » (ses
+// cinq étapes), puis « Tout le dossier », replié : tout ce que la Vue d'ensemble montrait sous ses
+// étapes y est (le marché en un coup d'œil, les autres actions, les acquéreurs de l'agence, la
+// prospection, la réouverture du Live). `?tout=1` l'ouvre.
+export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
+  const [{ projectId }, { tout }] = await Promise.all([params, searchParams]);
   const project = await getProject(projectId);
 
   if (!project) {
@@ -161,16 +166,36 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const watchLocator =
     prospectingRows == null &&
     (hasCompetitorsToLocate ?? (await hasSelectedCompetitorsToLocate(projectId)));
+  const nextPhrase =
+    nextAction != null
+      ? (relance?.phrase ?? nextStepPhrase(nextAction.key, launch?.estimatedMinutes ?? null))
+      : null;
   return (
-    <div className="flex flex-col gap-6 md:gap-8">
+    <div className="flex flex-col gap-[18px] md:gap-5">
       <div className="flex flex-col gap-2">
-        <Link href="/builder" className={backLink}>
-          ← Retour aux dossiers
+        <Link href="/vendeurs" className={backLink}>
+          ← Vendeurs
         </Link>
-        <span className={kickerLabel}>Dossier vendeur</span>
-        <h1 className={pageTitle}>{project.seller_name}</h1>
+        <DossierHeader
+          as="h1"
+          name={project.seller_name}
+          propertyText={propertyLabel(
+            property
+              ? {
+                  propertyType: property.property_type,
+                  roomsCount: property.rooms_count,
+                  surfaceArea: property.surface_area,
+                  city: displayCommune(property.city, property.postal_code),
+                }
+              : null,
+          )}
+          badge={dossierBadge({
+            status: project.status,
+            outcome: conclusion?.outcome ?? null,
+            mandateType: conclusion?.mandateType ?? null,
+          })}
+        />
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <span className={badgeNeutral}>{statusLabel(project.status)}</span>
           {/* Mission 138 — une lecture en échec le dit, jamais « aucune réponse » (M98). */}
           {offerAnswers == null ? (
             <span role="alert" className="text-xs font-semibold text-red-700">
@@ -185,7 +210,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               suffix={answer.buyerName}
             />
           ))}
-          <span className={pageSubtitle}>
+          <span className="text-sm text-[#5B6380] stage:text-white/60">
             {project.seller_email || 'E-mail non renseigné'} ·{' '}
             {project.seller_phone || 'Téléphone non renseigné'} · Créé{' '}
             {formatRelativeDay(project.created_at)}
@@ -193,131 +218,124 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         </div>
       </div>
 
-      {/* Mission 143 (B4, maquette AUDIT-garcia.png) — cinq étapes qui disent vrai, et UNE
-          prochaine étape avec un seul bouton plein. */}
+      {/* Mission 143 (B4) — UNE prochaine étape, avec un seul bouton plein. */}
+      {nextAction ? (
+        <NextStepCard
+          testId="overview-next-step"
+          title={relance?.title ?? nextStepTitle(nextAction, project.seller_name)}
+          phrase={nextPhrase}
+          action={
+            // Le Live passe par ses contrôles (M104, M107) : le même bouton que partout.
+            (nextAction.key === 'launch' || nextAction.key === 'resume') && launch ? (
+              <LiveLaunchActions
+                projectId={projectId}
+                competitorCount={launch.competitorCount}
+                resume={launch.resume}
+                isExample={launch.isExample}
+                toVerifyCount={launch.toVerifyCount}
+                decisionOutdated={launch.decisionOutdated}
+                decisionMissing={launch.decisionMissing}
+                shortlistPending={launch.shortlistPending}
+                pendingImportCount={launch.pendingImportCount}
+                listingsCheckStale={launch.listingsCheckStale}
+                presentationMode={launch.presentationMode}
+              />
+            ) : (
+              <Link href={nextAction.href} className={`${socleBtnFilledBig} ${socleBigStep}`}>
+                {nextAction.label}
+              </Link>
+            )
+          }
+          links={
+            // Mission 110 — le mode expert masque les rappels d'entraînement.
+            nextAction.key === 'launch' && !project.is_example && profile?.expert_mode !== true ? (
+              <form action={openExampleDossier}>
+                <button type="submit" className={`${link} text-sm`} data-testid="overview-practice">
+                  S’entraîner sur le dossier d’exemple
+                </button>
+              </form>
+            ) : null
+          }
+        />
+      ) : null}
+
+      {/* Trois chiffres (REFONTE-8) : ses concurrents retenus, ce qui reste à vérifier sur eux, les
+          acquéreurs de l'agence prêts à visiter. */}
+      <StatTiles
+        testId="dossier-tiles"
+        tiles={dossierTiles({
+          retained: retained.length,
+          toVerify: launch?.toVerifyCount ?? 0,
+          readyBuyers:
+            buyers === undefined ? undefined : buyers == null ? null : buyers.ready.length,
+        })}
+      />
+
+      {/* Mission 143 (B4) — cinq étapes qui disent vrai. */}
       <OverviewSteps steps={steps} />
 
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="flex min-w-0 flex-col gap-4">
-          {glance ? <MarketGlanceCard glance={glance} /> : null}
-        </div>
-        <div className="flex flex-col gap-3">
-          {nextAction ? (
-            <section
-              className={`${card} flex flex-col gap-3 border-l-4 border-l-brand-deep p-5`}
-              data-testid="overview-next-step"
-            >
-              <span className={kickerLabel}>Prochaine étape</span>
-              <h2 className="font-title text-xl font-bold text-zinc-900 stage:text-white">
-                {relance?.title ?? nextStepTitle(nextAction, project.seller_name)}
-              </h2>
-              {(relance?.phrase ??
-              nextStepPhrase(nextAction.key, launch?.estimatedMinutes ?? null)) ? (
-                <p
-                  className="text-sm text-zinc-600 stage:text-white/70"
-                  data-testid="overview-next-step-phrase"
-                >
-                  {relance?.phrase ??
-                    nextStepPhrase(nextAction.key, launch?.estimatedMinutes ?? null)}
-                </p>
-              ) : null}
-              {/* Le Live passe par ses contrôles (M104, M107) : le même bouton que partout. */}
-              {(nextAction.key === 'launch' || nextAction.key === 'resume') && launch ? (
-                <LiveLaunchActions
-                  projectId={projectId}
-                  competitorCount={launch.competitorCount}
-                  resume={launch.resume}
-                  isExample={launch.isExample}
-                  toVerifyCount={launch.toVerifyCount}
-                  decisionOutdated={launch.decisionOutdated}
-                  decisionMissing={launch.decisionMissing}
-                  shortlistPending={launch.shortlistPending}
-                  pendingImportCount={launch.pendingImportCount}
-                  listingsCheckStale={launch.listingsCheckStale}
-                  presentationMode={launch.presentationMode}
-                />
-              ) : (
-                <Link href={nextAction.href} className={`${btnPrimary} self-start`}>
-                  {nextAction.label}
-                </Link>
-              )}
-              {/* Mission 110 — le mode expert masque les rappels d'entraînement. */}
-              {nextAction.key === 'launch' &&
-              !project.is_example &&
-              profile?.expert_mode !== true ? (
-                <form action={openExampleDossier}>
-                  <button
-                    type="submit"
-                    className={`${link} text-sm`}
-                    data-testid="overview-practice"
-                  >
-                    S’entraîner sur le dossier d’exemple
-                  </button>
-                </form>
-              ) : null}
-            </section>
-          ) : null}
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-600 stage:text-white/70">
-            <span>Autres actions :</span>
-            {/* Mission 131 — l'Étude de marché, pour remettre ou envoyer, avec ou sans Live. */}
-            <Link
-              href={`/builder/${projectId}/etude-de-marche`}
-              className={link}
-              data-testid="market-study-link"
-            >
-              Télécharger l’Étude de marché
+      <DossierAllFold open={tout === '1'}>
+        {glance ? <MarketGlanceCard glance={glance} /> : null}
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-600 stage:text-white/70">
+          <span>Autres actions :</span>
+          {/* Mission 131 — l'Étude de marché, pour remettre ou envoyer, avec ou sans Live. */}
+          <Link
+            href={`/builder/${projectId}/etude-de-marche`}
+            className={link}
+            data-testid="market-study-link"
+          >
+            Télécharger l’Étude de marché
+          </Link>
+          {project.status === 'meeting_completed' ? (
+            <Link href={`/builder/${projectId}/conclusion`} className={link}>
+              Voir ou corriger l’issue
             </Link>
-            {project.status === 'meeting_completed' ? (
-              <Link href={`/builder/${projectId}/conclusion`} className={link}>
-                Voir ou corriger l’issue
-              </Link>
-            ) : null}
-            {/* « Supprimer » loin du bouton principal, avec sa confirmation, sur un dossier en
-                cours (M93). */}
-            {project.status === 'draft' || project.status === 'ready_for_meeting' ? (
-              <ArchiveProjectButton
-                projectId={projectId}
-                projectName={project.seller_name}
-                action={archiveProjectAction}
-                label="Supprimer le dossier…"
-                triggerClassName="text-sm font-medium text-red-700 underline underline-offset-4 hover:text-red-800"
-              />
-            ) : null}
-          </p>
-        </div>
-      </div>
+          ) : null}
+          {/* « Supprimer » loin du bouton principal, avec sa confirmation, sur un dossier en
+              cours (M93). */}
+          {project.status === 'draft' || project.status === 'ready_for_meeting' ? (
+            <ArchiveProjectButton
+              projectId={projectId}
+              projectName={project.seller_name}
+              action={archiveProjectAction}
+              label="Supprimer le dossier…"
+              triggerClassName="text-sm font-medium text-red-700 underline underline-offset-4 hover:text-red-800"
+            />
+          ) : null}
+        </p>
 
-      {buyers !== undefined ? (
-        <PropertyBuyersBlock
-          result={buyers}
-          followUp={conclusion?.outcome === 'follow_up'}
-          proposeKey={
-            // Mission 145 (partie A) — un mandat signé sans offre acceptée, et lui seul ; une
-            // lecture des offres en échec ne propose rien (M98).
-            agencyOffers != null &&
-            proposableMandate(conclusion?.outcome, projectId, projectsUnderOffer(agencyOffers))
-              ? `project:${projectId}`
-              : null
-          }
-        />
-      ) : null}
+        {buyers !== undefined ? (
+          <PropertyBuyersBlock
+            result={buyers}
+            followUp={conclusion?.outcome === 'follow_up'}
+            proposeKey={
+              // Mission 145 (partie A) — un mandat signé sans offre acceptée, et lui seul ; une
+              // lecture des offres en échec ne propose rien (M98).
+              agencyOffers != null &&
+              proposableMandate(conclusion?.outcome, projectId, projectsUnderOffer(agencyOffers))
+                ? `project:${projectId}`
+                : null
+            }
+          />
+        ) : null}
 
-      {prospectingRows ? (
-        <ProspectingSection projectId={projectId} rows={prospectingRows} />
-      ) : (
-        <CompetitorLocatorWatcher projectId={projectId} enabled={watchLocator} />
-      )}
+        {prospectingRows ? (
+          <ProspectingSection projectId={projectId} rows={prospectingRows} />
+        ) : (
+          <CompetitorLocatorWatcher projectId={projectId} enabled={watchLocator} />
+        )}
 
-      {reopenings ? (
-        <ReopenLivePanel
-          projectId={projectId}
-          canReopen={
-            (project.status === 'draft' || project.status === 'ready_for_meeting') &&
-            (launch?.resume.started === true || project.live_started_at != null)
-          }
-          history={reopenings}
-        />
-      ) : null}
+        {reopenings ? (
+          <ReopenLivePanel
+            projectId={projectId}
+            canReopen={
+              (project.status === 'draft' || project.status === 'ready_for_meeting') &&
+              (launch?.resume.started === true || project.live_started_at != null)
+            }
+            history={reopenings}
+          />
+        ) : null}
+      </DossierAllFold>
     </div>
   );
 }

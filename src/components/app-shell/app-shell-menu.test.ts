@@ -59,7 +59,7 @@ describe('le menu de l’application', () => {
     expect(html).toContain('aria-label="Menu principal"');
     expect(links(html)).toEqual([
       '/aujourdhui',
-      '/builder',
+      '/vendeurs',
       '/acquereurs',
       '/visites',
       '/prospection',
@@ -82,7 +82,7 @@ describe('le menu de l’application', () => {
 
   it('quatre entrées sur téléphone ; Aide à partir de 768 px, en bas ; Prospection à partir de 1280 px', () => {
     const html = renderToStaticMarkup(createElement(SidebarNav));
-    for (const href of ['/aujourdhui', '/builder', '/acquereurs', '/visites']) {
+    for (const href of ['/aujourdhui', '/vendeurs', '/acquereurs', '/visites']) {
       expect(anchor(html, href), href).toMatch(/class="flex /);
       expect(anchor(html, href), href).not.toMatch(/class="hidden /);
     }
@@ -97,12 +97,19 @@ describe('le menu de l’application', () => {
     expect(html).toMatch(/<nav [^>]*class="[^"]*md:items-stretch/);
   });
 
-  it('« Vendeurs » surligne Préparation, Live et Suivi', () => {
-    for (const pathname of ['/builder', '/builder/abc/avant-rendez-vous', '/live', '/suivi']) {
+  // La refonte, lot E — « Vendeurs » s'ouvre sur « à faire aujourd'hui » (`/vendeurs`).
+  it('« Vendeurs » surligne « à faire aujourd’hui », Préparation, Live et Suivi', () => {
+    for (const pathname of [
+      '/vendeurs',
+      '/builder',
+      '/builder/abc/avant-rendez-vous',
+      '/live',
+      '/suivi',
+    ]) {
       nav.pathname = pathname;
       const html = renderToStaticMarkup(createElement(SidebarNav));
       expect(html.match(/aria-current="page"/g), pathname).toHaveLength(1);
-      expect(anchor(html, '/builder'), pathname).toContain('aria-current="page"');
+      expect(anchor(html, '/vendeurs'), pathname).toContain('aria-current="page"');
     }
   });
 
@@ -384,7 +391,7 @@ describe('le menu aux trois tailles', () => {
     expect(html).toMatch(/<div class="hidden md:block"><div class="relative"><button/);
     expect(links(html)).toEqual([
       '/aujourdhui',
-      '/builder',
+      '/vendeurs',
       '/acquereurs',
       '/visites',
       '/prospection',

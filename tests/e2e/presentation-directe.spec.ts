@@ -16,6 +16,7 @@ import {
   readDemoWatchCap,
   resetDemoByScreen,
   restoreDemoWatchCap,
+  reveal,
 } from './support';
 
 // Mission 145 (partie B) — le point de la semaine est dû le lundi et retiré le mercredi soir
@@ -145,6 +146,8 @@ test('la présentation directe : passée au 3e concurrent, jusqu’à la conclus
     // bien : 5 prêts (la maison a une piscine), M. Fontaine correspond sans être prêt.
     await page.goto(`/builder/${projectId}`);
     await expectOneFilled(page, 'Vue d’ensemble, présentation directe');
+    // La refonte, lot E — les acquéreurs de l'agence et l'Étude sont sous « Tout le dossier ».
+    await reveal(page.getByTestId('property-buyers-headline'));
     await expect(page.getByTestId('property-buyers-headline')).toHaveText(
       '5 prêts à visiter · 1 autre correspond',
     );
@@ -298,6 +301,8 @@ test('la boucle : un dossier à 4 acquéreurs prêts n’a pas de pastille', asy
   await login(page, demoCredentials());
   const { ready: garciaId } = await freshDemo(page);
   await page.goto(`/builder/${garciaId}`);
+  // La refonte, lot E — les acquéreurs de l'agence sont sous « Tout le dossier ».
+  await reveal(page.getByTestId('property-buyers-headline'));
   await expect(page.getByTestId('property-buyers-headline')).toHaveText(
     '4 prêts à visiter · 1 autre correspond',
   );
