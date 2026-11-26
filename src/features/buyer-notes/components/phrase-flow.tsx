@@ -624,7 +624,9 @@ export function PhraseFlow({
               alt="Photo des notes de M. et Mme Arnaud"
               className="h-16 w-auto flex-none rounded-md border border-[#E3E6F0]"
             />
-            <div className="flex min-w-0 flex-1 flex-col">
+            {/* Une largeur au moins : sur un écran étroit, le bouton passe dessous plutôt que
+                d'écraser le texte. */}
+            <div className="flex min-w-[9.5rem] flex-1 flex-col">
               <b className="text-sm text-brand-darker stage:text-white">
                 Les notes de M. et Mme Arnaud
               </b>
