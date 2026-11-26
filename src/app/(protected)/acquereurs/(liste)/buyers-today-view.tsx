@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { LateNote, PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
 import {
@@ -21,6 +22,9 @@ import {
   buyerTaskKey,
   type BuyerTodayItem,
 } from '@/features/buyers/services/buyers-today';
+import type { Buyer } from '@/features/buyers/types';
+import { IdealPropertiesPanel } from '@/features/ideal-properties/components/ideal-properties-panel';
+import { loadIdealPanel } from '@/features/ideal-properties/queries/load-ideal-panel';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { taskLine } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
@@ -42,6 +46,14 @@ const ACTION_ROW =
   'flex flex-col xl:flex-row xl:items-center xl:justify-between xl:has-[[data-task-open]]:flex-col xl:has-[[data-task-open]]:items-stretch';
 const ACTION_SLOT = 'flex flex-col xl:w-60 xl:flex-none xl:has-[[data-task-open]]:w-auto';
 
+// La refonte, lot C — les nouveaux biens trouvés par la veille se voient « un bien à la fois »
+// (maquette REFONTE-3) : sur téléphone, le bouton de la carte y mène ; sur tablette et ordinateur,
+// le détail de la personne les montre sur place (REFONTE-5 et 6).
+const deckHref = (task: SuiviTask): string | null =>
+  task.kind === 'buyer_watch' && task.buyerId
+    ? `/acquereurs/${task.buyerId}/biens-ideaux?un=1`
+    : null;
+
 // Le geste d'une tâche : celui d'« Aujourd'hui », à l'allure du socle.
 function TaskAction({
   task,
@@ -58,7 +70,7 @@ function TaskAction({
   return (
     <TodayTaskAction
       task={task}
-      href={line.href}
+      href={deckHref(task) ?? line.href}
       label={line.button}
       primary={primary}
       look="socle"
@@ -88,6 +100,9 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
     read.buyers.find((buyer) => buyer.id === item.buyerId) ?? null;
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
   const unread = today.failed.length > 0;
+  // La refonte, lot C — la personne choisie a de nouveaux biens à voir : son détail les montre un
+  // par un (tablette, ordinateur).
+  const deckBuyer = selected && deckHref(selected.task) ? buyerOf(selected) : null;
 
   return (
     <div
@@ -200,11 +215,28 @@ export async function BuyersTodayView({ personne }: { personne?: string }) {
       <section
         key={selected?.buyerId ?? 'personne'}
         aria-label={selected ? selected.name : 'Détail'}
-        className="hidden min-w-0 flex-col gap-[18px] md:sticky md:top-0 md:flex md:max-h-screen md:self-start md:overflow-y-auto md:px-7 md:py-6 xl:px-10 xl:py-8"
+        className={`hidden min-w-0 flex-col gap-[18px] md:sticky md:top-0 md:flex md:max-h-screen md:self-start md:overflow-y-auto md:px-7 md:py-6 xl:px-10 xl:py-8 ${deckBuyer ? 'md:h-screen' : ''}`}
         data-testid="buyers-today-detail"
         data-person={selected?.buyerId}
       >
-        {selected ? (
+        {selected && deckBuyer ? (
+          <>
+            <Suspense
+              fallback={
+                <BuyerHeader
+                  item={selected}
+                  words={proposedBuyerWords(deckBuyer)}
+                  note="Lecture de ses nouveaux biens…"
+                />
+              }
+            >
+              <BuyerDeck buyer={deckBuyer} profile={profile} />
+            </Suspense>
+            {selected.others.length > 0 ? (
+              <OtherTasks item={selected} today={today} day={day} />
+            ) : null}
+          </>
+        ) : selected ? (
           <BuyerTodayDetail
             item={selected}
             words={(() => {
@@ -250,28 +282,7 @@ function BuyerTodayDetail({
 }) {
   return (
     <>
-      {/* Sous 1024 px (une tablette en portrait), le détail est étroit : « Ouvrir sa fiche » passe
-          sous son nom et sa recherche, qui gardent toute la largeur. */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-        <div className="flex min-w-0 flex-col gap-1">
-          <h2
-            className="text-[22px] leading-tight font-extrabold tracking-[-0.3px] text-brand-darker xl:text-[26px] xl:tracking-[-0.4px] stage:text-white"
-            data-testid="buyers-today-name"
-          >
-            {item.name}
-          </h2>
-          {words ? (
-            <p className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60">{words}</p>
-          ) : null}
-        </div>
-        <Link
-          href={`/acquereurs/${item.buyerId}`}
-          className={`${socleBtnQuiet} flex-none self-start`}
-          data-testid="buyers-today-open"
-        >
-          Ouvrir sa fiche
-        </Link>
-      </div>
+      <BuyerHeader item={item} words={words} />
 
       <div
         className={`${socleCardBordered} ${ACTION_ROW} gap-4 p-6 xl:gap-8`}
@@ -344,5 +355,71 @@ function OtherTasks({
         </div>
       ))}
     </div>
+  );
+}
+
+// Qui est la personne choisie : son nom, sa recherche en une phrase, « Ouvrir sa fiche ».
+function BuyerHeader({
+  item,
+  words,
+  note = null,
+}: {
+  item: BuyerTodayItem;
+  words: string | null;
+  // Pendant une lecture : ce qui arrive.
+  note?: string | null;
+}) {
+  return (
+    <>
+      {/* Sous 1024 px (une tablette en portrait), le détail est étroit : « Ouvrir sa fiche » passe
+          sous son nom et sa recherche, qui gardent toute la largeur. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2
+            className="text-[22px] leading-tight font-extrabold tracking-[-0.3px] text-brand-darker xl:text-[26px] xl:tracking-[-0.4px] stage:text-white"
+            data-testid="buyers-today-name"
+          >
+            {item.name}
+          </h2>
+          {words ? (
+            <p className="text-sm text-[#5B6380] xl:text-[15px] stage:text-white/60">{words}</p>
+          ) : null}
+        </div>
+        <Link
+          href={`/acquereurs/${item.buyerId}`}
+          className={`${socleBtnQuiet} flex-none self-start`}
+          data-testid="buyers-today-open"
+        >
+          Ouvrir sa fiche
+        </Link>
+      </div>
+      {note ? (
+        <p className="text-[15px] text-[#5B6380] stage:text-white/60" role="status">
+          {note}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+// La refonte, lot C — « un bien à la fois », dans le détail : les biens idéaux de la personne
+// (la même lecture que sa page), montrés un par un sous son nom.
+async function BuyerDeck({
+  buyer,
+  profile,
+}: {
+  buyer: Buyer;
+  profile: Parameters<typeof loadIdealPanel>[1];
+}) {
+  const panel = await loadIdealPanel(buyer, profile);
+  return (
+    <IdealPropertiesPanel
+      {...panel}
+      embedded={{
+        name: buyer.name,
+        words: proposedBuyerWords(buyer),
+        ficheHref: `/acquereurs/${buyer.id}`,
+      }}
+    />
   );
 }

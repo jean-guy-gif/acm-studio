@@ -135,7 +135,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 | Lot | Contenu                                                                                           | Maquettes       | Durée prévue | État    |
 | --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
 | A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 0 h 30 (3 h 05) : attend le « oui » |
-| B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | sur l'essai depuis le 26/11 à 1 h 20, relu et corrigé à 2 h 55 (3 h 15) : attend le « oui » |
+| B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | sur l'essai depuis le 26/11 à 1 h 20, relu et corrigé à 2 h 50 (3 h 05) : attend le « oui » |
 | C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | à faire |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | à faire |
 | E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | à faire |
@@ -367,7 +367,7 @@ liste qui perdait son adresse, les preuves que les tâches portent leurs acquér
 cachée derrière la première) ; ses remarques prises ou notées dans `missions/PLUS_TARD.md`.
 
 Tests : barrières vertes (4 439 tests). Sur l'essai, le 26/11 : d'abord 24 parcours sur 24 (0 h 45
-à 1 h 18) ; puis, après la relecture (2 h 05 à 2 h 55), la spec du lot et les six autres
+à 1 h 18) ; puis, après la relecture (2 h 03 à 2 h 47), la spec du lot et les six autres
 concernées, 14 parcours sur 14 (`acquereurs-a-faire`, `suivi-de-l-acquereur`, `fiche-complete`,
 `hors-mandat`, `presentation-directe`, `demo`, `parcours`). La spec du lot a trouvé un défaut
 d'écran (le lien du message qui faisait défiler le téléphone de côté), corrigé, et une attente
