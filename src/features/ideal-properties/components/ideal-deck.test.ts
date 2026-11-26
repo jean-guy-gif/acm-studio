@@ -40,6 +40,7 @@ const render = (over: Partial<DeckCard> = {}, props: { full?: boolean } = {}) =>
       onOpen: noop,
       onPropose: noop,
       onDismiss: noop,
+      onSkip: noop,
     }),
   );
 const tag = (html: string, testId: string) =>
@@ -115,9 +116,20 @@ describe('un bien à la fois', () => {
     expect(html).not.toContain('data-testid="deck-reasons"');
   });
 
-  it('sélection complète : « Proposer » ne retient plus rien', () => {
-    expect(tag(render({}, { full: true }), 'deck-propose')).toMatch(/ disabled=""/);
+  // Une sélection déjà complète ne ferme pas le parcours : le bien se voit, s'écarte ou se passe.
+  it('sélection complète : « Proposer » ne retient plus rien, le bien se voit quand même', () => {
+    const fullCard = render({}, { full: true });
+    expect(tag(fullCard, 'deck-propose')).toMatch(/ disabled=""/);
     expect(tag(render(), 'deck-propose')).not.toMatch(/ disabled=""/);
+    expect(tag(fullCard, 'deck-dismiss')).not.toMatch(/ disabled=""/);
+    expect(fullCard).toContain(
+      'Sélection complète : pour proposer ce bien, retirez-en un dans toute la liste.',
+    );
+    expect(fullCard).toContain('data-testid="deck-skip"');
+    expect(fullCard).toContain('>Maison · 8 pièces · 200 m² · Mougins<');
+    // Avec de la place : ni mention, ni « Passer ».
+    expect(render()).not.toContain('data-testid="deck-full"');
+    expect(render()).not.toContain('data-testid="deck-skip"');
   });
 
   it('tous les critères ne sont pas satisfaits : le nombre, sans la coche verte', () => {

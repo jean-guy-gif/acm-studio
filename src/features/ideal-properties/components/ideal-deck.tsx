@@ -185,6 +185,7 @@ export function DeckCardView({
   onOpen,
   onPropose,
   onDismiss,
+  onSkip,
   more = null,
 }: {
   card: DeckCard;
@@ -197,6 +198,8 @@ export function DeckCardView({
   onOpen: () => void;
   onPropose: () => void;
   onDismiss: (reason: DismissReason) => void;
+  // Sélection complète : voir le bien suivant sans rien décider de celui-ci.
+  onSkip?: () => void;
   // Sous le bien, avant les deux gestes : le lien vers toute la liste.
   more?: ReactNode;
 }) {
@@ -354,6 +357,27 @@ export function DeckCardView({
         {error ? (
           <p role="alert" className={errorText}>
             {error}
+          </p>
+        ) : null}
+        {/* Sélection complète : « Proposer » n'a plus de place. Le bien se voit quand même — il
+            s'écarte, ou se passe — et l'écran dit comment en retenir un autre. */}
+        {full && !choosing ? (
+          <p
+            className="flex flex-wrap items-center gap-x-2 text-sm text-[#5B6380] stage:text-white/60"
+            data-testid="deck-full"
+          >
+            Sélection complète : pour proposer ce bien, retirez-en un dans toute la liste.
+            {onSkip ? (
+              <button
+                type="button"
+                disabled={pending}
+                className="font-bold text-brand-deep underline stage:text-brand"
+                data-testid="deck-skip"
+                onClick={onSkip}
+              >
+                Passer ce bien
+              </button>
+            ) : null}
           </p>
         ) : null}
         {choosing ? (
