@@ -56,6 +56,12 @@ export async function saveBuyerFromNotes(formData: FormData): Promise<SaveFromNo
   const sentSoft = softCriteriaOf(formData.get('soft_criteria'));
   const financing = financingOf(formData.get('financing'));
   const toVerify = sanitizeBuyerFieldsToVerify(formData.getAll('fields_to_verify'));
+  // La refonte, lot D — un champ que le conseiller a corrigé ne porte plus « À vérifier », mais il
+  // reste gardé : la trace dit les champs envoyés (`fields_kept`, des noms, relus par la même liste
+  // d'autorisation) ; sans eux (« Depuis mes notes »), ceux à vérifier, comme avant.
+  const fieldsKept = formData.has('fields_kept')
+    ? sanitizeBuyerFieldsToVerify(formData.getAll('fields_kept'))
+    : toVerify;
   // Les communes que le conseiller a tapées (non lues, ou lues mais non reconnues) s'ajoutent.
   const citiesAdded = formData
     .getAll('cities_add')
@@ -146,7 +152,7 @@ export async function saveBuyerFromNotes(formData: FormData): Promise<SaveFromNo
       userId: profile.id,
       outcome: buyerId ? 'completed' : 'created',
       buyerId: savedId,
-      fieldsKept: toVerify,
+      fieldsKept,
     });
   }
   revalidatePath('/acquereurs');

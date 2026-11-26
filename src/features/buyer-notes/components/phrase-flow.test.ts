@@ -106,10 +106,12 @@ describe('« Ce que j’ai compris » : les pastilles à toucher', () => {
       }),
     );
 
-  it('le titre, « Touchez pour corriger », une pastille par chose comprise', () => {
+  it('le titre, « À vérifier : touchez pour corriger », une pastille par chose comprise', () => {
     const html = render(null);
     expect(html).toContain('>Ce que j’ai compris<');
-    expect(html).toContain('>Touchez pour corriger<');
+    // M151 — tout ce que la lecture propose est à vérifier (relecture du lot D).
+    expect(html).toContain('>À vérifier : touchez pour corriger<');
+    expect(html.match(/data-verify="true"/g)).toHaveLength(chips.length);
     expect(html.match(/data-testid="phrase-chip"/g)).toHaveLength(chips.length);
     expect(html).toMatch(/data-chip="name"[^>]*data-tone="plain"/);
     expect(html).toMatch(/data-chip="soft:calme"[^>]*data-tone="soft"/);
@@ -125,6 +127,8 @@ describe('« Ce que j’ai compris » : les pastilles à toucher', () => {
     expect(tag(html, 'chip-input')).toContain('value="M. et Mme Arnaud"');
     expect(tag(html, 'chip-source')).not.toBe('');
     expect(html).toContain('d’après : « ARNAUD (M. et Mme) »');
+    // Proposée par la lecture : « À vérifier ».
+    expect(tag(html, 'chip-verify')).not.toBe('');
     // Le nom ne se retire pas : il se corrige.
     expect(html).not.toContain('data-testid="chip-remove"');
     expect(filled(html)).toHaveLength(0);

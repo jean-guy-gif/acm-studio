@@ -10,7 +10,7 @@ import {
   type BuyerPropertyType,
   type BuyerSoftCriterionKey,
 } from '@/features/buyers/types';
-import { formatEuro } from '@/lib/format';
+import { formatEuro, formatSquareMeters } from '@/lib/format';
 
 // La refonte, lot D (maquette REFONTE-2) — « Nouvel acquéreur par une phrase » : ce que la lecture
 // des notes a compris (M151, la même lecture, les mêmes gardes), en pastilles que le conseiller
@@ -84,6 +84,8 @@ export type PhraseChip = {
   editor: ChipEditor;
   // Ce qui est à dire avant de corriger (une commune non reconnue).
   hint?: string;
+  // Proposée par la lecture et pas encore retapée : « À vérifier » (M151, M97).
+  verify?: boolean;
 };
 
 const plural = (count: number, one: string, many: string): string =>
@@ -192,7 +194,12 @@ export function phraseChips(
     );
   }
   if (values.surfaceMin != null) {
-    numberChip('surfaceMin', `${values.surfaceMin} m² et plus`, 'Surface, au moins', 'm²');
+    numberChip(
+      'surfaceMin',
+      `${formatSquareMeters(values.surfaceMin)} et plus`,
+      'Surface, au moins',
+      'm²',
+    );
   }
   for (const soft of draft.soft) {
     chips.push({
@@ -207,19 +214,36 @@ export function phraseChips(
   const unknown = proposal.communes.filter(
     (check) => check.status === 'unknown' || check.status === 'ambiguous',
   );
+  const citiesTouched = draft.touched.includes('cities');
   const unknownHint =
-    unknown.length > 0 && !draft.touched.includes('cities')
+    unknown.length > 0 && !citiesTouched
       ? `${unknown.map((check) => `« ${check.read} »`).join(', ')} : commune non reconnue. Saisissez-la.`
       : undefined;
+  // M151 — une commune lue sous un autre nom se dit (« lu : … ») ; une commune que le service des
+  // communes n'a pas pu vérifier se dit, et sa pastille reste à regarder (M104, M98).
+  const corrected = citiesTouched
+    ? []
+    : proposal.communes.filter((check) => check.status === 'corrected');
+  const unverified = citiesTouched
+    ? []
+    : proposal.communes.filter((check) => check.status === 'unverified');
+  const citiesHint = [
+    ...corrected.map((check) => `${check.name} : lu « ${check.read} »`),
+    ...unverified.map((check) => `« ${check.read} » : commune non vérifiée`),
+    unknownHint,
+  ].filter((part): part is string => part != null);
   if (values.cities && values.cities.length > 0) {
     chips.push({
       id: 'cities',
-      tone: 'plain',
-      label: values.cities.join(', '),
+      tone: unverified.length > 0 ? 'missing' : 'plain',
+      label:
+        unverified.length > 0
+          ? `${values.cities.join(', ')} : à vérifier`
+          : values.cities.join(', '),
       title: BUYER_CRITERION_LABELS.cities,
       source: sourceOf('cities'),
       editor: { kind: 'text', field: 'cities', value: values.cities.join(', ') },
-      ...(unknownHint ? { hint: unknownHint } : {}),
+      ...(citiesHint.length > 0 ? { hint: citiesHint.join(' · ') } : {}),
     });
     if (unknownHint) {
       chips.push({
@@ -281,7 +305,9 @@ export function phraseChips(
   if (values.floorMin != null) {
     numberChip(
       'floorMin',
-      values.floorMin === 0 ? 'Rez-de-chaussée accepté' : `${values.floorMin}e étage et plus`,
+      values.floorMin === 0
+        ? 'Rez-de-chaussée accepté'
+        : `${values.floorMin}${values.floorMin === 1 ? 'er' : 'e'} étage et plus`,
       'Étage, au moins',
       'étage',
     );
@@ -352,7 +378,37 @@ export function phraseChips(
       editor: { kind: 'text', field, value },
     });
   }
-  return chips;
+  // Ce que la lecture a proposé et que le conseiller n'a pas retapé porte « À vérifier » ; une
+  // question (« Son nom ? ») n'en porte pas.
+  const touched = new Set(draft.touched);
+  return chips.map((item) => ({
+    ...item,
+    verify: item.label.endsWith('?') ? false : !touched.has(chipFormField(item)),
+  }));
+}
+
+// Le champ de la fiche qu'une pastille porte, pour savoir s'il a été retapé.
+function chipFormField(item: PhraseChip): string {
+  if (item.id.startsWith('soft:')) return 'soft_criteria';
+  if (item.id.startsWith('star:')) return 'must_have';
+  if (item.id === 'cities:unknown') return 'cities';
+  if (item.id === 'types') return NOTE_FORM_FIELDS.propertyTypes;
+  if (item.id === 'cash') return 'financing';
+  return item.id in NOTE_FORM_FIELDS ? NOTE_FORM_FIELDS[item.id as NoteField] : item.id;
+}
+
+// Un montant retapé : « 1,5 M », « 750 k », « 750 000 € », « 1.2M » (le conseiller tape comme il
+// parle) ; un nombre de pièces, tel quel. null : rien de lisible.
+export function typedNumber(text: string): number | null {
+  const compact = text.replace(/[\s\u00a0\u202f€]/g, '').toLowerCase();
+  const match = /^(\d+(?:[.,]\d+)?)(k|m)?$/.exec(compact);
+  if (!match) {
+    const digits = compact.replace(/[^\d]/g, '');
+    return digits ? Number(digits) : null;
+  }
+  const value = Number((match[1] as string).replace(',', '.'));
+  const factor = match[2] === 'm' ? 1_000_000 : match[2] === 'k' ? 1_000 : 1;
+  return Number.isFinite(value) ? Math.round(value * factor) : null;
 }
 
 export type PhraseEdit =
@@ -374,6 +430,15 @@ const touch = (draft: PhraseDraft, ...names: string[]): string[] => [
   ...new Set([...draft.touched, ...names]),
 ];
 
+// Un indispensable n'a de sens qu'avec son champ : sans plafond, plus de ★ sur le budget (M132,
+// « une ★ sur le budget exige un montant ») ; sans commune, plus de ★ sur les communes.
+const STAR_OF_FIELD: Partial<Record<NoteField, NoteStar>> = {
+  budgetMax: 'budget',
+  cities: 'cities',
+};
+const withoutStarOf = (stars: NoteStar[], field: NoteField): NoteStar[] =>
+  stars.filter((star) => star !== STAR_OF_FIELD[field] && star !== field);
+
 // Une correction du conseiller. Le brouillon rendu est neuf ; une correction sans objet le rend
 // tel quel.
 export function editDraft(draft: PhraseDraft, edit: PhraseEdit): PhraseDraft {
@@ -394,13 +459,25 @@ export function editDraft(draft: PhraseDraft, edit: PhraseEdit): PhraseDraft {
         else delete values.cities;
       } else if (text) values[edit.field] = text;
       else delete values[edit.field];
-      return { ...draft, values, touched: touch(draft, NOTE_FORM_FIELDS[edit.field]) };
+      return {
+        ...draft,
+        values,
+        stars:
+          values[edit.field] === undefined ? withoutStarOf(draft.stars, edit.field) : draft.stars,
+        touched: touch(draft, NOTE_FORM_FIELDS[edit.field]),
+      };
     }
     case 'number': {
       if (edit.value == null || !Number.isFinite(edit.value) || edit.value < 0) {
         delete values[edit.field];
       } else values[edit.field] = Math.round(edit.value);
-      return { ...draft, values, touched: touch(draft, NOTE_FORM_FIELDS[edit.field]) };
+      return {
+        ...draft,
+        values,
+        stars:
+          values[edit.field] === undefined ? withoutStarOf(draft.stars, edit.field) : draft.stars,
+        touched: touch(draft, NOTE_FORM_FIELDS[edit.field]),
+      };
     }
     case 'types': {
       const types = [...new Set(edit.value)];
@@ -414,44 +491,38 @@ export function editDraft(draft: PhraseDraft, edit: PhraseEdit): PhraseDraft {
       if (edit.on && draft.stars.length >= NOTE_STARS_MAX) return draft;
       // Un équipement indispensable est un équipement voulu (M132).
       if (edit.on && isWish(edit.star)) values[edit.star] = true;
+      // Les ★ sont UN champ de la fiche (`must_have`) : en dire une ne vérifie pas les autres ;
+      // « À vérifier » reste (M97).
       return {
         ...draft,
         values,
         stars: edit.on ? [...draft.stars, edit.star] : draft.stars.filter((s) => s !== edit.star),
-        touched: touch(draft, 'must_have', 'condominium_must_have'),
       };
     }
     case 'cash':
       return { ...draft, financing: 'validated', cash: false, touched: touch(draft, 'financing') };
     case 'remove': {
+      // Retirer n'est pas vérifier ce qui reste : ce que la lecture a proposé garde « À vérifier ».
       if (edit.id.startsWith('soft:')) {
         const key = edit.id.slice('soft:'.length);
-        return {
-          ...draft,
-          soft: draft.soft.filter((soft) => soft.key !== key),
-          touched: touch(draft, 'soft_criteria'),
-        };
+        return { ...draft, soft: draft.soft.filter((soft) => soft.key !== key) };
       }
       if (edit.id.startsWith('star:')) {
         const star = edit.id.slice('star:'.length);
-        return {
-          ...draft,
-          stars: draft.stars.filter((item) => item !== star),
-          touched: touch(draft, 'must_have', 'condominium_must_have'),
-        };
+        return { ...draft, stars: draft.stars.filter((item) => item !== star) };
       }
       if (edit.id === 'financing' || edit.id === 'cash') {
         return { ...draft, financing: null, cash: false };
       }
-      if (edit.id === 'cities:unknown') return { ...draft, touched: touch(draft, 'cities') };
+      // « Commune à préciser » ne se retire pas : elle se saisit.
       if (!(edit.id in NOTE_FORM_FIELDS)) return draft;
       const field = edit.id as NoteField;
       delete values[field];
       return {
         ...draft,
         values,
-        // Un équipement retiré n'est plus indispensable.
-        stars: draft.stars.filter((star) => star !== field),
+        // Un équipement retiré n'est plus indispensable ; un plafond retiré, la ★ du budget non plus.
+        stars: withoutStarOf(draft.stars, field),
       };
     }
   }
@@ -471,6 +542,9 @@ export function draftMissing(draft: PhraseDraft): string[] {
 export function draftForm(draft: PhraseDraft): {
   fields: Record<string, string | string[]>;
   toVerify: string[];
+  // Les noms des champs envoyés, pour la trace de la lecture (`ai_usage`, M151) : ce qui est
+  // gardé, corrigé ou non — jamais une valeur.
+  kept: string[];
 } {
   const { fields, toVerify } = proposalForm(
     {
@@ -492,5 +566,5 @@ export function draftForm(draft: PhraseDraft): {
     },
   );
   const touched = new Set(draft.touched);
-  return { fields, toVerify: toVerify.filter((name) => !touched.has(name)) };
+  return { fields, toVerify: toVerify.filter((name) => !touched.has(name)), kept: toVerify };
 }

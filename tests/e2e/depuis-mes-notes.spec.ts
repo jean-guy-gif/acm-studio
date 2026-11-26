@@ -1,4 +1,4 @@
-import { expect, test } from './test';
+import { expect, test, type Page } from './test';
 
 import {
   demoCredentials,
@@ -17,8 +17,9 @@ import {
 // La refonte, lot D (maquette REFONTE-2) — pour une fiche neuve, le même parcours a un nouvel
 // écran : « Que cherche-t-il ? » (une phrase, « Dicter », « Photo de mes notes »), puis « Ce que
 // j'ai compris » en pastilles à corriger, et « Trouver ses biens » à la place de « Créer la
-// fiche ». Ce que la spec prouve ne change pas ; s'y ajoutent la correction d'une pastille et les
-// trois tailles.
+// fiche ». Tout ce que la spec prouvait l'est encore, à son nouvel endroit (« À vérifier » se lit
+// sur la pastille touchée, « Fiche enregistrée. » sur les biens idéaux) ; s'y ajoutent une fiche
+// créée depuis la phrase, la correction d'une pastille, et les trois tailles.
 
 const SOURCES = [
   'ARNAUD (M. et Mme)',
@@ -99,7 +100,13 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
   await test.step('« Ce que j’ai compris » : la fiche proposée, en pastilles à vérifier', async () => {
     await expect(understood).toBeVisible({ timeout: 20_000 });
     await expect(understood).toContainText('Ce que j’ai compris');
-    await expect(understood).toContainText('Touchez pour corriger');
+    // Chaque champ proposé est « À vérifier » (M151) : l'écran le dit, et chaque pastille touchée.
+    await expect(understood.getByTestId('phrase-verify')).toHaveText(
+      'À vérifier : touchez pour corriger',
+    );
+    await expect(page.getByTestId('phrase-from-photo')).toContainText(
+      'D’après la photo de vos notes.',
+    );
     await expect(page.getByTestId('notes-not-kept')).toHaveText(
       /Cette proposition n’est pas gardée : si vous quittez ou rechargez la page, elle sera perdue\./,
     );
@@ -107,12 +114,15 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     // Touchée, la pastille dit la ligne des notes d'où elle vient.
     await chip('name').click();
     const correction = page.getByTestId('chip-correction');
+    await expect(correction.getByTestId('chip-verify')).toHaveText('À vérifier');
     await expect(correction.getByTestId('chip-input')).toHaveValue('M. et Mme Arnaud');
     await expect(correction.getByTestId('chip-source')).toHaveText(
       /^d’après : «\s*ARNAUD \(M\. et Mme\)\s*»$/,
     );
     await correction.getByRole('button', { name: 'Fermer' }).click();
     await expect(correction).toHaveCount(0);
+    // Le focus revient à la pastille.
+    await expect(chip('name')).toBeFocused();
     // L'indispensable en orange, ce qui compte pour eux en vert, le financement lu.
     await expect(chip('outdoor')).toHaveText('Indispensable : extérieur');
     await expect(chip('outdoor')).toHaveAttribute('data-tone', 'must');
@@ -122,7 +132,7 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(page.getByTestId('proposal-skipped')).toHaveText(
       '2 mentions personnelles n’ont pas été relevées.',
     );
-    // Les notes restent montrées dans la phrase ; aucune pastille ne reprend une mention personnelle.
+    // Aucune pastille ne reprend une mention personnelle des notes (« enceinte », « pressé »).
     await expect(understood).not.toContainText(/enceinte|pressé|difficile/i);
     await expect(page.getByTestId('phrase-find')).toHaveText('Trouver ses biens');
     await expectOneFilled(page, 'Ce que j’ai compris');
@@ -136,12 +146,18 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await correction.getByTestId('chip-input').fill('720000');
     await correction.getByTestId('chip-ok').click();
     await expect(chip('budgetMax')).toHaveText(/^Jusqu’à 720\s000\s€$/);
+    // Retapé par le conseiller : il n'est plus « À vérifier ».
+    await expect(chip('budgetMax')).toHaveAttribute('data-verify', 'false');
+    await expect(chip('budgetIdeal')).toHaveAttribute('data-verify', 'true');
     await chip('soft:cachet').click();
     await page.getByTestId('chip-correction').getByTestId('chip-remove').click();
     await expect(chip('soft:cachet')).toHaveCount(0);
-    // Un souhait devient indispensable, deux au plus : le second, puis plus de place.
+    // Un indispensable se dit « Souhaité » ou « Indispensable ».
     await chip('outdoor').click();
     await expect(page.getByTestId('chip-correction')).toContainText('Souhaité');
+    await expect(page.getByTestId('chip-correction').getByTestId('chip-star')).toHaveText(
+      'Indispensable',
+    );
     await page.getByTestId('chip-correction').getByRole('button', { name: 'Fermer' }).click();
     await expectOneFilled(page, 'Ce que j’ai compris, corrigé');
   });
@@ -186,12 +202,13 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
   let buyerId = '';
   await test.step('« Trouver ses biens » crée la fiche : « À vérifier » et « Ce qui compte pour eux »', async () => {
     await page.getByTestId('phrase-find').click();
-    // La fiche est créée ; la suite est de trouver ses biens.
-    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\/biens-ideaux$/, {
+    // La fiche est créée ; la suite est de trouver ses biens, et la page le dit.
+    await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\/biens-ideaux\?enregistre=1$/, {
       timeout: 20_000,
     });
     buyerId = /\/acquereurs\/([0-9a-f-]{36})/.exec(page.url())![1];
     await expect(page.getByTestId('ideal-title')).toBeVisible();
+    await expect(page.getByTestId('buyer-saved')).toHaveText('Fiche enregistrée.');
     await page.goto(`/acquereurs/${buyerId}`);
     await expect(page.getByTestId('buyer-name')).toHaveText('M. et Mme Arnaud');
     // Les trois communes des notes, vérifiées sur la liste officielle, sont toutes écrites.
@@ -238,4 +255,57 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
       .click();
     await expect(page).toHaveURL(/\/acquereurs(\?|$)/, { timeout: 20_000 });
   });
+});
+
+// La fiche, archivée par l'écran (marquée démo, la remise à zéro la retirerait aussi).
+async function archiveBuyer(page: Page, buyerId: string) {
+  await page.goto(`/acquereurs/${buyerId}`);
+  await openFold(page, 'buyer-all');
+  await page.getByRole('button', { name: 'Archiver', exact: true }).first().click();
+  await page
+    .getByTestId('buyer-archive-confirm')
+    .getByRole('button', { name: 'Archiver', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/acquereurs(\?|$)/, { timeout: 20_000 });
+}
+
+// La refonte, lot D — la phrase elle-même, lue puis corrigée, crée la fiche : ce qu'elle a compris
+// est écrit, « À vérifier » sauf le champ retapé, et aucune ligne de la phrase n'est gardée.
+test('nouvel acquéreur par une phrase : la fiche créée depuis la phrase', async ({ page }) => {
+  test.setTimeout(4 * 60_000);
+  await login(page, demoCredentials());
+  await page.goto('/acquereurs/nouveau');
+  const flow = page.getByTestId('phrase-flow');
+  const understood = page.getByTestId('phrase-understood');
+  const chip = (id: string) => understood.locator(`[data-testid="phrase-chip"][data-chip="${id}"]`);
+  await expect(flow.getByTestId('phrase-text')).toHaveValue(/^M\. et Mme Arnaud\. Une maison/);
+  await flow.getByTestId('phrase-read').click();
+  await expect(chip('name')).toHaveText('M. et Mme Arnaud', { timeout: 20_000 });
+  await expect(page.getByTestId('phrase-from-photo')).toHaveCount(0);
+  await chip('budgetMax').click();
+  await page.getByTestId('chip-correction').getByTestId('chip-input').fill('720 000');
+  await page.getByTestId('chip-correction').getByTestId('chip-ok').click();
+  await expect(chip('budgetMax')).toHaveText(/^Jusqu’à 720\s000\s€$/);
+  await flow.getByTestId('phrase-find').click();
+  await expect(page).toHaveURL(/\/acquereurs\/[0-9a-f-]{36}\/biens-ideaux\?enregistre=1$/, {
+    timeout: 20_000,
+  });
+  const buyerId = /\/acquereurs\/([0-9a-f-]{36})/.exec(page.url())![1];
+  await expect(page.getByTestId('buyer-saved')).toHaveText('Fiche enregistrée.');
+  // Ce qui est écrit : la phrase comprise, sans ses lignes ; le champ retapé n'est plus à vérifier.
+  const traces = readNotesTraces(buyerId);
+  expect(traces).toContain('M. et Mme Arnaud');
+  expect(traces).toContain('720000');
+  for (const quote of [
+    'Une maison de 4 pièces ou plus',
+    'avec un jardin indispensable',
+    'à Vence, Saint-Paul-de-Vence ou Tourrettes-sur-Loup',
+  ]) {
+    expect(traces, quote).not.toContain(quote);
+  }
+  const toVerify = /"fields_to_verify":\[([^\]]*)\]/.exec(traces)?.[1] ?? '';
+  expect(toVerify).toContain('"name"');
+  expect(toVerify).toContain('"must_have"');
+  expect(toVerify).not.toContain('"budget_max"');
+  await archiveBuyer(page, buyerId);
 });

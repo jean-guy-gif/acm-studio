@@ -371,4 +371,14 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
     quitter une sélection cochée et non retenue ;
   - une personne tenue sur ses biens par l'adresse, qui n'a plus rien à faire, n'a plus de ligne
     dans la liste : le détail reste sous son nom, rien n'est surligné à gauche.
-
+- 26/11 · Refonte, lot D (relecture) · Notés, sans les corriger :
+  - « Compléter depuis mes notes » (`NotesFlow`, M151) vide son écran juste avant de partir vers
+    la fiche : pendant le chargement, un toucher pourrait relancer une lecture. Le nouvel écran de
+    la fiche neuve ne le fait plus ;
+  - « deux ★ au plus » et « une ★ sur le budget exige un montant » (M132) ne sont tenus que par
+    l'écran sur le chemin de la lecture des notes : `saveBuyerFromNotes` passe par
+    `parseBuyerInput`, qui ne les relit pas (la saisie rapide, elle, les relit). À ajouter au
+    serveur, pour les deux écrans ;
+  - relire la phrase efface la proposition et ses corrections avant de savoir si la nouvelle
+    lecture aboutit (une lecture en échec laisse l'écran vide, avec son message) ;
+  - la branche « fiche neuve » de `NotesFlow` ne sert plus (seul « Compléter » l'appelle).
