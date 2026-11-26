@@ -866,8 +866,11 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       await expect(nav.getByRole('link', { name: new RegExp(`^${label}`) })).toBeVisible();
     }
     // « Vendeurs » tient Préparation, Live et Suivi : ils se rejoignent par ses trois onglets, en
-    // tête de chacune de leurs listes, et le menu garde « Vendeurs » surligné.
+    // tête de chacune de leurs listes, et le menu garde « Vendeurs » surligné. La refonte, lot E —
+    // « Vendeurs » s'ouvre sur « à faire aujourd'hui » ; « Tous mes vendeurs » mène aux listes.
     await nav.getByRole('link', { name: /^Vendeurs/ }).click();
+    await expect(page).toHaveURL(/\/vendeurs$/);
+    await page.getByTestId('sellers-all-link').click();
     await expect(page).toHaveURL(/\/builder$/);
     const tabs = page.getByTestId('seller-tabs');
     for (const [label, url] of [

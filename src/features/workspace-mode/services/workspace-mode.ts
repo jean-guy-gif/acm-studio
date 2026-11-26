@@ -28,12 +28,14 @@ export const NAV_ITEMS: NavItem[] = [
     from: 'phone',
     spaces: ['/aujourdhui'],
   },
+  // La refonte, lot E (REFONTE-7 et 8) — « Vendeurs » s'ouvre sur « à faire aujourd'hui »
+  // (`/vendeurs`) ; Préparation, Live et Suivi restent ses pages.
   {
-    href: '/builder',
+    href: '/vendeurs',
     label: 'Vendeurs',
     icon: 'sellers',
     from: 'phone',
-    spaces: ['/builder', '/live', '/suivi'],
+    spaces: ['/vendeurs', '/builder', '/live', '/suivi'],
   },
   {
     href: '/acquereurs',

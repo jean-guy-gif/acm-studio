@@ -19,6 +19,7 @@ import {
   readDemoLinkAnswers,
   removeDemoRunDossiers,
   resetDemoByScreen,
+  reveal,
   sideNav,
   unfoldBuyerSheet,
   uniqueDossierName,
@@ -1340,6 +1341,8 @@ async function expectTodayAlerts(page: Page): Promise<void> {
   expect(followUpId, 'La carte des Lambert-Duval n’a pas d’identifiant').toBeTruthy();
   await page.goto(`/builder/${followUpId}`);
   const block = page.getByTestId('property-buyers');
+  // La refonte, lot E — les acquéreurs de l'agence sont sous « Tout le dossier ».
+  await reveal(block);
   await expect(block.getByTestId('property-buyers-headline')).toContainText(
     '1 acquéreur prêt correspond à ce bien',
   );

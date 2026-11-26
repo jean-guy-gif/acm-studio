@@ -38,6 +38,14 @@ describe('les cinq étapes de la Vue d’ensemble (mission 143)', () => {
       'conclude:later',
     ]);
     const steps = overviewSteps('p1', READY, NOW);
+    // La refonte, lot E (maquette REFONTE-8) — les titres de « Son dossier ».
+    expect(steps.map((step) => step.title)).toEqual([
+      'Le bien',
+      'Les concurrents',
+      'Le prix',
+      'Le rendez-vous',
+      'Conclure',
+    ]);
     expect(steps.map((step) => step.fact)).toEqual([
       'fiche saisie · 4 photos',
       '5 retenus',
