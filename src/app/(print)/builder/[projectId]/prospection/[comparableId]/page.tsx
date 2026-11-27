@@ -64,21 +64,23 @@ export default async function ProspectingFilePage({
           ) : null}
           {context.blocker === 'phone_missing' ? (
             <Link href="/profil" className={`${btnSecondary} self-start`}>
-              Ouvrir « Mon profil »
+              Ouvrir «&nbsp;Mon profil&nbsp;»
             </Link>
           ) : null}
         </>
       ) : (
         <>
           <p className={hintText}>
-            ACM ne sait pas si ce bien est en exclusivité : choisissez à qui s’adresse le dossier.
+            ACM ne sait pas si ce bien est en exclusivité&nbsp;: choisissez à qui s’adresse le
+            dossier.
           </p>
           <ul className="flex flex-col gap-2">
             {context.versions.map(({ version: candidate, blocker }) => (
               <li key={candidate} className="flex flex-wrap items-center gap-3">
                 {blocker ? (
                   <span className="text-sm text-zinc-600">
-                    {PROSPECTING_FILE_VERSION_LABELS[candidate]} : {FILE_BLOCKER_MESSAGES[blocker]}
+                    {PROSPECTING_FILE_VERSION_LABELS[candidate]}&nbsp;:{' '}
+                    {FILE_BLOCKER_MESSAGES[blocker]}
                   </span>
                 ) : (
                   <Link

@@ -425,9 +425,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           ▸
         </span>
         {inDossier ? (
-          <h3 className={nestedTitle}>Prêt à visiter ?</h3>
+          <h3 className={nestedTitle}>Prêt à visiter&#x202f;?</h3>
         ) : (
-          <h2 className={foldTitle}>Prêt à visiter ?</h2>
+          <h2 className={foldTitle}>Prêt à visiter&#x202f;?</h2>
         )}
         <span className={foldLineWrap} data-testid="buyer-readiness-line">
           <span className="hidden sm:inline">· </span>
@@ -761,7 +761,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                 <span className="text-sm text-zinc-600 stage:text-white/70">
                   {[
                     saleSeller
-                      ? `Vendeur : ${saleSeller.sellerName}${
+                      ? `Vendeur\u00a0: ${saleSeller.sellerName}${
                           saleSeller.mandateType
                             ? ` (mandat ${MANDATE_TYPE_LABELS[saleSeller.mandateType].toLowerCase()})`
                             : ''
@@ -999,7 +999,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                         </span>
                         <span className="text-sm text-zinc-500 stage:text-white/60">
                           {item.okCount} critère{item.okCount > 1 ? 's' : ''} sur {item.total}
-                          {item.pitch ? ` · « ${item.pitch} »` : ''}
+                          {item.pitch ? ` · «\u00a0${item.pitch}\u00a0»` : ''}
                         </span>
                       </span>
                       <span className="flex shrink-0 flex-col items-end text-right">
@@ -1120,7 +1120,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               <h3 className={subTitle}>Ses bons de visite</h3>
               {signedVouchers == null ? (
                 <p role="alert" className="text-sm font-semibold text-red-700">
-                  Les bons de visite n’ont pas pu être lus : rechargez la page.
+                  Les bons de visite n’ont pas pu être lus&nbsp;: rechargez la page.
                 </p>
               ) : (
                 <ul className="flex flex-col gap-1.5">
@@ -1132,7 +1132,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                         data-testid="buyer-voucher-signed"
                       >
                         Signé le {buyerDateLabel(voucher.signedAt)}
-                        {voucher.labels.length > 0 ? ` · ${voucher.labels.join(' ; ')}` : ''}
+                        {voucher.labels.length > 0 ? ` · ${voucher.labels.join('\u202f; ')}` : ''}
                       </Link>
                     </li>
                   ))}
@@ -1147,7 +1147,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
               <h3 className={subTitle}>Ses offres d’achat</h3>
               {signedOffers == null ? (
                 <p role="alert" className="text-sm font-semibold text-red-700">
-                  Les offres n’ont pas pu être lues : rechargez la page.
+                  Les offres n’ont pas pu être lues&nbsp;: rechargez la page.
                 </p>
               ) : (
                 <ul className="flex flex-col gap-1.5">
@@ -1210,7 +1210,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             <div className="mt-3 flex flex-col gap-2">
               {history.failed ? (
                 <p role="alert" className="text-sm font-semibold text-red-700">
-                  Une partie de l’historique n’a pas pu être lue : rechargez la page.
+                  Une partie de l’historique n’a pas pu être lue&nbsp;: rechargez la page.
                 </p>
               ) : null}
               <ol className="flex flex-col">

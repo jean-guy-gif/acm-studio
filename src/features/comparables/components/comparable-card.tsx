@@ -115,7 +115,7 @@ export function competitorMenuItems(input: {
 }
 
 // Mission 146 (I5) — la confirmation de « Supprimer… », dans l'écran (plus `window.confirm`).
-export const DELETE_COMPETITOR_TITLE = 'Supprimer ce concurrent ?';
+export const DELETE_COMPETITOR_TITLE = 'Supprimer ce concurrent\u202f?';
 export function deleteCompetitorText(label: string): string {
   return `${label} disparaîtra du dossier, avec ses réponses du Live s’il en a. Pour le garder sans le montrer, écartez-le.`;
 }
@@ -125,7 +125,7 @@ const smallBtn = `${btnSecondary} px-3 py-1.5 text-xs`;
 // Mission 103 — retenir une annonce retirée reste le choix du conseiller, mais il le fait en le
 // sachant : devant le vendeur, rien ne distingue ce bien d'un bien en vente.
 export const WITHDRAWN_REINTEGRATE_WARNING =
-  'Cette annonce n’est plus en ligne : elle sera présentée au vendeur comme un bien en vente. Continuer ?';
+  'Cette annonce n’est plus en ligne\u00a0: elle sera présentée au vendeur comme un bien en vente. Continuer\u202f?';
 
 // On confirme dans l'écran, sans boîte du navigateur ; « Continuer » est le geste qui réintègre.
 export function WithdrawnReintegrateWarning({
@@ -352,7 +352,7 @@ export function ComparableCard({
 
         {gap ? (
           <div className="text-xs text-zinc-500 stage:text-white/40">
-            Écart de surface avec le bien vendeur :{' '}
+            Écart de surface avec le bien vendeur&nbsp;:{' '}
             {formatSquareMeters(gap.deltaSquareMeters, { signed: true })} (
             {formatPercent(gap.deltaPercent, { signed: true })})
           </div>

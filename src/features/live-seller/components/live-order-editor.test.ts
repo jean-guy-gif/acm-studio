@@ -32,7 +32,7 @@ describe('l’ordre des concurrents au Live', () => {
 
   it('une fois le Live commencé : ni glisser-déposer, ni flèches, et « Ordre figé »', () => {
     const html = render(true);
-    expect(LIVE_ORDER_FROZEN).toBe('Ordre figé : le Live a commencé');
+    expect(LIVE_ORDER_FROZEN).toBe('Ordre figé\u00a0: le Live a commencé');
     expect(html).toContain(LIVE_ORDER_FROZEN);
     expect(html).not.toContain('draggable="true"');
     expect(html.match(/<button[^>]*>/g)).toHaveLength(6);

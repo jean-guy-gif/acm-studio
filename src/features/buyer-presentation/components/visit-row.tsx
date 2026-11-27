@@ -108,7 +108,8 @@ export function VisitRow({
         {!done && line.availability.length > 0 ? (
           <span data-testid="visit-availability">
             {' '}
-            · ses créneaux : {line.availability.map((slot) => AVAILABILITY_LABELS[slot]).join(', ')}
+            · ses créneaux&nbsp;:{' '}
+            {line.availability.map((slot) => AVAILABILITY_LABELS[slot]).join(', ')}
           </span>
         ) : null}
       </p>
@@ -129,7 +130,7 @@ export function VisitRow({
           ) : null}
           {line.feedback ? (
             <p className="text-sm text-zinc-700 stage:text-white/80" data-testid="visit-feedback">
-              « {line.feedback} »
+              «&nbsp;{line.feedback}&nbsp;»
             </p>
           ) : null}
         </>

@@ -67,12 +67,12 @@ export const FRENCH_TEXTS: ClientTexts = {
     yourAnswer: 'Votre réponse',
     commentOptional: 'Commentaire (facultatif)',
     addComment: '+ Ajouter un commentaire',
-    questionMark: '\u00a0?',
+    questionMark: '\u202f?',
     unknownLocation: 'Localisation inconnue',
     linkGone: {
       title: 'Ce lien n’est plus valable',
       body: (what, feminine) =>
-        `${what} a été ${feminine ? 'retirée' : 'retiré'}, ou son lien a expiré : il est valable 30 jours. Pour le recevoir de nouveau, demandez-le à votre conseiller.`,
+        `${what} a été ${feminine ? 'retirée' : 'retiré'}, ou son lien a expiré\u00a0: il est valable 30 jours. Pour le recevoir de nouveau, demandez-le à votre conseiller.`,
       what: {
         synthesis: 'Le dossier de rendez-vous',
         marketUpdate: 'Le Point marché',
@@ -153,7 +153,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     kicker: 'Votre quartier',
     salesKicker: 'Vos voisins ont vendu',
     home: 'Votre bien',
-    source: (name, day) => `Source : ${name}${day ? `, données du ${day}` : ''}`,
+    source: (name, day) => `Source\u00a0: ${name}${day ? `, données du ${day}` : ''}`,
     frozen: (day) => `Informations publiques telles qu’au ${day}.`,
     sources: {
       urbanisme: 'Géoportail de l’urbanisme (IGN)',
@@ -166,7 +166,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     within: (meters) => `Autour du bien, à moins de ${meters}`,
     range: (from, to) => `${from} à ${to}`,
     nothing: 'rien de relevé',
-    diagram: 'Schéma des distances, pas une carte : les directions ne sont pas connues.',
+    diagram: 'Schéma des distances, pas une carte\u00a0: les directions ne sont pas connues.',
     scale: { commune: 'la commune', address: 'l’adresse du bien' },
     planning: {
       title: 'L’urbanisme',
@@ -175,7 +175,7 @@ export const FRENCH_TEXTS: ClientTexts = {
         parcel > 0
           ? `${parcel} ${parcel > 1 ? 'éléments d’urbanisme relevés' : 'élément d’urbanisme relevé'} sur votre parcelle.`
           : within40 > 0
-            ? `Rien de relevé sur votre parcelle ; ${within40} ${within40 > 1 ? 'éléments' : 'élément'} à moins de ${meters40}.`
+            ? `Rien de relevé sur votre parcelle\u202f; ${within40} ${within40 > 1 ? 'éléments' : 'élément'} à moins de ${meters40}.`
             : `Rien de relevé sur votre parcelle, ni à moins de ${meters40}.`,
       item: (category, count) => {
         const many = count > 1;
@@ -239,15 +239,17 @@ export const FRENCH_TEXTS: ClientTexts = {
           (earthquake === 4 && clay === 2) ||
           (earthquake === 5 && clay === 3);
         if (same && clay != null)
-          return `Séisme et argiles : un niveau ${['faible', 'moyen', 'fort'][clay - 1]}.`;
+          return `Séisme et argiles\u00a0: un niveau ${['faible', 'moyen', 'fort'][clay - 1]}.`;
         const parts = [
           earthquake != null
-            ? `Séisme : zone ${earthquake} sur 5, « ${['très faible', 'faible', 'modérée', 'moyenne', 'forte'][earthquake - 1]} »`
+            ? `Séisme\u00a0: zone ${earthquake} sur 5, «\u00a0${['très faible', 'faible', 'modérée', 'moyenne', 'forte'][earthquake - 1]}\u00a0»`
             : null,
-          clay != null ? `argiles : exposition ${['faible', 'moyenne', 'forte'][clay - 1]}` : null,
+          clay != null
+            ? `argiles\u00a0: exposition ${['faible', 'moyenne', 'forte'][clay - 1]}`
+            : null,
         ].filter(Boolean);
         return parts.length
-          ? `${parts.join(' ; ')}.`
+          ? `${parts.join('\u202f; ')}.`
           : 'Les risques de la commune et de votre adresse.';
       },
       earthquake: 'Séisme',
@@ -257,18 +259,18 @@ export const FRENCH_TEXTS: ClientTexts = {
       clayLevels: ['faible', 'moyen', 'fort'],
       radonLevels: ['faible', 'faible, transfert facilité', 'significatif'],
       earthquakeCaption: (level) =>
-        `zone ${level} sur 5 : « ${['très faible', 'faible', 'modérée', 'moyenne', 'forte'][level - 1]} »`,
+        `zone ${level} sur 5\u00a0: «\u00a0${['très faible', 'faible', 'modérée', 'moyenne', 'forte'][level - 1]}\u00a0»`,
       clayCaption: (level) =>
         `exposition ${['faible', 'moyenne', 'forte'][level - 1]}, sur 3 niveaux`,
       radonCaption: (level) =>
-        `catégorie ${level} sur 3 : potentiel « ${['faible', 'faible, transfert facilité', 'significatif'][level - 1]} »`,
+        `catégorie ${level} sur 3\u00a0: potentiel «\u00a0${['faible', 'faible, transfert facilité', 'significatif'][level - 1]}\u00a0»`,
       disasters: 'Catastrophes naturelles',
       disastersCaption: (count, latest) =>
         count === 0
           ? 'aucune reconnue'
           : `${count > 1 ? 'reconnues' : 'reconnue'}${latest ? `, ${count > 1 ? 'la dernière ' : ''}le ${latest}` : ''}`,
       flood: 'Commune classée',
-      floodCaption: (name) => `territoire à risque important d’inondation : ${name}`,
+      floodCaption: (name) => `territoire à risque important d’inondation\u00a0: ${name}`,
     },
     population: {
       title: 'La population',
@@ -277,7 +279,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       inhabitants: 'habitants',
       households: 'ménages',
       perHousehold: 'personnes par ménage',
-      pictogram: (count, what) => `(un pictogramme : ${count} ${what})`,
+      pictogram: (count, what) => `(un pictogramme\u00a0: ${count} ${what})`,
     },
     condominium: {
       title: 'La copropriété',
@@ -323,9 +325,9 @@ export const FRENCH_TEXTS: ClientTexts = {
       within: (meters) => `À moins de ${meters} de votre bien`,
       about: (meters) => `à environ ${meters}`,
       legend:
-        'Chaque point : une vente, à sa date, plus haut quand le prix est plus élevé. Prix de vente réels.',
+        'Chaque point\u00a0: une vente, à sa date, plus haut quand le prix est plus élevé. Prix de vente réels.',
       legendMany:
-        'Chaque point : une vente, à sa date, plus haut quand le prix est plus élevé. Prix écrits, quand la place le permet : le plus bas, le plus haut et le plus récent. Prix de vente réels.',
+        'Chaque point\u00a0: une vente, à sa date, plus haut quand le prix est plus élevé. Prix écrits, quand la place le permet\u00a0: le plus bas, le plus haut et le plus récent. Prix de vente réels.',
       columns: {
         month: 'Vendue en',
         street: 'Rue',
@@ -340,47 +342,48 @@ export const FRENCH_TEXTS: ClientTexts = {
   },
   live: {
     perceived: {
-      question: 'À quel prix positionneriez-vous aujourd’hui votre bien ?',
-      savedHint: 'Votre prix de départ est noté : il ne se modifie plus.',
-      hint: 'D’abord votre intuition, avant de regarder le marché : c’est elle que nous notons ici.',
+      question: 'À quel prix positionneriez-vous aujourd’hui votre bien\u202f?',
+      savedHint: 'Votre prix de départ est noté\u00a0: il ne se modifie plus.',
+      hint: 'D’abord votre intuition, avant de regarder le marché\u00a0: c’est elle que nous notons ici.',
       label: 'Votre valeur perçue',
-      confirmHint: 'Est-ce bien votre prix\u00a0? Une fois confirmé, il ne se modifie plus.',
+      confirmHint: 'Est-ce bien votre prix\u202f? Une fois confirmé, il ne se modifie plus.',
       seePrices: 'Voir les biens et leurs prix',
-      seePricesAsk: 'Nous regardons les biens et leurs prix maintenant\u00a0?',
+      seePricesAsk: 'Nous regardons les biens et leurs prix maintenant\u202f?',
       seePricesYes: 'Oui, voir les prix',
       seePricesBack: 'Revenir à la question',
     },
     competition: {
-      question: 'Est-il un sérieux concurrent pour votre bien ?',
+      question: 'Est-il un sérieux concurrent pour votre bien\u202f?',
       hint: 'Observez le bien comme le ferait un acheteur — son prix viendra ensuite.',
       serious: SERIOUS_COMPETITOR_LABELS,
       seriousShort: { yes: 'Oui, sérieux', no: 'Non', unsure: 'Incertain' },
     },
     priceReveal: {
-      question: 'Ce prix vous paraît-il cohérent ?',
+      question: 'Ce prix vous paraît-il cohérent\u202f?',
       guessFirst:
-        'Donnez d’abord le prix que vous imaginez, à l’écran précédent : le prix réel s’affichera ensuite.',
-      hint: 'Voici le prix réellement affiché. Qu’en pensez-vous, face au prix que vous imaginiez ?',
+        'Donnez d’abord le prix que vous imaginez, à l’écran précédent\u00a0: le prix réel s’affichera ensuite.',
+      hint: 'Voici le prix réellement affiché. Qu’en pensez-vous, face au prix que vous imaginiez\u202f?',
       listed: 'Prix affiché sur le marché',
       perSqm: 'Prix au m²',
       position: 'Position (prix/m²)',
       legend: 'Selon vous, ce prix est…',
     },
     duration: {
-      question: 'Pourquoi est-il toujours sur le marché ?',
-      revealedHint: 'La durée observée est révélée — qu’est-ce qui retient ce bien sur le marché ?',
-      hint: 'D’abord votre intuition : depuis combien de temps ce bien est-il en vente ?',
+      question: 'Pourquoi est-il toujours sur le marché\u202f?',
+      revealedHint:
+        'La durée observée est révélée — qu’est-ce qui retient ce bien sur le marché\u202f?',
+      hint: 'D’abord votre intuition\u00a0: depuis combien de temps ce bien est-il en vente\u202f?',
       listed: 'Prix affiché',
       perSqm: 'Prix au m²',
-      serious: 'Sérieux concurrent ?',
+      serious: 'Sérieux concurrent\u202f?',
       notGiven: 'Non renseigné',
       days: (count) => `${formatNumber(count)}\u00a0jour${count > 1 ? 's' : ''}`,
       observedDays: (count) => `${formatNumber(count)} jours`,
       label: 'La durée que vous imaginez',
       unit: 'jours',
-      why: 'Selon vous, pourquoi ?',
+      why: 'Selon vous, pourquoi\u202f?',
       answerFirst:
-        'Donnez d’abord votre réponse : la durée réellement observée s’affichera ensuite.',
+        'Donnez d’abord votre réponse\u00a0: la durée réellement observée s’affichera ensuite.',
       observed: 'Durée observée sur le marché',
       unavailable: 'Non disponible',
       observedSince: (days) => `Observé sur le marché depuis ${days} jours`,
@@ -391,15 +394,15 @@ export const FRENCH_TEXTS: ClientTexts = {
       noHistory: 'Historique de prix non disponible.',
     },
     quick: {
-      guessQuestion: 'Un sérieux concurrent ? Et à quel prix, selon vous ?',
+      guessQuestion: 'Un sérieux concurrent\u202f? Et à quel prix, selon vous\u202f?',
       guessHint:
         'Regardez ce bien comme le ferait un acheteur, puis donnez le prix que vous imaginez.',
-      seriousLegend: 'Est-il un sérieux concurrent pour votre bien ?',
+      seriousLegend: 'Est-il un sérieux concurrent pour votre bien\u202f?',
       nextScreen: 'Le prix réel s’affichera à l’écran suivant.',
       revealQuestion: 'Voici son prix.',
       priceOnly: 'Le prix réellement affiché, face au prix que vous imaginiez.',
       durationShown: 'Et voici depuis combien de temps il est en vente.',
-      durationAsk: 'Et selon vous, depuis combien de temps est-il en vente ?',
+      durationAsk: 'Et selon vous, depuis combien de temps est-il en vente\u202f?',
       durationNote: 'La durée réellement observée s’affichera à la place de ce champ.',
     },
     direct: {
@@ -407,9 +410,9 @@ export const FRENCH_TEXTS: ClientTexts = {
       hint: 'Ce qui le rapproche du vôtre, ce qui l’en distingue, et son prix.',
     },
     price: {
-      question: 'À quel prix pensez-vous que ce bien est proposé ?',
-      savedHint: 'Votre réponse est notée : elle ne se modifie plus.',
-      hint: 'Donnez le prix que vous imaginez : le prix réel s’affichera à l’écran suivant.',
+      question: 'À quel prix pensez-vous que ce bien est proposé\u202f?',
+      savedHint: 'Votre réponse est notée\u00a0: elle ne se modifie plus.',
+      hint: 'Donnez le prix que vous imaginez\u00a0: le prix réel s’affichera à l’écran suivant.',
       label: 'Le prix que vous imaginez',
       note: 'Le prix réel n’apparaît pas ici. Passez à l’écran suivant pour le découvrir.',
     },
@@ -417,12 +420,12 @@ export const FRENCH_TEXTS: ClientTexts = {
       intro: 'Introduction',
       subject_property: 'Votre bien',
       seller_perceived_price: 'Votre valeur perçue',
-      comparable_competition: 'Un sérieux concurrent ?',
-      comparable_price: 'À quel prix ?',
-      comparable_price_reveal: 'Ce prix vous paraît-il cohérent ?',
-      comparable_duration: 'Pourquoi toujours en vente ?',
-      comparable_quick_guess: 'Un sérieux concurrent, et à quel prix ?',
-      comparable_quick_reveal: 'Son prix, et depuis quand ?',
+      comparable_competition: 'Un sérieux concurrent\u202f?',
+      comparable_price: 'À quel prix\u202f?',
+      comparable_price_reveal: 'Ce prix vous paraît-il cohérent\u202f?',
+      comparable_duration: 'Pourquoi toujours en vente\u202f?',
+      comparable_quick_guess: 'Un sérieux concurrent, et à quel prix\u202f?',
+      comparable_quick_reveal: 'Son prix, et depuis quand\u202f?',
       comparable_direct: 'Son prix et son temps de vente',
       dpe_market: 'Le DPE face au marché',
       advisor_closest: 'Le concurrent le plus proche',
@@ -430,7 +433,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       seller_revised_price: 'Votre prix après le marché',
       price_analysis: 'Analyse des prix',
       conclusion: 'Conclusion',
-      closing_question: 'Prêt à lancer ?',
+      closing_question: 'Prêt à lancer\u202f?',
       neighbourhood_block: 'Votre quartier',
       neighbourhood_sales: 'Vos voisins ont vendu',
     },
@@ -465,9 +468,9 @@ export const FRENCH_TEXTS: ClientTexts = {
       durationMissing: 'Indiquez la durée que vous imaginez.',
       priceGuessMissing: 'Indiquez le prix que vous imaginez.',
       perceivedMissing: 'Indiquez le prix que vous avez en tête.',
-      revisedMissing: 'Indiquez votre prix, ou touchez « Passer ».',
+      revisedMissing: 'Indiquez votre prix, ou touchez «\u00a0Passer\u00a0».',
       unavailable: 'Cet écran n’est pas disponible pour le moment.',
-      quitTitle: 'Quitter le rendez-vous\u00a0?',
+      quitTitle: 'Quitter le rendez-vous\u202f?',
       quitUnsaved:
         'Certaines réponses ne sont pas encore enregistrées. Restez un instant, ou relancez l’enregistrement avant de quitter.',
       quitSaved: 'Vos réponses sont enregistrées.',
@@ -489,7 +492,7 @@ export const FRENCH_TEXTS: ClientTexts = {
     },
     property: {
       title: 'Votre bien',
-      askHint: 'Reconnaissez-vous votre bien dans cette présentation ?',
+      askHint: 'Reconnaissez-vous votre bien dans cette présentation\u202f?',
       showHint: 'Votre bien, tel que nous allons le comparer aux biens en vente.',
       fallbackAlt: 'Votre bien',
       stats: {
@@ -511,29 +514,29 @@ export const FRENCH_TEXTS: ClientTexts = {
         address: 'Adresse',
       },
       highlights: 'Points forts',
-      question: 'Est-ce que cette présentation correspond bien à votre bien ?',
+      question: 'Est-ce que cette présentation correspond bien à votre bien\u202f?',
       confirmed: PROPERTY_CONFIRMED_LABELS,
     },
     dpe: {
       title: 'Le DPE face au marché',
       hint: 'Les acheteurs comparent la classe énergie de chaque bien avant de visiter.',
       yours: 'Votre bien',
-      noDpe: 'Pas encore de DPE : il sera établi par le diagnostiqueur.',
+      noDpe: 'Pas encore de DPE\u00a0: il sera établi par le diagnostiqueur.',
       competitors: 'Vos concurrents',
       competitorCount: (count) => `${count} concurrent${count > 1 ? 's' : ''}`,
       unknown: (reference) =>
-        `Vos concurrents affichent surtout ${reference}. Après le passage du diagnostiqueur, votre bien devra être ${reference === 'A' ? 'en A' : `en ${reference} ou mieux`} pour rester dans la course ; au-delà, il faudra peut-être ajuster la stratégie de prix.`,
+        `Vos concurrents affichent surtout ${reference}. Après le passage du diagnostiqueur, votre bien devra être ${reference === 'A' ? 'en A' : `en ${reference} ou mieux`} pour rester dans la course\u202f; au-delà, il faudra peut-être ajuster la stratégie de prix.`,
       better: 'Votre DPE est un atout face à vos concurrents.',
       equal: 'Votre DPE est dans la moyenne de vos concurrents.',
       worse:
-        'Votre DPE est moins bon que celui de la plupart de vos concurrents : les acheteurs compareront. À intégrer dans la stratégie de prix.',
+        'Votre DPE est moins bon que celui de la plupart de vos concurrents\u00a0: les acheteurs compareront. À intégrer dans la stratégie de prix.',
     },
     revised: {
-      question: 'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente ?',
-      savedHint: 'Votre prix est noté : il ne se modifie plus.',
+      question: 'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente\u202f?',
+      savedHint: 'Votre prix est noté\u00a0: il ne se modifie plus.',
       hint: 'Votre prix, maintenant que vous avez vu le marché. Vous pouvez aussi passer.',
       label: 'Votre prix après avoir vu le marché',
-      confirmHint: 'Est-ce bien votre prix\u00a0? Une fois confirmé, il ne se modifie plus.',
+      confirmHint: 'Est-ce bien votre prix\u202f? Une fois confirmé, il ne se modifie plus.',
     },
     closest: {
       title: 'Le concurrent le plus proche de votre bien',
@@ -541,18 +544,18 @@ export const FRENCH_TEXTS: ClientTexts = {
       badge: 'Le plus proche de votre bien',
     },
     dangerous: {
-      question: 'Quel concurrent vous paraît le plus dangereux ?',
+      question: 'Quel concurrent vous paraît le plus dangereux\u202f?',
       hint: 'Les biens que vous avez jugés sérieux (ou incertains), avec leur prix révélé.',
       none: 'Aucun bien n’a été retenu comme concurrent sérieux ou incertain.',
       review: 'Revoir',
       others: 'Les autres biens regardés',
-      serious: (answer) => `Sérieux concurrent : ${answer}`,
+      serious: (answer) => `Sérieux concurrent\u00a0: ${answer}`,
       notGiven: 'Non renseigné',
-      why: 'Pourquoi celui-là ?',
+      why: 'Pourquoi celui-là\u202f?',
     },
     analysis: {
       title: 'Analyse des prix',
-      pendingHint: 'Il reste à passer :',
+      pendingHint: 'Il reste à passer\u00a0:',
       readyHint: 'Tout est passé, l’analyse est prête.',
       goTo: 'Y aller',
       showAnalysis: 'Afficher l’analyse',
@@ -583,7 +586,7 @@ export const FRENCH_TEXTS: ClientTexts = {
         dangerous: 'Le plus dangereux selon vous',
         competitors: 'Prix des concurrents',
         dot: 'Un bien concurrent',
-        marker: (label, price) => `${label} : ${price}`,
+        marker: (label, price) => `${label}\u00a0: ${price}`,
       },
     },
     conclusion: {
@@ -600,7 +603,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       dangerousCard: 'Le concurrent qui vous fait le plus réfléchir',
       sentence:
         'Le prix des concurrents montre à quels biens votre logement sera comparé. L’analyse du conseiller détermine le positionnement professionnel proposé.',
-      priceQuestion: 'Sur quel prix partons-nous\u00a0?',
+      priceQuestion: 'Sur quel prix partons-nous\u202f?',
       priceHint: 'Le prix que nous retenons ensemble. Rien n’est pré-rempli.',
       saving: 'Enregistrement…',
       save: 'Enregistrer le prix',
@@ -609,12 +612,12 @@ export const FRENCH_TEXTS: ClientTexts = {
     closing: {
       question: (hasAgreedPrice) =>
         hasAgreedPrice
-          ? 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente à ce prix\u00a0?'
-          : 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente\u00a0?',
+          ? 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente à ce prix\u202f?'
+          : 'Sur une échelle de 1 à 10, où en êtes-vous pour lancer la vente\u202f?',
       scale: '1\u00a0: pas encore prêt · 10\u00a0: on y va.',
       scoreGroup: 'Votre note, de 1 à 10',
-      launch: 'Alors, on lance la vente\u00a0?',
-      missing: 'Qu’est-ce qui vous manquerait pour être à 10\u00a0?',
+      launch: 'Alors, on lance la vente\u202f?',
+      missing: 'Qu’est-ce qui vous manquerait pour être à 10\u202f?',
       answerOptional: 'Votre réponse (facultative)',
       agreedPrice: 'Prix de commercialisation',
     },
@@ -700,7 +703,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       contactCard: 'Carte de contact du conseiller',
       disclaimer:
         'Les prix cités sont ceux des annonces, pas des prix de vente. Surfaces et caractéristiques telles qu’annoncées, à vérifier.',
-      yours: (value) => ` (vous : ${value})`,
+      yours: (value) => ` (vous\u00a0: ${value})`,
       days: (days) => `${days} jours`,
       since: 'En vente depuis',
       onMarketFor: (days) => `en vente depuis ${days} jours`,
@@ -732,8 +735,8 @@ export const FRENCH_TEXTS: ClientTexts = {
         unsure: SERIOUS_COMPETITOR_LABELS.unsure,
         no: SERIOUS_COMPETITOR_LABELS.no,
       },
-      seriousQuestion: 'Un sérieux concurrent ?',
-      notConsidered: 'Pas un concurrent pour vous : son prix n’a pas été regardé.',
+      seriousQuestion: 'Un sérieux concurrent\u202f?',
+      notConsidered: 'Pas un concurrent pour vous\u00a0: son prix n’a pas été regardé.',
       basisCalculated: (count, seen) =>
         `Calculé par votre conseiller sur ${
           count > 1 ? `les ${count} concurrents qu’il a retenus` : 'le concurrent qu’il a retenu'
@@ -759,7 +762,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       youImagined: 'Vous imaginiez',
       listedShort: 'Affiché',
       durationTitle: 'La durée en vente',
-      knownDrop: (amount) => `Baisse de prix connue : ${amount}`,
+      knownDrop: (amount) => `Baisse de prix connue\u00a0: ${amount}`,
       listed: 'Prix affiché',
       whyYou: 'Pourquoi, selon vous',
       agreedPrice: 'Prix de commercialisation convenu',
@@ -776,10 +779,10 @@ export const FRENCH_TEXTS: ClientTexts = {
       perceivedAtStart: 'Votre valeur perçue, en début de rendez-vous',
       competitorsTitle: 'Les biens que nous avons regardés ensemble',
       competitorsHint:
-        'Dans l’ordre du rendez-vous : ce que nous avons vu, et ce que vous avez répondu.',
+        'Dans l’ordre du rendez-vous\u00a0: ce que nous avons vu, et ce que vous avez répondu.',
       dpeHint: 'La classe énergie des biens regardés, et celle du vôtre.',
       dpeProperties: (count) => `${count} bien${count > 1 ? 's' : ''}`,
-      dpeReference: (letter) => `Repère du marché : ${letter}.`,
+      dpeReference: (letter) => `Repère du marché\u00a0: ${letter}.`,
       dangerousTitle: 'Le concurrent le plus dangereux, selon vous',
       analysisTitle: 'L’analyse des prix',
       analysisHint: 'Les prix affichés des biens dont nous avons regardé le prix ensemble.',
@@ -807,7 +810,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       newcomersCount: 'Nouveaux venus retenus',
       competitorsTitle: 'Les concurrents, depuis le rendez-vous',
       competitorsHint:
-        'Pour chaque concurrent retenu : son prix au rendez-vous, son prix aujourd’hui, et ce qu’il est devenu.',
+        'Pour chaque concurrent retenu\u00a0: son prix au rendez-vous, son prix aujourd’hui, et ce qu’il est devenu.',
       newcomersTitle: 'Nouveaux sur le marché depuis le rendez-vous',
       newcomersHint: (since, from) =>
         `Les biens vus sur le marché${since ? ` depuis le ${since}` : ' depuis le rendez-vous'}, ${
@@ -815,12 +818,12 @@ export const FRENCH_TEXTS: ClientTexts = {
         }, et retenus par votre conseiller pour la comparaison.`,
       earlierTitle: 'Retenus depuis le rendez-vous',
       earlierHint:
-        'Des biens déjà en vente avant notre rendez-vous, que nous n’avions pas regardés ensemble : ils ne comptent pas parmi les nouveaux venus.',
+        'Des biens déjà en vente avant notre rendez-vous, que nous n’avions pas regardés ensemble\u00a0: ils ne comptent pas parmi les nouveaux venus.',
       rankingTitle: 'Où en est votre prix',
       noRanking: 'Sans prix retenu ensemble, le classement ne se calcule pas.',
       readingTitle: 'Pour lire ce document',
       reading:
-        'Les prix cités sont ceux des annonces, pas des prix de vente. Une annonce disparue n’est pas une vente constatée : « vente probable » et la négociation « estimée » sont déduites de la durée de commercialisation au retrait, selon la règle de l’agence ; « probablement retiré sans vente » dit une annonce retirée après plus de 300 jours. Rien ici n’affirme qu’un bien est vendu, ni à quel prix. Surfaces et caractéristiques telles qu’annoncées, à vérifier. « Vu sur le marché depuis le … » est la date de publication dite par l’annonce, sinon le jour où votre conseiller l’a retenue : jamais une date inventée.',
+        'Les prix cités sont ceux des annonces, pas des prix de vente. Une annonce disparue n’est pas une vente constatée\u00a0: «\u00a0vente probable\u00a0» et la négociation «\u00a0estimée\u00a0» sont déduites de la durée de commercialisation au retrait, selon la règle de l’agence\u202f; «\u00a0probablement retiré sans vente\u00a0» dit une annonce retirée après plus de 300 jours. Rien ici n’affirme qu’un bien est vendu, ni à quel prix. Surfaces et caractéristiques telles qu’annoncées, à vérifier. «\u00a0Vu sur le marché depuis le …\u00a0» est la date de publication dite par l’annonce, sinon le jour où votre conseiller l’a retenue\u00a0: jamais une date inventée.',
       dangerousToday: 'Le plus dangereux aujourd’hui',
       dangerousYours: 'Le plus dangereux, selon vous',
       beforeMeeting: 'En vente avant le rendez-vous, non montré alors',
@@ -832,7 +835,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       seenSince: 'Vu sur le marché depuis le',
       notYetListed: 'pas encore en vente au rendez-vous',
       newcomerNote:
-        'Retenu par votre conseiller pour la comparaison : il compte dans «\u00a0Avec les nouveaux venus\u00a0», pas dans «\u00a0Au rendez-vous\u00a0» ni «\u00a0Aujourd’hui\u00a0».',
+        'Retenu par votre conseiller pour la comparaison\u00a0: il compte dans «\u00a0Avec les nouveaux venus\u00a0», pas dans «\u00a0Au rendez-vous\u00a0» ni «\u00a0Aujourd’hui\u00a0».',
       priceTitle: 'Le prix, depuis le rendez-vous',
       atMeeting: 'Au rendez-vous',
       unread: 'Non relu',
@@ -842,20 +845,20 @@ export const FRENCH_TEXTS: ClientTexts = {
       today: 'Aujourd’hui',
       removed: (day, after) =>
         `Retirée${day ? ` le ${day}` : ''}${after ? `, après ${after}` : ''}`,
-      lastPrice: (price) => `dernier prix affiché : ${price}`,
+      lastPrice: (price) => `dernier prix affiché\u00a0: ${price}`,
       droppedSeen: (day) => `baisse vue le ${day}`,
       raisedSeen: (day) => `hausse vue le ${day}`,
       readOn: (day) => `relu le ${day}`,
       conclusion: 'Conclusion',
       gap: 'Écart',
-      noConclusion: 'durée en vente inconnue : aucune conclusion',
+      noConclusion: 'durée en vente inconnue\u00a0: aucune conclusion',
       unchanged: 'prix inchangé',
       gapAmount: (amount, lower) => `soit ${amount} de ${lower ? 'moins' : 'plus'}`,
       noGap: 'sans prix du rendez-vous, pas d’écart',
-      likelySale: (min, max) => `Prix de vente estimé : entre ${min} et ${max}`,
+      likelySale: (min, max) => `Prix de vente estimé\u00a0: entre ${min} et ${max}`,
       likelySaleNote:
-        'Déduit de la durée de commercialisation au retrait, selon la règle de l’agence : rien ne dit que ce bien est vendu, ni à quel prix.',
-      withdrawnNote: 'Plus de 300 jours en vente au retrait : probablement retiré sans vente.',
+        'Déduit de la durée de commercialisation au retrait, selon la règle de l’agence\u00a0: rien ne dit que ce bien est vendu, ni à quel prix.',
+      withdrawnNote: 'Plus de 300 jours en vente au retrait\u00a0: probablement retiré sans vente.',
       stillListed: 'Toujours en vente',
       sinceDays: (days) => `depuis ${days}`,
       perSqmToday: (value) => `${value} aujourd’hui`,
@@ -867,11 +870,11 @@ export const FRENCH_TEXTS: ClientTexts = {
         words: { green: 'Pas de problème', orange: 'Attention', red: 'Danger' },
         legend: { green: 'pas de problème', orange: 'attention', red: 'danger' },
         legendTiers: [
-          { number: '1', sup: 'er', rest: ' tiers : ' },
-          { number: '2', sup: 'e', rest: ' tiers : ' },
-          { number: '', sup: '', rest: 'dernier tiers : ' },
+          { number: '1', sup: 'er', rest: ' tiers\u00a0: ' },
+          { number: '2', sup: 'e', rest: ' tiers\u00a0: ' },
+          { number: '', sup: '', rest: 'dernier tiers\u00a0: ' },
         ],
-        youAre: (word) => `${word} : vous êtes `,
+        youAre: (word) => `${word}\u00a0: vous êtes `,
         ordinal: (rank) => (rank === 1 ? 'er' : 'e'),
         of: (total) => `sur ${total}`,
         atMeeting: 'Au rendez-vous',
@@ -885,8 +888,8 @@ export const FRENCH_TEXTS: ClientTexts = {
         dangerous: 'Le plus dangereux',
         yourProperty: 'VOTRE BIEN',
         agreedTogether: 'prix retenu ensemble',
-        atMeetingPrice: (price) => `Au rendez-vous : ${price}`,
-        todayPrice: (price) => `Aujourd’hui : ${price}`,
+        atMeetingPrice: (price) => `Au rendez-vous\u00a0: ${price}`,
+        todayPrice: (price) => `Aujourd’hui\u00a0: ${price}`,
         tableTitle: 'Classement, du moins cher au plus cher',
         tableMeeting: 'Prix au rendez-vous',
         tableToday: 'Prix aujourd’hui',
@@ -908,13 +911,13 @@ export const FRENCH_TEXTS: ClientTexts = {
         above: (amount) => `${amount} au-dessus de votre prix`,
         atYourPrice: 'à votre prix',
         newDangerous: (newcomer, label, price, where) =>
-          ` ${newcomer ? 'Un nouveau venu' : 'Un autre bien'} devient le plus dangereux : ${label}, à ${price}, ${where}.`,
+          ` ${newcomer ? 'Un nouveau venu' : 'Un autre bien'} devient le plus dangereux\u00a0: ${label}, à ${price}, ${where}.`,
         shortRooms: (label) => label.replace(/(\d+) pièces?/, '$1 p.'),
       },
       share: {
         message: (url, since) =>
           [
-            `Bonjour, voici le Point marché${since ? ` depuis notre rendez-vous du ${since}` : ''} : ${url}`,
+            `Bonjour, voici le Point marché${since ? ` depuis notre rendez-vous du ${since}` : ''}\u00a0: ${url}`,
             'Il montre ce qui a bougé chez les biens que nous avons regardés ensemble, et où en est votre prix.',
           ].join('\n'),
         subject: (day) => (day ? `Point marché du ${day}` : 'Point marché'),
@@ -927,8 +930,9 @@ export const FRENCH_TEXTS: ClientTexts = {
       byAdvisor: (name) => `Par ${name}`,
       competitorsTitle: 'Les biens en vente face au vôtre',
       competitorsHint:
-        'Chaque concurrent retenu par votre conseiller : ses caractéristiques face à votre bien, son prix affiché et depuis quand il est en vente.',
-      noCompetitors: 'Aucun concurrent retenu pour l’instant : le classement ne se calcule pas.',
+        'Chaque concurrent retenu par votre conseiller\u00a0: ses caractéristiques face à votre bien, son prix affiché et depuis quand il est en vente.',
+      noCompetitors:
+        'Aucun concurrent retenu pour l’instant\u00a0: le classement ne se calcule pas.',
       priceToday: 'Son prix aujourd’hui',
       listing: 'Annonce',
       removedOn: (day) => `Retirée le ${day}`,
@@ -948,7 +952,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       share: {
         message: (url) =>
           [
-            `Bonjour, voici l’Étude de marché de votre bien : ${url}`,
+            `Bonjour, voici l’Étude de marché de votre bien\u00a0: ${url}`,
             'Elle montre les biens en vente autour du vôtre aujourd’hui, et où se situe votre prix.',
           ].join('\n'),
         subject: (day) => (day ? `Étude de marché du ${day}` : 'Étude de marché'),
@@ -964,7 +968,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       slots: AVAILABILITY_LABELS,
       mustHave: 'indispensable',
       legendMarks: GRID_LEGEND_MARKS,
-      wordsTitle: 'Vous m’avez dit :',
+      wordsTitle: 'Vous m’avez dit\u00a0:',
       pitchTitle: 'Pourquoi je vous le propose',
       nextTitle: 'Ce que je fais ensuite',
       connectionLost: 'Connexion perdue — réessayez.',
@@ -977,10 +981,10 @@ export const FRENCH_TEXTS: ClientTexts = {
       noAnswer: 'Aucune réponse pour l’instant.',
       visit: (count, letters) =>
         `Vous voulez visiter ${count > 1 ? 'les biens' : 'le bien'} ${letters}.`,
-      when: 'Quand pouvez-vous visiter ?',
+      when: 'Quand pouvez-vous visiter\u202f?',
       hesitate: (count, letters) =>
         `Vous hésitez pour ${count > 1 ? 'les biens' : 'le bien'} ${letters}.`,
-      notForYou: (letter) => `Le bien ${letter} : pas pour vous. Pourquoi ?`,
+      notForYou: (letter) => `Le bien ${letter}\u00a0: pas pour vous. Pourquoi\u202f?`,
       nextStep: (count, letters) =>
         `Je contacte ${count > 1 ? 'les propriétaires' : 'le propriétaire'} de ${letters} et je vous confirme les visites sous 24 h.`,
       letters: (letters) =>
@@ -988,11 +992,11 @@ export const FRENCH_TEXTS: ClientTexts = {
           ? (letters[0] ?? '')
           : `${letters.slice(0, -1).join(', ')} et ${letters.at(-1)}`,
       unanswered: (letters, verb) =>
-        `${letters.length} bien${letters.length > 1 ? 's' : ''} sans réponse : ${
+        `${letters.length} bien${letters.length > 1 ? 's' : ''} sans réponse\u00a0: ${
           letters.length <= 1
             ? (letters[0] ?? '')
             : `${letters.slice(0, -1).join(', ')} et ${letters.at(-1)}`
-        }. ${verb === 'finish' ? 'Terminer' : 'Envoyer'} quand même ?`,
+        }. ${verb === 'finish' ? 'Terminer' : 'Envoyer'} quand même\u202f?`,
       cancel: 'Annuler',
       finishAnyway: 'Terminer quand même',
       sendAnyway: 'Envoyer quand même',
@@ -1004,23 +1008,23 @@ export const FRENCH_TEXTS: ClientTexts = {
       gridShort: 'Grille',
       toAvailability: 'Passer à ses disponibilités',
       availabilityShort: 'Ses disponibilités',
-      quitTitle: 'Quitter la présentation ?',
+      quitTitle: 'Quitter la présentation\u202f?',
       quitSaved: 'Ses réponses sont enregistrées.',
       seeItem: (letter) => `Voir le bien ${letter}`,
-      why: 'Pourquoi ?',
-      yourSlots: (slots) => `Vos créneaux : ${slots}`,
-      reasonsSuffix: (reasons) => ` : ${reasons}`,
+      why: 'Pourquoi\u202f?',
+      yourSlots: (slots) => `Vos créneaux\u00a0: ${slots}`,
+      reasonsSuffix: (reasons) => `\u00a0: ${reasons}`,
       propertiesForYou: (count) => `${count} bien${count > 1 ? 's' : ''} pour vous`,
-      advisorLabel: 'Votre conseiller : ',
+      advisorLabel: 'Votre conseiller\u00a0: ',
       propertiesCount: (count) => `${count} bien${count > 1 ? 's' : ''}`,
-      answeredTitle: 'Ce que vous m’avez répondu :',
+      answeredTitle: 'Ce que vous m’avez répondu\u00a0:',
       seenTogether: (count, letters) =>
         `${count > 1 ? 'Les biens' : 'Le bien'} ${letters}, que nous avons regardés ensemble.`,
-      hereIsWhat: 'Voici ce que vous m’avez répondu :',
+      hereIsWhat: 'Voici ce que vous m’avez répondu\u00a0:',
       selectionOf: (day) => `Votre sélection du ${day}`,
       forYou: 'pour vous',
       seeSelection: 'Voir ma sélection →',
-      notYetAnswered: 'Vous n’avez pas encore répondu : ouvrez un bien depuis la grille.',
+      notYetAnswered: 'Vous n’avez pas encore répondu\u00a0: ouvrez un bien depuis la grille.',
       sending: 'Envoi…',
       send: DOSSIER_SEND,
       noAnswerYet: DOSSIER_NO_ANSWER,
@@ -1079,7 +1083,7 @@ export const FRENCH_TEXTS: ClientTexts = {
         noWorks: 'Sans travaux',
       },
       judge: {
-        check: (label) => `${label} : à vérifier à la visite`,
+        check: (label) => `${label}\u00a0: à vérifier à la visite`,
         aHouse: 'Une maison',
         anApartment: 'Un appartement',
         houseNotFlat: 'Une maison, pas un appartement',
@@ -1087,8 +1091,8 @@ export const FRENCH_TEXTS: ClientTexts = {
         inCity: (city) => `À ${city}`,
         outsideCities: (city) => `Hors de vos communes (${city})`,
         priceToConfirm: PRICE_TO_CONFIRM,
-        priceToCheck: 'Prix : à vérifier ensemble',
-        inBudgetMargin: (amount) => `Dans votre budget : ${amount} de marge`,
+        priceToCheck: 'Prix\u00a0: à vérifier ensemble',
+        inBudgetMargin: (amount) => `Dans votre budget\u00a0: ${amount} de marge`,
         inBudget: 'Dans votre budget',
         overNegotiable: (amount) => `${amount} au-dessus de votre budget, à négocier`,
         overBudget: (amount) => `Budget dépassé de ${amount}`,
@@ -1139,7 +1143,7 @@ export const FRENCH_TEXTS: ClientTexts = {
         at: (city) => `à ${city}`,
         margin: (amount) => `${amount} sous votre budget`,
         fallback: (ok, total, nouns, many) =>
-          `Il coche ${ok} ${ok > 1 ? 'critères' : 'critère'} sur ${total} : ${nouns} ${many ? 'sont' : 'est'} à voir ensemble.`,
+          `Il coche ${ok} ${ok > 1 ? 'critères' : 'critère'} sur ${total}\u00a0: ${nouns} ${many ? 'sont' : 'est'} à voir ensemble.`,
       },
       dated: {
         listedToday: 'Mis en vente aujourd’hui',
@@ -1157,10 +1161,11 @@ export const FRENCH_TEXTS: ClientTexts = {
         several: (letters) =>
           `Les biens ${letters.slice(0, -1).join(', ')} et ${letters.at(-1)} cochent tous vos critères.`,
         full: (letter) =>
-          `Le bien ${letter} coche tous vos critères : c’est par lui que je vous propose de commencer.`,
-        most: (letter, ok, total) => `Le bien ${letter} en coche le plus : ${ok} sur ${total}.`,
+          `Le bien ${letter} coche tous vos critères\u00a0: c’est par lui que je vous propose de commencer.`,
+        most: (letter, ok, total) =>
+          `Le bien ${letter} en coche le plus\u00a0: ${ok} sur ${total}.`,
       },
-      priceLine: (amount) => `Prix affiché : ${amount}`,
+      priceLine: (amount) => `Prix affiché\u00a0: ${amount}`,
       seenOn: (day) => `affiché le ${day}`,
       criteriaCount: (ok, total) => `${ok} ${ok > 1 ? 'critères' : 'critère'} sur ${total}`,
     },
@@ -1181,34 +1186,35 @@ export const FRENCH_TEXTS: ClientTexts = {
       },
       withList: (items) => `avec ${items.join(', ')}`,
       at: (city) => `à ${city}`,
-      selection: (url) => `Votre sélection : ${url}`,
+      selection: (url) => `Votre sélection\u00a0: ${url}`,
       proposal: {
         noun: { house: 'maison', apartment: 'appartement' },
         margin: (amount) => `${amount} sous votre budget`,
-        line: (what, margin) => `J’ai un bien pour vous : ${what}${margin ? `, ${margin}` : ''}.`,
+        line: (what, margin) =>
+          `J’ai un bien pour vous\u00a0: ${what}${margin ? `, ${margin}` : ''}.`,
         ask: 'Dites-moi si vous voulez le visiter.',
         subject: 'Un bien pour vous',
       },
       relaunch: {
-        ask: (day) => `Avez-vous pu regarder la sélection envoyée le ${day} ?`,
+        ask: (day) => `Avez-vous pu regarder la sélection envoyée le ${day}\u202f?`,
         subjectNoun: { house: 'La maison', apartment: 'L’appartement', other: 'Le bien' },
         fits: (ask, what, feminine) =>
-          `${ask} ${what} coche ce que vous cherchez : voulez-vous ${feminine ? 'la' : 'le'} visiter samedi ?`,
+          `${ask} ${what} coche ce que vous cherchez\u00a0: voulez-vous ${feminine ? 'la' : 'le'} visiter samedi\u202f?`,
         noFit: (ask) => `${ask} Dites-moi quels biens vous voulez visiter.`,
         subject: 'Votre sélection',
       },
       share: {
         message: (url) =>
           [
-            `Bonjour, voici les biens que j’ai sélectionnés pour vous : ${url}`,
+            `Bonjour, voici les biens que j’ai sélectionnés pour vous\u00a0: ${url}`,
             'Dites-moi lesquels vous voulez visiter.',
           ].join('\n'),
         subject: 'Votre sélection de biens',
       },
       offer: {
         accepted: (property, day, url) => [
-          `Bonne nouvelle : le vendeur a accepté votre offre d’achat pour ${property}, le ${day}.`,
-          url ? `Votre offre, signée par vous et par le vendeur : ${url}` : '',
+          `Bonne nouvelle\u00a0: le vendeur a accepté votre offre d’achat pour ${property}, le ${day}.`,
+          url ? `Votre offre, signée par vous et par le vendeur\u00a0: ${url}` : '',
           'Je vous appelle pour la suite chez le notaire.',
         ],
         refused: (property) => [
@@ -1220,8 +1226,8 @@ export const FRENCH_TEXTS: ClientTexts = {
       visitConfirm: {
         lines: (property, day, time, url, livingHereUrl) => [
           `Je vous confirme la visite de ${property} le ${day} à ${time}.`,
-          `Votre sélection : ${url}`,
-          ...(livingHereUrl ? [`Vivre ici, autour du bien : ${livingHereUrl}`] : []),
+          `Votre sélection\u00a0: ${url}`,
+          ...(livingHereUrl ? [`Vivre ici, autour du bien\u00a0: ${livingHereUrl}`] : []),
           'À bientôt,',
         ],
         subject: 'Votre visite',
@@ -1230,15 +1236,15 @@ export const FRENCH_TEXTS: ClientTexts = {
   },
   sellerVisit: {
     hello: (name) => `Bonjour ${name},`,
-    line: (day, opinion) => `La visite de votre bien du ${day} : ${opinion}.`,
+    line: (day, opinion) => `La visite de votre bien du ${day}\u00a0: ${opinion}.`,
     opinions: {
       love: 'l’acquéreur a eu un coup de cœur',
       interested: 'l’acquéreur a été intéressé',
       mixed: 'l’acquéreur est resté mitigé',
       not_for_me: 'le bien n’a pas convaincu l’acquéreur',
     },
-    liked: (list) => `Ce qui lui a plu : ${list}.`,
-    disliked: (list) => `Ce qui l’a gêné : ${list}.`,
+    liked: (list) => `Ce qui lui a plu\u00a0: ${list}.`,
+    disliked: (list) => `Ce qui l’a gêné\u00a0: ${list}.`,
     closing: 'Je reviens vers vous très vite.',
     subject: 'La visite de votre bien',
   },

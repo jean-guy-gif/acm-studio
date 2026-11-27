@@ -10,7 +10,7 @@ import { OPPOSED_MESSAGE } from '@/features/prospecting/services/opposition';
 // il est listé en tête. Pur.
 
 export const CHOOSE_MESSAGE =
-  'À qui s’adresser ? Précisez sur la carte si ce bien est en exclusivité (confrère) ou non (propriétaire).';
+  'À qui s’adresser\u202f? Précisez sur la carte si ce bien est en exclusivité (confrère) ou non (propriétaire).';
 export const NOT_PREPARABLE_MESSAGE = 'Ce dossier ne peut pas être préparé.';
 
 export type BatchContext =

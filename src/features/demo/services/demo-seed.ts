@@ -165,10 +165,10 @@ export const DEMO_DIRECT_LANGUAGE = 'en' as const;
 // Mission 133 — la maison des Bernard a une piscine, celle de Mme Garcia non (décision de Jean-Guy,
 // 06/11) : depuis la mission 155, c'est leur bien qui le dit (`BERNARD_SUBJECT`).
 export const DEMO_DANGEROUS_REASON = 'better_location';
-export const DEMO_READINESS_MISSING = 'Le délai : il voudrait vendre avant l’été.';
+export const DEMO_READINESS_MISSING = 'Le délai\u00a0: il voudrait vendre avant l’été.';
 export const DEMO_FOLLOW_UP_MOTIVE = 'thinking_price';
 export const DEMO_OBJECTIONS = ['price', 'timing'] as const;
-export const DEMO_FOLLOW_UP_NOTE = 'Message laissé ; il rappelle après avoir vu sa banque.';
+export const DEMO_FOLLOW_UP_NOTE = 'Message laissé\u202f; il rappelle après avoir vu sa banque.';
 export const DEMO_JUSTIFICATION =
   'Prix retenu à partir des biens comparables en vente dans le secteur, ajusté à l’exposition et à l’étage.';
 // Le rendez-vous de démonstration : commencé il y a 50 minutes, fini il y a 9 minutes.
@@ -462,7 +462,7 @@ export function demoKellerSelectionPlan(now: Date): DemoSelectionItemPlan[] {
     fromListing('mou-02', 'compromise', [
       `${formatEuro(orange.price - budgetMax)} au-dessus du budget, à négocier`,
     ]),
-    fromListing('mou-07', 'explore', [`${BUYER_CRITERION_LABELS.pool} : à vérifier`]),
+    fromListing('mou-07', 'explore', [`${BUYER_CRITERION_LABELS.pool}\u00a0: à vérifier`]),
   ];
 }
 
@@ -695,7 +695,7 @@ export const DEMO_VOUCHER_DAYS_AGO = 2;
 export const DEMO_VOUCHER_VISITOR = 'Paul Keller';
 export const DEMO_VOUCHER_VISITOR_ADDRESS = '5 chemin de la Source Haute, 69006 Lyon';
 export const DEMO_VOUCHER_MANDATE = 'M-2026-0142';
-export const DEMO_VOUCHER_FEEDBACK = 'Une offre se prépare ; le prix reste leur question.';
+export const DEMO_VOUCHER_FEEDBACK = 'Une offre se prépare\u202f; le prix reste leur question.';
 
 // Mission 139 — le compte rendu de la visite des Keller (la fiche de la mission) : « Intéressé ·
 // aimé : piscine, extérieur · gêné : prix », la suite « Offre envisagée ».

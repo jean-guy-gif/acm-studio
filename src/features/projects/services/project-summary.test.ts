@@ -55,7 +55,7 @@ describe('les trois chiffres', () => {
   // M98 — une lecture en échec n'est jamais un zéro.
   it('des acquéreurs illisibles le disent ; un dossier d’exemple n’en a pas', () => {
     const unread = projectTiles({ retained: 3, toVerify: 0, readyBuyers: null });
-    expect(unread[2]).toMatchObject({ value: '?', label: 'Acquéreurs prêts : non lus' });
+    expect(unread[2]).toMatchObject({ value: '?', label: 'Acquéreurs prêts\u00a0: non lus' });
     expect(projectTiles({ retained: 3, toVerify: 0, readyBuyers: undefined })).toHaveLength(2);
   });
 

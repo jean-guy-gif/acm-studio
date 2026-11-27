@@ -24,7 +24,7 @@ export function BuyerStatusActions({ buyer }: { buyer: Buyer }) {
     startTransition(async () => {
       const result = await moveBuyerStatus(buyer.id, step).catch(() => ({
         ok: false as const,
-        error: 'Le statut n’a pas pu être enregistré : vérifiez la connexion, puis réessayez.',
+        error: 'Le statut n’a pas pu être enregistré\u00a0: vérifiez la connexion, puis réessayez.',
       }));
       if (!result.ok) {
         setError(result.error);

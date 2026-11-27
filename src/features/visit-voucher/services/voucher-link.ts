@@ -12,7 +12,7 @@ export function voucherPath(token: string): string {
 export function voucherMessage(input: { url: string; advisorFirstName: string | null }): string {
   return [
     'Bonjour,',
-    `Voici votre bon de visite signé : ${input.url}`,
+    `Voici votre bon de visite signé\u00a0: ${input.url}`,
     input.advisorFirstName?.trim() ?? '',
   ]
     .filter(Boolean)

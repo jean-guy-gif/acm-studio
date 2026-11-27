@@ -764,7 +764,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       expect(recordedText).toMatch(/négociation estimée de 5 à 10 %/);
       await expect(row.getByTestId('market-updates')).toContainText(/Point du \d{2}\/\d{2}\/\d{4}/);
       await expect(row.getByTestId('dropped-since-meeting')).toContainText(
-        /Ont baissé depuis le rendez-vous : 1 sur 5/,
+        /Ont baissé depuis le rendez-vous\s: 1 sur 5/,
       );
       // Mission 127 B — (c) « Chercher les nouveaux venus » : simulé en démo, aucun appel ; deux
       // biens vus sur le marché après le rendez-vous ; un retenu. Mission 129 — de −5 % du prix

@@ -108,7 +108,7 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
       'D’après la photo de vos notes.',
     );
     await expect(page.getByTestId('notes-not-kept')).toHaveText(
-      /Cette proposition n’est pas gardée : si vous quittez ou rechargez la page, elle sera perdue\./,
+      /Cette proposition n’est pas gardée\s: si vous quittez ou rechargez la page, elle sera perdue\./,
     );
     await expect(chip('name')).toHaveText('M. et Mme Arnaud');
     // Touchée, la pastille dit la ligne des notes d'où elle vient.
@@ -117,7 +117,7 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(correction.getByTestId('chip-verify')).toHaveText('À vérifier');
     await expect(correction.getByTestId('chip-input')).toHaveValue('M. et Mme Arnaud');
     await expect(correction.getByTestId('chip-source')).toHaveText(
-      /^d’après : «\s*ARNAUD \(M\. et Mme\)\s*»$/,
+      /^d’après\s: «\s*ARNAUD \(M\. et Mme\)\s*»$/,
     );
     await correction.getByRole('button', { name: 'Fermer' }).click();
     await expect(correction).toHaveCount(0);

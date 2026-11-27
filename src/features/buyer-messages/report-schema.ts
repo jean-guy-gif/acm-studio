@@ -18,7 +18,7 @@ export const visitReportSchema = z
   })
   // « Pas pour moi » puis « Offre envisagée » se contredisent : l'écran ne le propose pas.
   .refine((report) => !(report.opinion === 'not_for_me' && report.nextStep === 'offer'), {
-    message: '« Pas pour moi » et « Offre envisagée » se contredisent.',
+    message: '«\u00a0Pas pour moi\u00a0» et «\u00a0Offre envisagée\u00a0» se contredisent.',
   })
   .transform((report) => ({
     ...report,

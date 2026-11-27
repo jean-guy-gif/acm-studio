@@ -65,7 +65,7 @@ export default async function OfferPage({ params, searchParams }: Props) {
             context.visits.map((visit) => (
               <div key={visit.visitId} className="flex flex-col gap-2" data-testid="offer-visit">
                 <p className="text-sm text-zinc-700">
-                  {visit.label} : {visit.note}
+                  {visit.label}&nbsp;: {visit.note}
                 </p>
                 {visit.switchable ? (
                   <OfferSwitchButton
@@ -83,12 +83,12 @@ export default async function OfferPage({ params, searchParams }: Props) {
           {switchable.length > 0 ? (
             <div className={`${card} flex flex-col gap-3 p-5`} data-testid="offer-switchable">
               <p className="text-sm font-semibold text-zinc-800">
-                Une offre sur une autre visite ?
+                Une offre sur une autre visite&#x202f;?
               </p>
               {switchable.map((visit) => (
                 <div key={visit.visitId} className="flex flex-col gap-2" data-testid="offer-visit">
                   <p className="text-sm text-zinc-700">
-                    {visit.label} : {visit.note}
+                    {visit.label}&nbsp;: {visit.note}
                   </p>
                   <OfferSwitchButton
                     buyerId={context.buyer.id}

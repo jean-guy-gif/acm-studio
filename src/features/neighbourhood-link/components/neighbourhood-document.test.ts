@@ -34,8 +34,8 @@ describe('le quartier dans les documents du vendeur', () => {
   it('les blocs demandés, leur source, la date du choix ; jamais Academia ni la valeur indicative', () => {
     const html = render(['urbanisme', 'risques', 'population', 'copropriete', 'permis']);
     expect(html).toContain('Rien de relevé sur votre parcelle');
-    expect(html).toContain('Séisme et argiles : un niveau moyen.');
-    expect(html).toContain('Source : Géorisques');
+    expect(html).toContain('Séisme et argiles\u00a0: un niveau moyen.');
+    expect(html).toContain('Source\u00a0: Géorisques');
     expect(html).toContain('Informations publiques telles qu’au 17 novembre 2026');
     expect(html).not.toContain('11 maisons');
     expect(html).not.toMatch(/[Aa]cademia|estimation|980|955|1[  ]?060|DPE|Démonstration|AC1|UFb4/);

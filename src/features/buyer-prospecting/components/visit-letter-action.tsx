@@ -131,8 +131,8 @@ export function VisitLetterAction({
       <div className="flex flex-wrap items-center gap-2">
         {action.kind === 'choose' ? (
           <span className="text-sm text-zinc-600 stage:text-white/70">
-            <b className="text-zinc-900 stage:text-white">À qui écrire ?</b> L’annonce ne dit pas si
-            le mandat est exclusif.
+            <b className="text-zinc-900 stage:text-white">À qui écrire&#x202f;?</b> L’annonce ne dit
+            pas si le mandat est exclusif.
           </span>
         ) : null}
         {versions.map((version) => (
@@ -152,8 +152,8 @@ export function VisitLetterAction({
       </div>
       {action.kind === 'choose' ? (
         <span className={hintText}>
-          Votre choix enregistre la réponse sur le bien : « Exclusivité : non » ou « oui », indiqué
-          par vous.
+          Votre choix enregistre la réponse sur le bien&nbsp;: «&nbsp;Exclusivité&nbsp;: non&nbsp;»
+          ou «&nbsp;oui&nbsp;», indiqué par vous.
         </span>
       ) : null}
       {error ? (

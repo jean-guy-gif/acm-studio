@@ -120,12 +120,12 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     // tâche du mandat porte ses acquéreurs, et dit le bien.
     const moreau = rows.filter({ hasText: 'Famille Moreau' });
     await expect(moreau.getByTestId('person-task')).toHaveText(
-      /^Visite demandée : la maison de \p{Lu}/u,
+      /^Visite demandée\s: la maison de \p{Lu}/u,
     );
     const proposed = rows.getByTestId('person-task').filter({ hasText: /^Un bien à proposer/ });
     expect(await proposed.count()).toBeGreaterThanOrEqual(2);
     for (const text of await proposed.allInnerTexts()) {
-      expect(text).toMatch(/^Un bien à proposer : la maison de .+ \(\d+\sm², [\d\s]+€\)$/);
+      expect(text).toMatch(/^Un bien à proposer\s: la maison de .+ \(\d+\sm², [\d\s]+€\)$/);
     }
     // Rien de dû n'est caché derrière la première tâche : la ligne dit qu'il y en a d'autres.
     await expect(moreau.getByTestId('person-also')).toHaveText(/^\+ \d+ autres? choses? à faire$/);

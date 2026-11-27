@@ -66,9 +66,9 @@ export function OverviewSteps({ steps }: { steps: OverviewStep[] }) {
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-base font-bold text-brand-darker stage:text-white">
                   {step.title}
-                  {step.status === 'done' ? <span className="sr-only"> : fait</span> : null}
+                  {step.status === 'done' ? <span className="sr-only">&nbsp;: fait</span> : null}
                   {step.status === 'current' ? (
-                    <span className="sr-only"> : maintenant</span>
+                    <span className="sr-only">&nbsp;: maintenant</span>
                   ) : null}
                 </span>
                 <span className="text-sm text-[#5B6380] stage:text-white/60">{step.fact}</span>

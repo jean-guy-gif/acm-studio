@@ -207,5 +207,5 @@ export function cardAlertLabel(alert: CardAlert): string {
       : '1 acquéreur prêt correspond';
   return alert.mention === 'owner'
     ? `${count} · courrier ou passage`
-    : `${count} : précisez le mandat`;
+    : `${count}\u00a0: précisez le mandat`;
 }

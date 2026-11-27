@@ -43,10 +43,10 @@ export async function resolveIdealPlans(
     if (!commune.ok) {
       const reasons: Record<typeof commune.reason, string> = {
         unavailable:
-          'Le service des communes ne répond pas : réessayez dans un instant. Aucune recherche lancée.',
-        arrondissements: `${city} se cherche par arrondissement : écrivez-le sur la fiche (« Paris 15e »). Aucune recherche lancée.`,
-        ambiguous: `Plusieurs communes répondent à « ${city} » : précisez-la sur la fiche. Aucune recherche lancée.`,
-        not_found: `Commune introuvable (« ${city} ») : vérifiez la fiche. Aucune recherche lancée.`,
+          'Le service des communes ne répond pas\u00a0: réessayez dans un instant. Aucune recherche lancée.',
+        arrondissements: `${city} se cherche par arrondissement\u00a0: écrivez-le sur la fiche («\u00a0Paris 15e\u00a0»). Aucune recherche lancée.`,
+        ambiguous: `Plusieurs communes répondent à «\u00a0${city}\u00a0»\u00a0: précisez-la sur la fiche. Aucune recherche lancée.`,
+        not_found: `Commune introuvable («\u00a0${city}\u00a0»)\u00a0: vérifiez la fiche. Aucune recherche lancée.`,
       };
       return { ok: false, error: reasons[commune.reason] };
     }

@@ -179,7 +179,7 @@ export function PropertySheetView({
         ref={panel}
         role="dialog"
         aria-modal="true"
-        aria-label={sheet ? `Fiche complète : ${sheet.label}` : 'Fiche complète'}
+        aria-label={sheet ? `Fiche complète\u00a0: ${sheet.label}` : 'Fiche complète'}
         tabIndex={-1}
         data-testid="property-sheet"
         className="relative flex h-dvh w-full flex-col bg-white shadow-2xl outline-none lg:w-[600px]"

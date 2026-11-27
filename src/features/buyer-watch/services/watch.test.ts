@@ -71,13 +71,13 @@ describe('qui est veillé, et quand', () => {
 
   it('la ligne de la fiche', () => {
     expect(watchLine({ ready: false, lastRunAt: daysAgo(2), now: NOW })).toBe(
-      'Veille arrêtée : pas prêt à visiter',
+      'Veille arrêtée\u00a0: pas prêt à visiter',
     );
     expect(watchLine({ ready: true, lastRunAt: daysAgo(2), now: NOW })).toBe(
-      'Veille : dernière recherche le 04/11, prochaine le 11/11',
+      'Veille\u00a0: dernière recherche le 04/11, prochaine le 11/11',
     );
     expect(watchLine({ ready: true, lastRunAt: null, now: NOW })).toBe(
-      'Veille : première recherche la nuit prochaine',
+      'Veille\u00a0: première recherche la nuit prochaine',
     );
   });
 });
@@ -347,7 +347,7 @@ describe('un bien qui contredit un indispensable ne compte pas', () => {
 describe('la veille coupée par l’agence', () => {
   it('la fiche le dit, prête ou non', () => {
     expect(watchLine({ ready: true, lastRunAt: null, now: NOW, off: true })).toBe(
-      'Veille arrêtée : coupée par l’agence',
+      'Veille arrêtée\u00a0: coupée par l’agence',
     );
   });
 });

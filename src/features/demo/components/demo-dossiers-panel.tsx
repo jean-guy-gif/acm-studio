@@ -29,14 +29,14 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] | null
     <>
       <h2 className={sectionTitle}>Ma démo</h2>
       <p className={hintText}>
-        {capitalized(numberInWords(DEMO_SEEDS.length))} dossiers aux étapes de l’outil : à préparer,
-        prêt pour le Live, prêt en présentation directe,{' '}
+        {capitalized(numberInWords(DEMO_SEEDS.length))} dossiers aux étapes de l’outil&nbsp;: à
+        préparer, prêt pour le Live, prêt en présentation directe,{' '}
         {numberInWords(DEMO_SEEDS.filter((key) => DEMO_SEED_STAGE[key] === 'signed').length)}{' '}
-        mandats signés, à relancer ; et {numberInWords(DEMO_BUYERS.length)}{' '}
+        mandats signés, à relancer&#x202f;; et {numberInWords(DEMO_BUYERS.length)}{' '}
         <Link href={ALL_BUYERS_HREF} className={link}>
           acquéreurs
         </Link>{' '}
-        à rapprocher. Ils sont à vous ; chaque closer a les siens.
+        à rapprocher. Ils sont à vous&#x202f;; chaque closer a les siens.
       </p>
     </>
   );
@@ -46,7 +46,7 @@ export function DemoDossiersPanel({ dossiers }: { dossiers: DemoDossier[] | null
         <>
           {header}
           <p role="alert" className={alertError} data-testid="demo-dossiers-unread">
-            Vos dossiers de démo n’ont pas pu être lus : rechargez la page.
+            Vos dossiers de démo n’ont pas pu être lus&nbsp;: rechargez la page.
           </p>
         </>
       ) : (

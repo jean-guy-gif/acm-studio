@@ -31,9 +31,10 @@ export const ADDRESS_SOURCE_MENTIONS: Record<AddressSource, string> = {
 };
 
 // Mission 120 — le courrier né d'une recherche acquéreur dit sa propre finalité.
-export const OWNER_PURPOSE = 'Finalité : vous proposer nos services pour la vente de votre bien.';
+export const OWNER_PURPOSE =
+  'Finalité\u00a0: vous proposer nos services pour la vente de votre bien.';
 export const BUYER_SEARCH_PURPOSE =
-  'Finalité : vous présenter une recherche qui correspond à votre bien.';
+  'Finalité\u00a0: vous présenter une recherche qui correspond à votre bien.';
 
 export function ownerLegalMention(
   sender: Pick<
@@ -48,12 +49,12 @@ export function ownerLegalMention(
     .join(', ');
   const reach = [sender.phone?.trim(), sender.email.trim()].filter(Boolean).join(' ou ');
   return [
-    `Responsable du traitement : ${responsible}.`,
+    `Responsable du traitement\u00a0: ${responsible}.`,
     ADDRESS_SOURCE_MENTIONS[addressSource],
     purpose,
-    `Conservation : ${OWNER_ADDRESS_RETENTION_YEARS} ans au plus sans contact entre nous.`,
-    `Vos droits d’accès, d’opposition et d’effacement : ${reach}.`,
+    `Conservation\u00a0: ${OWNER_ADDRESS_RETENTION_YEARS} ans au plus sans contact entre nous.`,
+    `Vos droits d’accès, d’opposition et d’effacement\u00a0: ${reach}.`,
     'Vous pouvez saisir la CNIL (cnil.fr).',
-    `Confidentialité : ${sender.privacyUrl}.`,
+    `Confidentialité\u00a0: ${sender.privacyUrl}.`,
   ].join(' ');
 }

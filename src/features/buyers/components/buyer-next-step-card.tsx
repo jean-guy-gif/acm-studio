@@ -40,7 +40,7 @@ export function BuyerNextStepCard({
       <span className={socleKicker}>Prochaine étape</span>
       {unread ? (
         <p role="alert" className="text-sm font-semibold text-red-700 stage:text-red-300">
-          L’avancement de cette fiche n’a pas pu être lu : rechargez la page.
+          L’avancement de cette fiche n’a pas pu être lu&nbsp;: rechargez la page.
         </p>
       ) : (
         <>
@@ -51,7 +51,7 @@ export function BuyerNextStepCard({
           {/* Mission 145 — les mandats à lui proposer n'ont pas pu être lus (M98). */}
           {loopFailed ? (
             <p role="alert" className="text-sm font-semibold text-red-700 stage:text-red-300">
-              Les mandats à lui proposer n’ont pas pu être lus : rechargez la page.
+              Les mandats à lui proposer n’ont pas pu être lus&nbsp;: rechargez la page.
             </p>
           ) : null}
           {next.compromiseOfferId ? (

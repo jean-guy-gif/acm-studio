@@ -93,12 +93,12 @@ export function countFilledRecordFields(
 
 export function complementsSummary(counts: { filled: number; toVerify: number }): string {
   if (counts.filled === 0) {
-    return 'Compléments : aucun renseigné';
+    return 'Compléments\u00a0: aucun renseigné';
   }
   const filled = `${counts.filled} renseigné${counts.filled > 1 ? 's' : ''}`;
   return counts.toVerify > 0
-    ? `Compléments : ${filled}, dont ${counts.toVerify} à vérifier`
-    : `Compléments : ${filled}`;
+    ? `Compléments\u00a0: ${filled}, dont ${counts.toVerify} à vérifier`
+    : `Compléments\u00a0: ${filled}`;
 }
 
 // Une saisie à corriger dans un complément ouvre le bloc : « un clic mène au champ » (M77)

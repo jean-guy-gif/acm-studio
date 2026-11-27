@@ -265,7 +265,7 @@ describe('les biens en prospection que veulent des acquéreurs prêts', () => {
       '1 acquéreur prêt correspond · courrier ou passage',
     );
     expect(cardAlertLabel({ readyBuyers: 3, mention: 'check' })).toBe(
-      '3 acquéreurs prêts correspondent : précisez le mandat',
+      '3 acquéreurs prêts correspondent\u00a0: précisez le mandat',
     );
   });
 

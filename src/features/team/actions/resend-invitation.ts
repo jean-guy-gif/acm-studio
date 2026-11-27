@@ -31,7 +31,7 @@ export async function resendInvitation(invitationId: string): Promise<ActionResu
     revalidatePath('/admin/equipe');
     return {
       ok: false,
-      error: 'L’invitation n’a toujours pas pu être envoyée. Elle reste « non envoyée ».',
+      error: 'L’invitation n’a toujours pas pu être envoyée. Elle reste «\u00a0non envoyée\u00a0».',
     };
   }
 

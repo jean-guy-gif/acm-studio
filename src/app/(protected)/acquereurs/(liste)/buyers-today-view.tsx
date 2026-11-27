@@ -196,7 +196,7 @@ export async function BuyersTodayView({
         ))}
         {read.failed ? (
           <p role="alert" className={alertError}>
-            Vos acquéreurs n’ont pas pu être lus : rechargez la page.
+            Vos acquéreurs n’ont pas pu être lus&nbsp;: rechargez la page.
           </p>
         ) : null}
 
@@ -304,7 +304,7 @@ export async function BuyersTodayView({
             <span className={socleKicker}>À faire aujourd’hui</span>
             <p className="text-[21px] leading-snug font-bold text-brand-darker stage:text-white">
               {unread
-                ? 'Une partie des tâches n’a pas pu être lue : rechargez la page.'
+                ? 'Une partie des tâches n’a pas pu être lue\u00a0: rechargez la page.'
                 : 'Rien à faire aujourd’hui pour vos acquéreurs.'}
             </p>
             <Link href={allHref} className="text-[15px] font-bold text-brand-deep stage:text-brand">
@@ -387,7 +387,7 @@ async function BuyerTodaySummary({ buyer }: { buyer: Buyer }) {
         <StatTiles testId="buyer-today-tiles" tiles={summary.tiles} />
       ) : (
         <p role="alert" className={alertError}>
-          Son suivi n’a pas pu être lu : ouvrez sa fiche.
+          Son suivi n’a pas pu être lu&nbsp;: ouvrez sa fiche.
         </p>
       )}
     </>

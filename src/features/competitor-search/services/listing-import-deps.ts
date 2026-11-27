@@ -16,7 +16,7 @@ import { importDemoCompetitor } from '@/features/demo/actions/import-demo-compet
 // tenue pour acquise, et c'est l'action de démonstration qui importe, depuis le jeu de données,
 // côté serveur (où le repère de l'agence est revérifié). Le reste de l'enchaînement — trois
 // tentatives, création depuis la recherche, attente — ne change pas.
-const DEMO_PAGE = '<!-- démonstration : aucune page lue -->';
+const DEMO_PAGE = '<!-- démonstration\u00a0: aucune page lue -->';
 
 // Mission 101 — ce dont l'import d'une annonce a besoin, branché sur l'extension (lecture de la
 // page) et sur le serveur (import, création depuis la recherche, signalement). Utilisé par l'écran

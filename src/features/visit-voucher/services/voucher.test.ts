@@ -115,7 +115,7 @@ describe('le texte validé du bon de visite', () => {
     expect(text).toContain('Je soussigné(e) M. Paul Exemple et Mme Anna Exemple , demeurant');
     expect(text).toContain("comme en atteste sa carte nationale d'identité");
     expect(text).toMatch(
-      /Numéro du mandat : M-1 · Prix de commercialisation : 1\s639\s500 € · Adresse du bien : 12 allée du Décor/,
+      /Numéro du mandat\s: M-1 · Prix de commercialisation\s: 1\s639\s500 € · Adresse du bien\s: 12 allée du Décor/,
     );
     expect(text).toContain(
       'Les biens ci-dessus mentionnés ont été présentés par Carl Conseiller .',
@@ -148,8 +148,8 @@ describe('l’identité légale', () => {
     );
     expect(gaps).toEqual([
       'Carte professionnelle',
-      'Responsabilité civile professionnelle : N° de contrat',
-      'Garantie financière : Montant de la garantie (en euros)',
+      'Responsabilité civile professionnelle\u00a0: N° de contrat',
+      'Garantie financière\u00a0: Montant de la garantie (en euros)',
     ]);
     expect(
       voucherAgency({

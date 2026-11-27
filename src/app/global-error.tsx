@@ -21,7 +21,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
       <body className="flex min-h-screen flex-col antialiased">
         <ErrorScreen
           title="Un incident est survenu"
-          message="L’application n’a pas pu s’afficher. Vos données sont enregistrées : revenez à vos dossiers."
+          message="L’application n’a pas pu s’afficher. Vos données sont enregistrées&nbsp;: revenez à vos dossiers."
         />
       </body>
     </html>

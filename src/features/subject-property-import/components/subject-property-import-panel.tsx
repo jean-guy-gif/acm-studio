@@ -127,8 +127,8 @@ export function SubjectPropertyImportPanel({
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
       <h2 className={formSectionTitle}>Importer depuis une annonce en ligne</h2>
       <p className={hintText}>
-        Le bien est déjà commercialisé ? Collez le lien SeLoger, Bien’ici, Green-Acres, Maisons et
-        Appartements… — infos et caractéristiques sont reprises pour vous, à relire avant
+        Le bien est déjà commercialisé&#x202f;? Collez le lien SeLoger, Bien’ici, Green-Acres,
+        Maisons et Appartements… — infos et caractéristiques sont reprises pour vous, à relire avant
         d’enregistrer.
       </p>
       {extension.available === false && !extension.demo ? (
@@ -141,7 +141,7 @@ export function SubjectPropertyImportPanel({
           un scénario remplit l'adresse, « Importer l'annonce » lit le jeu de données. */}
       {demoListings && demoListings.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2" data-testid="demo-listing-choices">
-          <span className={hintText}>Annonces à importer :</span>
+          <span className={hintText}>Annonces à importer&nbsp;:</span>
           {demoListings.map((choice) => (
             <button
               key={choice.url}
@@ -206,7 +206,7 @@ export function SubjectPropertyImportPanel({
                 {summary.info.readPortalPricePerSquareMeter != null
                   ? ` · ${formatEuroPerSquareMeter(summary.info.readPortalPricePerSquareMeter)} (portail)`
                   : ''}{' '}
-                — pour information : l’outil ne l’enregistre pas et ne préremplit pas votre
+                — pour information&nbsp;: l’outil ne l’enregistre pas et ne préremplit pas votre
                 fourchette.
               </p>
             </div>
@@ -230,14 +230,14 @@ export function SubjectPropertyImportPanel({
                 <>
                   <p className="text-zinc-600 stage:text-white/65">
                     {recovery.ok} photo(s) récupérée(s)
-                    {recovery.failed > 0 ? ` · ${recovery.failed} échec(s)` : ''} — visibles dans «
-                    Photos du bien vendeur ».
+                    {recovery.failed > 0 ? ` · ${recovery.failed} échec(s)` : ''} — visibles dans
+                    «&nbsp;Photos du bien vendeur&nbsp;».
                   </p>
                   {recovery.failed > 0 ? (
                     <ul className="list-disc pl-5 text-zinc-600 stage:text-white/65">
                       {summarizeRecoveryFailures(recovery.errors).map(({ cause, count }) => (
                         <li key={cause}>
-                          {count} photo(s) : {cause}
+                          {count} photo(s)&nbsp;: {cause}
                         </li>
                       ))}
                     </ul>

@@ -151,7 +151,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(page.getByText('Arrondissement : Paris 15e')).toBeVisible();
     await field('Code postal').fill('06000');
     await field('Ville').fill('Nice');
-    await expect(page.getByText(/^Arrondissement :/)).toHaveCount(0);
+    await expect(page.getByText(/^Arrondissement\s:/)).toHaveCount(0);
     await field('De').fill(String(FOURCHETTE.min));
     // Mission 77 — un seul bouton, dans la barre fixée, qui dit où en est la fiche.
     await expect(page.getByText('Modifications non enregistrées')).toBeVisible();
@@ -180,7 +180,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(field('Chambres')).toBeHidden();
     await expect(field('Terrain')).toBeHidden();
     // Fermés par défaut, résumés en une ligne.
-    await expect(page.getByTestId('complements-summary')).toHaveText(/^Compléments : /);
+    await expect(page.getByTestId('complements-summary')).toHaveText(/^Compléments\s: /);
     // Mission 146 (C3) — la fiche enregistrée : ses imports se replient en « Importer à nouveau ».
     await page.reload();
     await expect(page.getByTestId('reimport')).toBeVisible();
@@ -389,7 +389,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       rhythmSetting.getByRole('radio', { name: 'Complet pour tous les concurrents' }),
     ).toBeEnabled();
     await expect(rhythmSetting).toContainText(
-      /Accéléré : environ \d+\smin · Complet : environ \d+\smin/,
+      /Accéléré\s: environ \d+\smin · Complet\s: environ \d+\smin/,
     );
     // Mission 110 — avant la décision, pas d'« Étape suivante » ici : c'est cet écran qui l'est.
     await expect(page.getByTestId('next-step')).toHaveCount(0);
@@ -647,7 +647,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await expect(said.getByText(/Le concurrent le plus dangereux, selon lui/)).toBeVisible();
     await expect(said.getByText('Prêt à lancer : 7/10 → 10/10')).toBeVisible();
     // Mission 95 — la durée mesurée du Live, du premier écran au « Terminer », pause comprise.
-    await expect(said.getByText(/Durée du Live : \d+\smin/)).toBeVisible();
+    await expect(said.getByText(/Durée du Live\s: \d+\smin/)).toBeVisible();
     // Les prix viennent d'être révélés et figés : aucune comparaison « à aujourd'hui ».
     await expect(said.getByText(/face aux prix affichés aujourd’hui/)).toHaveCount(0);
 
@@ -1297,7 +1297,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await page.getByTestId('present-selection').click();
     await expect(page.getByText(/^Terminé le \d{2}\/\d{2}\/\d{4}$/)).toBeVisible();
     await expect(page.getByTestId('presentation-finished')).toContainText(
-      /^Présentation terminée le \d{2}\/\d{2}\/\d{4} : pour en refaire une, retenez une nouvelle sélection\.$/,
+      /^Présentation terminée le \d{2}\/\d{2}\/\d{4}\s: pour en refaire une, retenez une nouvelle sélection\.$/,
     );
     await expect(
       page
@@ -1345,7 +1345,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     await doneForm.getByTestId('visit-done-save').click();
     await expect(page).toHaveURL(/\/visites\?messages=[0-9a-f-]{36}/);
     await expect(page.getByTestId('visit-message-buyer-text')).toHaveValue(
-      /Ce qui vous a gêné : la luminosité\./,
+      /Ce qui vous a gêné\s: la luminosité\./,
     );
     await expect(page.getByTestId('visits-done')).toContainText(
       'Trop sombre, d’après le test automatique',

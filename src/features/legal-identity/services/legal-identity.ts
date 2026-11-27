@@ -52,8 +52,8 @@ export const LEGAL_TEXT_FIELDS = [
   { key: 'companyForm', label: 'Forme (SAS, SARL…)', max: 40, group: 'Société' },
   { key: 'shareCapital', label: 'Capital (en euros)', max: 40, group: 'Société' },
   { key: 'companySeat', label: 'Siège social', max: 300, group: 'Société' },
-  { key: 'rcsCity', label: 'RCS : ville', max: 80, group: 'Société' },
-  { key: 'rcsNumber', label: 'RCS : numéro', max: 40, group: 'Société' },
+  { key: 'rcsCity', label: 'RCS\u00a0: ville', max: 80, group: 'Société' },
+  { key: 'rcsNumber', label: 'RCS\u00a0: numéro', max: 40, group: 'Société' },
   { key: 'vatNumber', label: 'N° de TVA', max: 40, group: 'Société' },
   { key: 'agencyPhone', label: 'Téléphone de l’agence', max: 40, group: 'Agence' },
   { key: 'agencyEmail', label: 'E-mail de l’agence', max: 200, group: 'Agence' },
@@ -121,16 +121,16 @@ export function legalIdentityGaps(
   if (!filled(branding?.professionalCard)) gaps.push('Carte professionnelle');
   if (!filled(branding?.professionalCardIssuer)) gaps.push('Carte délivrée par');
   for (const field of LEGAL_TEXT_FIELDS) {
-    if (!filled(value[field.key])) gaps.push(`${field.group} : ${field.label}`);
+    if (!filled(value[field.key])) gaps.push(`${field.group}\u00a0: ${field.label}`);
   }
   if (value.guaranteeAmount == null || !(value.guaranteeAmount > 0)) {
-    gaps.push(`Garantie financière : ${GUARANTEE_AMOUNT_LABEL}`);
+    gaps.push(`Garantie financière\u00a0: ${GUARANTEE_AMOUNT_LABEL}`);
   }
   return gaps;
 }
 
 export function legalIdentityGapsLabel(gaps: string[]): string {
-  return `Identité légale de l’agence à compléter (Administration → Identité) : ${gaps.join(', ')}.`;
+  return `Identité légale de l’agence à compléter (Administration → Identité)\u00a0: ${gaps.join(', ')}.`;
 }
 
 // La garantie structurée, recomposée en une ligne pour les documents qui lisent le texte de la

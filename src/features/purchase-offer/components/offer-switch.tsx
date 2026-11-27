@@ -44,7 +44,9 @@ export function OfferSwitchButton({
           });
         }}
       >
-        {pending ? 'Enregistrement…' : 'Passer la visite en « Offre envisagée » et faire l’offre'}
+        {pending
+          ? 'Enregistrement…'
+          : 'Passer la visite en «\u00a0Offre envisagée\u00a0» et faire l’offre'}
       </button>
       {error ? (
         <p role="alert" className={errorText}>

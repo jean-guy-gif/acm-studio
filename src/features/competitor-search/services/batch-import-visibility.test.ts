@@ -128,15 +128,15 @@ describe('la ligne de bilan', () => {
     });
     const summary = describeStreamEstateSearch(search.ranked, note);
     expect(summary.headline).toBe(
-      '3 concurrents : 1 identique, 1 plus grand, 1 à moins de 10 km — 37 annonces comptées',
+      '3 concurrents\u00a0: 1 identique, 1 plus grand, 1 à moins de 10 km — 37 annonces comptées',
     );
     expect(summary.details).toContain(
-      'Moins de 10 : plus aucun bien après le dernier élargissement (rayon de 10 km).',
+      'Moins de 10\u00a0: plus aucun bien après le dernier élargissement (rayon de 10 km).',
     );
     // Mission 97 — un seul mot, « élargissement » : plus de « cran » à l'écran.
     expect([summary.headline, ...summary.details].join(' ')).not.toMatch(/\bcrans?\b/i);
     expect(summary.details).toContain(
-      'Écartés, mais comptés : 1 bien hors de Saint-Laurent-du-Var à un élargissement « même ville » · 2 biens sans annonce sur un site que l’extension relit.',
+      'Écartés, mais comptés\u00a0: 1 bien hors de Saint-Laurent-du-Var à un élargissement «\u00a0même ville\u00a0» · 2 biens sans annonce sur un site que l’extension relit.',
     );
   });
 
@@ -157,9 +157,9 @@ describe('la ligne de bilan', () => {
     });
     expect(summary.headline).toBe('0 concurrent — 60 annonces comptées');
     expect(summary.details[0]).toBe(
-      'Moins de 10 : plafond atteint, la recherche s’arrête là — « Chercher encore » reprend la recherche à l’identique, page suivante.',
+      'Moins de 10\u00a0: plafond atteint, la recherche s’arrête là — «\u00a0Chercher encore\u00a0» reprend la recherche à l’identique, page suivante.',
     );
     expect(summary.details[1]).toMatch(/^Adresse du bien non localisée/);
-    expect(summary.details[2]).toMatch(/^Pour « identique » : communes voisines non exclues/);
+    expect(summary.details[2]).toMatch(/^Pour «\sidentique\s»\s: communes voisines non exclues/);
   });
 });

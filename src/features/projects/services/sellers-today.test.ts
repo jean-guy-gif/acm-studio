@@ -54,7 +54,7 @@ describe('ce qu’il y a à faire, sans redire son nom', () => {
         { ...relance, readyBuyers: 2, property: { propertyType: 'Maison', city: 'Antibes' } },
         context('p-lambert'),
       ),
-    ).toBe('À relancer : 2 acquéreurs prêts correspondent à la maison');
+    ).toBe('À relancer\u00a0: 2 acquéreurs prêts correspondent à la maison');
   });
 
   it('« Relancer plus tôt ? » : des acquéreurs prêts, et la relance prévue', () => {
@@ -63,7 +63,7 @@ describe('ce qu’il y a à faire, sans redire son nom', () => {
         task({ kind: 'follow_up_early', readyBuyers: 1, plannedOn: '2026-12-03' }),
         undefined,
       ),
-    ).toBe('Relancer plus tôt ? 1 acquéreur prêt correspond · relance prévue le 03/12');
+    ).toBe('Relancer plus tôt\u202f? 1 acquéreur prêt correspond · relance prévue le 03/12');
   });
 
   it('un Point marché : le mandat signé, ou le dernier point', () => {

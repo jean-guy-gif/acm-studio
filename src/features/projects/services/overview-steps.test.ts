@@ -156,7 +156,8 @@ describe('la relance, Prochaine étape d’un vendeur à relancer', () => {
         href: '/suivi?relancer=p1#suivi-p1',
       },
       title: 'Relancer M. et Mme Lambert-Duval',
-      phrase: '1 acquéreur prêt correspond à ce bien : rentrez le mandat pour pouvoir le proposer.',
+      phrase:
+        '1 acquéreur prêt correspond à ce bien\u00a0: rentrez le mandat pour pouvoir le proposer.',
     });
     expect(followUpNextStep('p1', 'M. Roux', 3)?.phrase).toMatch(
       /^3 acquéreurs prêts correspondent à ce bien/,

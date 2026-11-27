@@ -51,8 +51,8 @@ export default async function LettersPage({ searchParams }: LettersPageProps) {
         </Link>
         <h1 className={sectionTitle}>Courriers de prospection</h1>
         <p className={hintText}>
-          Choisissez d’abord un bien vendeur dans Prospection : les courriers se préparent pour un
-          mandat à la fois.
+          Choisissez d’abord un bien vendeur dans Prospection&nbsp;: les courriers se préparent pour
+          un mandat à la fois.
         </p>
       </main>
     );
@@ -105,7 +105,7 @@ export default async function LettersPage({ searchParams }: LettersPageProps) {
         <div className="flex flex-col gap-1">
           <h1 className={sectionTitle}>Courriers de prospection</h1>
           <p className={hintText}>
-            Pour : {seller.name}
+            Pour&nbsp;: {seller.name}
             {seller.label ? ` · ${seller.label}` : ''} — {letters.length} courrier
             {letters.length > 1 ? 's' : ''} prêt{letters.length > 1 ? 's' : ''} à imprimer, tel
             {letters.length > 1 ? 's' : ''} qu’enregistré{letters.length > 1 ? 's' : ''}. Pour
@@ -137,7 +137,8 @@ export default async function LettersPage({ searchParams }: LettersPageProps) {
           />
         ) : (
           <p className="text-sm text-zinc-600">
-            Aucun courrier à imprimer : aucun concurrent de ce bien n’est « prêt à envoyer ».
+            Aucun courrier à imprimer&nbsp;: aucun concurrent de ce bien n’est «&nbsp;prêt à
+            envoyer&nbsp;».
           </p>
         )}
       </header>

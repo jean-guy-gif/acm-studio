@@ -94,13 +94,13 @@ export default async function MarketUpdatePage({
         </p>
         <p className={hintText}>
           Ce document montre au vendeur ce qui a bougé depuis le rendez-vous
-          {meeting ? ` du ${meeting}` : ''} : chaque concurrent, son prix d’alors et d’aujourd’hui,
-          les annonces disparues, puis où en est son prix. Ni adresse, ni titre, ni lien d’annonce ;
-          « estimé » partout où l’outil déduit.
+          {meeting ? ` du ${meeting}` : ''}&nbsp;: chaque concurrent, son prix d’alors et
+          d’aujourd’hui, les annonces disparues, puis où en est son prix. Ni adresse, ni titre, ni
+          lien d’annonce&#x202f;; «&nbsp;estimé&nbsp;» partout où l’outil déduit.
         </p>
         <SynthesisPhotoChoices
           projectId={projectId}
-          hint="Cochez « Sans photo » pour retirer la photo du document imprimé et du lien ; c’est le même choix que sur la synthèse du rendez-vous. Rien ici n’est imprimé."
+          hint="Cochez «&nbsp;Sans photo&nbsp;» pour retirer la photo du document imprimé et du lien&#x202f;; c’est le même choix que sur la synthèse du rendez-vous. Rien ici n’est imprimé."
           competitors={(() => {
             const newcomers = document.summary.competitors
               .filter((item) => item.newcomer)

@@ -67,7 +67,7 @@ describe('le message de relance (mission 96)', () => {
       ...BASE,
       launchReadinessMissing: ' Un avis de\nmon notaire ',
     });
-    expect(message).toContain('« Un avis de mon notaire »');
+    expect(message).toContain('«\u00a0Un avis de mon notaire\u00a0»');
   });
 
   it('est signé du prénom du conseiller et du nom sur les documents', () => {
@@ -267,7 +267,7 @@ describe('la réponse du vendeur dans le message (mission 130)', () => {
       ...BASE,
       launchReadinessMissing: 'Le délai : il voudrait vendre avant l’été.',
     });
-    expect(message).toContain('« Le délai : il voudrait vendre avant l’été ».');
-    expect(message).not.toContain('. ».');
+    expect(message).toContain('«\u00a0Le délai : il voudrait vendre avant l’été\u00a0».');
+    expect(message).not.toContain('.\u00a0».');
   });
 });

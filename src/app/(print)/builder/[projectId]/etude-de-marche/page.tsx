@@ -78,13 +78,13 @@ export default async function MarketStudyPage({
           adresse, ni titre, ni lien d’annonce, ni l’agence qui vend.
           {document.ranking.subject
             ? document.ranking.subject.proposed
-              ? ' Puis où se situe son prix : son bien y est classé au prix proposé (le dossier est conclu sans mandat signé).'
-              : ' Puis où se situe son prix : son bien y est classé au prix de commercialisation convenu ensemble.'
-            : ' Tant qu’aucun prix de commercialisation n’est enregistré, au Live ou à la conclusion, son bien n’est pas classé : ni « Où se place votre prix », ni verdict. Votre analyse de valeur n’y figure jamais.'}
+              ? ' Puis où se situe son prix\u00a0: son bien y est classé au prix proposé (le dossier est conclu sans mandat signé).'
+              : ' Puis où se situe son prix\u00a0: son bien y est classé au prix de commercialisation convenu ensemble.'
+            : ' Tant qu’aucun prix de commercialisation n’est enregistré, au Live ou à la conclusion, son bien n’est pas classé\u00a0: ni «\u00a0Où se place votre prix\u00a0», ni verdict. Votre analyse de valeur n’y figure jamais.'}
         </p>
         <SynthesisPhotoChoices
           projectId={projectId}
-          hint="Cochez « Sans photo » pour retirer la photo du document imprimé et du lien ; c’est le même choix que sur la synthèse du rendez-vous et le Point marché. Rien ici n’est imprimé."
+          hint="Cochez «&nbsp;Sans photo&nbsp;» pour retirer la photo du document imprimé et du lien&#x202f;; c’est le même choix que sur la synthèse du rendez-vous et le Point marché. Rien ici n’est imprimé."
           competitors={document.competitors
             .filter((competitor) => competitor.hasPhoto)
             .map((competitor) => ({

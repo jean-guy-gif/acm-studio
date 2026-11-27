@@ -33,7 +33,7 @@ export function SynthesisLinkButton({
       const result = await removeSynthesisLink(projectId, linkId);
       if (result.ok) {
         if (created?.linkId === linkId) setCreated(null);
-        setMessage('Lien retiré : il ne s’ouvre plus.');
+        setMessage('Lien retiré\u00a0: il ne s’ouvre plus.');
         router.refresh();
       } else {
         setMessage(result.error);
@@ -67,8 +67,8 @@ export function SynthesisLinkButton({
             {created.url}
           </p>
           <p className={hintText}>
-            Copiez ce lien pour l’envoyer au vendeur : il ne s’affichera plus. Il expire dans 30
-            jours ; l’outil n’envoie rien.
+            Copiez ce lien pour l’envoyer au vendeur&nbsp;: il ne s’affichera plus. Il expire dans
+            30 jours&#x202f;; l’outil n’envoie rien.
           </p>
         </>
       ) : null}

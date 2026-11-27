@@ -97,7 +97,7 @@ export function agencyDeckCard({
     label,
     photo: null,
     price: hit.candidate.price,
-    origin: `${sourceLabel} · Pour : ${hit.candidate.sellerName}`,
+    origin: `${sourceLabel} · Pour\u00a0: ${hit.candidate.sellerName}`,
     criteria: null,
     budget,
     why: whyPills(city ? [{ tone: 'plain', label: city }] : [], reasons),
@@ -133,7 +133,7 @@ export function deckSelectionNote({
   }
   if (full) {
     return {
-      text: 'Sélection complète : pour proposer ce bien, retirez-en un dans toute la liste.',
+      text: 'Sélection complète\u00a0: pour proposer ce bien, retirez-en un dans toute la liste.',
       retain: false,
     };
   }

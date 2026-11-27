@@ -64,8 +64,8 @@ describe('le courrier imprimé', () => {
     const mention = legal(printed('owner', 'locator'));
     expect(mention).toContain('Votre adresse a été déterminée à partir de données publiques');
     expect(mention).not.toContain('relevée par notre conseiller');
-    expect(mention).toContain('Conservation : 3 ans au plus sans contact entre nous.');
-    expect(mention).toContain('Confidentialité : acm.test/confidentialite.');
+    expect(mention).toContain('Conservation\u00a0: 3 ans au plus sans contact entre nous.');
+    expect(mention).toContain('Confidentialité\u00a0: acm.test/confidentialite.');
   });
 
   it('propriétaire, adresse saisie : la mention dit « relevée par notre conseiller »', () => {
@@ -86,7 +86,7 @@ describe('le courrier imprimé', () => {
       ...SENDER,
       financialGuarantee: 'Galian — 120 000 €',
     });
-    expect(legal(html)).toContain('Garantie financière : Galian — 120 000 €.');
+    expect(legal(html)).toContain('Garantie financière\u00a0: Galian — 120 000 €.');
     expect(html).not.toContain('aucun fonds');
   });
 
@@ -99,7 +99,9 @@ describe('le courrier imprimé', () => {
 
   it('le nom sur les documents (M87) est celui qui s’imprime', () => {
     const html = printed('owner', 'locator', { ...SENDER, agencyName: 'Port Immo' });
-    expect(legal(html)).toContain('Responsable du traitement : Port Immo, 1 place de la Mairie');
+    expect(legal(html)).toContain(
+      'Responsable du traitement\u00a0: Port Immo, 1 place de la Mairie',
+    );
     expect(html).not.toContain('Agence du Port');
   });
 });

@@ -58,7 +58,7 @@ export async function inviteMember(formData: FormData): Promise<InviteResult> {
     if (existing.agency_id === profile.agency_id && existing.removed_at != null) {
       return {
         ok: false,
-        error: 'Cette personne a été retirée de votre agence : vous pouvez la réintégrer.',
+        error: 'Cette personne a été retirée de votre agence\u00a0: vous pouvez la réintégrer.',
         reinstateMemberId: existing.id,
       };
     }
@@ -92,7 +92,7 @@ export async function inviteMember(formData: FormData): Promise<InviteResult> {
     return {
       ok: false,
       error:
-        'L’invitation n’a pas pu être envoyée (service e-mail indisponible). Elle apparaît « non envoyée » : renvoyez-la quand l’e-mail refonctionne.',
+        'L’invitation n’a pas pu être envoyée (service e-mail indisponible). Elle apparaît «\u00a0non envoyée\u00a0»\u00a0: renvoyez-la quand l’e-mail refonctionne.',
     };
   }
 

@@ -25,7 +25,7 @@ const guide = readFileSync(
 )
   .replace(/<style[\s\S]*?<\/style>/g, ' ')
   .replace(/<[^>]+>/g, ' ')
-  .replace(/&nbsp;/g, ' ')
+  .replace(/&nbsp;|&#x202f;/g, ' ')
   .replace(/\s+/g, ' ')
   // Une balise fermée devant un point laisse une espace : « se lisent . » redevient « se lisent. ».
   .replace(/ ([.,])/g, '$1');
@@ -46,7 +46,7 @@ describe('le guide de prise en main : la ligne des portails', () => {
   it('nomme chaque site que l’extension lit', () => {
     for (const suffix of EXTENSION_HOST_SUFFIXES) {
       const name = SITE_NAMES[suffix];
-      expect(name, `site sans nom dans le guide : ${suffix}`).toBeDefined();
+      expect(name, `site sans nom dans le guide\u00a0: ${suffix}`).toBeDefined();
       expect(read).toContain(name);
     }
   });
@@ -60,6 +60,6 @@ describe('le guide de prise en main : la ligne des portails', () => {
   });
 
   it('cite le message du forfait tel que l’écran le dit', () => {
-    expect(guide).toContain(`« ${BUDGET_REACHED_LABEL} »`);
+    expect(guide).toContain(`« ${BUDGET_REACHED_LABEL.replace(/\s+/g, ' ')} »`);
   });
 });

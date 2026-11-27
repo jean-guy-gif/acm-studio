@@ -14,7 +14,7 @@ export type PrepareSearchResult =
 
 const GENERIC_ERROR = 'La recherche a échoué. Vous pouvez importer une annonce par son adresse.';
 const NO_CITY_ERROR =
-  'Renseignez d’abord la ville du bien vendeur : la recherche se base sur sa localisation.';
+  'Renseignez d’abord la ville du bien vendeur\u00a0: la recherche se base sur sa localisation.';
 
 // La PRÉPARATION de la recherche, côté serveur : les critères viennent du bien vendeur (jamais
 // du client). Aucune lecture réseau ici. Le classement et l'apprentissage se font à part

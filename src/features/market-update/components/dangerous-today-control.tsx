@@ -62,8 +62,8 @@ export function DangerousTodayControl({
       setMessage({
         ok: true,
         text: chosen
-          ? `Point du ${pointDay} mis à jour : le plus dangereux aujourd’hui est ${chosen.label}.`
-          : `Point du ${pointDay} mis à jour : le plus dangereux redevient le choix du vendeur au rendez-vous.`,
+          ? `Point du ${pointDay} mis à jour\u00a0: le plus dangereux aujourd’hui est ${chosen.label}.`
+          : `Point du ${pointDay} mis à jour\u00a0: le plus dangereux redevient le choix du vendeur au rendez-vous.`,
       });
       router.refresh();
     });
@@ -96,14 +96,14 @@ export function DangerousTodayControl({
         : null}
       {!editable ? (
         <p className={hintText} data-testid="dangerous-stale">
-          Pour désigner le plus dangereux aujourd’hui, mettez d’abord les concurrents à jour : le
-          point du {pointDay} reste tel qu’il a été remis.
+          Pour désigner le plus dangereux aujourd’hui, mettez d’abord les concurrents à jour&nbsp;:
+          le point du {pointDay} reste tel qu’il a été remis.
         </p>
       ) : open ? (
         <fieldset className="flex flex-col gap-1.5" data-testid="dangerous-options">
           <legend className="sr-only">Désigner le plus dangereux aujourd’hui</legend>
           {options.length === 0 ? (
-            <p className={hintText}>Aucun bien encore en vente : rien à désigner.</p>
+            <p className={hintText}>Aucun bien encore en vente&nbsp;: rien à désigner.</p>
           ) : (
             options.map((item) => (
               <label key={item.id} className="flex items-center gap-2 text-sm">
@@ -127,7 +127,7 @@ export function DangerousTodayControl({
           )}
           <p className={hintText}>
             Le document et son lien le montreront dès maintenant. Le choix du vendeur au rendez-vous
-            reste écrit, avec la mention « votre choix au rendez-vous ».
+            reste écrit, avec la mention «&nbsp;votre choix au rendez-vous&nbsp;».
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <button

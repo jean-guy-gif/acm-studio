@@ -48,7 +48,7 @@ function sellerWords(input: FollowUpMessageInput): string[] {
     .replace(/[.\s]+$/, '');
   if (missing) {
     lines.push(
-      `Vous m’aviez aussi indiqué ce qui vous manquait pour lancer la vente : « ${missing} ».`,
+      `Vous m’aviez aussi indiqué ce qui vous manquait pour lancer la vente\u00a0: «\u00a0${missing}\u00a0».`,
     );
   }
   return lines;
@@ -64,7 +64,7 @@ const OBJECTION_LINES: Record<Objection, string> = {
   timing: 'Pour le calendrier, nous pouvons caler la mise en vente sur votre projet.',
   other_agency:
     'Si vous rencontrez d’autres agences, je reste disponible pour répondre à vos questions.',
-  not_ready: 'Rien ne presse : je reste à votre disposition quand votre projet sera prêt.',
+  not_ready: 'Rien ne presse\u00a0: je reste à votre disposition quand votre projet sera prêt.',
 };
 
 function objectionLines(objections: Objection[] | undefined): string[] {
@@ -92,18 +92,18 @@ function motiveLine(input: FollowUpMessageInput): string {
   switch (input.motive) {
     case 'price_accepted':
       return input.commercializationPrice != null
-        ? `Nous étions convenus d’un prix de ${formatEuro(input.commercializationPrice)}. Quand souhaitez-vous que nous signions le mandat ?`
-        : 'Nous étions d’accord sur le prix. Quand souhaitez-vous que nous signions le mandat ?';
+        ? `Nous étions convenus d’un prix de ${formatEuro(input.commercializationPrice)}. Quand souhaitez-vous que nous signions le mandat\u202f?`
+        : 'Nous étions d’accord sur le prix. Quand souhaitez-vous que nous signions le mandat\u202f?';
     case 'thinking_price':
-      return 'Où en est votre réflexion sur le prix ? Je reste disponible pour en reparler.';
+      return 'Où en est votre réflexion sur le prix\u202f? Je reste disponible pour en reparler.';
     case 'consulting_relative':
-      return 'Avez-vous pu en parler autour de vous ? Je peux reprendre les éléments avec vous et vos proches si vous le souhaitez.';
+      return 'Avez-vous pu en parler autour de vous\u202f? Je peux reprendre les éléments avec vous et vos proches si vous le souhaitez.';
     case 'awaiting_estimate':
-      return 'Avez-vous reçu l’autre avis de valeur que vous attendiez ? Je suis disponible pour le regarder avec vous.';
+      return 'Avez-vous reçu l’autre avis de valeur que vous attendiez\u202f? Je suis disponible pour le regarder avec vous.';
     case 'undated_project':
-      return 'Votre projet de vente a-t-il avancé ? Je reste à votre disposition quand vous le souhaiterez.';
+      return 'Votre projet de vente a-t-il avancé\u202f? Je reste à votre disposition quand vous le souhaiterez.';
     default:
-      return 'Où en êtes-vous de votre projet ? Je reste à votre disposition.';
+      return 'Où en êtes-vous de votre projet\u202f? Je reste à votre disposition.';
   }
 }
 

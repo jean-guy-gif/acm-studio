@@ -75,7 +75,7 @@ export const DOCUMENT_CSS = `
 .pf-cta { font-size: 13pt; font-weight: 700; margin: 0 0 1mm; }
 .pf-qr { flex: 0 0 24mm; width: 24mm; height: 24mm; background: #fff; border-radius: 2mm; padding: 2mm; }
 .pf-qr svg { display: block; width: 100%; height: 100%; }
-/* Version confrère : une seule page, photo comprise. */
+/* Version confrère\u00a0: une seule page, photo comprise. */
 .pf-page.compact .pf-h1 { margin: 5mm 0 3mm; }
 .pf-page.compact .pf-ph { height: 24mm; }
 .pf-page.compact .pf-duo { margin: 3mm 0; }

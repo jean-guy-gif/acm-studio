@@ -112,7 +112,7 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
         title="Le navigateur Chrome"
       >
         {chrome === false
-          ? 'Ouvrez ACM Studio dans Google Chrome : l’extension ne fonctionne que là.'
+          ? 'Ouvrez ACM Studio dans Google Chrome\u00a0: l’extension ne fonctionne que là.'
           : null}
       </Item>
       <Item
@@ -133,7 +133,7 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
           extension.noSiteAccess ? (
             // Mission 105 — installée, mais Chrome ne lui laisse pas lire ACM Studio.
             <span data-testid="extension-no-site-access">
-              {EXTENSION_NO_SITE_ACCESS_TITLE} : {EXTENSION_NO_SITE_ACCESS_STEPS}.
+              {EXTENSION_NO_SITE_ACCESS_TITLE}&nbsp;: {EXTENSION_NO_SITE_ACCESS_STEPS}.
             </span>
           ) : (
             <>
@@ -169,7 +169,7 @@ export function WelcomeChecklist({ hasPhone }: { hasPhone: boolean }) {
       <Item
         testId="need-locator"
         state={extension.demo || locatorInstalled(locator) ? 'done' : 'optional'}
-        title="Facultatif : Localisateur Academia"
+        title="Facultatif&nbsp;: Localisateur Academia"
       >
         Pour retrouver l’adresse d’un bien.
         {extension.demo || locatorInstalled(locator) ? null : (

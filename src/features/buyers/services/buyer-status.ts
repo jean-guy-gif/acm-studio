@@ -41,8 +41,8 @@ export function buyerStatusActions(
         current === 'abandoned'
           ? 'Reprendre la recherche'
           : current === 'under_offer'
-            ? 'L’offre est tombée : revenir en visite'
-            : `Revenir : ${BUYER_STATUS_LABELS[back].toLowerCase()}`,
+            ? 'L’offre est tombée\u00a0: revenir en visite'
+            : `Revenir\u00a0: ${BUYER_STATUS_LABELS[back].toLowerCase()}`,
       primary: false,
     });
   }

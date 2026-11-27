@@ -120,7 +120,7 @@ export type MatchDetailLine = {
 };
 
 export const MATCH_SUMMARY_LINE =
-  'Ressemblance avec votre bien : secteur, surface, prix, pièces et équipements';
+  'Ressemblance avec votre bien\u00a0: secteur, surface, prix, pièces et équipements';
 
 const PROXIMITY_LABELS: Record<string, string> = {
   parking: 'Stationnement',
@@ -248,7 +248,7 @@ export function gapLine(
   if (!place.sameCommune) {
     const name = candidate.city ?? 'autre commune';
     parts.push(
-      `Commune voisine : ${name}${d != null ? `, ${km(d)}` : unverified ? ' — quartier non vérifié' : ''}`,
+      `Commune voisine\u00a0: ${name}${d != null ? `, ${km(d)}` : unverified ? ' — quartier non vérifié' : ''}`,
     );
   } else if (unverified) {
     parts.push('Même ville — quartier non vérifié');
@@ -260,7 +260,7 @@ export function gapLine(
   const value = candidate.surfaceArea;
   if (ref != null && ref > 0 && value != null && value > ref + identicalSurfaceTolerance(ref)) {
     parts.push(
-      `Plus grand : ${formatSquareMeters(value)} (${formatPercent(((value - ref) / ref) * 100, { maxDecimals: 0, signed: true })})`,
+      `Plus grand\u00a0: ${formatSquareMeters(value)} (${formatPercent(((value - ref) / ref) * 100, { maxDecimals: 0, signed: true })})`,
     );
   }
   if (criteria.roomsCount != null) {

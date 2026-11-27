@@ -298,8 +298,8 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
       key: 'competitors_without_dpe',
       severity: 'info',
       message: many
-        ? `${sequence.competitorsWithoutDpe} concurrents sans DPE : ils n’apparaissent pas sur l’écran DPE.`
-        : '1 concurrent sans DPE : il n’apparaît pas sur l’écran DPE.',
+        ? `${sequence.competitorsWithoutDpe} concurrents sans DPE\u00a0: ils n’apparaissent pas sur l’écran DPE.`
+        : '1 concurrent sans DPE\u00a0: il n’apparaît pas sur l’écran DPE.',
     });
   }
 
@@ -404,7 +404,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
               data-testid="price-surface-to-verify"
               className="text-sm text-amber-700 stage:text-amber-300"
             >
-              {priceOrSurfaceLabel} :{' '}
+              {priceOrSurfaceLabel}&nbsp;:{' '}
               {priceOrSurfaceToVerify.map((competitor, index) => (
                 <span key={competitor.id}>
                   {index > 0 ? ', ' : ''}
@@ -505,8 +505,8 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
             ) : (
               <div className="flex flex-col gap-2">
                 <p className={hintText}>
-                  Le prix des concurrents ne peut pas encore être calculé : la décision s’enregistre
-                  dès que les données suffisent.
+                  Le prix des concurrents ne peut pas encore être calculé&nbsp;: la décision
+                  s’enregistre dès que les données suffisent.
                 </p>
                 <PositioningReasons reasons={positioning?.reasons ?? []} />
               </div>
@@ -524,7 +524,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
               <p className="text-xs text-zinc-500 stage:text-white/50">
                 Décision enregistrée {formatRelativeMoment(saved.validatedAt)}.
                 {presentation.positioningStatus === 'outdated'
-                  ? ' Les concurrents ou le bien ont changé depuis : le prix calculé n’est plus le même.'
+                  ? ' Les concurrents ou le bien ont changé depuis\u00a0: le prix calculé n’est plus le même.'
                   : ''}
               </p>
             ) : null}
@@ -533,7 +533,7 @@ export default async function BeforeMeetingPage({ params }: BeforeMeetingPagePro
         details={
           analysis == null || analysis.statistics.count === 0 ? (
             <p className={hintText}>
-              Aucun concurrent retenu avec un prix et une surface : l’analyse ne peut pas être
+              Aucun concurrent retenu avec un prix et une surface&nbsp;: l’analyse ne peut pas être
               produite.
             </p>
           ) : (

@@ -95,12 +95,12 @@ export default async function VisitsPage({
       </div>
       {offerAnswers == null ? (
         <p role="alert" className={alertError}>
-          Les réponses aux offres d’achat n’ont pas pu être lues : rechargez la page.
+          Les réponses aux offres d’achat n’ont pas pu être lues&nbsp;: rechargez la page.
         </p>
       ) : null}
       {lines.length === 0 ? (
         <div className={`${socleCardBordered} p-6 text-[15px] text-[#5B6380] stage:text-white/60`}>
-          Aucune demande de visite pour l’instant : elles naissent pendant une présentation ou
+          Aucune demande de visite pour l’instant&nbsp;: elles naissent pendant une présentation ou
           depuis le dossier.
         </div>
       ) : null}

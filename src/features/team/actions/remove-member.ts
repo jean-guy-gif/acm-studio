@@ -36,7 +36,7 @@ export async function removeMember(memberId: string): Promise<ActionResult> {
   if (isLastManager(members, memberId)) {
     return {
       ok: false,
-      error: 'Le dernier manager ne peut pas être retiré : l’agence resterait sans manager.',
+      error: 'Le dernier manager ne peut pas être retiré\u00a0: l’agence resterait sans manager.',
     };
   }
 

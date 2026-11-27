@@ -65,8 +65,8 @@ export default async function ErrorsPage() {
         <h1 className={pageTitle}>Erreurs</h1>
         <p className={pageSubtitle}>
           Les erreurs inattendues des {ERRORS_WINDOW_DAYS} derniers jours, toutes agences
-          confondues, regroupées par message. Les messages sont nettoyés : ni saisie, ni prix, ni
-          adresse.
+          confondues, regroupées par message. Les messages sont nettoyés&nbsp;: ni saisie, ni prix,
+          ni adresse.
         </p>
       </div>
 
@@ -78,7 +78,8 @@ export default async function ErrorsPage() {
         </h2>
         {report.truncated ? (
           <p className={hintText}>
-            Seules les {report.total} erreurs les plus récentes sont comptées : il y en a davantage.
+            Seules les {report.total} erreurs les plus récentes sont comptées&nbsp;: il y en a
+            davantage.
           </p>
         ) : null}
         <ul className="flex flex-col gap-3">
@@ -92,15 +93,15 @@ export default async function ErrorsPage() {
               </div>
               <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm text-zinc-600 sm:grid-cols-2 stage:text-white/65">
                 <div className="flex gap-1.5">
-                  <dt className="font-medium">Dernière fois :</dt>
+                  <dt className="font-medium">Dernière fois&nbsp;:</dt>
                   <dd>{formatRelativeMoment(group.lastAt)}</dd>
                 </div>
                 <div className="flex gap-1.5">
-                  <dt className="font-medium">Page :</dt>
+                  <dt className="font-medium">Page&nbsp;:</dt>
                   <dd className="break-all">{group.lastPage}</dd>
                 </div>
                 <div className="flex gap-1.5">
-                  <dt className="font-medium">Agences touchées :</dt>
+                  <dt className="font-medium">Agences touchées&nbsp;:</dt>
                   <dd>
                     {[
                       ...group.agencies,
@@ -109,7 +110,7 @@ export default async function ErrorsPage() {
                   </dd>
                 </div>
                 <div className="flex gap-1.5">
-                  <dt className="font-medium">Origine :</dt>
+                  <dt className="font-medium">Origine&nbsp;:</dt>
                   <dd>
                     {group.sources.map(errorSourceLabel).join(' · ')}
                     {group.lastVersion ? ` · version ${group.lastVersion.slice(0, 7)}` : ''}
@@ -126,9 +127,9 @@ export default async function ErrorsPage() {
         <div className="flex flex-col gap-1">
           <h2 className={sectionTitle}>Échecs de lecture par portail</h2>
           <p className={hintText}>
-            Sur {ERRORS_WINDOW_DAYS} jours : les annonces retenues dont la page n’a pas pu être lue
-            après trois essais, face à celles importées depuis leur page. Aucune adresse d’annonce
-            n’est gardée. Le concurrent est alors créé depuis les données de la recherche.
+            Sur {ERRORS_WINDOW_DAYS} jours&nbsp;: les annonces retenues dont la page n’a pas pu être
+            lue après trois essais, face à celles importées depuis leur page. Aucune adresse
+            d’annonce n’est gardée. Le concurrent est alors créé depuis les données de la recherche.
           </p>
         </div>
         {importFailures.length === 0 ? (
@@ -168,7 +169,7 @@ export default async function ErrorsPage() {
           const line = academiaKeyLine(kind, academiaKeys[kind]);
           return (
             <p key={kind} className="text-sm text-zinc-700 stage:text-white/75">
-              {line.label} :{' '}
+              {line.label}&nbsp;:{' '}
               <span
                 className={
                   line.good ? 'font-semibold text-emerald-700' : 'font-semibold text-amber-700'
@@ -180,7 +181,7 @@ export default async function ErrorsPage() {
           );
         })}
         <p className={hintText}>
-          Ouvert aux agences :{' '}
+          Ouvert aux agences&nbsp;:{' '}
           {ACADEMIA_API_AGENCES_OUVERTES === 'toutes'
             ? 'toutes, sauf celle des tests automatiques'
             : budgets
@@ -198,9 +199,9 @@ export default async function ErrorsPage() {
           <h2 className={sectionTitle}>Budget de recherche par agence</h2>
           <p className={hintText}>
             Ce que chaque agence a dépensé ce mois-ci en recherches Stream Estate, et ses plafonds
-            mensuels : la recherche, la veille des acquéreurs (prise dans celui de la recherche, la
-            moitié au plus) et la lecture par l’IA. À 0 €, c’est coupé. Ni le conseiller ni le
-            manager ne voient ces montants.
+            mensuels&nbsp;: la recherche, la veille des acquéreurs (prise dans celui de la
+            recherche, la moitié au plus) et la lecture par l’IA. À 0 €, c’est coupé. Ni le
+            conseiller ni le manager ne voient ces montants.
           </p>
         </div>
         <ul className="flex flex-col gap-3">
@@ -219,7 +220,7 @@ export default async function ErrorsPage() {
                     ) : null}
                   </span>
                   <span className="text-sm text-zinc-600 stage:text-white/65">
-                    Ce mois-ci : {budgetUsageLabel(budget)}
+                    Ce mois-ci&nbsp;: {budgetUsageLabel(budget)}
                     {budget.reached ? ` · ${OPERATOR_BUDGET_REACHED}` : ''}
                     {budget.warning ? ` · ${budgetWarningLabel(budget)}` : ''}
                   </span>
@@ -229,7 +230,7 @@ export default async function ErrorsPage() {
                     className="text-sm text-zinc-600 stage:text-white/65"
                     data-testid="watch-budget"
                   >
-                    Veille ce mois-ci :{' '}
+                    Veille ce mois-ci&nbsp;:{' '}
                     {budgetUsageLabel({
                       spentCents: agency.watchSpentCents,
                       capCents: agency.watchEffectiveCapCents,
@@ -243,10 +244,10 @@ export default async function ErrorsPage() {
                     data-testid="ai-budget"
                   >
                     {!aiBudgets
-                      ? 'Lecture par l’IA : le budget n’a pas pu être lu.'
+                      ? 'Lecture par l’IA\u00a0: le budget n’a pas pu être lu.'
                       : aiBudgetOpen(aiBudgetOf(aiBudgets, agencyId), isDemo)
-                        ? `Lecture par l’IA ce mois-ci : ${formatEuro(aiBudgetOf(aiBudgets, agencyId).spentCents / 100)} sur ${formatEuro(aiBudgetOf(aiBudgets, agencyId).capCents / 100)}`
-                        : 'Lecture par l’IA : fermée — posez un plafond pour l’ouvrir.'}
+                        ? `Lecture par l’IA ce mois-ci\u00a0: ${formatEuro(aiBudgetOf(aiBudgets, agencyId).spentCents / 100)} sur ${formatEuro(aiBudgetOf(aiBudgets, agencyId).capCents / 100)}`
+                        : 'Lecture par l’IA\u00a0: fermée — posez un plafond pour l’ouvrir.'}
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-2">

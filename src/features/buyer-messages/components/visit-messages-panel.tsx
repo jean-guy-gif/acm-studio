@@ -43,7 +43,7 @@ function MessageBox({
             navigator.clipboard
               ?.writeText(text)
               .then(() => setNote('Message copié.'))
-              .catch(() => setNote('La copie a échoué : sélectionnez le message.'));
+              .catch(() => setNote('La copie a échoué\u00a0: sélectionnez le message.'));
           }}
         >
           Copier
@@ -97,7 +97,7 @@ export function VisitMessagesPanel({ requestId }: { requestId: string }) {
         }
         setMessages({ buyer: result.buyer, seller: result.seller });
       })
-      .catch(() => setError('Connexion perdue : réessayez.'));
+      .catch(() => setError('Connexion perdue\u00a0: réessayez.'));
   }, [requestId]);
 
   return (

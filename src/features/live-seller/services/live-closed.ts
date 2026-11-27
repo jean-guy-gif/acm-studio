@@ -4,7 +4,7 @@
 // `live_closed_after_conclusion`).
 export const LIVE_CLOSED_STATUSES = ['meeting_completed', 'archived'] as const;
 
-export const LIVE_CLOSED_MESSAGE = 'Rendez-vous terminé : la réponse n’est pas enregistrée.';
+export const LIVE_CLOSED_MESSAGE = 'Rendez-vous terminé\u00a0: la réponse n’est pas enregistrée.';
 
 export function isLiveClosed(status: string | null | undefined): boolean {
   return (LIVE_CLOSED_STATUSES as readonly string[]).includes(status ?? '');

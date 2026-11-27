@@ -35,7 +35,7 @@ export async function NeighbourhoodChoiceSection({
   if (state.kind === 'failed') {
     return (
       <p className={errorText} role="alert" data-testid="neighbourhood-choice-failed">
-        Le quartier à montrer au vendeur n’a pas pu être lu : rechargez la page.
+        Le quartier à montrer au vendeur n’a pas pu être lu&nbsp;: rechargez la page.
       </p>
     );
   }

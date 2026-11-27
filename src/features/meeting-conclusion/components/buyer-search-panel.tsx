@@ -123,7 +123,7 @@ function HitAction({ candidate }: { candidate: BuyerCandidate }) {
           </a>
         ) : null}
         <Link href={`/builder/${candidate.projectId}`} className={miniSecondary}>
-          Rappeler : « j’ai un acquéreur »
+          Rappeler&nbsp;: «&nbsp;j’ai un acquéreur&nbsp;»
         </Link>
       </div>
     );

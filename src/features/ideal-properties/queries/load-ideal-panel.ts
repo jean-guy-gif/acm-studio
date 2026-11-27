@@ -166,7 +166,7 @@ export async function loadIdealPanel(buyer: Buyer, profile: Profile) {
   const marketBlocked = !deduced.ok
     ? IDEAL_CRITERIA_MESSAGES[deduced.reason]
     : !marketAvailable
-      ? 'La recherche du marché n’est pas activée : prévenez l’équipe ACM Studio.'
+      ? 'La recherche du marché n’est pas activée\u00a0: prévenez l’équipe ACM Studio.'
       : null;
   // Mission 100 — l'avertissement de budget, pour le manager seulement, hors démo.
   const budget =

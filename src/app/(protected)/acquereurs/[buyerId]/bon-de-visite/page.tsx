@@ -60,7 +60,7 @@ export default async function VoucherPage({ params, searchParams }: Props) {
         <div className={`${card} flex flex-col gap-2 p-5`} data-testid="voucher-none">
           {context.visits.map((visit) => (
             <p key={visit.visitId} className="text-sm text-zinc-700">
-              {visit.label} : {visit.note}
+              {visit.label}&nbsp;: {visit.note}
             </p>
           ))}
         </div>

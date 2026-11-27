@@ -160,7 +160,7 @@ function AnswerGroupView({ group }: { group: AnswerGroup<BuyerAnswerView> }) {
             <span className="text-sm text-zinc-700 stage:text-white/80">
               {ITEM_ANSWER_REPORT[answer.answer]}
               {answer.reasons.length > 0
-                ? ` : ${answer.reasons.map((reason) => NO_REASON_LABELS[reason]).join(', ')}`
+                ? `\u00a0: ${answer.reasons.map((reason) => NO_REASON_LABELS[reason]).join(', ')}`
                 : ''}
             </span>
             <span className={hintText}>

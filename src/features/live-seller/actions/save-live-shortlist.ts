@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export type SaveLiveShortlistResult = { ok: true } | { ok: false; error: string };
 
-const LOCKED = 'Le Live a commencé : les concurrents montrés ne se modifient plus.';
+const LOCKED = 'Le Live a commencé\u00a0: les concurrents montrés ne se modifient plus.';
 const FAILURE = 'Le choix n’a pas pu être enregistré. Réessayez.';
 
 // Mission 110 — les concurrents montrés pendant le Live, au-delà de 6. `shown` : les identifiants

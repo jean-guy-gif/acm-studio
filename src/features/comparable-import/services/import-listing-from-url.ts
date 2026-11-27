@@ -33,7 +33,7 @@ export const ROBOTS_BLOCKED_MESSAGE =
 // portails refusent son adresse (M74), son échec ne dit rien de l'annonce. Jamais « L'annonce
 // semble supprimée » ni « le site a refusé » : l'écran dit l'extension (M105).
 export const EXTENSION_UNREAD_MESSAGE =
-  'L’extension ACM n’a pas pu lire l’annonce : vérifiez qu’elle est installée et activée, puis réessayez. Sinon, saisissez le bien à la main ci-dessous.';
+  'L’extension ACM n’a pas pu lire l’annonce\u00a0: vérifiez qu’elle est installée et activée, puis réessayez. Sinon, saisissez le bien à la main ci-dessous.';
 // Les échecs du serveur qui ne disent rien de l'annonce quand c'est un portail qui répond. Une
 // adresse refusée par le portail (robots.txt), une adresse invalide ou qui n'est pas une annonce
 // gardent leur message.
@@ -65,7 +65,7 @@ export async function importListingFromUrl(opts: {
   // retrieve exactly the same canonical address. Deterministic, never adjusted to
   // make the address pass.
   const normalized = normalizeListingUrl(url);
-  console.info(`[ACM import] adresse normalisée : ${normalized}  (origine : ${url})`);
+  console.info(`[ACM import] adresse normalisée\u00a0: ${normalized}  (origine\u00a0: ${url})`);
   const parsed = safeUrl(normalized);
   // Mission 150 — un site qu'ACM ne lit plus : refusé avant toute lecture (le serveur le refuse
   // aussi).
@@ -94,13 +94,15 @@ export async function importListingFromUrl(opts: {
       if (page.ok) {
         // Diagnostic (§2.4): a complete Bien'ici fiche is ~286 000 chars; a shell is
         // under 50 000. If the parser then finds nothing, this tells which it was.
-        console.info(`[ACM import] page reçue : ${page.size} caractères en ${page.durationMs} ms`);
+        console.info(
+          `[ACM import] page reçue\u00a0: ${page.size} caractères en ${page.durationMs} ms`,
+        );
         const htmlData = new FormData();
         htmlData.set('url', page.finalUrl || normalized);
         htmlData.set('html', page.html);
         return importHtmlAction(htmlData);
       }
-      console.warn(`[ACM import] extension : ${page.error}`);
+      console.warn(`[ACM import] extension\u00a0: ${page.error}`);
     }
     // fall through to the server attempt
   }

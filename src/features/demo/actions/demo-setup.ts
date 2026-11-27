@@ -40,10 +40,10 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 export type DemoSetupResult = { ok: true } | { ok: false; error: string };
 export type DemoSetupStart = { ok: true; now: string } | { ok: false; error: string };
 
-const READ_FAILED = 'Vos dossiers de démo n’ont pas pu être lus : rechargez la page.';
+const READ_FAILED = 'Vos dossiers de démo n’ont pas pu être lus\u00a0: rechargez la page.';
 const stale = (mode: DemoSetupMode): { ok: false; error: string } => ({
   ok: false,
-  error: `${setupName(mode)} a été interrompue trop longtemps. Recommencez : rien n’est prêt.`,
+  error: `${setupName(mode)} a été interrompue trop longtemps. Recommencez\u00a0: rien n’est prêt.`,
 });
 const failed = (reason: string, mode: DemoSetupMode): { ok: false; error: string } => ({
   ok: false,
@@ -183,7 +183,7 @@ export async function seedDemoProjectsStep(
     return failed(
       names.length === 1
         ? `le dossier de ${names[0]} n’a pas pu être créé`
-        : `les dossiers de ${names.join(' ; ')} n’ont pas pu être créés`,
+        : `les dossiers de ${names.join('\u202f; ')} n’ont pas pu être créés`,
       mode,
     );
   }

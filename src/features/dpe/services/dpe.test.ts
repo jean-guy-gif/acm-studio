@@ -87,7 +87,7 @@ describe('Mission 80 — « Le DPE face au marché »', () => {
 
   it('moins bon que le repère', () => {
     expect(dpeMarket('G', competitors)?.message).toBe(
-      'Votre DPE est moins bon que celui de la plupart de vos concurrents : les acheteurs compareront. À intégrer dans la stratégie de prix.',
+      'Votre DPE est moins bon que celui de la plupart de vos concurrents\u00a0: les acheteurs compareront. À intégrer dans la stratégie de prix.',
     );
   });
 
@@ -95,7 +95,7 @@ describe('Mission 80 — « Le DPE face au marché »', () => {
     expect(dpeMarket(null, competitors)).toMatchObject({
       verdict: 'unknown',
       message:
-        'Vos concurrents affichent surtout D. Après le passage du diagnostiqueur, votre bien devra être en D ou mieux pour rester dans la course ; au-delà, il faudra peut-être ajuster la stratégie de prix.',
+        'Vos concurrents affichent surtout D. Après le passage du diagnostiqueur, votre bien devra être en D ou mieux pour rester dans la course\u202f; au-delà, il faudra peut-être ajuster la stratégie de prix.',
     });
     expect(dpeMarket('', ['A', 'A'])?.message).toContain('devra être en A pour rester');
   });

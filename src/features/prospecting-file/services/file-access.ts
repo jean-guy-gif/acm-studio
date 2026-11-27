@@ -38,7 +38,7 @@ export function resolveFileVersion(
 
 export const ADDRESS_TO_CONFIRM_MESSAGE = 'Adresse à confirmer avant d’envoyer';
 export const PHONE_MISSING_MESSAGE =
-  'Renseignez votre téléphone dans « Mon profil » : il figure dans la mention « Pour ne plus être sollicité ».';
+  'Renseignez votre téléphone dans «\u00a0Mon profil\u00a0»\u00a0: il figure dans la mention «\u00a0Pour ne plus être sollicité\u00a0».';
 
 // Mission 90 — le courrier à un propriétaire porte l'adresse de l'agence (responsable du
 // traitement) : sans elle, il ne se prépare pas.

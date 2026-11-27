@@ -5,7 +5,7 @@
 export const BATCH_ITEM_TIMEOUT_MS = 30_000;
 export const BATCH_PAUSE_MS = 1000;
 export const BATCH_TIMEOUT_REASON =
-  'la fiche n’a pas répondu en 30 secondes (elle peut être entrée quand même : vérifiez la liste des concurrents avant de la relancer)';
+  'la fiche n’a pas répondu en 30 secondes (elle peut être entrée quand même\u00a0: vérifiez la liste des concurrents avant de la relancer)';
 export const BATCH_CRASH_REASON = 'l’import de la fiche a été interrompu par une erreur';
 
 export type BatchItemOutcome = { ok: true } | { ok: false; reason: string };

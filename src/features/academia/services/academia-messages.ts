@@ -10,14 +10,14 @@ export function academiaQuotaMessage(
   if (retryAfter != null && retryAfter <= QUOTA_MINUTES_MAX) {
     const minutes = Math.max(1, Math.ceil(retryAfter / 60));
     return {
-      message: `Academia reçoit beaucoup de demandes en ce moment : réessayez dans ${minutes} minute${minutes > 1 ? 's' : ''}.`,
+      message: `Academia reçoit beaucoup de demandes en ce moment\u00a0: réessayez dans ${minutes} minute${minutes > 1 ? 's' : ''}.`,
       retry: true,
     };
   }
   const tail = ' Les dossiers déjà prêts restent lisibles. Ou collez le lien vous-même.';
   if (retryAfter == null) {
     return {
-      message: `Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui : réessayez demain.${tail}`,
+      message: `Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui\u00a0: réessayez demain.${tail}`,
       retry: false,
     };
   }
@@ -41,7 +41,7 @@ export function academiaQuotaMessage(
         : `le ${formatDay(at, 'fr', 'short')}, `;
   const when = `${prefix}à partir de ${Number(hours)} h ${minutes}`;
   return {
-    message: `Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui : réessayez ${when}.${tail}`,
+    message: `Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui\u00a0: réessayez ${when}.${tail}`,
     retry: false,
   };
 }

@@ -446,7 +446,7 @@ describe('le document de l’Étude de marché', () => {
     expect(document.ranking.subject).toMatchObject({ price: 615000, proposed: true });
     expect(html).toContain('prix proposé');
     expect(html).not.toContain('retenu ensemble');
-    expect(document.story.summary.value).toContain('Le prix proposé :');
+    expect(document.story.summary.value).toContain('Le prix proposé\u00a0:');
     expect(document.story.next.is).toContain('elle situe le prix proposé');
     for (const text of [JSON.stringify(document), html])
       expect(text).not.toMatch(ANALYSIS_TRAP_PATTERN);

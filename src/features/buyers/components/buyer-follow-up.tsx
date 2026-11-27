@@ -230,7 +230,7 @@ export function BuyerFollowUp({
       </div>
       {unread ? (
         <p role="alert" className="pb-2 text-sm font-semibold text-red-700">
-          Son suivi n’a pas pu être lu en entier : rechargez la page.
+          Son suivi n’a pas pu être lu en entier&nbsp;: rechargez la page.
         </p>
       ) : null}
       <div

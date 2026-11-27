@@ -109,7 +109,7 @@ export function offerNotaryMessage(input: {
 }): string {
   return [
     'Maître,',
-    `Veuillez trouver l’offre d’achat acceptée par le vendeur pour le bien situé ${input.propertyAddress}${input.mandateNumber ? `, mandat n° ${input.mandateNumber}` : ''} : ${input.url}`,
+    `Veuillez trouver l’offre d’achat acceptée par le vendeur pour le bien situé ${input.propertyAddress}${input.mandateNumber ? `, mandat n° ${input.mandateNumber}` : ''}\u00a0: ${input.url}`,
     'Le document porte l’identité des offrants et les signatures des deux parties.',
     'Je reste à votre disposition pour la suite.',
     [input.advisor.name, input.agencyName, input.advisor.phone].filter(Boolean).join(' · '),

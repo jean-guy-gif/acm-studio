@@ -56,14 +56,14 @@ export function CopyMessage({ state, address }: { state: CopyState; address: str
         className="text-sm font-medium text-emerald-700 stage:text-emerald-300"
         data-testid="academia-copied"
       >
-        ✓ Adresse copiée : collez-la dans Academia
+        ✓ Adresse copiée&nbsp;: collez-la dans Academia
       </p>
     );
   }
   if (state === 'failed' && address) {
     return (
       <p role="status" className={hintText} data-testid="academia-copy-failed">
-        Copiez l’adresse :{' '}
+        Copiez l’adresse&nbsp;:{' '}
         <span className="font-medium text-zinc-900 select-all stage:text-white">{address}</span>
       </p>
     );
@@ -152,7 +152,9 @@ export function AcademiaLinks({
       {state === 'idle' ? (
         copied ? (
           <p className="text-xs text-zinc-500 stage:text-white/60">
-            {variant === 'buttons' ? 'Adresse copiée en un toucher :' : 'Adresse du bien :'}{' '}
+            {variant === 'buttons'
+              ? 'Adresse copiée en un toucher\u00a0:'
+              : 'Adresse du bien\u00a0:'}{' '}
             <span className="rounded-md bg-zinc-100 px-2 py-0.5 font-medium text-zinc-800 stage:bg-white/10 stage:text-white">
               {copied}
             </span>

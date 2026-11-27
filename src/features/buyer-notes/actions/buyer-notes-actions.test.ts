@@ -165,7 +165,7 @@ describe('readBuyerNotes', () => {
     expect(await readBuyerNotes(notesForm())).toEqual({ ok: false, cause: 'unreadable' });
     const settle = fake.calls.find((call) => call.args[0] === 'settle_ai_budget');
     expect(settle?.args[1]).toMatchObject({ p_outcome: 'failed' });
-    expect(state.reported).toEqual(['lecture des notes : invalid_output']);
+    expect(state.reported).toEqual(['lecture des notes\u00a0: invalid_output']);
   });
 
   it('une photo HEIC est refusée avant tout, avec sa consigne', async () => {

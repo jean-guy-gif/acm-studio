@@ -63,7 +63,7 @@ export function LegalIdentityForm({
         </p>
         {gaps.length > 0 ? (
           <p className="text-sm font-medium text-amber-700" data-testid="legal-identity-gaps">
-            À compléter pour produire un bon de visite : {gaps.join(', ')}.
+            À compléter pour produire un bon de visite&nbsp;: {gaps.join(', ')}.
           </p>
         ) : (
           <p className={okText} data-testid="legal-identity-complete">
@@ -73,8 +73,8 @@ export function LegalIdentityForm({
         {readOnly ? <p className={hintText}>{IDENTITY_MANAGER_ONLY_MESSAGE}</p> : null}
         {initialGuaranteeText ? (
           <p className={hintText} data-testid="legal-identity-old-guarantee">
-            Votre garantie financière en texte libre : « {initialGuaranteeText} ». Saisie ci-dessous
-            champ par champ, elle le remplace sur tous vos documents.
+            Votre garantie financière en texte libre&nbsp;: «&nbsp;{initialGuaranteeText}&nbsp;».
+            Saisie ci-dessous champ par champ, elle le remplace sur tous vos documents.
           </p>
         ) : null}
       </div>
@@ -86,7 +86,7 @@ export function LegalIdentityForm({
           setState(null);
           startTransition(async () => {
             const result = await saveLegalIdentity({ ...values, guaranteeAmount: amount }).catch(
-              () => ({ ok: false as const, error: 'Connexion perdue : réessayez.' }),
+              () => ({ ok: false as const, error: 'Connexion perdue\u00a0: réessayez.' }),
             );
             if (!result.ok) {
               setState({ ok: false, message: result.error });

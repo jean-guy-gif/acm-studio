@@ -41,12 +41,12 @@ export function sellerTaskWhat(task: SuiviTask, context: SellerTaskContext | und
     case 'follow_up':
       // Des acquéreurs prêts correspondent à son bien : c'est l'argument de la relance (M145).
       return task.readyBuyers
-        ? `À relancer : ${readyBuyersArgument(task.readyBuyers, task.property?.propertyType)}`
+        ? `À relancer\u00a0: ${readyBuyersArgument(task.readyBuyers, task.property?.propertyType)}`
         : ['À relancer', context?.motiveLabel ?? null].filter(Boolean).join(' · ');
     case 'follow_up_early': {
       const count = task.readyBuyers ?? 0;
       return [
-        `Relancer plus tôt ? ${readyBuyersCount(count)} ${count > 1 ? 'correspondent' : 'correspond'}`,
+        `Relancer plus tôt\u202f? ${readyBuyersCount(count)} ${count > 1 ? 'correspondent' : 'correspond'}`,
         task.plannedOn ? `relance prévue le ${dayLabel(task.plannedOn)}` : null,
       ]
         .filter(Boolean)

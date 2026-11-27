@@ -291,7 +291,7 @@ describe('« Ne plus solliciter »', () => {
     for (const address of [null, '', 'rue des Pins', 'Antibes', '8', 'x'.repeat(201)]) {
       expect(await addManualOpposition(address)).toEqual({
         ok: false,
-        error: 'Saisissez l’adresse complète : numéro, rue, code postal, ville.',
+        error: 'Saisissez l’adresse complète\u00a0: numéro, rue, code postal, ville.',
       });
     }
     noWrite();
@@ -308,7 +308,7 @@ describe('« Ne plus solliciter »', () => {
     state.communes = null;
     expect(await addManualOpposition('8 avenue Hochet 06160')).toEqual({
       ok: false,
-      error: 'Service des communes indisponible : tapez le nom de la commune.',
+      error: 'Service des communes indisponible\u00a0: tapez le nom de la commune.',
     });
     // Un code postal à plusieurs communes : il faut choisir, et un choix hors liste ne vaut rien.
     state.communes = [
@@ -496,7 +496,7 @@ describe('« Ne plus solliciter »', () => {
     expect(refused).toEqual({
       ok: false,
       error:
-        'L’inscription n’a pas été confirmée : l’adresse n’est pas sur la liste « Ne plus solliciter ». Réessayez.',
+        'L’inscription n’a pas été confirmée\u00a0: l’adresse n’est pas sur la liste «\u00a0Ne plus solliciter\u00a0». Réessayez.',
     });
     expect((await addManualOpposition('8 avenue Hochet 06160')).ok).toBe(false);
     // La relecture qui échoue elle-même ne vaut pas confirmation.
@@ -519,7 +519,7 @@ describe('relance', () => {
     state.conclusion = { outcome: 'signed' };
     expect(await recordFollowUpContact(PROJECT, form({}))).toEqual({
       ok: false,
-      error: 'Ce dossier n’est plus « à relancer ».',
+      error: 'Ce dossier n’est plus «\u00a0à relancer\u00a0».',
     });
     state.conclusion = { outcome: 'follow_up' };
     expect((await recordFollowUpContact(PROJECT, form({ note: 'a'.repeat(201) }))).ok).toBe(false);
@@ -656,7 +656,7 @@ describe('invitations', () => {
         : {};
     expect(await inviteMember(invite)).toEqual({
       ok: false,
-      error: 'Cette personne a été retirée de votre agence : vous pouvez la réintégrer.',
+      error: 'Cette personne a été retirée de votre agence\u00a0: vous pouvez la réintégrer.',
       reinstateMemberId: 'ancien',
     });
     expect(service.writes()).toEqual([]);
@@ -1248,7 +1248,7 @@ describe('Mission 109', () => {
       const serious = form({ seller_serious_competitor: 'no' });
       expect(await writeLiveComparableResponse(PROJECT, COMPETITOR, serious)).toEqual({
         ok: false,
-        error: 'Rendez-vous terminé : la réponse n’est pas enregistrée.',
+        error: 'Rendez-vous terminé\u00a0: la réponse n’est pas enregistrée.',
       });
       expect(
         (
@@ -1404,7 +1404,7 @@ describe('Mission 110 — les concurrents montrés au Live', () => {
           : {};
     expect(await saveLiveShortlist(PROJECT, [A])).toEqual({
       ok: false,
-      error: 'Le Live a commencé : les concurrents montrés ne se modifient plus.',
+      error: 'Le Live a commencé\u00a0: les concurrents montrés ne se modifient plus.',
     });
     expect(server.writes()).toEqual(['rpc save_live_shortlist']);
   });

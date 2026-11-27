@@ -16,7 +16,7 @@ export default function ForgottenPasswordPage() {
     <AuthCard
       kicker="Espace conseiller"
       title="Mot de passe oublié"
-      subtitle="Indiquez votre adresse e-mail : nous vous envoyons un lien pour en choisir un nouveau."
+      subtitle="Indiquez votre adresse e-mail&nbsp;: nous vous envoyons un lien pour en choisir un nouveau."
     >
       <form action={requestPasswordReset} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5">

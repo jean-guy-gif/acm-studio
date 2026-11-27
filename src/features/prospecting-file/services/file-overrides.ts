@@ -13,7 +13,7 @@ import type {
 // réécrit. La version confrère en parle librement.
 export const OWNER_FORBIDDEN_WORD = /mandat/i;
 export const OWNER_FORBIDDEN_MESSAGE =
-  'Version propriétaire : le mot « mandat » ne doit pas apparaître. Reformulez le texte.';
+  'Version propriétaire\u00a0: le mot «\u00a0mandat\u00a0» ne doit pas apparaître. Reformulez le texte.';
 
 export function ownerForbiddenWord(
   version: ProspectingFileVersion,

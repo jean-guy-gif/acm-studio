@@ -43,7 +43,9 @@ describe('liveLaunchCheck — avant d’ouvrir le Live', () => {
         notices: [FEW_COMPETITORS_WARNING],
       });
     }
-    expect(FEW_COMPETITORS_WARNING).toBe('Peu de concurrents : la lecture du marché sera fragile.');
+    expect(FEW_COMPETITORS_WARNING).toBe(
+      'Peu de concurrents\u00a0: la lecture du marché sera fragile.',
+    );
   });
 
   it('3 concurrents, dossier d’exemple, rien à vérifier : aucune question', () => {
@@ -66,7 +68,7 @@ describe('liveLaunchCheck — avant d’ouvrir le Live', () => {
       status: 'ask',
       confirm: false,
       notices: [
-        '2 concurrents retenus ont un prix ou une surface à vérifier : ils entrent tels quels dans le prix des concurrents.',
+        '2 concurrents retenus ont un prix ou une surface à vérifier\u00a0: ils entrent tels quels dans le prix des concurrents.',
       ],
     });
   });
@@ -133,7 +135,7 @@ describe('le bouton « Lancer le Live »', () => {
 
   it('la confirmation dit ce qui arrive aux réponses, et propose le dossier d’exemple', () => {
     expect(REAL_DOSSIER_CONFIRMATION).toBe(
-      'Vous êtes devant le vendeur ? Ses réponses seront enregistrées pour de bon. Pour vous entraîner, ouvrez le dossier d’exemple.',
+      'Vous êtes devant le vendeur\u202f? Ses réponses seront enregistrées pour de bon. Pour vous entraîner, ouvrez le dossier d’exemple.',
     );
   });
 });
@@ -155,7 +157,7 @@ describe('l’étape « Lancer le Live »', () => {
   it('un vrai dossier : la confirmation « devant le vendeur » s’affiche d’emblée', () => {
     const html = step({ competitorCount: 3, isExample: false });
     expect(html).toContain('data-testid="live-launch-confirm"');
-    expect(html).toContain('Vous êtes devant le vendeur ?');
+    expect(html).toContain('Vous êtes devant le vendeur\u202f?');
   });
 
   it('le dossier d’exemple prêt : pas de confirmation, la scène s’ouvre', () => {
@@ -207,7 +209,7 @@ describe('Mission 109 — sans décision de prix', () => {
       status: 'ask',
       confirm: false,
       notices: [
-        'Aucune décision de prix : le vendeur ne verra pas de prix final. Décidez votre prix avant le rendez-vous',
+        'Aucune décision de prix\u00a0: le vendeur ne verra pas de prix final. Décidez votre prix avant le rendez-vous',
       ],
     });
   });

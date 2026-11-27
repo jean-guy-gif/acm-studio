@@ -154,7 +154,7 @@ export function seriesItemName(task: SuiviTask): string {
       .filter(Boolean)
       .join(' — ');
   }
-  if (task.kind === 'prospect') return `${task.sellerName} : ${task.count ?? 0}`;
+  if (task.kind === 'prospect') return `${task.sellerName}\u00a0: ${task.count ?? 0}`;
   if (task.buyerName) return capitalized(buyerInSentence(task.buyerName));
   return task.sellerName || 'Un dossier';
 }
@@ -169,7 +169,7 @@ export function seriesTitle(
     case 'follow_up':
       return `Relancer ${plural(n, 'vendeur', 'vendeurs')}`;
     case 'follow_up_early':
-      return `Relancer plus tôt ? ${plural(n, 'vendeur a', 'vendeurs ont')} des acquéreurs prêts`;
+      return `Relancer plus tôt\u202f? ${plural(n, 'vendeur a', 'vendeurs ont')} des acquéreurs prêts`;
     case 'market_update':
       return `Faire ${plural(n, 'Point marché', 'Points marché')}`;
     case 'visit':
@@ -179,7 +179,7 @@ export function seriesTitle(
     case 'propose_buyers':
       return `${plural(n, 'bien', 'biens')} à proposer à vos acquéreurs`;
     case 'buyer_watch':
-      return `Nouveaux biens de la veille : ${plural(n, 'acquéreur', 'acquéreurs')}`;
+      return `Nouveaux biens de la veille\u00a0: ${plural(n, 'acquéreur', 'acquéreurs')}`;
     case 'buyer_relaunch':
       return `Relancer ${plural(n, 'acquéreur', 'acquéreurs')}`;
     case 'buyer_recontact':
@@ -189,7 +189,7 @@ export function seriesTitle(
     case 'buyer_weekly_report':
       return `Envoyer le point de la semaine à ${plural(n, 'acquéreur', 'acquéreurs')}`;
     case 'prospect_buyers':
-      return `Démarcher ${plural(n, 'bien', 'biens')} : des acquéreurs prêts y correspondent`;
+      return `Démarcher ${plural(n, 'bien', 'biens')}\u00a0: des acquéreurs prêts y correspondent`;
     case 'prospect': {
       const total = tasks.reduce((sum, task) => sum + (task.count ?? 0), 0);
       return `Démarcher ${plural(total, prospectAlerts ? 'autre concurrent' : 'concurrent', prospectAlerts ? 'autres concurrents' : 'concurrents')} de ${plural(n, 'mandat', 'mandats')}`;

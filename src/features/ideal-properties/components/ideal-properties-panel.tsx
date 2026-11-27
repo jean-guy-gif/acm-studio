@@ -555,7 +555,7 @@ export function IdealPropertiesPanel({
         return;
       }
       setSaved(
-        `Sélection retenue : ${result.selection.items.length} bien${result.selection.items.length > 1 ? 's' : ''}.`,
+        `Sélection retenue\u00a0: ${result.selection.items.length} bien${result.selection.items.length > 1 ? 's' : ''}.`,
       );
       setBaseline([...selected.values()]);
       // La refonte, lot C — dans le détail d'Acquéreurs aussi, on reste sur place (« sans changer
@@ -579,7 +579,7 @@ export function IdealPropertiesPanel({
         setImportNote(
           imported === result.toImport.length
             ? `${imported} annonce${imported > 1 ? 's' : ''} importée${imported > 1 ? 's' : ''}.`
-            : `${imported} annonce${imported > 1 ? 's' : ''} importée${imported > 1 ? 's' : ''} sur ${result.toImport.length} ; les autres gardent les données de la recherche.`,
+            : `${imported} annonce${imported > 1 ? 's' : ''} importée${imported > 1 ? 's' : ''} sur ${result.toImport.length}\u202f; les autres gardent les données de la recherche.`,
         );
       }
       router.refresh();
@@ -848,7 +848,7 @@ export function IdealPropertiesPanel({
       })
       .catch(() => {
         setDeckPending(false);
-        setDeckError('Connexion perdue : réessayez.');
+        setDeckError('Connexion perdue\u00a0: réessayez.');
       })
       .finally(() => {
         dismissing.current = false;
@@ -1003,8 +1003,8 @@ export function IdealPropertiesPanel({
     const deckUnread = seenUnread || (deckScope === 'all' && mandatesUnread);
     const leaveDialog = leaveGuard.pendingHref ? (
       <ConfirmDialog
-        title="Quitter sans retenir la sélection ?"
-        text="Les biens que vous venez de proposer ne sont pas encore enregistrés : ils seront perdus. « Retenir la sélection » les garde."
+        title="Quitter sans retenir la sélection&#x202f;?"
+        text="Les biens que vous venez de proposer ne sont pas encore enregistrés&nbsp;: ils seront perdus. «&nbsp;Retenir la sélection&nbsp;» les garde."
         onCancel={leaveGuard.stay}
         cancelLabel="Rester"
       >
@@ -1103,14 +1103,14 @@ export function IdealPropertiesPanel({
         />
         {dismissed == null ? (
           <p role="alert" className="text-sm font-semibold text-red-700">
-            Ce qu’il a déjà reçu, visité ou refusé n’a pas pu être lu : rechargez la page. En
+            Ce qu’il a déjà reçu, visité ou refusé n’a pas pu être lu&nbsp;: rechargez la page. En
             attendant, aucun bien ne lui est proposé ici.
           </p>
         ) : null}
         {/* Comme sur la liste : des mandats illisibles ne sont pas des mandats absents (M98). */}
         {deckScope === 'all' && mandatesUnread ? (
           <p role="alert" className="text-sm font-semibold text-red-700" data-testid="deck-unread">
-            Vos mandats n’ont pas pu être lus : rechargez la page.
+            Vos mandats n’ont pas pu être lus&nbsp;: rechargez la page.
           </p>
         ) : null}
         {lastDismissed ? (
@@ -1119,7 +1119,7 @@ export function IdealPropertiesPanel({
             role="status"
             data-testid="deck-dismissed"
           >
-            Écarté pour lui : {lastDismissed.label} ·{' '}
+            Écarté pour lui&nbsp;: {lastDismissed.label} ·{' '}
             <button
               type="button"
               className="font-bold text-brand-deep underline stage:text-brand"
@@ -1149,7 +1149,7 @@ export function IdealPropertiesPanel({
                       setDeckIndex(back);
                     }
                   })
-                  .catch(() => setUndoError('Connexion perdue : réessayez.'));
+                  .catch(() => setUndoError('Connexion perdue\u00a0: réessayez.'));
               }}
             >
               Annuler
@@ -1203,7 +1203,7 @@ export function IdealPropertiesPanel({
               data-testid="deck-end-title"
             >
               {retained.length > 0
-                ? `Sélection${buyerName ? ` de ${buyerInSentence(buyerName)}` : ''} : ${retained.length} bien${retained.length > 1 ? 's' : ''} sur ${MAX_IDEAL_SELECTION}`
+                ? `Sélection${buyerName ? ` de ${buyerInSentence(buyerName)}` : ''}\u00a0: ${retained.length} bien${retained.length > 1 ? 's' : ''} sur ${MAX_IDEAL_SELECTION}`
                 : 'Aucun bien dans la sélection'}
             </p>
             {retained.length > 0 ? (
@@ -1286,7 +1286,7 @@ export function IdealPropertiesPanel({
       ) : null}
       {dismissed == null ? (
         <p role="alert" className="text-sm font-semibold text-red-700">
-          Ce qu’il a déjà reçu, visité ou refusé n’a pas pu être lu : rechargez la page. En
+          Ce qu’il a déjà reçu, visité ou refusé n’a pas pu être lu&nbsp;: rechargez la page. En
           attendant, aucun bien ne lui est proposé ici.
         </p>
       ) : null}
@@ -1294,7 +1294,7 @@ export function IdealPropertiesPanel({
         <div className="flex flex-col gap-1" data-testid="dismissed-now" role="status">
           {justDismissed.map((entry) => (
             <p key={entry.key} className="text-sm text-zinc-700 stage:text-white/80">
-              Écarté pour lui : {entry.label} ·{' '}
+              Écarté pour lui&nbsp;: {entry.label} ·{' '}
               <button
                 type="button"
                 className="font-semibold text-brand-darker underline"
@@ -1316,7 +1316,7 @@ export function IdealPropertiesPanel({
                         current.filter((other) => other.key !== entry.key),
                       );
                     })
-                    .catch(() => setUndoError('Connexion perdue : réessayez.'));
+                    .catch(() => setUndoError('Connexion perdue\u00a0: réessayez.'));
                 }}
               >
                 Annuler
@@ -1336,7 +1336,7 @@ export function IdealPropertiesPanel({
         <section className={`${card} flex flex-col gap-3 p-5`} data-testid="ideal-current">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className={sectionTitle}>
-              Sélection actuelle :{' '}
+              Sélection actuelle&nbsp;:{' '}
               {baseline.length > 0
                 ? baseline.map((_, index) => String.fromCharCode(65 + index)).join(', ')
                 : 'aucune'}
@@ -1409,8 +1409,8 @@ export function IdealPropertiesPanel({
           <div className="flex flex-col gap-0.5">
             <h2 className={sectionTitle}>Nouveau cette semaine</h2>
             <p className={hintText}>
-              Trouvés par la veille le {dayLabel(watch.seenOn)} : arrivés sur le marché depuis sa
-              recherche précédente. À vérifier avant de les proposer.
+              Trouvés par la veille le {dayLabel(watch.seenOn)}&nbsp;: arrivés sur le marché depuis
+              sa recherche précédente. À vérifier avant de les proposer.
             </p>
           </div>
           <ul className="flex flex-col gap-2">
@@ -1433,7 +1433,7 @@ export function IdealPropertiesPanel({
         </div>
         {mandatesUnread ? (
           <p role="alert" className="text-sm font-semibold text-red-700">
-            Vos mandats n’ont pas pu être lus : rechargez la page.
+            Vos mandats n’ont pas pu être lus&nbsp;: rechargez la page.
           </p>
         ) : null}
         {allAgencyHits.length > 0 && agencyOpen.length === 0 && !seenUnread ? (
@@ -1448,7 +1448,7 @@ export function IdealPropertiesPanel({
         ) : null}
         {allAgencyHits.length === 0 ? (
           <p className="text-sm text-zinc-600 stage:text-white/70">
-            Rien de ce côté pour l’instant : aucun bien de l’agence ne correspond exactement.
+            Rien de ce côté pour l’instant&nbsp;: aucun bien de l’agence ne correspond exactement.
             {agency.near.length > 0
               ? ` ${agency.near.length} bien${agency.near.length > 1 ? 's' : ''} proche${agency.near.length > 1 ? 's' : ''} mais hors critères.`
               : ''}
@@ -1489,7 +1489,7 @@ export function IdealPropertiesPanel({
                     <span className="text-sm text-zinc-600 stage:text-white/70">
                       {[
                         hit.candidate.price != null ? formatEuro(hit.candidate.price) : null,
-                        `Pour : ${hit.candidate.sellerName}`,
+                        `Pour\u00a0: ${hit.candidate.sellerName}`,
                         hit.note,
                         hit.condominiumNote,
                       ]
@@ -1519,7 +1519,7 @@ export function IdealPropertiesPanel({
           <h2 className={sectionTitle}>Le marché</h2>
           <p className={hintText}>
             Les annonces en vente qui répondent à la fiche, rangées en trois catégories d’après ses
-            indispensables ; un indispensable contredit écarte le bien.
+            indispensables&#x202f;; un indispensable contredit écarte le bien.
           </p>
         </div>
         {budgetWarning ? <p className={hintText}>{budgetWarning}</p> : null}
@@ -1545,7 +1545,7 @@ export function IdealPropertiesPanel({
               Recherche du marché…
             </span>
             <span className="text-sm text-zinc-700 stage:text-white/80">
-              Puis lecture des annonces pour ce qui compte pour eux : {softLabels.join(', ')}.
+              Puis lecture des annonces pour ce qui compte pour eux&nbsp;: {softLabels.join(', ')}.
             </span>
             <span className={hintText}>
               Jusqu’à 30 secondes. Si la lecture tarde, les biens s’affichent en classement
@@ -1664,7 +1664,7 @@ export function IdealPropertiesPanel({
           className="text-sm font-semibold text-red-700"
           data-testid="ideal-seen-unread"
         >
-          Les biens qu’il a déjà vus n’ont pas pu être listés : rechargez la page.
+          Les biens qu’il a déjà vus n’ont pas pu être listés&nbsp;: rechargez la page.
         </p>
       ) : seenList.length > 0 ? (
         <section
@@ -1676,7 +1676,7 @@ export function IdealPropertiesPanel({
               Déjà vus avec lui <span className={badgeBrand}>{seenList.length}</span>
             </h2>
             <p className={hintText}>
-              Il les a reçus, visités ou refusés : ils ne lui sont plus proposés, et ne se
+              Il les a reçus, visités ou refusés&nbsp;: ils ne lui sont plus proposés, et ne se
               retiennent plus.
             </p>
           </div>

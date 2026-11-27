@@ -53,8 +53,8 @@ export function VerifyBanner({ count, onAllCorrect }: { count: number; onAllCorr
       className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 stage:border-amber-400/30 stage:bg-amber-500/10 stage:text-amber-200"
     >
       <span>
-        {label} : relisez les champs marqués « {VERIFY_LABEL} », ou confirmez d’un geste. Rien n’est
-        bloquant.
+        {label}&nbsp;: relisez les champs marqués «&nbsp;{VERIFY_LABEL}&nbsp;», ou confirmez d’un
+        geste. Rien n’est bloquant.
       </span>
       <button type="button" className={btnSecondary} onClick={onAllCorrect}>
         {ALL_CORRECT_LABEL}

@@ -52,16 +52,16 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACADEMIA_DOWN =
   'Academia ne répond pas pour l’instant. Réessayez dans un moment, ou collez le lien vous-même.';
 const ACADEMIA_REFUSED =
-  'Academia refuse la demande pour l’instant : l’équipe ACM Studio est prévenue. Collez le lien vous-même.';
+  'Academia refuse la demande pour l’instant\u00a0: l’équipe ACM Studio est prévenue. Collez le lien vous-même.';
 const ACADEMIA_PREPARATION_FAILED =
-  'Academia n’a pas pu préparer le dossier de cette adresse pour l’instant : réessayez plus tard, ou collez le lien vous-même.';
+  'Academia n’a pas pu préparer le dossier de cette adresse pour l’instant\u00a0: réessayez plus tard, ou collez le lien vous-même.';
 const ACADEMIA_GONE =
-  'Le dossier de cette adresse a été effacé chez Academia : touchez « Réessayer » pour en refaire un.';
+  'Le dossier de cette adresse a été effacé chez Academia\u00a0: touchez «\u00a0Réessayer\u00a0» pour en refaire un.';
 const READ_FAILED = 'La demande à Academia n’a pas pu être lue. Réessayez dans un moment.';
 const SAVE_FAILED = 'Le lien n’a pas pu être enregistré. Réessayez.';
 const ADDRESS_MAX = 300;
 const ADDRESS_TOO_LONG =
-  'L’adresse du bien est trop longue pour Academia (300 caractères au plus) : raccourcissez-la sur la fiche.';
+  'L’adresse du bien est trop longue pour Academia (300 caractères au plus)\u00a0: raccourcissez-la sur la fiche.';
 
 type Admin = ReturnType<typeof createServiceRoleClient>;
 type RequestRow = {
@@ -82,7 +82,7 @@ const fail = (message: string, retry = true): LivingHereLinkState => ({
 async function failed(reason: AcademiaFailure, where: string): Promise<LivingHereLinkState> {
   await reportServerError(
     `academia:${where}`,
-    new Error(`Academia : ${reason.reason}${reason.detail ? ` — ${reason.detail}` : ''}`),
+    new Error(`Academia\u00a0: ${reason.reason}${reason.detail ? ` — ${reason.detail}` : ''}`),
   );
   if (reason.reason === 'quota') {
     const quota = academiaQuotaMessage(reason.retryAfter);
@@ -144,7 +144,9 @@ async function linkFor(
   if (!link.ok && current && link.reason !== 'not_found') {
     await reportServerError(
       'academia:client-link',
-      new Error(`Academia : ${link.reason}${link.detail ? ` — ${link.detail}` : ''} (lien gardé)`),
+      new Error(
+        `Academia\u00a0: ${link.reason}${link.detail ? ` — ${link.detail}` : ''} (lien gardé)`,
+      ),
     );
     return { state: 'ready', ...current };
   }
@@ -316,7 +318,9 @@ async function run(
   if (!request.ok && request.reason === 'address_not_found') {
     await reportServerError(
       'academia:create-request',
-      new Error(`Academia : adresse introuvable${request.detail ? ` — ${request.detail}` : ''}`),
+      new Error(
+        `Academia\u00a0: adresse introuvable${request.detail ? ` — ${request.detail}` : ''}`,
+      ),
     );
     return { state: 'address_not_found' };
   }

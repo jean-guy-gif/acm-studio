@@ -71,7 +71,10 @@ export async function readClientBlocks(input: {
   if (!reply.ok) return { kind: await viewFailure({ ...input, label }, reply) };
   const blocks = parseNeighbourhoodBlocks(reply.json);
   if (!blocks) {
-    await reportServerError(label, new Error('Academia : vue « bien-client » hors contrat'));
+    await reportServerError(
+      label,
+      new Error('Academia\u00a0: vue «\u00a0bien-client\u00a0» hors contrat'),
+    );
     return { kind: 'failed' };
   }
   return {

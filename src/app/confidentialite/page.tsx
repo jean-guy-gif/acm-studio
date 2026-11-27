@@ -27,21 +27,22 @@ export default function ConfidentialitePage() {
           <p className={paragraph}>
             ACM Studio est un outil de préparation et de conduite du rendez-vous vendeur, destiné
             aux conseillers immobiliers. Il est édité par {PUBLISHER_NAME}. Cette page dit ce que
-            lit l’extension Chrome « ACM Studio — Accès annonces », ce qu’ACM Studio conserve, où se
-            trouvent les données et qui contacter.
+            lit l’extension Chrome «&nbsp;ACM Studio — Accès annonces&nbsp;», ce qu’ACM Studio
+            conserve, où se trouvent les données et qui contacter.
           </p>
         </header>
 
         <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
           <h2 className={sectionTitle}>Ce que lit l’extension</h2>
           <p className={paragraph}>
-            L’extension ne fait rien d’elle-même : elle agit seulement quand le conseiller clique
-            dans ACM Studio (importer une annonce, ouvrir ses recherches, lire ses recherches).
+            L’extension ne fait rien d’elle-même&nbsp;: elle agit seulement quand le conseiller
+            clique dans ACM Studio (importer une annonce, ouvrir ses recherches, lire ses
+            recherches).
           </p>
           <ul className={list}>
             <li>
               Elle lit le contenu de pages d’annonces et de pages de résultats de recherche sur cinq
-              sites immobiliers, et sur aucun autre : SeLoger, Bien’ici, Green Acres, Figaro
+              sites immobiliers, et sur aucun autre&nbsp;: SeLoger, Bien’ici, Green Acres, Figaro
               Immobilier, Maisons et Appartements.
             </li>
             <li>
@@ -65,66 +66,66 @@ export default function ConfidentialitePage() {
           <h2 className={sectionTitle}>Ce qu’ACM Studio conserve</h2>
           <ul className={list}>
             <li>
-              Le compte du conseiller : adresse e-mail, nom, agence et rôle et, s’il les renseigne,
-              son téléphone et sa photo. L’identité de l’agence : nom, logo, couleurs et, si elles
-              sont renseignées, adresse postale, carte professionnelle (numéro, autorité qui l’a
-              délivrée) et garantie financière.
+              Le compte du conseiller&nbsp;: adresse e-mail, nom, agence et rôle et, s’il les
+              renseigne, son téléphone et sa photo. L’identité de l’agence&nbsp;: nom, logo,
+              couleurs et, si elles sont renseignées, adresse postale, carte professionnelle
+              (numéro, autorité qui l’a délivrée) et garantie financière.
             </li>
             <li>
-              Les dossiers vendeur : le nom du vendeur et, si le conseiller les saisit, son e-mail
-              et son téléphone ; le bien (adresse, caractéristiques, photos déposées par le
-              conseiller) ; la fourchette et l’analyse du conseiller.
+              Les dossiers vendeur&nbsp;: le nom du vendeur et, si le conseiller les saisit, son
+              e-mail et son téléphone&#x202f;; le bien (adresse, caractéristiques, photos déposées
+              par le conseiller)&#x202f;; la fourchette et l’analyse du conseiller.
             </li>
             <li>
-              Les concurrents retenus : les informations publiées dans l’annonce (prix, surface,
-              pièces, description, photos, adresse de l’annonce) et la date à laquelle elles ont été
-              relevées. La page lue par l’extension n’est pas conservée : seules ces informations en
-              sont extraites. La description et le titre de l’annonce sont effacés quand rien ne
-              s’est passé pour ce concurrent depuis 3 ans.
+              Les concurrents retenus&nbsp;: les informations publiées dans l’annonce (prix,
+              surface, pièces, description, photos, adresse de l’annonce) et la date à laquelle
+              elles ont été relevées. La page lue par l’extension n’est pas conservée&nbsp;: seules
+              ces informations en sont extraites. La description et le titre de l’annonce sont
+              effacés quand rien ne s’est passé pour ce concurrent depuis 3 ans.
             </li>
             <li>
-              Les biens retenus pour un acquéreur : ACM Studio garde aussi le texte des annonces
-              trouvées par la recherche, pour le conseiller seul ; il n’est jamais montré à
-              l’acquéreur, et il est effacé au bout de 3 ans.
+              Les biens retenus pour un acquéreur&nbsp;: ACM Studio garde aussi le texte des
+              annonces trouvées par la recherche, pour le conseiller seul&#x202f;; il n’est jamais
+              montré à l’acquéreur, et il est effacé au bout de 3 ans.
             </li>
             <li>
-              Les adresses des biens concurrents : si le conseiller a installé le Localisateur
-              Academia (une extension distincte) et y a activé « Partager avec ACM Studio », ACM
-              Studio lui transmet l’adresse des annonces des concurrents retenus et conserve ce
-              qu’il rend — l’adresse du bien, son niveau de confirmation et sa position. Le
-              conseiller peut aussi confirmer cette adresse lui-même, ou la saisir. Usage de
-              prospection par l’agence : ces adresses ne sont jamais montrées au vendeur. Durée de
-              conservation : {OWNER_ADDRESS_RETENTION_YEARS} ans. Une adresse pour laquelle rien ne
-              s’est passé depuis {OWNER_ADDRESS_RETENTION_YEARS} ans — ni dossier remis, ni
-              rendez-vous, ni réponse du propriétaire, ni correction de l’adresse — est effacée
-              automatiquement, chaque nuit, avec sa position ; l’annonce publique et ses
-              caractéristiques restent. En mode expert, le conseiller peut exporter le comparatif
-              d’un dossier dans un tableur, pour son propre usage : l’adresse d’un concurrent n’y
-              figure que s’il l’a lui-même confirmée ou saisie, et ce fichier, une fois enregistré
-              sur son ordinateur, relève de l’agence.
+              Les adresses des biens concurrents&nbsp;: si le conseiller a installé le Localisateur
+              Academia (une extension distincte) et y a activé «&nbsp;Partager avec ACM
+              Studio&nbsp;», ACM Studio lui transmet l’adresse des annonces des concurrents retenus
+              et conserve ce qu’il rend — l’adresse du bien, son niveau de confirmation et sa
+              position. Le conseiller peut aussi confirmer cette adresse lui-même, ou la saisir.
+              Usage de prospection par l’agence&nbsp;: ces adresses ne sont jamais montrées au
+              vendeur. Durée de conservation&nbsp;: {OWNER_ADDRESS_RETENTION_YEARS} ans. Une adresse
+              pour laquelle rien ne s’est passé depuis {OWNER_ADDRESS_RETENTION_YEARS} ans — ni
+              dossier remis, ni rendez-vous, ni réponse du propriétaire, ni correction de l’adresse
+              — est effacée automatiquement, chaque nuit, avec sa position&#x202f;; l’annonce
+              publique et ses caractéristiques restent. En mode expert, le conseiller peut exporter
+              le comparatif d’un dossier dans un tableur, pour son propre usage&nbsp;: l’adresse
+              d’un concurrent n’y figure que s’il l’a lui-même confirmée ou saisie, et ce fichier,
+              une fois enregistré sur son ordinateur, relève de l’agence.
             </li>
             <li>
-              Les dossiers de prospection : quand un mandat est signé, le conseiller peut préparer
-              un courrier à imprimer, adressé au propriétaire d’un bien concurrent — à l’adresse
-              confirmée de ce bien — ou au confrère qui le vend. L’adresse sort donc d’ACM Studio
-              sur ce courrier, remis par le conseiller. Le courrier adressé à un propriétaire porte
-              une mention légale : le responsable du traitement (l’agence, avec son adresse),
-              l’origine réelle de l’adresse (déterminée à partir de données publiques — diagnostic
-              de performance énergétique, registre des copropriétés ou cadastre — et de l’annonce,
-              que le conseiller l’ait confirmée ou non, ou relevée par le conseiller quand il l’a
-              saisie ou corrigée), la finalité (proposer les services de l’agence pour la vente du
-              bien), la durée de conservation, les droits d’accès, d’opposition et d’effacement avec
-              le moyen de les exercer (le téléphone ou l’e-mail du conseiller), le droit de saisir
-              la CNIL et l’adresse de cette page. Tout courrier porte aussi la carte professionnelle
-              de l’agence et l’autorité qui l’a délivrée, puis sa garantie financière ou la mention
-              « Ne peut recevoir aucun fonds ». Il ne reprend ni le nom du propriétaire, ni rien du
-              vendeur. Il peut porter une photo tirée de l’annonce du bien concurrent, montrée telle
-              quelle, au seul choix du conseiller (jamais par défaut) : elle appartient à son
-              auteur. ACM Studio conserve les textes que le conseiller a réécrits ; il n’envoie
-              lui-même aucun courrier.
+              Les dossiers de prospection&nbsp;: quand un mandat est signé, le conseiller peut
+              préparer un courrier à imprimer, adressé au propriétaire d’un bien concurrent — à
+              l’adresse confirmée de ce bien — ou au confrère qui le vend. L’adresse sort donc d’ACM
+              Studio sur ce courrier, remis par le conseiller. Le courrier adressé à un propriétaire
+              porte une mention légale&nbsp;: le responsable du traitement (l’agence, avec son
+              adresse), l’origine réelle de l’adresse (déterminée à partir de données publiques —
+              diagnostic de performance énergétique, registre des copropriétés ou cadastre — et de
+              l’annonce, que le conseiller l’ait confirmée ou non, ou relevée par le conseiller
+              quand il l’a saisie ou corrigée), la finalité (proposer les services de l’agence pour
+              la vente du bien), la durée de conservation, les droits d’accès, d’opposition et
+              d’effacement avec le moyen de les exercer (le téléphone ou l’e-mail du conseiller), le
+              droit de saisir la CNIL et l’adresse de cette page. Tout courrier porte aussi la carte
+              professionnelle de l’agence et l’autorité qui l’a délivrée, puis sa garantie
+              financière ou la mention «&nbsp;Ne peut recevoir aucun fonds&nbsp;». Il ne reprend ni
+              le nom du propriétaire, ni rien du vendeur. Il peut porter une photo tirée de
+              l’annonce du bien concurrent, montrée telle quelle, au seul choix du conseiller
+              (jamais par défaut)&nbsp;: elle appartient à son auteur. ACM Studio conserve les
+              textes que le conseiller a réécrits&#x202f;; il n’envoie lui-même aucun courrier.
             </li>
             <li>
-              Les courriers nés d’une recherche acquéreur : quand un acquéreur de l’agence veut
+              Les courriers nés d’une recherche acquéreur&nbsp;: quand un acquéreur de l’agence veut
               visiter un bien que l’agence n’a pas en mandat, le conseiller peut préparer un
               courrier au propriétaire de ce bien. ACM Studio garde l’annonce du bien, ce qu’elle
               publie (type, surface, pièces, extérieurs, commune, prix, photos), qui le vend et son
@@ -132,204 +133,207 @@ export default function ConfidentialitePage() {
               et les étapes de la démarche (courrier remis, rendez-vous, mandat), avec la recherche
               acquéreur dont elle est née. Le courrier porte les mêmes mentions que tout courrier à
               un propriétaire, avec sa propre finalité (présenter une recherche qui correspond au
-              bien) ; il ne dit ni le nom ni le budget de l’acquéreur. L’adresse d’un bien sans
-              contact depuis {OWNER_ADDRESS_RETENTION_YEARS} ans est effacée, comme celle d’un bien
-              concurrent, et la liste « Ne plus solliciter » s’applique de la même façon. Quand le
-              bien est en exclusivité, le conseiller prépare plutôt un dossier de collaboration à
-              l’agence qui le détient : il désigne le bien par ses caractéristiques et le numéro de
-              son annonce, jamais par son adresse, ne dit ni le nom ni le budget de l’acquéreur, ne
-              pose aucune condition, et porte les mentions professionnelles de l’agence. Quand le
-              dossier vendeur pour lequel ce bien était un concurrent n’est plus un mandat signé, la
-              démarche née d’une recherche acquéreur continue sur sa propre carte, avec les mêmes
-              données.
+              bien)&#x202f;; il ne dit ni le nom ni le budget de l’acquéreur. L’adresse d’un bien
+              sans contact depuis {OWNER_ADDRESS_RETENTION_YEARS} ans est effacée, comme celle d’un
+              bien concurrent, et la liste «&nbsp;Ne plus solliciter&nbsp;» s’applique de la même
+              façon. Quand le bien est en exclusivité, le conseiller prépare plutôt un dossier de
+              collaboration à l’agence qui le détient&nbsp;: il désigne le bien par ses
+              caractéristiques et le numéro de son annonce, jamais par son adresse, ne dit ni le nom
+              ni le budget de l’acquéreur, ne pose aucune condition, et porte les mentions
+              professionnelles de l’agence. Quand le dossier vendeur pour lequel ce bien était un
+              concurrent n’est plus un mandat signé, la démarche née d’une recherche acquéreur
+              continue sur sa propre carte, avec les mêmes données.
             </li>
             <li>
-              La liste « Ne plus solliciter » : quand un propriétaire demande à ne plus être
-              contacté, le conseiller inscrit le bien sur la liste d’opposition de son agence —
-              depuis sa carte, ou en saisissant son adresse. ACM Studio en conserve l’adresse de
-              l’immeuble, sous une forme simplifiée (sans étage ni appartement), le portail et le
-              numéro de son annonce quand elle est connue, et la date de la demande — ni nom, ni
-              autre donnée. Ce bien ne reçoit plus de courrier et ne figure plus dans les tournées,
-              dans aucun dossier de l’agence, présent ou futur, et son adresse ne peut plus y être
-              corrigée. Une demande d’effacement y inscrit aussi l’adresse. Cette liste n’est pas
-              effacée au terme des {OWNER_ADDRESS_RETENTION_YEARS} ans : c’est elle qui permet de ne
-              plus solliciter.
+              La liste «&nbsp;Ne plus solliciter&nbsp;»&nbsp;: quand un propriétaire demande à ne
+              plus être contacté, le conseiller inscrit le bien sur la liste d’opposition de son
+              agence — depuis sa carte, ou en saisissant son adresse. ACM Studio en conserve
+              l’adresse de l’immeuble, sous une forme simplifiée (sans étage ni appartement), le
+              portail et le numéro de son annonce quand elle est connue, et la date de la demande —
+              ni nom, ni autre donnée. Ce bien ne reçoit plus de courrier et ne figure plus dans les
+              tournées, dans aucun dossier de l’agence, présent ou futur, et son adresse ne peut
+              plus y être corrigée. Une demande d’effacement y inscrit aussi l’adresse. Cette liste
+              n’est pas effacée au terme des {OWNER_ADDRESS_RETENTION_YEARS} ans&nbsp;: c’est elle
+              qui permet de ne plus solliciter.
             </li>
             <li>
-              Le rendez-vous : les réponses du vendeur enregistrées pendant la présentation, puis la
-              conclusion notée par le conseiller.
+              Le rendez-vous&nbsp;: les réponses du vendeur enregistrées pendant la présentation,
+              puis la conclusion notée par le conseiller.
             </li>
             <li>
-              L’historique des relances : quand un vendeur est « à relancer », le conseiller note le
-              motif de la relance, puis chaque relance qu’il fait. ACM Studio conserve la date de la
-              relance, la note d’une ligne que le conseiller peut y joindre et le nom du conseiller
-              qui l’a faite. Cet historique est visible par les seuls membres de l’agence ; il n’est
-              jamais montré au vendeur. ACM Studio n’envoie lui-même aucun message au vendeur : il
-              propose un texte, que le conseiller copie et envoie par ses propres moyens.
+              L’historique des relances&nbsp;: quand un vendeur est «&nbsp;à relancer&nbsp;», le
+              conseiller note le motif de la relance, puis chaque relance qu’il fait. ACM Studio
+              conserve la date de la relance, la note d’une ligne que le conseiller peut y joindre
+              et le nom du conseiller qui l’a faite. Cet historique est visible par les seuls
+              membres de l’agence&#x202f;; il n’est jamais montré au vendeur. ACM Studio n’envoie
+              lui-même aucun message au vendeur&nbsp;: il propose un texte, que le conseiller copie
+              et envoie par ses propres moyens.
             </li>
             <li>
               Les freins notés à la conclusion (le prix, l’exclusivité, le délai…) et une ligne
-              libre : ils servent au conseiller pour sa relance et au manager de l’agence pour
-              suivre la prise de mandat ; jamais à d’autres agences.
+              libre&nbsp;: ils servent au conseiller pour sa relance et au manager de l’agence pour
+              suivre la prise de mandat&#x202f;; jamais à d’autres agences.
             </li>
             <li>
-              Les fiches acquéreur : pour un acquéreur rencontré par l’agence, le conseiller note
-              son nom, son téléphone et son e-mail s’il les donne, la raison et le calendrier de son
-              achat, ce qu’il cherche (type de bien, communes, budget, pièces, surface, équipements)
-              et ses critères indispensables ou éliminatoires, avec des notes libres. Ces fiches
-              servent à rapprocher sa recherche des biens que l’agence connaît ; elles sont visibles
-              par les seuls membres de l’agence, jamais par une autre agence ni par un vendeur. Le
-              conseiller peut archiver une fiche : elle disparaît alors de l’outil et est effacée
-              sur demande. Le conseiller peut aussi noter l’état de son financement (validé, en
-              cours ou inconnu, sans montant ni justificatif) et le jour de son dernier échange avec
-              lui ; l’outil en déduit, sans rien envoyer, s’il est prêt à visiter ou s’il est à
-              recontacter, pour la seule agence. Pendant un rendez-vous avec un vendeur, et
-              seulement si le conseiller le choisit, l’outil peut montrer combien d’acquéreurs prêts
-              de l’agence cherchent un bien comme le sien, sous une forme anonyme : les communes
-              cherchées, le budget en fourchette arrondie, « financement validé » et depuis combien
-              de semaines il cherche — jamais un nom, un téléphone, un e-mail ni une note ; l’agence
-              garde le jour où ils ont été montrés et leur nombre. Quand un bien arrive (un mandat,
-              un vendeur à relancer, un bien en vente retenu par l’agence), le conseiller peut le
-              proposer aux acquéreurs qui lui correspondent : l’outil prépare un message et le lien
-              de leur sélection, sans rien envoyer lui-même ; l’agence garde, pour chaque acquéreur,
-              le bien proposé (décrit par ses caractéristiques, jamais par une adresse), le jour où
-              le conseiller a noté l’envoi et qui l’a noté. L’agence garde aussi le jour où le lien
-              de sa sélection a été partagé et ses relances (deux au plus, quand il n’a pas
-              répondu), pour rappeler au conseiller de le relancer ; et, quand ses refus le
-              suggèrent, l’ajustement de sa recherche que le conseiller a choisi d’appliquer, daté.
-              Aucun message n’est envoyé par l’outil. Pour un acquéreur prêt à visiter, une veille
-              cherche chaque semaine, la nuit, les biens arrivés sur le marché qui correspondent à
-              sa recherche : ses critères (type de bien, communes, budget, pièces, surface,
+              Les fiches acquéreur&nbsp;: pour un acquéreur rencontré par l’agence, le conseiller
+              note son nom, son téléphone et son e-mail s’il les donne, la raison et le calendrier
+              de son achat, ce qu’il cherche (type de bien, communes, budget, pièces, surface,
+              équipements) et ses critères indispensables ou éliminatoires, avec des notes libres.
+              Ces fiches servent à rapprocher sa recherche des biens que l’agence connaît&#x202f;;
+              elles sont visibles par les seuls membres de l’agence, jamais par une autre agence ni
+              par un vendeur. Le conseiller peut archiver une fiche&nbsp;: elle disparaît alors de
+              l’outil et est effacée sur demande. Le conseiller peut aussi noter l’état de son
+              financement (validé, en cours ou inconnu, sans montant ni justificatif) et le jour de
+              son dernier échange avec lui&#x202f;; l’outil en déduit, sans rien envoyer, s’il est
+              prêt à visiter ou s’il est à recontacter, pour la seule agence. Pendant un rendez-vous
+              avec un vendeur, et seulement si le conseiller le choisit, l’outil peut montrer
+              combien d’acquéreurs prêts de l’agence cherchent un bien comme le sien, sous une forme
+              anonyme&nbsp;: les communes cherchées, le budget en fourchette arrondie,
+              «&nbsp;financement validé&nbsp;» et depuis combien de semaines il cherche — jamais un
+              nom, un téléphone, un e-mail ni une note&#x202f;; l’agence garde le jour où ils ont
+              été montrés et leur nombre. Quand un bien arrive (un mandat, un vendeur à relancer, un
+              bien en vente retenu par l’agence), le conseiller peut le proposer aux acquéreurs qui
+              lui correspondent&nbsp;: l’outil prépare un message et le lien de leur sélection, sans
+              rien envoyer lui-même&#x202f;; l’agence garde, pour chaque acquéreur, le bien proposé
+              (décrit par ses caractéristiques, jamais par une adresse), le jour où le conseiller a
+              noté l’envoi et qui l’a noté. L’agence garde aussi le jour où le lien de sa sélection
+              a été partagé et ses relances (deux au plus, quand il n’a pas répondu), pour rappeler
+              au conseiller de le relancer&#x202f;; et, quand ses refus le suggèrent, l’ajustement
+              de sa recherche que le conseiller a choisi d’appliquer, daté. Aucun message n’est
+              envoyé par l’outil. Pour un acquéreur prêt à visiter, une veille cherche chaque
+              semaine, la nuit, les biens arrivés sur le marché qui correspondent à sa
+              recherche&nbsp;: ses critères (type de bien, communes, budget, pièces, surface,
               équipements, jamais son nom ni ses coordonnées) partent seuls vers le fournisseur
-              d’annonces, Stream Estate, dans la limite d’un budget mensuel réglé par l’agence ;
-              l’agence garde la date de chaque passage et les biens trouvés, tels que les annonces
-              les publient, jamais une adresse. Rien n’est envoyé à l’acquéreur sans le conseiller.
-              Pour créer ou compléter une fiche, le conseiller peut photographier ses notes, déposer
-              la fiche exportée de son logiciel ou coller un texte : ce contenu est envoyé une fois
-              à un service d’intelligence artificielle, Claude, d’Anthropic, utilisé par Amazon Web
-              Services, qui le lit uniquement dans l’Union européenne, et propose une fiche ; le
-              conseiller la vérifie, et seul ce qu’il valide est enregistré. La photo, le fichier ou
-              le texte ne sont pas gardés par ACM Studio, ni les extraits des notes montrés au
-              conseiller pour vérifier. Le service ne relève aucune donnée sur la santé, la
-              religion, les origines, les opinions ou la vie privée, ni aucun jugement sur la
-              personne ; dans les notes de la fiche, il ne propose que des faits pratiques
-              (disponibilités pour visiter, contraintes), que le conseiller vérifie. Pour chaque
-              lecture, ACM Studio garde la date, le conseiller qui l’a faite, le modèle utilisé, son
-              coût, son issue (fiche créée ou complétée, lecture annulée) et le nom des champs
-              proposés, jamais leur contenu ; cette ligne reste à l’agence, comme la consommation
-              des recherches. Quand l’outil cherche des biens pour l’acquéreur, ce qui compte pour
-              lui (le calme, l’absence de vis-à-vis, le caractère du bien…) est comparé aux
-              descriptions publiques des annonces par le même service, sans son nom ni ses
-              coordonnées ; l’outil range les biens et cite l’annonce au conseiller, il n’en écarte
-              aucun. Pour la veille de la nuit, ce jugement et sa citation courte sont gardés avec
-              le passage, et la citation est effacée au bout de 3 ans ; une citation qui contient
-              une adresse n’est jamais gardée.
+              d’annonces, Stream Estate, dans la limite d’un budget mensuel réglé par
+              l’agence&#x202f;; l’agence garde la date de chaque passage et les biens trouvés, tels
+              que les annonces les publient, jamais une adresse. Rien n’est envoyé à l’acquéreur
+              sans le conseiller. Pour créer ou compléter une fiche, le conseiller peut
+              photographier ses notes, déposer la fiche exportée de son logiciel ou coller un
+              texte&nbsp;: ce contenu est envoyé une fois à un service d’intelligence artificielle,
+              Claude, d’Anthropic, utilisé par Amazon Web Services, qui le lit uniquement dans
+              l’Union européenne, et propose une fiche&#x202f;; le conseiller la vérifie, et seul ce
+              qu’il valide est enregistré. La photo, le fichier ou le texte ne sont pas gardés par
+              ACM Studio, ni les extraits des notes montrés au conseiller pour vérifier. Le service
+              ne relève aucune donnée sur la santé, la religion, les origines, les opinions ou la
+              vie privée, ni aucun jugement sur la personne&#x202f;; dans les notes de la fiche, il
+              ne propose que des faits pratiques (disponibilités pour visiter, contraintes), que le
+              conseiller vérifie. Pour chaque lecture, ACM Studio garde la date, le conseiller qui
+              l’a faite, le modèle utilisé, son coût, son issue (fiche créée ou complétée, lecture
+              annulée) et le nom des champs proposés, jamais leur contenu&#x202f;; cette ligne reste
+              à l’agence, comme la consommation des recherches. Quand l’outil cherche des biens pour
+              l’acquéreur, ce qui compte pour lui (le calme, l’absence de vis-à-vis, le caractère du
+              bien…) est comparé aux descriptions publiques des annonces par le même service, sans
+              son nom ni ses coordonnées&#x202f;; l’outil range les biens et cite l’annonce au
+              conseiller, il n’en écarte aucun. Pour la veille de la nuit, ce jugement et sa
+              citation courte sont gardés avec le passage, et la citation est effacée au bout de 3
+              ans&#x202f;; une citation qui contient une adresse n’est jamais gardée.
             </li>
             <li>
-              Le bon de visite : quand un acquéreur visite un bien de l’agence, il signe au doigt,
-              sur la tablette ou le téléphone du conseiller, un bon de visite. L’agence garde le
-              texte signé, la date et l’heure de la signature, l’image de la signature, le nom et
+              Le bon de visite&nbsp;: quand un acquéreur visite un bien de l’agence, il signe au
+              doigt, sur la tablette ou le téléphone du conseiller, un bon de visite. L’agence garde
+              le texte signé, la date et l’heure de la signature, l’image de la signature, le nom et
               l’adresse du visiteur, le type de la pièce d’identité qu’il a présentée (jamais son
-              numéro ni son image), les biens visités et le conseiller qui les a présentés ; le
-              visiteur reçoit un lien vers son bon. Ce bon prouve le droit de l’agence à sa
-              rémunération : il est conservé cinq ans à compter de la visite, durée de la
+              numéro ni son image), les biens visités et le conseiller qui les a présentés&#x202f;;
+              le visiteur reçoit un lien vers son bon. Ce bon prouve le droit de l’agence à sa
+              rémunération&nbsp;: il est conservé cinq ans à compter de la visite, durée de la
               prescription, y compris si le visiteur demande l’effacement de ses données (article
-              17.3.e du RGPD : constatation, exercice ou défense de droits en justice), puis il est
-              effacé. Il ne disparaît pas avec la fiche de l’acquéreur ni avec le compte du
+              17.3.e du RGPD&nbsp;: constatation, exercice ou défense de droits en justice), puis il
+              est effacé. Il ne disparaît pas avec la fiche de l’acquéreur ni avec le compte du
               conseiller. L’agence y est identifiée par son identité légale (société, RCS, TVA,
               assurance, garantie financière, nom et qualité de son représentant légal), saisie par
               son manager. Texte à faire relire par un juriste.
             </li>
             <li>
-              L’offre d’achat : quand un acquéreur fait une offre sur un bien de l’agence, il la
-              signe au doigt ; l’agence garde le texte signé, la date et l’heure de la signature,
-              l’image des signatures, et l’état civil de chaque offrant qu’il exige (civilité, nom,
-              prénoms, date et lieu de naissance, nationalité, profession, adresse, situation
-              matrimoniale et régime s’il est indiqué, résidence fiscale en France ou non), le prix,
-              les honoraires, l’acompte et les dates. Le vendeur la reçoit par un lien et l’accepte
-              en la signant (son nom et sa signature, datés) ou la refuse. Une offre acceptée peut
-              être transmise au notaire, par un lien de 30 jours que le conseiller lui envoie
-              lui-même : le notaire y lit l’offre signée, rien d’autre de la fiche de l’acquéreur.
-              L’agence garde aussi le jour où le conseiller a donné suite à la réponse du vendeur.
-              Comme le bon de visite, l’offre est conservée cinq ans à compter de la visite, puis
-              effacée. Texte à faire relire par un juriste.
+              L’offre d’achat&nbsp;: quand un acquéreur fait une offre sur un bien de l’agence, il
+              la signe au doigt&#x202f;; l’agence garde le texte signé, la date et l’heure de la
+              signature, l’image des signatures, et l’état civil de chaque offrant qu’il exige
+              (civilité, nom, prénoms, date et lieu de naissance, nationalité, profession, adresse,
+              situation matrimoniale et régime s’il est indiqué, résidence fiscale en France ou
+              non), le prix, les honoraires, l’acompte et les dates. Le vendeur la reçoit par un
+              lien et l’accepte en la signant (son nom et sa signature, datés) ou la refuse. Une
+              offre acceptée peut être transmise au notaire, par un lien de 30 jours que le
+              conseiller lui envoie lui-même&nbsp;: le notaire y lit l’offre signée, rien d’autre de
+              la fiche de l’acquéreur. L’agence garde aussi le jour où le conseiller a donné suite à
+              la réponse du vendeur. Comme le bon de visite, l’offre est conservée cinq ans à
+              compter de la visite, puis effacée. Texte à faire relire par un juriste.
             </li>
             <li>
-              Après une visite, l’agence garde le compte rendu de l’acquéreur : son avis (coup de
-              cœur, intéressé, mitigé, pas pour lui), ce qui lui a plu et ce qui l’a gêné parmi une
-              liste, la suite convenue et une note du conseiller. L’outil prépare deux messages que
-              le conseiller envoie lui-même : à l’acquéreur, dans la langue choisie sur sa fiche ;
-              au vendeur d’un bien de l’agence, sans le nom de l’acquéreur ni sa note. L’agence
-              garde aussi les biens que le conseiller a écartés pour un acquéreur (par leurs
-              caractéristiques, jamais une adresse), avec la raison, et le jour où le point de la
-              semaine ou un point de rendez-vous lui a été envoyé ; aucun message n’est envoyé par
-              l’outil, et ces messages sont écrits depuis des modèles, jamais par une intelligence
-              artificielle. Texte à faire relire par un juriste.
+              Après une visite, l’agence garde le compte rendu de l’acquéreur&nbsp;: son avis (coup
+              de cœur, intéressé, mitigé, pas pour lui), ce qui lui a plu et ce qui l’a gêné parmi
+              une liste, la suite convenue et une note du conseiller. L’outil prépare deux messages
+              que le conseiller envoie lui-même&nbsp;: à l’acquéreur, dans la langue choisie sur sa
+              fiche&#x202f;; au vendeur d’un bien de l’agence, sans le nom de l’acquéreur ni sa
+              note. L’agence garde aussi les biens que le conseiller a écartés pour un acquéreur
+              (par leurs caractéristiques, jamais une adresse), avec la raison, et le jour où le
+              point de la semaine ou un point de rendez-vous lui a été envoyé&#x202f;; aucun message
+              n’est envoyé par l’outil, et ces messages sont écrits depuis des modèles, jamais par
+              une intelligence artificielle. Texte à faire relire par un juriste.
             </li>
             <li>
               Le dossier d’un vendeur garde la langue dans laquelle il préfère lire (français par
-              défaut, ou anglais) : le rendez-vous qui lui est montré, la synthèse, le Point marché,
-              l’Étude de marché et leurs messages sont écrits dans cette langue, depuis des textes
-              écrits et relus, jamais par une intelligence artificielle ; les mentions légales de
-              l’agence restent en français. Texte à faire relire par un juriste.
+              défaut, ou anglais)&nbsp;: le rendez-vous qui lui est montré, la synthèse, le Point
+              marché, l’Étude de marché et leurs messages sont écrits dans cette langue, depuis des
+              textes écrits et relus, jamais par une intelligence artificielle&#x202f;; les mentions
+              légales de l’agence restent en français. Texte à faire relire par un juriste.
             </li>
             <li>
-              La fiche d’un acquéreur garde aussi sa langue : la présentation, son dossier, son
+              La fiche d’un acquéreur garde aussi sa langue&nbsp;: la présentation, son dossier, son
               lien, les biens qui lui sont proposés, ses relances et la réponse du vendeur à son
               offre lui sont écrits dans cette langue, depuis des textes écrits et relus. Le bon de
-              visite et l’offre d’achat restent signés en français, seule version qui fait foi ; une
-              traduction pour information pourra y être jointe, une fois validée par un juriste.
-              Texte à faire relire par un juriste.
+              visite et l’offre d’achat restent signés en français, seule version qui fait
+              foi&#x202f;; une traduction pour information pourra y être jointe, une fois validée
+              par un juriste. Texte à faire relire par un juriste.
             </li>
             <li>
-              La synthèse du rendez-vous laissée au vendeur : elle reprend, dans l’ordre du
+              La synthèse du rendez-vous laissée au vendeur&nbsp;: elle reprend, dans l’ordre du
               rendez-vous, les réponses qu’il a données (ses prix, ses réponses sur chaque bien
               concurrent, le concurrent qu’il a jugé le plus dangereux), le marché vu ensemble et le
               prix retenu, avec les photos de son bien. Chaque bien concurrent y figure par ses
               caractéristiques et une photo tirée de son annonce, montrée telle quelle — jamais son
-              adresse, le titre ou le lien de l’annonce, ni l’agence qui le vend ; le conseiller
-              peut retirer cette photo (« Sans photo »), du document comme du lien. Le conseiller
-              peut l’imprimer ou créer un lien pour la lui envoyer : ce lien s’ouvre sans compte,
-              n’est jamais indexé par les moteurs de recherche et expire après 30 jours. ACM Studio
-              ne garde pas le lien lui-même, seulement de quoi le reconnaître, avec sa date
-              d’expiration.
+              adresse, le titre ou le lien de l’annonce, ni l’agence qui le vend&#x202f;; le
+              conseiller peut retirer cette photo («&nbsp;Sans photo&nbsp;»), du document comme du
+              lien. Le conseiller peut l’imprimer ou créer un lien pour la lui envoyer&nbsp;: ce
+              lien s’ouvre sans compte, n’est jamais indexé par les moteurs de recherche et expire
+              après 30 jours. ACM Studio ne garde pas le lien lui-même, seulement de quoi le
+              reconnaître, avec sa date d’expiration.
             </li>
             <li>
-              L’Étude de marché remise au vendeur : elle présente, au jour où elle est ouverte,
+              L’Étude de marché remise au vendeur&nbsp;: elle présente, au jour où elle est ouverte,
               chaque bien concurrent retenu par le conseiller — ses caractéristiques face au bien du
               vendeur, son prix affiché, depuis quand il est en vente, une baisse de prix connue —
               puis où se situe le prix du vendeur parmi eux. Chaque bien concurrent y figure par ses
               caractéristiques et une photo tirée de son annonce, montrée telle quelle — jamais son
-              adresse, le titre ou le lien de l’annonce, ni l’agence qui le vend ; le conseiller
-              peut retirer cette photo (« Sans photo »), du document comme du lien. Le conseiller
-              peut l’imprimer ou créer un lien pour l’envoyer au vendeur : ce lien s’ouvre sans
-              compte, n’est jamais indexé par les moteurs de recherche et expire après 30 jours ; un
-              nouveau lien remplace le précédent, et le conseiller peut le retirer. ACM Studio ne
-              garde pas le lien lui-même, seulement de quoi le reconnaître, avec sa date
-              d’expiration.
+              adresse, le titre ou le lien de l’annonce, ni l’agence qui le vend&#x202f;; le
+              conseiller peut retirer cette photo («&nbsp;Sans photo&nbsp;»), du document comme du
+              lien. Le conseiller peut l’imprimer ou créer un lien pour l’envoyer au vendeur&nbsp;:
+              ce lien s’ouvre sans compte, n’est jamais indexé par les moteurs de recherche et
+              expire après 30 jours&#x202f;; un nouveau lien remplace le précédent, et le conseiller
+              peut le retirer. ACM Studio ne garde pas le lien lui-même, seulement de quoi le
+              reconnaître, avec sa date d’expiration.
             </li>
             <li>
-              Le dossier d’adresse et « Vivre ici » : pour le bien vendeur, le conseiller peut
-              obtenir de Mon secteur, le service d’Academia (app.myacademia.ai), distinct d’ACM
-              Studio, le dossier d’adresse du bien et sa fiche « Vivre ici ». Quand le conseiller le
-              demande, ACM Studio envoie à Mon secteur, par le compte d’ACM Studio, l’adresse du
-              bien, son type, son nombre de pièces et sa surface, et rien d’autre : ni le nom, ni
-              les coordonnées du vendeur ou d’un acquéreur, ni le texte ou le lien d’une annonce.
-              Aucun autre bien que celui du vendeur n’est envoyé à Mon secteur. Mon secteur renvoie
-              des données publiques sur l’adresse et son quartier (ventes, urbanisme, risques,
-              population, copropriété, diagnostic de performance énergétique) et une valeur de
-              marché indicative ; elles sont montrées au conseiller, qui seul voit la valeur
-              indicative et le diagnostic. ACM Studio garde seulement de quoi retrouver le dossier,
-              sans en garder de copie à l’écran. Le conseiller peut choisir de montrer au vendeur,
-              pendant le rendez-vous et dans le document qui lui est remis, certaines de ces données
-              publiques (les ventes autour, avec leur rue sans numéro, jamais une vente à l’adresse
-              même du bien ; l’urbanisme, les permis, les risques, la population, la copropriété) :
-              ce qu’il a choisi est alors figé dans ce document, avec sa source et sa date, et gardé
-              avec le dossier du vendeur. Le lien « Vivre ici » du bien vendeur, valable 30 jours,
-              peut être donné au vendeur et aux acquéreurs à qui ce bien est proposé ; en l’ouvrant,
-              ils quittent ACM Studio pour Academia. Aucune donnée de l’acquéreur n’est envoyée à
-              Academia. Quand le conseiller confirme une visite, la fiche de l’acquéreur garde le
-              jour et l’heure de cette visite.
+              Le dossier d’adresse et «&nbsp;Vivre ici&nbsp;»&nbsp;: pour le bien vendeur, le
+              conseiller peut obtenir de Mon secteur, le service d’Academia (app.myacademia.ai),
+              distinct d’ACM Studio, le dossier d’adresse du bien et sa fiche «&nbsp;Vivre
+              ici&nbsp;». Quand le conseiller le demande, ACM Studio envoie à Mon secteur, par le
+              compte d’ACM Studio, l’adresse du bien, son type, son nombre de pièces et sa surface,
+              et rien d’autre&nbsp;: ni le nom, ni les coordonnées du vendeur ou d’un acquéreur, ni
+              le texte ou le lien d’une annonce. Aucun autre bien que celui du vendeur n’est envoyé
+              à Mon secteur. Mon secteur renvoie des données publiques sur l’adresse et son quartier
+              (ventes, urbanisme, risques, population, copropriété, diagnostic de performance
+              énergétique) et une valeur de marché indicative&#x202f;; elles sont montrées au
+              conseiller, qui seul voit la valeur indicative et le diagnostic. ACM Studio garde
+              seulement de quoi retrouver le dossier, sans en garder de copie à l’écran. Le
+              conseiller peut choisir de montrer au vendeur, pendant le rendez-vous et dans le
+              document qui lui est remis, certaines de ces données publiques (les ventes autour,
+              avec leur rue sans numéro, jamais une vente à l’adresse même du bien&#x202f;;
+              l’urbanisme, les permis, les risques, la population, la copropriété)&nbsp;: ce qu’il a
+              choisi est alors figé dans ce document, avec sa source et sa date, et gardé avec le
+              dossier du vendeur. Le lien «&nbsp;Vivre ici&nbsp;» du bien vendeur, valable 30 jours,
+              peut être donné au vendeur et aux acquéreurs à qui ce bien est proposé&#x202f;; en
+              l’ouvrant, ils quittent ACM Studio pour Academia. Aucune donnée de l’acquéreur n’est
+              envoyée à Academia. Quand le conseiller confirme une visite, la fiche de l’acquéreur
+              garde le jour et l’heure de cette visite.
               <span className="mt-2 block">
                 Jusqu’au 9 novembre 2026, ACM Studio préparait lui-même ces deux documents à partir
                 de données publiques. Ces dossiers et ces fiches ne sont plus lus ni montrés, et ils
@@ -346,59 +350,59 @@ export default function ConfidentialitePage() {
                 et figurer dans les documents qui lui sont remis. ACM Studio garde les seules
                 informations choisies par le conseiller, le jour où il les a choisies, l’adresse, le
                 type, le nombre de pièces et la surface du bien pour lesquels elles ont été
-                calculées, et le conseiller qui les a choisies ; jamais le nom ni l’immatriculation
-                d’une copropriété, ni une valeur du bien. Ces informations sont visibles par la
-                seule agence et effacées avec le dossier.
+                calculées, et le conseiller qui les a choisies&#x202f;; jamais le nom ni
+                l’immatriculation d’une copropriété, ni une valeur du bien. Ces informations sont
+                visibles par la seule agence et effacées avec le dossier.
               </span>
             </li>
             <li>
-              Le dossier acquéreur : pour un acquéreur, le conseiller retient jusqu’à trois biens et
-              lui remet un dossier qui reprend sa recherche et, pour chaque bien, ses
+              Le dossier acquéreur&nbsp;: pour un acquéreur, le conseiller retient jusqu’à trois
+              biens et lui remet un dossier qui reprend sa recherche et, pour chaque bien, ses
               caractéristiques, son prix affiché, pourquoi il correspond et ce qu’il faut savoir,
               avec une photo tirée de l’annonce ou du bien, montrée telle quelle — jamais l’adresse,
-              le titre ou le lien d’une annonce, ni l’agence qui le vend ; le conseiller peut
-              retirer cette photo (« Sans photo »). Le dossier s’imprime ou part par un lien qui
-              s’ouvre sans compte, n’est jamais indexé et expire après 30 jours ; le conseiller peut
-              le retirer. Sur ce lien, l’acquéreur peut répondre une fois, depuis son téléphone :
-              pour chaque bien, le visiter, peut-être ou pas pour lui, avec la raison parmi une
-              liste, et ses créneaux de visite parmi une liste ; ACM Studio n’enregistre que ces
-              réponses, datées, pour le conseiller, sans compte ni adresse e-mail ; aucun texte
-              libre.
+              le titre ou le lien d’une annonce, ni l’agence qui le vend&#x202f;; le conseiller peut
+              retirer cette photo («&nbsp;Sans photo&nbsp;»). Le dossier s’imprime ou part par un
+              lien qui s’ouvre sans compte, n’est jamais indexé et expire après 30 jours&#x202f;; le
+              conseiller peut le retirer. Sur ce lien, l’acquéreur peut répondre une fois, depuis
+              son téléphone&nbsp;: pour chaque bien, le visiter, peut-être ou pas pour lui, avec la
+              raison parmi une liste, et ses créneaux de visite parmi une liste&#x202f;; ACM Studio
+              n’enregistre que ces réponses, datées, pour le conseiller, sans compte ni adresse
+              e-mail&#x202f;; aucun texte libre.
             </li>
             <li>
-              Les réponses de l’acquéreur : quand le conseiller lui présente sa sélection, il note,
-              pour chaque bien, ce que l’acquéreur répond — le visiter, peut-être, pas pour lui —
-              et, s’il n’en veut pas, la raison parmi une liste (le quartier, la surface,
+              Les réponses de l’acquéreur&nbsp;: quand le conseiller lui présente sa sélection, il
+              note, pour chaque bien, ce que l’acquéreur répond — le visiter, peut-être, pas pour
+              lui — et, s’il n’en veut pas, la raison parmi une liste (le quartier, la surface,
               l’extérieur, le parking, le prix, les travaux, les photos, autre), ainsi que ses
-              créneaux de visite parmi une liste ; aucun texte libre. Ces réponses sont datées, lues
-              par la seule agence, et servent au conseiller à organiser les visites et à affiner la
-              recherche : quand une même raison revient, la fiche lui propose un changement, qui ne
-              s’applique que s’il l’accepte.
+              créneaux de visite parmi une liste&#x202f;; aucun texte libre. Ces réponses sont
+              datées, lues par la seule agence, et servent au conseiller à organiser les visites et
+              à affiner la recherche&nbsp;: quand une même raison revient, la fiche lui propose un
+              changement, qui ne s’applique que s’il l’accepte.
             </li>
             <li>
-              Un journal technique : quand une erreur inattendue survient, ACM Studio enregistre sa
-              date, la page concernée, un message technique, la version de l’outil et les
-              identifiants de l’agence et du conseiller connecté. Le message est nettoyé avant
-              d’être enregistré : il ne contient ni texte saisi, ni prix, ni adresse. Ce journal
-              n’est lu que par l’éditeur, pour corriger l’outil. Il est conservé 90 jours : chaque
-              nuit, les lignes plus anciennes sont supprimées automatiquement.
+              Un journal technique&nbsp;: quand une erreur inattendue survient, ACM Studio
+              enregistre sa date, la page concernée, un message technique, la version de l’outil et
+              les identifiants de l’agence et du conseiller connecté. Le message est nettoyé avant
+              d’être enregistré&nbsp;: il ne contient ni texte saisi, ni prix, ni adresse. Ce
+              journal n’est lu que par l’éditeur, pour corriger l’outil. Il est conservé 90
+              jours&nbsp;: chaque nuit, les lignes plus anciennes sont supprimées automatiquement.
             </li>
             <li>
-              Le compte des recherches de concurrents : pour chaque recherche lancée auprès de
+              Le compte des recherches de concurrents&nbsp;: pour chaque recherche lancée auprès de
               Stream Estate, le nombre d’annonces reçues, sa date, le dossier et le conseiller. Il
               sert à tenir le budget de recherche mensuel de l’agence.
             </li>
           </ul>
           <p className={paragraph}>
-            Un dossier vendeur supprimé par le conseiller est archivé : il disparaît de l’outil,
-            mais ses données restent conservées jusqu’à leur effacement, fait sur demande (voir «
-            Qui contacter »).
+            Un dossier vendeur supprimé par le conseiller est archivé&nbsp;: il disparaît de
+            l’outil, mais ses données restent conservées jusqu’à leur effacement, fait sur demande
+            (voir «&nbsp;Qui contacter&nbsp;»).
           </p>
           <p className={paragraph}>
-            Une fiche commerciale en PDF est lue dans le navigateur du conseiller : le fichier n’est
-            pas envoyé, seul son texte l’est. Les données d’une agence ne sont visibles que par les
-            membres de cette agence. ACM Studio dépose les cookies nécessaires à la connexion et au
-            choix du thème, et aucun cookie publicitaire ou de mesure d’audience.
+            Une fiche commerciale en PDF est lue dans le navigateur du conseiller&nbsp;: le fichier
+            n’est pas envoyé, seul son texte l’est. Les données d’une agence ne sont visibles que
+            par les membres de cette agence. ACM Studio dépose les cookies nécessaires à la
+            connexion et au choix du thème, et aucun cookie publicitaire ou de mesure d’audience.
           </p>
         </section>
 
@@ -406,22 +410,22 @@ export default function ConfidentialitePage() {
           <h2 className={sectionTitle}>Qui est responsable</h2>
           <p className={paragraph}>
             L’agence immobilière qui utilise ACM Studio est responsable du traitement des données de
-            ses dossiers : vendeurs, biens, concurrents et prospection. {PUBLISHER_NAME}, éditeur
-            d’ACM Studio, est son sous-traitant : il héberge et traite ces données pour le compte de
-            l’agence. Pour lire les notes d’un conseiller, {PUBLISHER_NAME} fait appel à Amazon Web
-            Services, son propre sous-traitant.
+            ses dossiers&nbsp;: vendeurs, biens, concurrents et prospection. {PUBLISHER_NAME},
+            éditeur d’ACM Studio, est son sous-traitant&nbsp;: il héberge et traite ces données pour
+            le compte de l’agence. Pour lire les notes d’un conseiller, {PUBLISHER_NAME} fait appel
+            à Amazon Web Services, son propre sous-traitant.
           </p>
         </section>
 
         <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
           <h2 className={sectionTitle}>Où sont les données</h2>
           <ul className={list}>
-            <li>Supabase : la base de données, les comptes et les photos des dossiers.</li>
-            <li>Vercel : l’hébergement de l’application.</li>
+            <li>Supabase&nbsp;: la base de données, les comptes et les photos des dossiers.</li>
+            <li>Vercel&nbsp;: l’hébergement de l’application.</li>
             <li>
-              Amazon Web Services (Amazon Bedrock), avec le modèle Claude d’Anthropic : la lecture
-              des notes d’un conseiller et des descriptions d’annonces, uniquement dans l’Union
-              européenne ; le service ne garde pas ce qu’il lit.
+              Amazon Web Services (Amazon Bedrock), avec le modèle Claude d’Anthropic&nbsp;: la
+              lecture des notes d’un conseiller et des descriptions d’annonces, uniquement dans
+              l’Union européenne&#x202f;; le service ne garde pas ce qu’il lit.
             </li>
             <li>
               Pour chercher des concurrents, ACM Studio transmet les critères de la recherche
@@ -430,24 +434,25 @@ export default function ConfidentialitePage() {
               services publics de géographie de l’État (api-adresse.data.gouv.fr, geo.api.gouv.fr)
               pour la situer. Ni le nom, ni l’e-mail, ni le téléphone du vendeur ne leur sont
               transmis. Le dernier résultat d’une recherche est gardé sur le dossier, pour être
-              rouvert sans nouvel appel ; il part avec le dossier.
+              rouvert sans nouvel appel&#x202f;; il part avec le dossier.
             </li>
             <li>
-              Mon secteur, d’Academia (app.myacademia.ai) : l’adresse du bien vendeur, son type, son
-              nombre de pièces et sa surface, par le compte d’ACM Studio, quand le conseiller
-              demande son dossier d’adresse ou son lien « Vivre ici ». Ni le nom, ni l’e-mail, ni le
-              téléphone du vendeur ou d’un acquéreur ne lui sont transmis.
+              Mon secteur, d’Academia (app.myacademia.ai)&nbsp;: l’adresse du bien vendeur, son
+              type, son nombre de pièces et sa surface, par le compte d’ACM Studio, quand le
+              conseiller demande son dossier d’adresse ou son lien «&nbsp;Vivre ici&nbsp;». Ni le
+              nom, ni l’e-mail, ni le téléphone du vendeur ou d’un acquéreur ne lui sont transmis.
             </li>
             <li>
-              Sur le Suivi, « Mettre à jour les prix des concurrents » relit, par l’extension, les
-              annonces des concurrents retenus : seuls le prix et la date du constat sont gardés.
+              Sur le Suivi, «&nbsp;Mettre à jour les prix des concurrents&nbsp;» relit, par
+              l’extension, les annonces des concurrents retenus&nbsp;: seuls le prix et la date du
+              constat sont gardés.
             </li>
             <li>
-              Pour inscrire à la main une adresse « Ne plus solliciter », ACM Studio demande à
-              geo.api.gouv.fr la commune d’un code postal, ou vérifie le nom d’une commune : seul ce
-              code postal ou ce nom lui est transmis, jamais la rue ni le numéro. Si le service ne
-              répond pas, le nom de la commune tapé est gardé avec l’opposition, et revérifié la
-              nuit suivante.
+              Pour inscrire à la main une adresse «&nbsp;Ne plus solliciter&nbsp;», ACM Studio
+              demande à geo.api.gouv.fr la commune d’un code postal, ou vérifie le nom d’une
+              commune&nbsp;: seul ce code postal ou ce nom lui est transmis, jamais la rue ni le
+              numéro. Si le service ne répond pas, le nom de la commune tapé est gardé avec
+              l’opposition, et revérifié la nuit suivante.
             </li>
             <li>Les e-mails d’invitation sont envoyés par Google (messagerie de l’éditeur).</li>
           </ul>
@@ -457,10 +462,10 @@ export default function ConfidentialitePage() {
           <h2 className={sectionTitle}>Qui contacter</h2>
           <p className={paragraph}>
             Pour consulter, corriger ou faire supprimer des données qui vous concernent, ou pour
-            vous opposer à un contact, adressez-vous à l’agence concernée, responsable du traitement
-            : ses coordonnées figurent sur le courrier que vous avez reçu. Pour toute autre
-            question, ou si vous ne savez pas quelle agence est concernée, écrivez à{' '}
-            {PUBLISHER_NAME} :{' '}
+            vous opposer à un contact, adressez-vous à l’agence concernée, responsable du
+            traitement&nbsp;: ses coordonnées figurent sur le courrier que vous avez reçu. Pour
+            toute autre question, ou si vous ne savez pas quelle agence est concernée, écrivez à{' '}
+            {PUBLISHER_NAME}&nbsp;:{' '}
             <a href={`mailto:${PRIVACY_CONTACT_EMAIL}`} className={link}>
               {PRIVACY_CONTACT_EMAIL}
             </a>

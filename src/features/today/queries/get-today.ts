@@ -172,16 +172,18 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
   ]);
 
   const failed: string[] = [];
-  if (visitRead.failed) failed.push('Les visites n’ont pas pu être lues : rechargez la page.');
-  if (contactsRes.error) failed.push('Les relances n’ont pas pu être lues : rechargez la page.');
-  if (pointsRes.error) failed.push('Les Points marché n’ont pas pu être lus : rechargez la page.');
+  if (visitRead.failed) failed.push('Les visites n’ont pas pu être lues\u00a0: rechargez la page.');
+  if (contactsRes.error)
+    failed.push('Les relances n’ont pas pu être lues\u00a0: rechargez la page.');
+  if (pointsRes.error)
+    failed.push('Les Points marché n’ont pas pu être lus\u00a0: rechargez la page.');
   if (buyerRead.failed || loopTasks.failed || watchRead.failed || agency.failed) {
-    failed.push('Les tâches des acquéreurs n’ont pas pu être lues : rechargez la page.');
+    failed.push('Les tâches des acquéreurs n’ont pas pu être lues\u00a0: rechargez la page.');
   }
-  if (offerRead.failed) failed.push('Les offres n’ont pas pu être lues : rechargez la page.');
+  if (offerRead.failed) failed.push('Les offres n’ont pas pu être lues\u00a0: rechargez la page.');
   if (keptRes.error || loop.failed || dismissals == null || buyerProspecting == null) {
     failed.push(
-      'Les acquéreurs prêts des biens sans mandat n’ont pas pu être lus : rechargez la page.',
+      'Les acquéreurs prêts des biens sans mandat n’ont pas pu être lus\u00a0: rechargez la page.',
     );
   }
 
@@ -390,7 +392,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
       }[]
     ).map((row) => ({
       at: row.sent_at,
-      title: `Bien proposé à ${buyerTitle(row.buyer_id)} : ${row.label}`,
+      title: `Bien proposé à ${buyerTitle(row.buyer_id)}\u00a0: ${row.label}`,
       authorId: row.sent_by,
       ownerIds: buyerOwners(row.buyer_id),
     })),
@@ -398,7 +400,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
       .filter((card) => card.row.handedAt != null && card.row.handedAt >= since)
       .map((card) => ({
         at: card.row.handedAt as string,
-        title: `Courrier remis : ${card.label}`,
+        title: `Courrier remis\u00a0: ${card.label}`,
         authorId: null,
         ownerIds:
           card.kind === 'competitor'
@@ -409,7 +411,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
       .filter((line) => line.visitedAt != null && line.visitedAt >= since)
       .map((line) => ({
         at: line.visitedAt as string,
-        title: `Visite faite : ${buyerInSentence(line.buyerName)}`,
+        title: `Visite faite\u00a0: ${buyerInSentence(line.buyerName)}`,
         authorId: null,
         ownerIds: buyerOwners(line.buyerId),
       })),

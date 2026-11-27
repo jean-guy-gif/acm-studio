@@ -134,11 +134,11 @@ describe('un lien sans réponse devient une relance', () => {
       advisorFirstName: 'Carl',
     });
     expect(text).toMatch(/^Bonjour M\. et Mme Lambert,/);
-    expect(text).toMatch(/Avez-vous pu regarder la sélection envoyée le 03\/11 \?/);
+    expect(text).toMatch(/Avez-vous pu regarder la sélection envoyée le 03\/11\s\?/);
     expect(text).toMatch(
       /La maison à Vence avec la piscine que vous vouliez coche ce que vous cherchez/,
     );
-    expect(text).toMatch(/voulez-vous la visiter samedi \?/);
+    expect(text).toMatch(/voulez-vous la visiter samedi\s\?/);
     expect(text).toContain('https://acm/dossier/abc');
     expect(text).not.toMatch(/disponible|€/);
   });
@@ -241,7 +241,7 @@ describe('les refus affinent la recherche', () => {
         no('b', ['district'], { city: 'la colle sur loup' }),
       ],
     );
-    expect(suggestion?.text).toMatch(/retirer La Colle-sur-Loup de sa recherche \?$/);
+    expect(suggestion?.text).toMatch(/retirer La Colle-sur-Loup de sa recherche\s\?$/);
     expect(suggestion?.patch).toEqual({ cities: ['Vence'] });
   });
 
@@ -302,13 +302,13 @@ describe('« Ce mois-ci »', () => {
 
   it('la ligne, et la dernière réponse', () => {
     expect(buyersMonthLine({ proposed: 24, answers: 9, visits: 4 })).toBe(
-      'Ce mois-ci : 24 biens proposés · 9 réponses · 4 visites',
+      'Ce mois-ci\u00a0: 24 biens proposés · 9 réponses · 4 visites',
     );
     expect(buyersMonthLine({ proposed: 1, answers: 0, visits: 1 })).toBe(
-      'Ce mois-ci : 1 bien proposé · 0 réponse · 1 visite',
+      'Ce mois-ci\u00a0: 1 bien proposé · 0 réponse · 1 visite',
     );
     expect(lastAnswerLabel({ at: '2026-11-04T10:00:00Z', answer: 'no', reasons: ['price'] })).toBe(
-      'Dernière réponse le 04/11 : Pas pour moi · Le prix',
+      'Dernière réponse le 04/11\u00a0: Pas pour moi · Le prix',
     );
   });
 });

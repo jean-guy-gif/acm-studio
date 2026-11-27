@@ -22,8 +22,8 @@ export function BuyerSoftCriteria({
         Ce qui compte pour eux
       </h3>
       <p className={hintText}>
-        Leurs mots. Les biens trouvés sont rangés d’après eux, avec la raison ; aucun bien n’est
-        écarté pour eux.
+        Leurs mots. Les biens trouvés sont rangés d’après eux, avec la raison&#x202f;; aucun bien
+        n’est écarté pour eux.
       </p>
       <ul className="flex flex-col">
         {criteria.map((criterion) => (

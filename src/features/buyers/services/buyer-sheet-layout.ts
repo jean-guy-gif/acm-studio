@@ -79,7 +79,7 @@ export function otherActions(input: {
             key: 'matches',
             label: 'Rapprocher',
             href,
-            unread: 'Correspondances illisibles pour l’instant : rechargez la page.',
+            unread: 'Correspondances illisibles pour l’instant\u00a0: rechargez la page.',
           }
         : {
             key: 'matches',
@@ -237,7 +237,7 @@ export function everythingLine(input: {
     input.dismissed > 0
       ? `${input.dismissed} écarté${input.dismissed > 1 ? 's' : ''} pour lui`
       : null,
-    input.readiness ? 'prêt à visiter ?' : null,
+    input.readiness ? 'prêt à visiter\u202f?' : null,
     'ce qui s’est passé',
     'statut',
   ]

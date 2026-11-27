@@ -65,7 +65,7 @@ export function PendingImportsBanner({
         }),
       );
       if (outcome.status === 'pending') {
-        note(item.id, `Toujours en attente : ${READ_FAILURE_LABELS[outcome.cause]}.`);
+        note(item.id, `Toujours en attente\u00a0: ${READ_FAILURE_LABELS[outcome.cause]}.`);
       } else if (outcome.status === 'already_dismissed') {
         const comparableId = outcome.comparableId;
         setDismissed((current) =>
@@ -75,7 +75,7 @@ export function PendingImportsBanner({
         );
       }
     } catch {
-      note(item.id, 'Toujours en attente : l’import a été interrompu.');
+      note(item.id, 'Toujours en attente\u00a0: l’import a été interrompu.');
     } finally {
       setBusyId(null);
       router.refresh();

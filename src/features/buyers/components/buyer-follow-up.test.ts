@@ -214,7 +214,7 @@ describe('« Son suivi », à l’écran', () => {
 
   it('un concurrent refusé : sa raison, « Concurrent à prospecter », jamais « Dans l’agence »', () => {
     const html = render();
-    expect(html).toContain('Pas pour lui : Le quartier');
+    expect(html).toContain('Pas pour lui\u00a0: Le quartier');
     expect(html).toContain('Concurrent à prospecter');
     expect(html).not.toContain('Dans l’agence');
     expect(html).toContain('>Refusé<');
@@ -262,7 +262,7 @@ describe('« Son suivi », à l’écran', () => {
 
   it('une lecture en échec le dit, même sans rien à montrer ; sans rien ni échec, pas de bloc', () => {
     const failed = render({ unread: true, list: [] });
-    expect(failed).toContain('Son suivi n’a pas pu être lu en entier : rechargez la page.');
+    expect(failed).toContain('Son suivi n’a pas pu être lu en entier\u00a0: rechargez la page.');
     // Jamais « aucun » sur une lecture en échec (M98) : une ligne qu'on n'a pas pu lire ne s'écrit pas.
     expect(failed).not.toContain('aucun');
     expect(failed).not.toContain('data-testid="buyer-follow-up-group"');

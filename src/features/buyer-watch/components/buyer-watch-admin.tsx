@@ -15,7 +15,7 @@ import { formatRelativeMoment } from '@/lib/format';
 // l'enregistrement n'a pas abouti et propose de recharger.
 const SAVE_TIMEOUT_MS = 20_000;
 const SAVE_LOST =
-  'L’enregistrement n’a pas abouti : rechargez la page pour voir l’état enregistré de la veille.';
+  'L’enregistrement n’a pas abouti\u00a0: rechargez la page pour voir l’état enregistré de la veille.';
 
 const STATUS_LABELS: Record<WatchAdmin['journal'][number]['status'], string> = {
   running: 'en cours',
@@ -64,7 +64,7 @@ export function BuyerWatchAdmin({ watch }: { watch: Pick<WatchAdmin, 'state' | '
           off && !result.active
             ? {
                 ok: false,
-                text: 'La veille ne peut pas reprendre : la recherche de l’agence est coupée. Contactez l’équipe ACM Studio.',
+                text: 'La veille ne peut pas reprendre\u00a0: la recherche de l’agence est coupée. Contactez l’équipe ACM Studio.',
               }
             : { ok: true, text: result.active ? 'Veille reprise.' : 'Veille coupée.' },
         );
@@ -135,8 +135,8 @@ export function BuyerWatchAdmin({ watch }: { watch: Pick<WatchAdmin, 'state' | '
         </h3>
         {watch.journal.length === 0 ? (
           <p className="text-sm text-zinc-500 stage:text-white/55">
-            Aucun passage pour l’instant : la veille cherche la nuit pour les acquéreurs prêts à
-            visiter.
+            Aucun passage pour l’instant&nbsp;: la veille cherche la nuit pour les acquéreurs prêts
+            à visiter.
           </p>
         ) : (
           <ul

@@ -84,7 +84,7 @@ export function academiaLinkView(input: {
 export const ACADEMIA_LIVING_HERE_PATTERN = /^https:\/\/app\.myacademia\.ai\/l\/[A-Za-z0-9._~-]+$/;
 export const ACADEMIA_LIVING_HERE_MAX = 500;
 export const ACADEMIA_LIVING_HERE_ERROR =
-  'Collez le lien « Vivre ici » donné par Academia : il commence par https://app.myacademia.ai/l/';
+  'Collez le lien «\u00a0Vivre ici\u00a0» donné par Academia\u00a0: il commence par https://app.myacademia.ai/l/';
 
 // Le lien s'il est d'Academia, sinon `null` ; une valeur vide aussi (relu à l'écran, au serveur, et
 // à la lecture avant de partir vers l'acquéreur).

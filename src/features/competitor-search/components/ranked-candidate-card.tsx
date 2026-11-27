@@ -43,12 +43,12 @@ export function StreamEstateFactsLine({ facts }: { facts: StreamEstateFacts }) {
   return (
     <div className="flex flex-col gap-1 text-xs text-zinc-600 stage:text-white/70">
       <span>
-        Annonce d’origine : <span className="font-medium">{facts.originSite}</span>
+        Annonce d’origine&nbsp;: <span className="font-medium">{facts.originSite}</span>
         {since ? ` · en ligne depuis le ${since}` : ''}
       </span>
       <span>
         {facts.priceDrops.length > 0
-          ? `Baisse${facts.priceDrops.length > 1 ? 's' : ''} de prix : ${facts.priceDrops.map(percent).join(' puis ')}`
+          ? `Baisse${facts.priceDrops.length > 1 ? 's' : ''} de prix\u00a0: ${facts.priceDrops.map(percent).join(' puis ')}`
           : 'Aucune baisse de prix relevée'}
       </span>
     </div>
@@ -89,12 +89,12 @@ export function ProximityLines({ reasons }: { reasons: ProximityReason[] }) {
   return (
     <div className="flex flex-col gap-1 text-xs text-zinc-600 stage:text-white/70">
       <p>
-        <span className="font-semibold">Pourquoi il est proche : </span>
+        <span className="font-semibold">Pourquoi il est proche&nbsp;: </span>
         <ReasonList reasons={first} />
       </p>
       {second.length > 0 ? (
         <p>
-          <span className="font-semibold">Puis : </span>
+          <span className="font-semibold">Puis&nbsp;: </span>
           <ReasonList reasons={second} />
         </p>
       ) : null}
@@ -327,14 +327,14 @@ export function RankedCandidateCard({
 
         {ranked.learnedPenalties.length > 0 ? (
           <p className={hintText}>
-            D’après vos choix passés : {ranked.learnedPenalties.join(' · ')}
+            D’après vos choix passés&nbsp;: {ranked.learnedPenalties.join(' · ')}
           </p>
         ) : null}
 
         {rejecting ? (
           <div className="flex flex-col gap-2 pt-1">
             <label className="text-sm text-zinc-700 stage:text-white/80">
-              Pourquoi n’est-ce pas un concurrent ?
+              Pourquoi n’est-ce pas un concurrent&#x202f;?
               <select
                 value={reason}
                 onChange={(event) => setReason(event.target.value as DecisionReason)}

@@ -40,7 +40,7 @@ export default async function PublicOfferPage({ params }: { params: Promise<{ to
           className="mx-auto max-w-[210mm] text-sm font-semibold text-zinc-700 print:hidden"
           data-testid="offer-expired"
         >
-          Cette offre n’est plus valable : elle l’était jusqu’au {frenchDay(offer.validUntil)}{' '}
+          Cette offre n’est plus valable&nbsp;: elle l’était jusqu’au {frenchDay(offer.validUntil)}{' '}
           inclus.
         </p>
       ) : null}

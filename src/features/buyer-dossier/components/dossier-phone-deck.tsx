@@ -561,7 +561,7 @@ export function DossierPhoneDeck({
                 {t.wordsTitle}
               </p>
               <p className="font-title text-lg leading-snug font-semibold text-zinc-800">
-                « {deck.words} »
+                «&nbsp;{deck.words}&nbsp;»
               </p>
               <p className="text-sm text-zinc-600">{t.propertiesForYou(itemCount)}</p>
             </div>

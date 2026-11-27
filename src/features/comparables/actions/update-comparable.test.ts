@@ -78,7 +78,7 @@ describe('« Modifier le bien » (mission 112)', () => {
         ? { error: { code: '23505', message: 'comparables_one_listing_per_project' } }
         : { data: { id: 'c9', is_selected: true } };
     const result = await updateComparable('p1', 'c1', initialUpdateComparableState, form());
-    expect(result.error).toMatch(/^Déjà dans le dossier : cette annonce a déjà sa fiche, retenue/);
+    expect(result.error).toMatch(/^Déjà dans le dossier\s: cette annonce a déjà sa fiche, retenue/);
     expect(result.values?.price).toBe('400000');
   });
 });

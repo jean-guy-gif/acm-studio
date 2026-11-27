@@ -140,7 +140,7 @@ describe('la première étape : supprimer, recompter à zéro, préparer l’age
     for (const mode of ['prepare', 'reset']) {
       expect(await startDemoSetup(mode)).toEqual({
         ok: false,
-        error: 'Vos dossiers de démo n’ont pas pu être lus : rechargez la page.',
+        error: 'Vos dossiers de démo n’ont pas pu être lus\u00a0: rechargez la page.',
       });
     }
     expect(service.writes()).toEqual([]);
@@ -219,12 +219,12 @@ describe('une étape en échec arrête tout et le dit', () => {
     expect(await seedDemoProjectStep('ready', new Date().toISOString())).toEqual({
       ok: false,
       error:
-        'La remise à zéro n’a pas abouti : le dossier de Mme Garcia, prêt pour le Live n’a pas pu être créé. Rien n’est prêt.',
+        'La remise à zéro n’a pas abouti\u00a0: le dossier de Mme Garcia, prêt pour le Live n’a pas pu être créé. Rien n’est prêt.',
     });
     expect(state.reported).toContain('demoReset.dossier');
     // En « Préparer », le même échec dit « La préparation de la démo ».
     const prepared = await seedDemoProjectStep('ready', new Date().toISOString(), 'prepare');
-    expect(!prepared.ok && prepared.error).toMatch(/^La préparation de la démo n’a pas abouti : /);
+    expect(!prepared.ok && prepared.error).toMatch(/^La préparation de la démo n’a pas abouti\s: /);
   });
 
   it('les acquéreurs : le mandat de Mougins absent, en double ou illisible, rien n’est semé', async () => {
@@ -248,7 +248,7 @@ describe('une étape en échec arrête tout et le dit', () => {
       table === 'projects' ? { error: { message: 'timeout' } } : { data: [] };
     expect(await seedDemoBuyersStep(now)).toEqual({
       ok: false,
-      error: 'Vos dossiers de démo n’ont pas pu être lus : rechargez la page.',
+      error: 'Vos dossiers de démo n’ont pas pu être lus\u00a0: rechargez la page.',
     });
     expect(service.writes()).toEqual([]);
   });
@@ -360,7 +360,7 @@ describe('la vérification : « prête » seulement sur preuve', () => {
     expect(await verifyDemoSetup()).toEqual({
       ok: false,
       error:
-        'La remise à zéro n’a pas abouti : 11 dossiers sur 12 (il manque « Prêt, en présentation directe »). Rien n’est prêt.',
+        'La remise à zéro n’a pas abouti\u00a0: 11 dossiers sur 12 (il manque «\u00a0Prêt, en présentation directe\u00a0»). Rien n’est prêt.',
     });
     expect(state.reported).toContain('demoReset.verify');
   });

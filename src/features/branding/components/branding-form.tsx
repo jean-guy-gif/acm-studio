@@ -101,7 +101,7 @@ export function BrandingForm({
           const result = await saveBranding(formData);
           setState(
             result.ok
-              ? { ok: true, message: 'Charte validée : elle s’applique à tout l’outil.' }
+              ? { ok: true, message: 'Charte validée\u00a0: elle s’applique à tout l’outil.' }
               : { ok: false, message: result.error },
           );
         });
@@ -139,8 +139,8 @@ export function BrandingForm({
 
             {palette?.textContrastAdjusted ? (
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                Votre couleur serait illisible en texte : elle a été assombrie pour le texte, et
-                reste exacte pour les aplats et les accents.
+                Votre couleur serait illisible en texte&nbsp;: elle a été assombrie pour le texte,
+                et reste exacte pour les aplats et les accents.
               </p>
             ) : null}
 
@@ -256,8 +256,8 @@ export function BrandingForm({
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <span className="text-xs text-zinc-500">
-                Vide, les courriers portent « Ne peut recevoir aucun fonds ». Ces mentions sont
-                imprimées en pied des dossiers de prospection.
+                Vide, les courriers portent «&nbsp;Ne peut recevoir aucun fonds&nbsp;». Ces mentions
+                sont imprimées en pied des dossiers de prospection.
               </span>
             </label>
 
@@ -280,8 +280,8 @@ export function BrandingForm({
                 className="rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <span className="text-xs text-zinc-500">
-                Vide, c’est le nom de l’agence{agencyName ? ` (« ${agencyName} »)` : ''} qui
-                s’imprime.
+                Vide, c’est le nom de l’agence{agencyName ? ` («\u00a0${agencyName}\u00a0»)` : ''}{' '}
+                qui s’imprime.
               </span>
             </label>
 
@@ -296,7 +296,7 @@ export function BrandingForm({
               />
               {light.isJpeg ? (
                 <span className="text-xs text-amber-700">
-                  JPEG : fond opaque possible (rectangle blanc). Préférez un SVG ou un PNG
+                  JPEG&nbsp;: fond opaque possible (rectangle blanc). Préférez un SVG ou un PNG
                   transparent.
                 </span>
               ) : null}
@@ -313,7 +313,7 @@ export function BrandingForm({
               />
               {dark.isJpeg ? (
                 <span className="text-xs text-amber-700">
-                  JPEG : fond opaque possible (rectangle blanc). Préférez un SVG ou un PNG
+                  JPEG&nbsp;: fond opaque possible (rectangle blanc). Préférez un SVG ou un PNG
                   transparent.
                 </span>
               ) : null}

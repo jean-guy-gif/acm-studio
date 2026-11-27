@@ -23,7 +23,7 @@ import { formatSquareMeters } from '@/lib/format';
 // renvoie pas un bien sans classe publiée. Sans classe cochée, aucun filtre.
 export const DPE_FILTER_HINT =
   'Les annonces sans DPE publié ne sont pas proposées avec ce critère.';
-export const DPE_NO_FILTER_HINT = 'Aucune classe cochée : aucun filtre sur le DPE.';
+export const DPE_NO_FILTER_HINT = 'Aucune classe cochée\u00a0: aucun filtre sur le DPE.';
 
 export const OUTDOOR_CHOICES = ['balcony', 'terrace', 'garden'] as const;
 export type OutdoorChoice = (typeof OUTDOOR_CHOICES)[number];

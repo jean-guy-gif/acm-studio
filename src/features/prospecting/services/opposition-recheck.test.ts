@@ -18,7 +18,7 @@ describe('la revérification de la nuit', () => {
   it('commune inconnue : le manager le voit', () => {
     expect(recheckDecision('Cagnes sur Mère', [{ nom: 'Cagnes-sur-Mer' }])).toBe('unknown');
     expect(recheckDecision('Nullepart', [])).toBe('unknown');
-    expect(UNKNOWN_COMMUNE_NOTICE).toBe('Opposition à vérifier : commune inconnue');
+    expect(UNKNOWN_COMMUNE_NOTICE).toBe('Opposition à vérifier\u00a0: commune inconnue');
   });
 
   it('service muet : rien ne change, on réessaie la nuit suivante', () => {

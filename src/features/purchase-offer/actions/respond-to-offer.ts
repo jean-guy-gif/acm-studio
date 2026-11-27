@@ -32,7 +32,10 @@ export async function respondToOffer(token: unknown, raw: unknown): Promise<Resp
   const { offer } = found;
   if (offer.answer) return { ok: false, error: 'Une réponse a déjà été donnée à cette offre.' };
   if (offer.validUntil < parisToday()) {
-    return { ok: false, error: 'Cette offre n’est plus valable : sa date de validité est passée.' };
+    return {
+      ok: false,
+      error: 'Cette offre n’est plus valable\u00a0: sa date de validité est passée.',
+    };
   }
   const parsed = offerResponseSchema.safeParse(raw);
   if (!parsed.success)
@@ -51,11 +54,11 @@ export async function respondToOffer(token: unknown, raw: unknown): Promise<Resp
     return { ok: true };
   }
   if (response.signatures.length !== response.signers.length) {
-    return { ok: false, error: 'Chaque signataire signe : une signature par nom.' };
+    return { ok: false, error: 'Chaque signataire signe\u00a0: une signature par nom.' };
   }
   const signatures = response.signatures.map(decodeSignature);
   if (signatures.some((bytes) => bytes == null)) {
-    return { ok: false, error: 'Une signature n’a pas pu être lue : signez de nouveau.' };
+    return { ok: false, error: 'Une signature n’a pas pu être lue\u00a0: signez de nouveau.' };
   }
   const folder = randomUUID();
   const paths = signatures.map(

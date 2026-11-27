@@ -33,8 +33,8 @@ export function AgencyDemoToggle({
         setState({
           ok: true,
           message: result.isDemo
-            ? 'Agence de démonstration : fournisseurs simulés.'
-            : 'Agence réelle : fournisseurs réels.',
+            ? 'Agence de démonstration\u00a0: fournisseurs simulés.'
+            : 'Agence réelle\u00a0: fournisseurs réels.',
         });
         router.refresh();
       } else {
@@ -51,7 +51,7 @@ export function AgencyDemoToggle({
           checked={isDemo}
           disabled={pending}
           onChange={(event) => toggle(event.target.checked)}
-          aria-label={`${agencyName} : agence de démonstration`}
+          aria-label={`${agencyName}\u00a0: agence de démonstration`}
           className="h-4 w-4 accent-violet-700"
         />
         Agence de démonstration

@@ -283,11 +283,11 @@ describe('ce qui s’est passé', () => {
       ],
     });
     expect(entries.map((entry) => entry.text)).toEqual([
-      'Visite faite : Maison · 7 p. · 210 m² · Mougins · Offre envisagée',
-      'Courrier préparé : Maison · 7 p. · 210 m² · Mougins',
-      'Visite demandée : Maison · 7 p. · 210 m² · Mougins',
+      'Visite faite\u00a0: Maison · 7 p. · 210 m² · Mougins · Offre envisagée',
+      'Courrier préparé\u00a0: Maison · 7 p. · 210 m² · Mougins',
+      'Visite demandée\u00a0: Maison · 7 p. · 210 m² · Mougins',
       'Sélection présentée',
-      '3 biens sélectionnés : 1 de l’agence, 2 du marché',
+      '3 biens sélectionnés\u00a0: 1 de l’agence, 2 du marché',
       'Fiche créée',
     ]);
   });

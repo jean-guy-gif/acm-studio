@@ -30,5 +30,5 @@ export function missingForSearch(property: {
 }
 
 export function missingForSearchMessage(missing: SearchRequirement[]): string {
-  return `Il manque : ${missing.map((name) => SEARCH_REQUIREMENT_LABELS[name]).join(', ')}`;
+  return `Il manque\u00a0: ${missing.map((name) => SEARCH_REQUIREMENT_LABELS[name]).join(', ')}`;
 }

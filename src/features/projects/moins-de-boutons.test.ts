@@ -74,13 +74,13 @@ describe('le menu « … »', () => {
       createElement(MoreMenuEntries, {
         items: [
           { key: 'del', label: 'Supprimer…', danger: true },
-          { key: 'ready', label: 'Déclarer prêt', hint: 'il manque : bien vendeur' },
+          { key: 'ready', label: 'Déclarer prêt', hint: 'il manque\u00a0: bien vendeur' },
         ],
         onPick: () => {},
       }),
     );
     expect(html.indexOf('Déclarer prêt')).toBeLessThan(html.indexOf('Supprimer…'));
-    expect(html).toContain('· il manque : bien vendeur');
+    expect(html).toContain('· il manque\u00a0: bien vendeur');
     expect(html).toMatch(/text-red-600[^>]*>.*Supprimer…/);
     expect(html.match(/role="menuitem"/g)).toHaveLength(2);
   });
@@ -108,10 +108,10 @@ describe('Préparation : « Déclarer prêt » dit ce qui manque (M52 gardée)',
         ready: false,
       }),
     ).toBe(
-      'il manque : bien vendeur, 3 concurrents (1 sur 3), décision de prix, 2 imports en attente',
+      'il manque\u00a0: bien vendeur, 3 concurrents (1 sur 3), décision de prix, 2 imports en attente',
     );
     expect(missingForReady({ ...base, hasPositioning: false, ready: false })).toBe(
-      'il manque : décision de prix',
+      'il manque\u00a0: décision de prix',
     );
   });
 
@@ -123,7 +123,7 @@ describe('Préparation : « Déclarer prêt » dit ce qui manque (M52 gardée)',
         projectName: 'M. et Mme Martin',
         ready: false,
         next: { label: 'Saisir le bien vendeur', href: '/builder/p1/property' },
-        missing: 'il manque : bien vendeur',
+        missing: 'il manque\u00a0: bien vendeur',
         declareReady: noop,
         revertToPreparation: noop,
         archive: noop,

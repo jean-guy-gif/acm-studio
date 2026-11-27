@@ -87,7 +87,7 @@ export async function resolveAcademiaDossier(input: {
     } else {
       await reportServerError(
         input.label,
-        new Error(`Academia : ${read.reason}${read.detail ? ` — ${read.detail}` : ''}`),
+        new Error(`Academia\u00a0: ${read.reason}${read.detail ? ` — ${read.detail}` : ''}`),
       );
       return { kind: 'failed' };
     }
@@ -129,7 +129,7 @@ export async function viewFailure(
   if (reply.reason === 'not_found') return 'request_failed';
   await reportServerError(
     input.label,
-    new Error(`Academia : ${reply.reason}${reply.detail ? ` — ${reply.detail}` : ''}`),
+    new Error(`Academia\u00a0: ${reply.reason}${reply.detail ? ` — ${reply.detail}` : ''}`),
   );
   return 'failed';
 }
@@ -159,7 +159,7 @@ export async function readAddressView(input: {
   if (!view) {
     await reportServerError(
       'academia:read-address-view',
-      new Error('Academia : vue « bien » hors contrat'),
+      new Error('Academia\u00a0: vue «\u00a0bien\u00a0» hors contrat'),
     );
     return { kind: 'failed' };
   }

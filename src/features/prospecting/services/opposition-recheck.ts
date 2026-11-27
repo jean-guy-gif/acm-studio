@@ -14,7 +14,7 @@ import { manualCommuneLookupName } from '@/features/prospecting/services/manual-
 //   • service muet : rien ne change, on réessaie la nuit suivante.
 // Une opposition n'est jamais retirée ni affaiblie par cette vérification.
 
-export const UNKNOWN_COMMUNE_NOTICE = 'Opposition à vérifier : commune inconnue';
+export const UNKNOWN_COMMUNE_NOTICE = 'Opposition à vérifier\u00a0: commune inconnue';
 
 export type RecheckDecision = 'verified' | 'unknown' | 'retry';
 

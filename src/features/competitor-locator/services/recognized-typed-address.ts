@@ -34,7 +34,9 @@ export async function recognizedTypedAddress(
   if (!decision.verified) {
     await reportServerError(
       'adresse saisie par le conseiller',
-      new Error(`commune non vérifiée (service des communes indisponible) : ${decision.commune}`),
+      new Error(
+        `commune non vérifiée (service des communes indisponible)\u00a0: ${decision.commune}`,
+      ),
     );
   }
   return {

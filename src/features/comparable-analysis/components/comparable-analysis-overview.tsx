@@ -64,7 +64,7 @@ export function ComparableAnalysisOverview({
           </div>
         ) : (
           <p className={hintText}>
-            Surface du bien vendeur inconnue : le positionnement ne peut pas être calculé.
+            Surface du bien vendeur inconnue&nbsp;: le positionnement ne peut pas être calculé.
           </p>
         )}
       </section>

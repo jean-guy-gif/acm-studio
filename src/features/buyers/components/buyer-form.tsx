@@ -43,7 +43,7 @@ import { PROPERTY_TYPE_LABELS } from '@/features/subject-property/constants/prop
 // « Enregistrer ».
 
 const SAVED = 'Fiche enregistrée.';
-const FAILED = 'La fiche n’a pas pu être enregistrée : vérifiez la connexion, puis réessayez.';
+const FAILED = 'La fiche n’a pas pu être enregistrée\u00a0: vérifiez la connexion, puis réessayez.';
 
 type TriState = boolean | null | undefined;
 const tri = (value: TriState): string => (value === true ? 'yes' : value === false ? 'no' : '');
@@ -215,7 +215,8 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
           placeholder: 'Antibes, Juan-les-Pins, Vallauris',
         })}
         <p className={hintText}>
-          Plusieurs communes, séparées par des virgules ; « Paris 15e » pour un arrondissement.
+          Plusieurs communes, séparées par des virgules&#x202f;; «&nbsp;Paris 15e&nbsp;» pour un
+          arrondissement.
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {text('Budget idéal (€)', 'budget_ideal', {
@@ -267,7 +268,8 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
       <section className={formSection} data-testid="buyer-form-soft">
         <h2 className={formSectionTitle}>Ce qui compte pour eux</h2>
         <p className={hintText}>
-          Leurs mots. Les biens trouvés sont rangés d’après eux ; aucun bien n’est écarté pour eux.
+          Leurs mots. Les biens trouvés sont rangés d’après eux&#x202f;; aucun bien n’est écarté
+          pour eux.
         </p>
         <div className="flex flex-col gap-2">
           {BUYER_SOFT_CRITERIA.map((key) => (
@@ -285,7 +287,7 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
               <input
                 type="text"
                 name={`soft_words_${key}`}
-                aria-label={`Leurs mots : ${BUYER_SOFT_CRITERION_LABELS[key]}`}
+                aria-label={`Leurs mots\u00a0: ${BUYER_SOFT_CRITERION_LABELS[key]}`}
                 maxLength={BUYER_SOFT_WORDS_MAX}
                 defaultValue={softWords.get(key) ?? ''}
                 placeholder="Leurs mots (facultatif)"
@@ -301,7 +303,8 @@ export function BuyerForm({ buyer, draft }: { buyer: Buyer | null; draft?: Parti
         <div className="flex flex-col gap-1">
           <span className={fieldLabel}>Indispensable</span>
           <p className={hintText}>
-            Cochez les critères sans lesquels il n’achète pas ; les autres restent des préférences.
+            Cochez les critères sans lesquels il n’achète pas&#x202f;; les autres restent des
+            préférences.
           </p>
           <div className="flex flex-wrap gap-2">
             {BUYER_CRITERIA.map((criterion) => (

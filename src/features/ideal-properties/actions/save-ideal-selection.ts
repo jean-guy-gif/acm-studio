@@ -31,7 +31,7 @@ export type SaveIdealSelectionResult =
 
 const FAILED = 'La sélection n’a pas pu être enregistrée. Réessayez.';
 const ALREADY_SEEN =
-  'L’un de ces biens a déjà été vu avec lui, ou écarté pour lui : il ne se retient plus. Rechargez la page.';
+  'L’un de ces biens a déjà été vu avec lui, ou écarté pour lui\u00a0: il ne se retient plus. Rechargez la page.';
 
 // Mission 118 — « Retenir la sélection » : jusqu'à trois biens, enregistrés d'un coup pour la fiche
 // (une sélection précédente reste lisible, la nouvelle vaut). Les annonces du marché retenues

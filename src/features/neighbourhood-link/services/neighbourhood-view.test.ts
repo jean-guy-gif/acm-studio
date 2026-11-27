@@ -45,7 +45,7 @@ describe('le quartier, dit au vendeur', () => {
     const view = fr('risques');
     expect(view).toMatchObject({
       kind: 'risks',
-      headline: 'Séisme et argiles : un niveau moyen.',
+      headline: 'Séisme et argiles\u00a0: un niveau moyen.',
       disasters: {
         scale: 'la commune',
         count: '2',
@@ -53,15 +53,15 @@ describe('le quartier, dit au vendeur', () => {
       },
       flood: {
         title: 'Commune classée',
-        caption: 'territoire à risque important d’inondation : Nice Cannes Mandelieu',
+        caption: 'territoire à risque important d’inondation\u00a0: Nice Cannes Mandelieu',
       },
     });
     expect(
       view?.kind === 'risks' && view.gauges.map((g) => [g.title, g.scale, g.value, g.caption]),
     ).toEqual([
-      ['Séisme', 'la commune', 4, 'zone 4 sur 5 : « moyenne »'],
+      ['Séisme', 'la commune', 4, 'zone 4 sur 5\u00a0: «\u00a0moyenne\u00a0»'],
       ['Argiles', 'l’adresse du bien', 2, 'exposition moyenne, sur 3 niveaux'],
-      ['Radon', 'la commune', 1, 'catégorie 1 sur 3 : potentiel « faible »'],
+      ['Radon', 'la commune', 1, 'catégorie 1 sur 3\u00a0: potentiel «\u00a0faible\u00a0»'],
     ]);
     expect(en('risques')).toMatchObject({ headline: 'Earthquake and clay: a medium level.' });
   });
@@ -70,8 +70,8 @@ describe('le quartier, dit au vendeur', () => {
     expect(fr('population')).toMatchObject({
       headline: `1${THIN}120 habitants autour de votre bien.`,
       groups: [
-        { value: `1${THIN}120`, pictograms: 11, note: '(un pictogramme : 100 habitants)' },
-        { value: '500', pictograms: 10, note: '(un pictogramme : 50 ménages)' },
+        { value: `1${THIN}120`, pictograms: 11, note: '(un pictogramme\u00a0: 100 habitants)' },
+        { value: '500', pictograms: 10, note: '(un pictogramme\u00a0: 50 ménages)' },
         { value: '2,2', pictograms: 2, note: null },
       ],
     });

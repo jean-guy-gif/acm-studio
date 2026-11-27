@@ -255,7 +255,7 @@ export function extractBienIci(html: string, listingUrl?: string): PartialListin
       if (looksLikeHouse) {
         result.landArea = terrain;
       } else {
-        console.warn(`[bienici] terrain relevé mais non retenu (bien non-maison) : ${text}`);
+        console.warn(`[bienici] terrain relevé mais non retenu (bien non-maison)\u00a0: ${text}`);
       }
     }
     if (surface != null) {
@@ -294,7 +294,7 @@ export function extractBienIci(html: string, listingUrl?: string): PartialListin
     if (looksLikeFeature(text)) {
       features.push(text);
     } else {
-      console.warn(`[bienici] bloc labelInfo ignoré (forme inattendue) : ${text}`);
+      console.warn(`[bienici] bloc labelInfo ignoré (forme inattendue)\u00a0: ${text}`);
     }
   }
   if (features.length > 0) {

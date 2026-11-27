@@ -49,7 +49,7 @@ describe('l’import d’une annonce par le serveur', () => {
     expect(result).toEqual({
       ok: false,
       error:
-        'Belles Demeures interdit la lecture automatique de ses annonces : ACM ne peut pas la reprendre. Saisissez le bien à la main ci-dessous.',
+        'Belles Demeures interdit la lecture automatique de ses annonces\u00a0: ACM ne peut pas la reprendre. Saisissez le bien à la main ci-dessous.',
     });
     expect(state.fetched).toEqual([]);
   });

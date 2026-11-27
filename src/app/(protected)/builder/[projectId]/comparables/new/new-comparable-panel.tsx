@@ -264,8 +264,8 @@ export function NewComparablePanel({
                 <div>
                   <p className="font-semibold text-zinc-700 stage:text-white/85">Prix au m²</p>
                   <p className="text-zinc-600 stage:text-white/65">
-                    Portail : {portal != null ? formatEuroPerSquareMeter(portal) : '—'} · Calculé
-                    ACM : {acm != null ? formatEuroPerSquareMeter(acm) : '—'}
+                    Portail&nbsp;: {portal != null ? formatEuroPerSquareMeter(portal) : '—'} ·
+                    Calculé ACM&nbsp;: {acm != null ? formatEuroPerSquareMeter(acm) : '—'}
                   </p>
                   {overThreshold ? (
                     <p role="alert" className="font-medium text-amber-600 stage:text-amber-300">

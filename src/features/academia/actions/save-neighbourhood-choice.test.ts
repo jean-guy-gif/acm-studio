@@ -137,7 +137,7 @@ describe('« Enregistrer le choix » du quartier', () => {
     for (const keys of [['risques', 'estimation'], ['dpe'], 'risques', [1], null]) {
       expect(await saveNeighbourhoodChoice(PROJECT, keys)).toEqual({
         ok: false,
-        error: 'Choix illisible : rechargez la page.',
+        error: 'Choix illisible\u00a0: rechargez la page.',
       });
     }
     expect(inserted()).toBeNull();
@@ -161,7 +161,7 @@ describe('« Enregistrer le choix » du quartier', () => {
       setup();
       expect(await saveNeighbourhoodChoice(PROJECT, ['risques'])).toEqual({
         ok: false,
-        error: 'Le Live a commencé : le quartier montré au vendeur ne se modifie plus.',
+        error: 'Le Live a commencé\u00a0: le quartier montré au vendeur ne se modifie plus.',
       });
       expect(inserted()).toBeNull();
     }
@@ -175,7 +175,7 @@ describe('« Enregistrer le choix » du quartier', () => {
     state.writeError = { code: '42501', message: 'le Live a commencé' };
     expect(await saveNeighbourhoodChoice(PROJECT, ['risques'])).toEqual({
       ok: false,
-      error: 'Le Live a commencé : le quartier montré au vendeur ne se modifie plus.',
+      error: 'Le Live a commencé\u00a0: le quartier montré au vendeur ne se modifie plus.',
     });
   });
 

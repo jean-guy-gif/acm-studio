@@ -87,9 +87,9 @@ export function OutsideTitleFields({
       data-testid="outside-title"
       data-kind={draft.kind ?? ''}
     >
-      <legend className="sr-only">À quel titre intervenez-vous ?</legend>
+      <legend className="sr-only">À quel titre intervenez-vous&#x202f;?</legend>
       <span className="text-sm font-bold text-brand-deep stage:text-brand" aria-hidden>
-        À quel titre intervenez-vous ?{' '}
+        À quel titre intervenez-vous&#x202f;?{' '}
         <span className="font-semibold text-zinc-500 stage:text-white/60">obligatoire</span>
       </span>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

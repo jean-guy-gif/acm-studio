@@ -132,12 +132,12 @@ export function BuyerList({
       {shown.length === 0 ? (
         <div className={emptyState} data-testid="buyer-list-empty">
           {query.trim()
-            ? `Aucun acquéreur ne porte « ${query.trim()} ».`
+            ? `Aucun acquéreur ne porte «\u00a0${query.trim()}\u00a0».`
             : view === 'mine' && rows.length > 0 && inView.length === 0
-              ? 'Aucune fiche à votre nom : « Toute l’agence » montre celles de vos collègues.'
+              ? 'Aucune fiche à votre nom\u00a0: «\u00a0Toute l’agence\u00a0» montre celles de vos collègues.'
               : inView.length > 0
                 ? 'Aucune fiche pour ce filtre.'
-                : 'Aucun acquéreur pour l’instant : « Nouvel acquéreur » crée la première fiche.'}
+                : 'Aucun acquéreur pour l’instant\u00a0: «\u00a0Nouvel acquéreur\u00a0» crée la première fiche.'}
         </div>
       ) : (
         <ul className="flex flex-col gap-2" data-testid="buyer-list">
@@ -183,7 +183,7 @@ export function BuyerList({
                 {/* Mission 130 B — sa prochaine étape et depuis quand ; le bouton la fait. */}
                 {row.next == null ? (
                   <span className="text-xs font-semibold text-red-700">
-                    Avancement non lu : rechargez la page.
+                    Avancement non lu&nbsp;: rechargez la page.
                   </span>
                 ) : (
                   <div className="flex flex-col gap-1.5 sm:max-w-80 sm:items-end sm:text-right">

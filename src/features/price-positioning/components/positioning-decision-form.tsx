@@ -106,7 +106,7 @@ export function PositioningDecisionForm({
   }
 
   function handleDelete() {
-    if (!window.confirm('Supprimer définitivement la décision enregistrée ?')) {
+    if (!window.confirm('Supprimer définitivement la décision enregistrée\u202f?')) {
       return;
     }
     setError(null);

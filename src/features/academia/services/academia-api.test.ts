@@ -196,7 +196,7 @@ describe('ce qu’Academia a rendu, dit au journal (pour Laurent)', () => {
     const result = await createAcademiaRequest(input, server.fetch);
     expect(result).toMatchObject({
       reason: 'unavailable',
-      detail: 'HTTP 200 · réponse hors contrat · champs : dossier, statut, lien',
+      detail: 'HTTP 200 · réponse hors contrat · champs\u00a0: dossier, statut, lien',
     });
     expect(JSON.stringify(result)).not.toContain('dos_secret');
   });
@@ -233,7 +233,8 @@ describe('la forme réelle de l’API d’essai (17/11)', () => {
     });
     expect(await createAcademiaRequest(input, server.fetch)).toMatchObject({
       reason: 'unavailable',
-      detail: 'HTTP 200 · réponse hors contrat · champs : id, statut · statut inconnu : archive',
+      detail:
+        'HTTP 200 · réponse hors contrat · champs\u00a0: id, statut · statut inconnu\u00a0: archive',
     });
   });
 

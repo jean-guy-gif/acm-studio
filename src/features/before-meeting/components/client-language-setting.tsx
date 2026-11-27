@@ -66,7 +66,7 @@ export function ClientLanguageSetting({
         ))}
       </div>
       <p className={hintText}>
-        Le Live et les documents remis au vendeur suivent sa langue ; vos écrans restent en
+        Le Live et les documents remis au vendeur suivent sa langue&#x202f;; vos écrans restent en
         français.
       </p>
       {error ? (

@@ -304,12 +304,12 @@ describe('« Créer le lien « Vivre ici » »', () => {
       // Au plafond, sans Retry-After : « réessayez demain », sans « Réessayer » (M161).
       [
         429,
-        'Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui : réessayez demain. Les dossiers déjà prêts restent lisibles. Ou collez le lien vous-même.',
+        'Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui\u00a0: réessayez demain. Les dossiers déjà prêts restent lisibles. Ou collez le lien vous-même.',
         false,
       ],
       [
         401,
-        'Academia refuse la demande pour l’instant : l’équipe ACM Studio est prévenue. Collez le lien vous-même.',
+        'Academia refuse la demande pour l’instant\u00a0: l’équipe ACM Studio est prévenue. Collez le lien vous-même.',
         true,
       ],
     ];
@@ -340,7 +340,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect(await refreshLivingHereLink(PROJECT)).toEqual({
       state: 'failed',
       message:
-        'Academia n’a pas pu préparer le dossier de cette adresse pour l’instant : réessayez plus tard, ou collez le lien vous-même.',
+        'Academia n’a pas pu préparer le dossier de cette adresse pour l’instant\u00a0: réessayez plus tard, ou collez le lien vous-même.',
       retry: true,
     });
     expect(written('project_academia_requests', 'update')).toEqual({ state: 'erreur' });
@@ -387,7 +387,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     expect(await createLivingHereLink(PROJECT)).toEqual({
       state: 'failed',
       message:
-        'L’adresse du bien est trop longue pour Academia (300 caractères au plus) : raccourcissez-la sur la fiche.',
+        'L’adresse du bien est trop longue pour Academia (300 caractères au plus)\u00a0: raccourcissez-la sur la fiche.',
       retry: false,
     });
     expect(server.calls).toEqual([]);
@@ -441,7 +441,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
     vi.stubGlobal('fetch', server.fetch);
     expect(await createLivingHereLink(PROJECT)).toEqual({
       state: 'failed',
-      message: 'Academia reçoit beaucoup de demandes en ce moment : réessayez dans 2 minutes.',
+      message: 'Academia reçoit beaucoup de demandes en ce moment\u00a0: réessayez dans 2 minutes.',
       retry: true,
     });
     server = fakeAcademia({
@@ -452,7 +452,7 @@ describe('« Créer le lien « Vivre ici » »', () => {
       state: 'failed',
       retry: false,
       message: expect.stringMatching(
-        /^Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui : réessayez (demain, )?à partir de \d{1,2} h \d{2}\./,
+        /^Academia a atteint sa limite de nouveaux dossiers pour aujourd’hui\s: réessayez (demain, )?à partir de \d{1,2} h \d{2}\./,
       ),
     });
   });

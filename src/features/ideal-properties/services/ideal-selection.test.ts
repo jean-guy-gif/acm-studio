@@ -139,8 +139,8 @@ describe('la sélection de biens idéaux', () => {
 // Mission 151 — une seule forme dans le dossier remis (Jean-Guy, 12/11).
 describe('oneToVerifyForm', () => {
   it('« À vérifier : Piscine » se lit « Piscine : à vérifier » ; le reste ne change pas', () => {
-    expect(oneToVerifyForm('À vérifier : Piscine')).toBe('Piscine : à vérifier');
-    expect(oneToVerifyForm('Copropriété : à vérifier')).toBe('Copropriété : à vérifier');
+    expect(oneToVerifyForm('À vérifier\u00a0: Piscine')).toBe('Piscine\u00a0: à vérifier');
+    expect(oneToVerifyForm('Copropriété\u00a0: à vérifier')).toBe('Copropriété\u00a0: à vérifier');
     expect(oneToVerifyForm('Pas de parking')).toBe('Pas de parking');
   });
 });

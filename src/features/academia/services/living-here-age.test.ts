@@ -60,16 +60,16 @@ describe('livingHereAgeLine', () => {
   it('du 25e au 29e jour : l’avertissement orange de la maquette', () => {
     expect(livingHereAgeLine(daysAgo(26), NOW)).toEqual({
       tone: 'warn',
-      text: 'Collé il y a 26 jours : un lien d’Academia vaut 30 jours. Collez bientôt un lien neuf.',
+      text: 'Collé il y a 26 jours\u00a0: un lien d’Academia vaut 30 jours. Collez bientôt un lien neuf.',
     });
   });
 
   it('à 30 jours et au-delà : il n’est plus montré, et la carte propose un lien neuf', () => {
     expect(livingHereAgeLine(daysAgo(34), NOW)).toEqual({
       tone: 'warn',
-      text: 'Collé il y a 34 jours : un lien d’Academia vaut 30 jours. Il n’est plus montré, ni au vendeur ni aux acquéreurs. Collez un lien neuf.',
+      text: 'Collé il y a 34 jours\u00a0: un lien d’Academia vaut 30 jours. Il n’est plus montré, ni au vendeur ni aux acquéreurs. Collez un lien neuf.',
     });
-    expect(livingHereAgeLine(daysAgo(30), NOW)?.text).toMatch(/^Collé il y a 30 jours : /);
+    expect(livingHereAgeLine(daysAgo(30), NOW)?.text).toMatch(/^Collé il y a 30 jours\s: /);
     // Avec la création en un clic, la carte propose de créer le lien.
     expect(livingHereAgeLine(daysAgo(34), NOW, { canCreate: true })?.text).toMatch(
       /Créez un lien neuf\.$/,
@@ -82,7 +82,7 @@ describe('livingHereAgeLine', () => {
   it('l’adresse du bien a changé depuis le collage : il n’est plus montré, la carte le dit', () => {
     expect(livingHereAgeLine(daysAgo(2), NOW, { moved: true })).toEqual({
       tone: 'warn',
-      text: 'L’adresse du bien a changé depuis le collage : ce lien n’est plus montré, ni au vendeur ni aux acquéreurs. Collez celui de la nouvelle adresse.',
+      text: 'L’adresse du bien a changé depuis le collage\u00a0: ce lien n’est plus montré, ni au vendeur ni aux acquéreurs. Collez celui de la nouvelle adresse.',
     });
     expect(livingHereAgeLine(daysAgo(2), NOW, { moved: true, canCreate: true })?.text).toMatch(
       /Créez celui de la nouvelle adresse\.$/,
@@ -92,7 +92,7 @@ describe('livingHereAgeLine', () => {
   it('sans date (collé avant la mission 156) : il n’est plus montré, la carte le dit', () => {
     expect(livingHereAgeLine(null, NOW)).toEqual({
       tone: 'warn',
-      text: 'Collé sans date connue : ce lien n’est plus montré, ni au vendeur ni aux acquéreurs. Collez un lien neuf.',
+      text: 'Collé sans date connue\u00a0: ce lien n’est plus montré, ni au vendeur ni aux acquéreurs. Collez un lien neuf.',
     });
   });
 });

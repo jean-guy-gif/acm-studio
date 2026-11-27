@@ -329,7 +329,8 @@ export function DeckPresentation({
           data-testid="presentation-finished"
           className="relative mx-auto mt-4 w-full max-w-5xl px-4 text-sm text-zinc-600 sm:px-8 stage:text-white/70"
         >
-          Présentation terminée le {buyerDateIn(deck.presentedAt!, 'fr')} : pour en refaire une,{' '}
+          Présentation terminée le {buyerDateIn(deck.presentedAt!, 'fr')}&nbsp;: pour en refaire
+          une,{' '}
           <Link
             href={`/acquereurs/${deck.buyerId}/biens-ideaux`}
             className="font-medium text-brand-deep underline-offset-2 hover:underline stage:text-brand"
@@ -350,7 +351,7 @@ export function DeckPresentation({
           <div className="flex flex-col gap-5" data-testid="deck-words">
             <h1 className={question}>{t.wordsTitle}</h1>
             <p className="font-title text-2xl leading-snug font-semibold text-zinc-900 sm:text-3xl stage:text-white">
-              « {deck.words} »
+              «&nbsp;{deck.words}&nbsp;»
             </p>
           </div>
         ) : screen.type === 'grid' ? (
@@ -844,7 +845,7 @@ export function ItemScreen({
       {item.pitch ? (
         <section className={panelSoft} data-testid="deck-pitch">
           <h2 className={`${statLabel} mb-2`}>{t.pitchTitle}</h2>
-          <p className="text-lg text-zinc-800 stage:text-white/90">« {item.pitch} »</p>
+          <p className="text-lg text-zinc-800 stage:text-white/90">«&nbsp;{item.pitch}&nbsp;»</p>
         </section>
       ) : null}
       {item.datedFact ? (

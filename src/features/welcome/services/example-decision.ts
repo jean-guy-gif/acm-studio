@@ -13,7 +13,7 @@ type PositioningInsert = Database['public']['Tables']['project_price_positioning
 // Mission 113 — « Votre analyse de valeur » aussi, arrondie au millier comme M110 le dit : sans
 // elle, la conclusion figeait une analyse vide et l'exemple ne montrait pas « Analyse du conseiller ».
 export const EXAMPLE_JUSTIFICATION =
-  'Exemple : le bien se place au milieu des cinq concurrents, de surface et de nombre de pièces proches. Son balcon et son garage le distinguent ; son DPE D est dans la moyenne.';
+  'Exemple\u00a0: le bien se place au milieu des cinq concurrents, de surface et de nombre de pièces proches. Son balcon et son garage le distinguent\u202f; son DPE D est dans la moyenne.';
 
 export function exampleDecisionRow(input: {
   projectId: string;

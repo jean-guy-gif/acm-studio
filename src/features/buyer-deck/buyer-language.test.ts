@@ -211,7 +211,7 @@ describe('l’acquéreur dans sa langue', () => {
     );
     expect(sendConfirmation(['C'], 'en')).toBe('1 property without an answer: C. Send anyway?');
     expect(finishConfirmation(['A', 'B'])).toBe(
-      '2 biens sans réponse : A et B. Terminer quand même ?',
+      '2 biens sans réponse\u00a0: A et B. Terminer quand même\u202f?',
     );
   });
 
@@ -263,7 +263,7 @@ describe('l’acquéreur dans sa langue', () => {
   it('ses messages en français ne changent pas', () => {
     expect(propertyPhrase(property)).toBe('la maison de Vence');
     expect(dossierShareMessage('https://x.test/d', null)).toBe(
-      'Bonjour, voici les biens que j’ai sélectionnés pour vous : https://x.test/d\nDites-moi lesquels vous voulez visiter.',
+      'Bonjour, voici les biens que j’ai sélectionnés pour vous\u00a0: https://x.test/d\nDites-moi lesquels vous voulez visiter.',
     );
   });
 });

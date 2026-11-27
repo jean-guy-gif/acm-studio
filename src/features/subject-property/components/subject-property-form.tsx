@@ -332,7 +332,7 @@ export function SubjectPropertyForm({
               le code postal ou dans la ville. */}
           {arrondissement ? (
             <p className="text-sm text-zinc-500 stage:text-white/60" data-arrondissement>
-              Arrondissement : {arrondissementLabel(arrondissement)}
+              Arrondissement&nbsp;: {arrondissementLabel(arrondissement)}
             </p>
           ) : null}
           <SelectField

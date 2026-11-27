@@ -44,5 +44,5 @@ export function missingForReady(readiness: PreparationReadiness): string | null 
       ? `${readiness.pendingImportCount} import${readiness.pendingImportCount > 1 ? 's' : ''} en attente`
       : null,
   ].filter((item): item is string => item != null);
-  return missing.length > 0 ? `il manque : ${missing.join(', ')}` : null;
+  return missing.length > 0 ? `il manque\u00a0: ${missing.join(', ')}` : null;
 }

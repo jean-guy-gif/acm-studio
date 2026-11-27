@@ -179,7 +179,7 @@ describe('mentions de l’agence en pied de page', () => {
       { withAddress: false },
     );
     expect(mentions).toBe(
-      `Agence du Port · ${CARD} · Garantie financière : Galian, 89 rue La Boétie, 75008 Paris — 120 000 €`,
+      `Agence du Port · ${CARD} · Garantie financière\u00a0: Galian, 89 rue La Boétie, 75008 Paris — 120 000 €`,
     );
     expect(mentions).not.toContain('aucun fonds');
   });

@@ -18,7 +18,7 @@ export default function AppError({ error }: { error: Error & { digest?: string }
   return (
     <ErrorScreen
       title="Un incident est survenu"
-      message="Cette page n’a pas pu s’afficher. Vos données sont enregistrées : revenez à vos dossiers et reprenez où vous en étiez."
+      message="Cette page n’a pas pu s’afficher. Vos données sont enregistrées&nbsp;: revenez à vos dossiers et reprenez où vous en étiez."
     />
   );
 }

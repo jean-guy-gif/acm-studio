@@ -66,7 +66,7 @@ describe('courriers en lot : ce qui s’imprime, ce qui est retenu', () => {
       {
         row: 'sans-telephone',
         reason:
-          'Renseignez votre téléphone dans « Mon profil » : il figure dans la mention « Pour ne plus être sollicité ».',
+          'Renseignez votre téléphone dans «\u00a0Mon profil\u00a0»\u00a0: il figure dans la mention «\u00a0Pour ne plus être sollicité\u00a0».',
       },
       {
         row: 'sans-agence',

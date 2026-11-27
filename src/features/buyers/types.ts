@@ -34,7 +34,7 @@ export const BUYER_FINANCING_LABELS: Record<BuyerFinancing, string> = {
   in_progress: 'En cours',
   unknown: 'Inconnu',
 };
-export const BUYER_FINANCING_HINT = 'Validé : accord de principe ou apport suffisant.';
+export const BUYER_FINANCING_HINT = 'Validé\u00a0: accord de principe ou apport suffisant.';
 
 export const BUYER_PURPOSES = ['primary', 'secondary', 'investment', 'other'] as const;
 export type BuyerPurpose = (typeof BUYER_PURPOSES)[number];

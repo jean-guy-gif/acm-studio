@@ -6,7 +6,7 @@
 export const UNREAD_PORTAL_SUFFIXES: readonly string[] = [];
 
 export const UNREAD_PORTAL_MESSAGE =
-  'Ce site ne se lit plus : sa page ne donne plus ni le prix ni la surface. Saisissez le bien à la main ci-dessous.';
+  'Ce site ne se lit plus\u00a0: sa page ne donne plus ni le prix ni la surface. Saisissez le bien à la main ci-dessous.';
 
 export function isUnreadPortalHost(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^www\./, '');

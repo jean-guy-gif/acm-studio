@@ -21,5 +21,6 @@ export const DEMO_PHOTOS_PATH = '/demo/photos';
 
 // Messages des actions de démonstration (hors des fichiers « use server », qui n'exportent que
 // des fonctions asynchrones).
-export const DEMO_SUBJECT_UNKNOWN = 'Adresse d’annonce inconnue : utilisez l’adresse proposée.';
+export const DEMO_SUBJECT_UNKNOWN =
+  'Adresse d’annonce inconnue\u00a0: utilisez l’adresse proposée.';
 export const DEMO_LISTING_UNKNOWN = 'Annonce inconnue.';

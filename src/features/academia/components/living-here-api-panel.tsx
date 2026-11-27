@@ -74,7 +74,7 @@ export function fromState(result: LivingHereLinkState, previous: View): View {
     case 'closed':
       return {
         kind: 'failed',
-        message: 'Academia n’est pas ouvert pour votre agence : collez le lien vous-même.',
+        message: 'Academia n’est pas ouvert pour votre agence\u00a0: collez le lien vous-même.',
         retry: false,
       };
     case 'idle':
@@ -88,7 +88,7 @@ function initialView(address: string | null, initial: LivingHereApiInitial): Vie
   if (initial.kind === 'unread') {
     return {
       kind: 'failed',
-      message: 'La demande à Academia n’a pas pu être lue : rechargez la page.',
+      message: 'La demande à Academia n’a pas pu être lue\u00a0: rechargez la page.',
       retry: false,
     };
   }
@@ -141,7 +141,7 @@ export function LivingHereApiPanel({
       const result = await createLivingHereLink(projectId, choice).catch(
         (): LivingHereLinkState => ({
           state: 'failed',
-          message: 'Connexion perdue : réessayez dans un moment.',
+          message: 'Connexion perdue\u00a0: réessayez dans un moment.',
           retry: true,
         }),
       );
@@ -228,10 +228,10 @@ export function LivingHereApiPanel({
   if (saveFirst) {
     return (
       <div className="flex flex-col gap-2" data-testid="living-here-api">
-        <span className={fieldLabel}>Lien « Vivre ici » pour les acquéreurs</span>
+        <span className={fieldLabel}>Lien «&nbsp;Vivre ici&nbsp;» pour les acquéreurs</span>
         <p className={hintText} data-testid="living-here-save-first">
           {showAddress
-            ? `Enregistrez d’abord la fiche : le lien se crée sur l’adresse enregistrée du bien${
+            ? `Enregistrez d’abord la fiche\u00a0: le lien se crée sur l’adresse enregistrée du bien${
                 saveFirst === 'changed' ? ' (vous l’avez modifiée)' : ''
               }.`
             : 'Enregistrez d’abord la fiche.'}
@@ -242,13 +242,13 @@ export function LivingHereApiPanel({
 
   return (
     <div className="flex flex-col gap-2" data-testid="living-here-api">
-      <span className={fieldLabel}>Lien « Vivre ici » pour les acquéreurs</span>
+      <span className={fieldLabel}>Lien «&nbsp;Vivre ici&nbsp;» pour les acquéreurs</span>
       {view.kind === 'idle' ? (
         <>
           {view.stale ? (
             <p className={AGE_WARN_CLASS} data-testid="living-here-stale">
-              L’adresse du bien a changé : le lien de l’ancienne adresse n’est plus montré. Créez
-              celui de la nouvelle adresse.
+              L’adresse du bien a changé&nbsp;: le lien de l’ancienne adresse n’est plus montré.
+              Créez celui de la nouvelle adresse.
             </p>
           ) : null}
           <p className={hintText} data-testid="living-here-intro">
@@ -259,11 +259,11 @@ export function LivingHereApiPanel({
               </>
             ) : (
               'Academia prépare la page du quartier du bien'
-            )}{' '}
-            : les écoles, les commerces, les transports. Le lien est {shownTo}, et dans « Confirmer
-            la visite ».
+            )}
+            &nbsp;: les écoles, les commerces, les transports. Le lien est {shownTo}, et dans
+            «&nbsp;Confirmer la visite&nbsp;».
           </p>
-          {button('Créer le lien « Vivre ici »')}
+          {button('Créer le lien «\u00a0Vivre ici\u00a0»')}
         </>
       ) : null}
       {view.kind === 'waiting' ? (
@@ -274,13 +274,13 @@ export function LivingHereApiPanel({
         >
           {view.gaveUp
             ? 'La préparation prend plus de temps que prévu.'
-            : 'Academia prépare le dossier de cette adresse : 20 à 60 secondes.'}
+            : 'Academia prépare le dossier de cette adresse\u00a0: 20 à 60 secondes.'}
         </p>
       ) : null}
       {view.kind === 'waiting' ? (
         <p className={hintText} data-testid="living-here-waiting-hint">
           {view.gaveUp
-            ? 'Revenez sur cette page dans quelques minutes : la demande continue chez Academia.'
+            ? 'Revenez sur cette page dans quelques minutes\u00a0: la demande continue chez Academia.'
             : 'La page vérifie toute seule, toutes les 5 secondes, deux minutes au plus.'}
         </p>
       ) : null}
@@ -317,8 +317,8 @@ export function LivingHereApiPanel({
         view.expiry?.level === 'expired' ? (
           <>
             <p className={AGE_WARN_CLASS} data-testid="living-here-expired">
-              Le lien a expiré le {formatDay(view.expiresAt, 'fr', 'short')} : il n’est plus montré
-              aux acquéreurs.
+              Le lien a expiré le {formatDay(view.expiresAt, 'fr', 'short')}&nbsp;: il n’est plus
+              montré aux acquéreurs.
             </p>
             {button('Créer un lien neuf')}
           </>
@@ -396,7 +396,7 @@ export function LivingHereApiPanel({
       {view.kind === 'ambiguous' ? (
         <fieldset className="flex flex-col gap-2" data-testid="living-here-ambiguous">
           <p className={AGE_WARN_CLASS}>
-            Academia ne reconnaît pas l’adresse avec certitude. Laquelle est la bonne ?
+            Academia ne reconnaît pas l’adresse avec certitude. Laquelle est la bonne&#x202f;?
           </p>
           {view.propositions.map((proposition) => (
             <label key={proposition} className="flex items-center gap-2 text-sm text-zinc-800">
@@ -443,7 +443,7 @@ export function LivingHereApiPanel({
       {pasted && view.kind !== 'ready' ? (
         <div className="flex flex-col gap-1 pt-1" data-testid="living-here-pasted">
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-800">
-            <span className="font-medium">Lien collé à la main :</span>
+            <span className="font-medium">Lien collé à la main&nbsp;:</span>
             {showAddress ? (
               <span className="rounded-lg bg-zinc-100 px-2 py-0.5 font-mono text-xs break-all text-zinc-900">
                 {pasted.url}

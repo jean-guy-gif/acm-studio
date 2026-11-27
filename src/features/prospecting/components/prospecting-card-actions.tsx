@@ -22,7 +22,7 @@ import type { ProspectingMove } from '@/features/prospecting/services/prospectin
 
 const small = 'px-3 py-1.5 text-xs';
 const OPPOSE_FAILED =
-  'L’inscription n’a pas été confirmée : vérifiez la connexion, puis réessayez.';
+  'L’inscription n’a pas été confirmée\u00a0: vérifiez la connexion, puis réessayez.';
 
 // Mission 146 (partie B, C9, planche B3) — les gestes d'une carte de Prospection : SA prochaine
 // étape en contour, au plus un lien, et « … » (Corriger l'adresse · Pas intéressé · Annuler · Ne
@@ -236,12 +236,12 @@ export function ProspectingCardActions({
       ) : null}
       {opposing ? (
         <ConfirmDialog
-          title="Ne plus solliciter cette adresse ?"
-          text="Elle sera bloquée pour toute l’agence, dans tous les dossiers : plus de courrier, plus de tournée. Ce geste ne s’annule pas d’ici."
+          title="Ne plus solliciter cette adresse&#x202f;?"
+          text="Elle sera bloquée pour toute l’agence, dans tous les dossiers&nbsp;: plus de courrier, plus de tournée. Ce geste ne s’annule pas d’ici."
           onCancel={() => setOpposing(false)}
         >
           <button type="button" disabled={pending} onClick={oppose} className={btnDanger}>
-            Confirmer : ne plus solliciter
+            Confirmer&nbsp;: ne plus solliciter
           </button>
         </ConfirmDialog>
       ) : null}

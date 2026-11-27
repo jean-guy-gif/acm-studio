@@ -15,7 +15,7 @@ export function ComparableAnalysisFeatures({
         <ul className="text-sm text-zinc-600 stage:text-white/65">
           {featureAnalysis.features.map((feature) => (
             <li key={feature.label}>
-              {feature.label} : {feature.count} / {featureAnalysis.total}
+              {feature.label}&nbsp;: {feature.count} / {featureAnalysis.total}
             </li>
           ))}
         </ul>

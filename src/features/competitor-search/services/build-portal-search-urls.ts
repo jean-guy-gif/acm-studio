@@ -63,7 +63,7 @@ export function forbiddenSearchReason(portal: SearchPortal, rawUrl: string): str
       // tout « tri= ». Une pagination ?page=2 (paramètre unique) reste autorisée.
       if (url.pathname.includes('/recherche/')) {
         if (href.includes(',') || href.includes('&')) {
-          return 'Bien’ici refuse une adresse de recherche à virgule ou à « & ».';
+          return 'Bien’ici refuse une adresse de recherche à virgule ou à «\u00a0&\u00a0».';
         }
         if (/(?:^|[?&])tri=/i.test(url.search)) {
           return 'Bien’ici refuse un tri dans l’adresse.';

@@ -106,7 +106,7 @@ describe('désigner le plus dangereux aujourd’hui', () => {
   it('un bien qui n’est plus en vente, ou absent du point : refusé', async () => {
     expect(await designateDangerousToday(PROJECT, GONE)).toEqual({
       ok: false,
-      error: 'Ce bien n’est plus en vente : choisissez-en un autre.',
+      error: 'Ce bien n’est plus en vente\u00a0: choisissez-en un autre.',
     });
     expect(
       (await designateDangerousToday(PROJECT, '55555555-5555-4555-8555-555555555555')).ok,
@@ -131,7 +131,7 @@ describe('désigner le plus dangereux aujourd’hui', () => {
     state.madeAt = new Date(Date.now() - 3 * 86_400_000).toISOString();
     expect(await designateDangerousToday(PROJECT, LISTED)).toEqual({
       ok: false,
-      error: 'Mettez d’abord les concurrents à jour : un point déjà remis ne change plus.',
+      error: 'Mettez d’abord les concurrents à jour\u00a0: un point déjà remis ne change plus.',
     });
     expect(service.writes()).toEqual([]);
   });

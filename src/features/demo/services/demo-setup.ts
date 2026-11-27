@@ -30,7 +30,7 @@ export function setupName(mode: DemoSetupMode): string {
 
 // « La remise à zéro n'a pas abouti : … Rien n'est prêt. »
 export function setupFailure(mode: DemoSetupMode, reason: string): string {
-  return `${setupName(mode)} n’a pas abouti : ${reason}. Rien n’est prêt.`;
+  return `${setupName(mode)} n’a pas abouti\u00a0: ${reason}. Rien n’est prêt.`;
 }
 
 // Mission 155 — un dossier porte le numéro du groupe que le serveur crée d'un coup.
@@ -110,7 +110,8 @@ export const EXPECTED_DEMO_STAGES: Record<DemoStage, number> = Object.fromEntrie
 export type DemoSetupCheck = { ok: true } | { ok: false; message: string };
 
 const plural = (count: number, word: string): string => `${count} ${word}${count > 1 ? 's' : ''}`;
-const quoted = (labels: string[]): string => labels.map((label) => `« ${label} »`).join(', ');
+const quoted = (labels: string[]): string =>
+  labels.map((label) => `«\u00a0${label}\u00a0»`).join(', ');
 
 // La preuve : les dossiers de démo du closer, relus en base, un par étape attendue (deux mandats
 // signés), et ses neuf acquéreurs. Tout autre résultat dit ce qui manque ou ce qui est en trop,
@@ -143,9 +144,9 @@ export function checkDemoSetup(
         : `${plural(stages.length, 'dossier')} sur ${expectedDossiers}`;
     const details = [
       missing.length > 0 ? `il manque ${quoted(missing)}` : null,
-      doubled.length > 0 ? `en double : ${quoted(doubled)}` : null,
+      doubled.length > 0 ? `en double\u00a0: ${quoted(doubled)}` : null,
     ].filter(Boolean);
-    parts.push(details.length > 0 ? `${count} (${details.join(' ; ')})` : count);
+    parts.push(details.length > 0 ? `${count} (${details.join('\u202f; ')})` : count);
   }
   if (buyers !== expectedBuyers) {
     parts.push(
@@ -160,6 +161,6 @@ export function checkDemoSetup(
       : '';
   return {
     ok: false,
-    message: `${setupName(mode)} n’a pas abouti : ${parts.join(', ')}.${concurrent} Rien n’est prêt.`,
+    message: `${setupName(mode)} n’a pas abouti\u00a0: ${parts.join(', ')}.${concurrent} Rien n’est prêt.`,
   };
 }

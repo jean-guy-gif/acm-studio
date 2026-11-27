@@ -55,8 +55,8 @@ export function AdvisorProfileForm({
           className={`${inputBase} max-w-xs`}
         />
         <span className={hintText}>
-          Imprimé sur vos dossiers de prospection, et dans la mention « Pour ne plus être sollicité
-          ».
+          Imprimé sur vos dossiers de prospection, et dans la mention «&nbsp;Pour ne plus être
+          sollicité&nbsp;».
         </span>
       </label>
 
