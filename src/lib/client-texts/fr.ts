@@ -820,7 +820,7 @@ export const FRENCH_TEXTS: ClientTexts = {
       noRanking: 'Sans prix retenu ensemble, le classement ne se calcule pas.',
       readingTitle: 'Pour lire ce document',
       reading:
-        'Les prix cités sont ceux des annonces, pas des prix de vente. Une annonce disparue n’est pas une vente constatée : « vente probable » et la négociation « estimée » sont déduites de la durée de commercialisation au retrait, selon la règle de l’agence ; « retiré sans vente » dit une annonce retirée après plus de 300 jours. Rien ici n’affirme qu’un bien est vendu, ni à quel prix. Surfaces et caractéristiques telles qu’annoncées, à vérifier. « Vu sur le marché depuis le … » est la date de publication dite par l’annonce, sinon le jour où votre conseiller l’a retenue : jamais une date inventée.',
+        'Les prix cités sont ceux des annonces, pas des prix de vente. Une annonce disparue n’est pas une vente constatée : « vente probable » et la négociation « estimée » sont déduites de la durée de commercialisation au retrait, selon la règle de l’agence ; « probablement retiré sans vente » dit une annonce retirée après plus de 300 jours. Rien ici n’affirme qu’un bien est vendu, ni à quel prix. Surfaces et caractéristiques telles qu’annoncées, à vérifier. « Vu sur le marché depuis le … » est la date de publication dite par l’annonce, sinon le jour où votre conseiller l’a retenue : jamais une date inventée.',
       dangerousToday: 'Le plus dangereux aujourd’hui',
       dangerousYours: 'Le plus dangereux, selon vous',
       beforeMeeting: 'En vente avant le rendez-vous, non montré alors',
@@ -855,13 +855,13 @@ export const FRENCH_TEXTS: ClientTexts = {
       likelySale: (min, max) => `Prix de vente estimé : entre ${min} et ${max}`,
       likelySaleNote:
         'Déduit de la durée de commercialisation au retrait, selon la règle de l’agence : rien ne dit que ce bien est vendu, ni à quel prix.',
-      withdrawnNote: 'Plus de 300 jours en vente au retrait : retiré du marché sans vente.',
+      withdrawnNote: 'Plus de 300 jours en vente au retrait : probablement retiré sans vente.',
       stillListed: 'Toujours en vente',
       sinceDays: (days) => `depuis ${days}`,
       perSqmToday: (value) => `${value} aujourd’hui`,
       days: (days, approximate) =>
         `${approximate ? 'environ ' : ''}${days} jour${days > 1 ? 's' : ''}`,
-      withdrawnLabel: 'Retiré du marché sans vente',
+      withdrawnLabel: 'Probablement retiré sans vente',
       probableSaleLabel: (min, max) => `Vente probable, négociation estimée de ${min} à ${max} %`,
       ranking: {
         words: { green: 'Pas de problème', orange: 'Attention', red: 'Danger' },

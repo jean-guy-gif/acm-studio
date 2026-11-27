@@ -14,6 +14,10 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 27/11 · Refonte (Jean-Guy) · Préparation, Live et Suivi filtrés sur « Mes dossiers » : tant
   qu'ils montrent toute l'agence (M59), le lien de Vendeurs dit « Tous les vendeurs de l'agence »
   et compte l'agence.
+- 27/11 · Le gel (vu sur le compte de Jean-Guy) · Préparation, quand aucun dossier n'est en
+  préparation : « Créer un dossier », dans la liste vide, est plein à côté de « Nouveau dossier
+  vendeur », deux boutons pleins (M146 A n'a pas couvert la liste vide ; ainsi depuis la mission
+  52). Le passer en contour.
 - 23/11 · Correctifs 163 (avis) · Étude imprimée, cas du balayage seulement, aucun vrai dossier :
   devant un classement de 11 ou 12 lignes, la page « dernier bloc et avis » reste peu remplie ; une
   page peut aussi rester peu remplie quand un long bloc insécable la suit (« La suite » d'un

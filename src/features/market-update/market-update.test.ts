@@ -126,7 +126,7 @@ describe('la règle des annonces disparues (mission 127)', () => {
     const conclusion = goneListingConclusion(150, 1699000);
     expect(conclusion).toMatchObject({ estimatedMin: 1529000, estimatedMax: 1614000 });
     expect(goneConclusionLabel(conclusion)).toBe('Vente probable, négociation estimée de 5 à 10 %');
-    expect(goneConclusionLabel({ kind: 'withdrawn' })).toBe('Retiré du marché sans vente');
+    expect(goneConclusionLabel({ kind: 'withdrawn' })).toBe('Probablement retiré sans vente');
   });
 });
 
@@ -267,7 +267,7 @@ describe('le point daté', () => {
       goneUnknown: 0,
     });
     expect(marketUpdateLine(summary)).toBe(
-      '3 annonces relues · 2 baisses · 1 vente probable · 1 retiré sans vente · 1 prix au rendez-vous non relu',
+      '3 annonces relues · 2 baisses · 1 vente probable · 1 probablement retiré sans vente · 1 prix au rendez-vous non relu',
     );
     expect(droppedSinceMeetingLabel(summary)).toBe('Ont baissé depuis le rendez-vous : 2 sur 4');
     expect(parseMarketUpdateSummary(JSON.parse(JSON.stringify(summary)))).toEqual(summary);
@@ -505,7 +505,7 @@ describe('le document Point marché', () => {
     expect(html).toContain('Aucun nouveau venu retenu');
     expect(html).not.toContain('NaN');
     expect(html).toContain('Vente probable, négociation estimée de 5 à 10 %');
-    expect(html).toContain('Retiré du marché sans vente');
+    expect(html).toContain('Probablement retiré sans vente');
     expect(html).toContain('Non relu');
     // Une seule couleur à lire, celle de la place : la couleur M116 du prix disparaît de la page.
     expect(html).not.toContain('Prix aligné sur le marché');
