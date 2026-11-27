@@ -233,9 +233,11 @@ describe('un dossier en préparation a sa carte (remarques de Jean-Guy, 26/11)',
   });
 
   it('le sous-titre compte les tâches du jour, et les préparations à part', () => {
-    expect(sellersTodayCount(2, 1)).toBe('2 choses à faire aujourd’hui · 1 préparation en cours');
+    expect(sellersTodayCount(2, 1)).toBe(
+      '2 choses à faire aujourd’hui · 1\u00a0préparation en cours',
+    );
     expect(sellersTodayCount(1, 0)).toBe('1 chose à faire aujourd’hui');
-    expect(sellersTodayCount(0, 2)).toBe('2 préparations en cours');
+    expect(sellersTodayCount(0, 2)).toBe('2\u00a0préparations en cours');
     expect(sellersTodayCount(0, 0)).toBe('Rien à faire aujourd’hui');
   });
 });

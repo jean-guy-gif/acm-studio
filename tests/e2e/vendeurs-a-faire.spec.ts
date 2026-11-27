@@ -26,7 +26,7 @@ import {
 const countText = (things: number, preparations: number) => {
   const prepared =
     preparations > 0
-      ? `${preparations} ${preparations > 1 ? 'préparations' : 'préparation'} en cours`
+      ? `${preparations}\u00a0${preparations > 1 ? 'préparations' : 'préparation'} en cours`
       : null;
   if (things === 0 && prepared) return prepared;
   const due =

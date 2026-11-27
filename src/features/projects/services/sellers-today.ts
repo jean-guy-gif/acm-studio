@@ -176,7 +176,8 @@ export function preparationItems(
 export function sellersTodayCount(things: number, preparations: number): string {
   const prepared =
     preparations > 0
-      ? `${preparations} ${preparations > 1 ? 'préparations' : 'préparation'} en cours`
+      ? // Le chiffre ne se sépare jamais de son mot en fin de ligne (une espace insécable).
+        `${preparations}\u00a0${preparations > 1 ? 'préparations' : 'préparation'} en cours`
       : null;
   if (things === 0 && prepared) return prepared;
   const due =
