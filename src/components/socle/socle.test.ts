@@ -2,11 +2,10 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { initialsOf } from '@/components/socle/initials';
-import { soclePreviewOpen } from '@/components/socle/preview-open';
 import { StatTiles } from '@/components/socle/stat-tiles';
 import { PersonMark, PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
 import { MARK_TONES, TEXT_TONES } from '@/components/socle/tone';
@@ -283,21 +282,11 @@ describe('les tuiles de chiffres', () => {
   });
 });
 
+// La refonte, lot F — l'aperçu des blocs (`/socle`), ouvert sur l'essai seulement au lot A, est
+// retiré : les écrans de la refonte les montrent.
 describe('l’aperçu du socle', () => {
-  it('ouvert sur l’essai et en local ; un environnement qui ne se dit pas reste fermé', () => {
-    expect(soclePreviewOpen({ VERCEL_ENV: 'preview', NODE_ENV: 'production' })).toBe(true);
-    expect(soclePreviewOpen({ NODE_ENV: 'development' })).toBe(true);
-    expect(soclePreviewOpen({ VERCEL_ENV: 'production', NODE_ENV: 'production' })).toBe(false);
-    expect(soclePreviewOpen({ NODE_ENV: 'production' })).toBe(false);
-    expect(soclePreviewOpen({ VERCEL_ENV: 'development', NODE_ENV: 'production' })).toBe(false);
-    expect(soclePreviewOpen({})).toBe(false);
-  });
-
-  it('la page se garde par cette règle, avant de rendre quoi que ce soit', () => {
-    const page = readFileSync(path.resolve('src/app/(protected)/socle/page.tsx'), 'utf8');
-    const guard = page.indexOf('if (!soclePreviewOpen()) notFound();');
-    expect(guard).toBeGreaterThan(0);
-    expect(guard).toBeLessThan(page.indexOf('return ('));
-    expect(page).not.toContain('process.env');
+  it('est retiré', () => {
+    expect(existsSync(path.resolve('src/app/(protected)/socle/page.tsx'))).toBe(false);
+    expect(existsSync(path.resolve('src/components/socle/preview-open.ts'))).toBe(false);
   });
 });
