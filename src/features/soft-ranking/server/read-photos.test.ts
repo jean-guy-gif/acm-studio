@@ -77,8 +77,8 @@ describe('readListingPhotos', () => {
     expect(state.calls).toHaveLength(1);
     const content = state.calls[0]!.content;
     expect(content.filter((block) => block.type === 'text').map((block) => block.text)).toEqual([
-      'Photo 1\u00a0:',
-      'Photo 3\u00a0:',
+      'Photo 1 :',
+      'Photo 3 :',
     ]);
     expect(content.filter((block) => block.type === 'image')).toHaveLength(2);
     expect(content[1]!.source!.media_type).toBe('image/jpeg');

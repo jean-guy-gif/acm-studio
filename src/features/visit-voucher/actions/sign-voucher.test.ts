@@ -206,7 +206,7 @@ describe('signer le bon de visite', () => {
       }),
     );
     const document = state.writes[0]![1] as { rendered_text: string };
-    expect(document.rendered_text).toMatch(/Prix de commercialisation\s: 1\s639\s500 €/);
+    expect(document.rendered_text).toMatch(/Prix de commercialisation : 1\s639\s500 €/);
     expect(document.rendered_text).toContain('Adresse du bien : 12 allée du Décor, 06250 Mougins');
     expect(document.rendered_text).toContain('Fait à Mougins ,');
     expect(document.rendered_text).not.toContain('une autre adresse');
@@ -317,7 +317,7 @@ describe('signer le bon de visite', () => {
         "Je reconnais avoir confié à l'Agence un mandat de recherche, et que ces biens m'ont été présentés dans le cadre de ce mandat.",
       );
       expect(document.rendered_text).toMatch(
-        /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché\s: 1\s720\s000 € · Adresse du bien\s: 8 allée des Cistes Blancs, 06250 Mougins/,
+        /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché : 1\s720\s000 € · Adresse du bien : 8 allée des Cistes Blancs, 06250 Mougins/,
       );
       expect(document.rendered_text).not.toContain('précisés notamment dans le mandat de vente');
       expect(document.rendered_text).not.toContain('Numéro du mandat');
@@ -414,7 +414,7 @@ describe('le bon de la tournée', () => {
     const text = document.rendered_text;
     expect(text).toContain("que l'Agence me présente en vertu du titre indiqué pour chacun d'eux.");
     expect(text).toMatch(
-      /Mandat de vente de l'Agence n° M-2026-0142 · Prix de commercialisation\s: 1\s639\s500 €/,
+      /Mandat de vente de l'Agence n° M-2026-0142 · Prix de commercialisation : 1\s639\s500 €/,
     );
     expect(text).toContain('Mandat de recherche n° R-2026-031 du 04/11/2026 · Prix affiché');
     expect(text).toContain(

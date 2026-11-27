@@ -28,6 +28,7 @@ const OUTSIDE = [
   /^features\/buyer-notes\/model-request\.ts$/,
   /^features\/soft-ranking\/ranking-request\.ts$/,
   /^features\/soft-ranking\/photo-request\.ts$/,
+  /^features\/soft-ranking\/server\/read-photos\.ts$/,
   // Les données et les aides des tests.
   /^test-fixtures\//,
 ];
@@ -104,6 +105,9 @@ export function spacingFaultsIn(name: string, source: string): string[] {
   const lineOf = (node: ts.Node) =>
     file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1;
   const check = (node: ts.Node, text: string) => {
+    // Une accolade : du CSS (`@page :first{…}`) ou du code, jamais un texte affiché. Une espace
+    // insécable y casserait la règle (relecture du lot A : `@page :first` jeté par Chromium).
+    if (/[{}]/.test(text)) return;
     for (const fault of frenchSpacingFaults(text)) {
       found.push({
         line: lineOf(node),
@@ -230,7 +234,7 @@ describe('la règle des espaces insécables', () => {
         <p>{label}{' '}: suite</p>
         <p>{label}&nbsp;: bon</p>
         <p>Prêt&#x202f;?</p>
-        <style>{'.a { color: red !important; }'}</style>
+        <style>{'.a { color: red !important; }'}</style><p>{\`@page :first{margin:0}\`}</p>
       </div>
     );
     export const B = 'Oui : non';
@@ -245,6 +249,38 @@ describe('la règle des espaces insécables', () => {
       'sample.tsx:13',
       'sample.tsx:14',
     ]);
+  });
+
+  it('le CSS écrit dans le code n’a jamais d’espace insécable', () => {
+    // Relecture du lot A : `@page\u00a0:first` n'est plus du CSS valide, Chromium jette la règle et la
+    // couverture imprimée déborde.
+    const css = /@(page|media)|[{;]\s*[a-z-]+\s*:/;
+    const spaces = /\\u00a0|\\u202f|&nbsp;|&#x202f;|[\u00a0\u202f]/i;
+    const found = files(SRC).flatMap((path) => {
+      const source = readFileSync(path, 'utf8');
+      const file = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+      const out: string[] = [];
+      const visit = (node: ts.Node): void => {
+        if (
+          ts.isStringLiteral(node) ||
+          ts.isNoSubstitutionTemplateLiteral(node) ||
+          ts.isTemplateHead(node) ||
+          ts.isTemplateMiddle(node) ||
+          ts.isTemplateTail(node)
+        ) {
+          const raw = node.getText(file);
+          if (/[{}]/.test(raw) && css.test(raw) && spaces.test(raw)) {
+            out.push(
+              `${relative(SRC, path)}:${file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1}`,
+            );
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(file);
+      return out;
+    });
+    expect(found).toEqual([]);
   });
 
   it('le guide de prise en main et les modèles d’e-mail suivent la même règle', () => {

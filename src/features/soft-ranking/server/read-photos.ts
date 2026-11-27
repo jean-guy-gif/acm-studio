@@ -107,7 +107,7 @@ export async function readListingPhotos(input: {
       const answer = await callStructured({
         system: photoInstructions(input.criteria),
         content: loaded.flatMap((photo): AiContentBlock[] => [
-          { type: 'text', text: `Photo ${photo.number}\u00a0:` },
+          { type: 'text', text: `Photo ${photo.number} :` },
           photo.block,
         ]),
         schema: photoSchema(input.criteria),

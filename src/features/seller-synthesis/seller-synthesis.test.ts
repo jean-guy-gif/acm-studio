@@ -478,7 +478,7 @@ describe('la synthèse au vendeur', () => {
     const { html } = await load();
     expect(html).not.toContain('—');
     // Aucune baisse connue sur un concurrent révélé sans durée : pas de ligne.
-    expect(html).not.toMatch(/Baisse de prix connue : 0/);
+    expect(html).not.toMatch(/Baisse de prix connue\s: 0/);
   });
 
   it('sans Live mené, pas de synthèse', async () => {
