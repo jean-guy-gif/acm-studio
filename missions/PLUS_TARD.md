@@ -4,6 +4,16 @@ Ce qui se découvre pendant une mission et n'en fait pas partie (règle de Jean-
 CLAUDE.md) : une ligne datée par point, avec la mission où il a été vu. Un cas imaginé par un
 balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `docs/IDEES.md`.
 
+- 27/11 · Refonte, en tête (Jean-Guy) · Visites, une seule action par visite : celle de son étape ;
+  les autres apparaissent quand leur étape arrive. Aujourd'hui, sur téléphone, une visite en
+  attente du propriétaire montre encore « Ouvrir le courrier » et quatre liens (« Suivre dans
+  Prospection », « Confirmer la visite », « Visite faite », « Signer le bon de visite »). Pas avant
+  le gel du 27/11.
+- 27/11 · Refonte (Jean-Guy) · « Aujourd'hui » : la prospection comptée comme une seule tâche
+  (« N adresses à démarcher »), pour que le badge reste lisible (25 dans la démo au lancement).
+- 27/11 · Refonte (Jean-Guy) · Préparation, Live et Suivi filtrés sur « Mes dossiers » : tant
+  qu'ils montrent toute l'agence (M59), le lien de Vendeurs dit « Tous les vendeurs de l'agence »
+  et compte l'agence.
 - 23/11 · Correctifs 163 (avis) · Étude imprimée, cas du balayage seulement, aucun vrai dossier :
   devant un classement de 11 ou 12 lignes, la page « dernier bloc et avis » reste peu remplie ; une
   page peut aussi rester peu remplie quand un long bloc insécable la suit (« La suite » d'un

@@ -156,7 +156,8 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
           : null,
         detail: [context.motiveLabel, contact, planned].filter(Boolean).join(' · '),
         late,
-        button: 'Relancer',
+        // La refonte (Jean-Guy, 27/11) — un geste, un nom, partout : « Préparer la relance ».
+        button: 'Préparer la relance',
         href,
       };
     }
@@ -173,7 +174,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
           .filter(Boolean)
           .join(' · '),
         late: null,
-        button: 'Relancer',
+        button: 'Préparer la relance',
         href,
       };
     }

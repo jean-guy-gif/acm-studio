@@ -51,7 +51,8 @@ describe('« À faire aujourd’hui »', () => {
       argue: null,
       detail: 'Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui',
       late: null,
-      button: 'Relancer',
+      // La refonte (Jean-Guy, 27/11) — un geste, un nom, partout.
+      button: 'Préparer la relance',
       href: '/suivi?relancer=p1#suivi-p1',
     });
   });
@@ -100,7 +101,7 @@ describe('« À faire aujourd’hui »', () => {
     );
     expect(line.detail).toBe('relance prévue le 20/11 · Réfléchit au prix');
     expect(line.late).toBeNull();
-    expect(line.button).toBe('Relancer');
+    expect(line.button).toBe('Préparer la relance');
   });
 
   it('« Démarcher » : courrier ou passage, jamais un téléphone ; l’adresse d’abord', () => {
