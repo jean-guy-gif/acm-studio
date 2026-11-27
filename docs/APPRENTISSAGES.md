@@ -964,6 +964,22 @@ de la fenêtre`), pas seulement qu'ils existent : sur ordinateur, « Écarter »
   (les lignes du bloc d'« Aujourd'hui ») au lieu de les retrier : retrier par `sortDueTasks`
   perdait la règle de M145 B (la relance qui porte l'argument en tête), et le bouton plein
   changeait de carte.
+- 27/11 · Refonte, lot F · `projects.updated_at` ne dit pas quand un dossier a été travaillé :
+  saisir le bien, retenir un concurrent ou décider le prix écrivent dans d'autres tables. Pour
+  « modifié dans les 14 derniers jours », prendre la plus récente des dates du dossier et de ses
+  parties ; la spec ne le voyait pas, ses dossiers étant créés le jour même (trouvé par la
+  relecture).
+- 27/11 · Refonte, lot F · Les tests unitaires ont tourné 14 minutes au lieu de deux sur une machine
+  surchargée (des processus de test qui ne démarrent pas, des délais de 5 s dépassés) : onze échecs
+  sans rapport avec le code, tous verts au rejeu. Un lot d'échecs éparpillés dans des fichiers non
+  touchés, avec « Timeout waiting for worker », se rejoue avant de se lire.
+- 27/11 · Refonte, mise en production · Fusionner les lots empilés dans `main` fait un conflit dans
+  le tableau de `LANCEMENT.md` à chaque lot (l'état « en production » d'un côté, la section du lot
+  de l'autre). Un `git merge … && git commit` enchaîné enregistre alors les marqueurs de conflit :
+  arrivé au lot B (réparé tout de suite, le code n'était pas touché). Lire `git diff --name-only
+--diff-filter=U` après chaque fusion, et résoudre avant d'enregistrer.
+- 27/11 · Refonte · Le Mac s'est endormi pendant la suite de la nuit malgré `caffeinate -dimsu` :
+  le parcours en cours a perdu le réseau (`ERR_NETWORK_IO_SUSPENDED`), vert au rejeu le matin.
 
 ## La base
 

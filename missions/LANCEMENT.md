@@ -139,7 +139,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 | C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
 | E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
-| F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | à faire |
+| F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | en production le 27/11 à 13 h, sur le « oui » de Jean-Guy |
 
 Pour chaque lot : sur l'essai, ses specs vertes, trois captures (téléphone, tablette, ordinateur)
 dans `missions/maquettes/`, puis l'adresse à ouvrir sur l'essai. Rien ne va sur `main` sans le
@@ -701,7 +701,7 @@ lots D et E) : `vendeurs-a-faire`, `live-tablette` (trois), `parcours`, `present
 route : la démo cherchait l'exclusivité hors du pli ; le parcours, sur téléphone, attendait
 encore « Vendeurs » → Préparation.
 
-### Remarques de Jean-Guy du 26/11 sur les lots D et E (sur l'essai, attend le « oui »)
+### Remarques de Jean-Guy du 26/11 sur les lots D et E (en production le 27/11)
 
 Son « oui » pour les lots A à E (26/11 au soir) venait avec cinq réponses : 2 et 4, « oui » (la
 tuile « Prix ou surface à vérifier », « À faire aujourd'hui » dans le détail de Vendeurs) ; 1, 3
@@ -755,6 +755,77 @@ Les specs modifiées (ce qu'elles prouvent ne change pas ; elles prouvent en plu
 
 Les tests : barrières vertes (4 568 tests unitaires). Sur l'essai : `vendeurs-a-faire`,
 `acquereurs-a-faire`, `depuis-mes-notes` (deux) et `parcours`, 5 parcours, verts au premier
+passage.
+
+### Lot F — Visites sur le socle, et les ajouts du 26/11 (en production le 27/11)
+
+À ouvrir sur l'essai, avec le compte de démonstration des tests :
+`https://acm-studio-essai.vercel.app/visites`, puis `/aujourdhui`, `/acquereurs` (la famille Keller
+choisie d'emblée) et `/vendeurs`. Les captures, avant et après, pour a, b et d :
+`missions/maquettes/REFONTE-F-avant-…` et `REFONTE-F-apres-…` (`aujourdhui-ordinateur`,
+`acquereurs-ordinateur`, `-tablette`, `-telephone`, `vendeurs-ordinateur`) ; Visites aux trois
+tailles : `REFONTE-F-apres-visites-telephone.png`, `-tablette.png`, `-ordinateur.png`. La branche
+part des remarques (`refonte-remarques`) : un « oui » pour le lot F les emporte avec lui.
+
+Ce qui change, en comportement :
+
+- **a. Un même chiffre partout** : le badge d'« Aujourd'hui », sa ligne (« 25 choses à faire ») et
+  les en-têtes de ses blocs comptent les tâches que la page liste, plus ses lignes (une série de
+  trois relances en compte trois) ; « N choses à faire » de Vendeurs et d'Acquéreurs dit sa part de
+  ces mêmes tâches, comptée pareil : une tâche qui concerne deux acquéreurs a deux cartes, mais
+  compte une fois. L'écart d'avant, en une ligne : le badge comptait les lignes d'« Aujourd'hui »,
+  Acquéreurs chaque tâche, « Aussi aujourd'hui » compris. Dans la démo, le badge passe de 10 à 25 :
+  les tâches de démarchage, regroupées en séries, se comptent une par une.
+- **b. Les initiales des noms de famille**, jamais « M. », « Mme » ni « Famille » :
+  Lambert-Duval → LD, Girard et Chevalier → GC, Keller → K, Rossi → R ; un nom composé seul donne
+  ses deux lettres ; plusieurs mots, une lettre chacun, deux au plus (le compte de Jean-Guy redit
+  JO).
+- **c. Un geste, un nom** : « Préparer la relance » dans la liste de Vendeurs (« Relancer plus
+  tôt ? » compris) et sur la page du dossier ; le titre de l'étape reste « Relancer M. et Mme … ».
+- **d. Sur ordinateur et tablette, une personne sans bien à voir** : juste sous sa tâche du jour,
+  sa prochaine étape et ses trois chiffres (visités, envoyés en attente, refusés), lus sur les
+  mêmes faits que sa fiche repliée ; la carte de la fiche est partagée (`BuyerNextStepCard`), son
+  bouton en contour (la tâche du jour garde le seul bouton plein), sans les gestes du compromis,
+  qui sont ceux de la tâche.
+- **Visites et le compte rendu de visite, sur le socle** : le titre et sa ligne (« 6 visites à
+  planifier · 3 faites »), les deux groupes sous leur sur-titre, chaque acquéreur avec son rond
+  aux initiales, chaque visite dans la carte du socle, ses pastilles, ses gestes avec les boutons
+  du socle (contour 48 px ; « Enregistrer le compte rendu » et « Préparer le message » pleins sur
+  Visites, en contour sur la fiche, comme avant) ; les choix de l'avis et de la suite, en pastilles
+  à toucher (44 px) ou en grands boutons, le choisi plein. Aucune logique ne change.
+- **L'aperçu `/socle`** est retiré ; **le guide de prise en main** dit le nouveau menu
+  (« Vendeurs », « Tous mes vendeurs », le + de « Nouveau », la phrase de « Nouvel acquéreur »),
+  toujours sur deux pages.
+
+Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
+
+- « Préparer la relance » vaut dans la liste et sur le dossier, comme demandé ; « Aujourd'hui »
+  garde « Relancer » pour le même geste.
+- La prochaine étape de la personne vient sous sa tâche, avant « Aussi aujourd'hui ».
+- Le dossier en préparation (remarque 1) se juge sur sa dernière activité — la plus récente des
+  dates du dossier, de son bien, de ses concurrents, de sa décision de prix et de ses imports — :
+  la date du seul dossier ne bouge pas quand on travaille son bien (trouvé par la relecture).
+
+Les specs modifiées (lot F) :
+
+| Spec                         | Ce qui a changé                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `acquereurs-a-faire.spec.ts` | « N choses à faire » prouve la nouvelle règle (sa part des tâches d'« Aujourd'hui », comptée pareil) au lieu de « cartes + autres choses » : c'est le point a. **Ajouté** : le badge égal à la ligne d'« Aujourd'hui » et à ses tâches ; les initiales K, GC, R ; la prochaine étape et les trois chiffres de la personne choisie, toujours un seul bouton plein |
+| `vendeurs-a-faire.spec.ts`   | **Ajouté** : les initiales LD et L                                                                |
+| `demo.spec.ts`               | « Préparer la relance » à la place de « Relancer » sur la page du dossier (un libellé)            |
+
+Le relecteur, une passe sur les remarques et le lot F (sur Opus) : un bloquant, levé — « modifié
+dans les 14 derniers jours » se lisait sur la seule date du dossier. Ses « à corriger », faits : les
+en-têtes d'« Aujourd'hui » comptent les tâches ; le prénom composé ne coupe plus les initiales du
+compte (JO) ; la lecture des dossiers en préparation dit son échec ; le guide dit le menu à chaque
+taille ; la prochaine étape sous la tâche ; Visites ne redit pas « aucune » ; deux commentaires
+périmés. Restent dans `missions/PLUS_TARD.md` ses remarques et une question à Jean-Guy (« Tous mes
+vendeurs · N » compte les siens, la liste ouverte montre l'agence).
+
+Les tests : barrières vertes (4 569 tests unitaires). Sur l'essai (`aa86c9d4`) : `vendeurs-a-faire`,
+`acquereurs-a-faire`, `parcours`, `demo` ; avant la relecture, sur `98945f8c`, `hors-mandat`,
+`confirmer-la-visite`, `bon-de-la-tournee`, `suivi-de-l-acquereur`, `acquereur-sans-offre`,
+`fiche-complete`, `bienvenue`, `presentation-directe` (huit) : 24 parcours, verts au premier
 passage.
 
 ## Chaque soir
