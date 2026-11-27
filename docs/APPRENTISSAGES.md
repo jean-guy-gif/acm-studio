@@ -981,6 +981,28 @@ de la fenêtre`), pas seulement qu'ils existent : sur ordinateur, « Écarter »
 - 27/11 · Refonte · Le Mac s'est endormi pendant la suite de la nuit malgré `caffeinate -dimsu` :
   le parcours en cours a perdu le réseau (`ERR_NETWORK_IO_SUSPENDED`), vert au rejeu le matin.
 
+- 27/11 · Lot A · Les outils d'écriture de Claude Code (Write, Edit, et le texte d'une commande)
+  décodent `\uXXXX` en caractère : un échappement `\u00a0` voulu dans un fichier s'y écrit en
+  espace insécable brute, et un double antislash en donne deux. Pour poser un échappement, un
+  script qui construit l'antislash (`chr(92)`, `String.fromCharCode(92)`), puis relire le fichier
+  octet par octet.
+- 27/11 · Lot A · Une conversion de texte par script doit laisser le CSS : `@page :first` écrit
+  dans un gabarit avait reçu une espace insécable, Chromium jetait la règle et la couverture
+  imprimée débordait (2 → 3 pages sur le PDF d'essai du relecteur) ; ni l'e2e ni le banc de l'Étude ne l'ont vu, le
+  relecteur oui, par un `page.pdf()` sur la synthèse. Un test garde désormais le CSS.
+- 27/11 · Lot A · Convertir des textes : les tests qui normalisent ce qu'ils reçoivent (`plain`,
+  `.replace(/[  ]/g, ' ')`) gardent l'espace ordinaire dans leurs attentes ; les titres de
+  `describe` / `it` ne sont pas des textes de l'application ; un test qui lit du code source
+  (`&& !`, `?? []`) ne se convertit pas ; une vérification négative non convertie devient sans
+  objet. Repris fichier par fichier après une première passe trop large (82 fichiers en échec,
+  dont la moitié par excès de conversion).
+- 27/11 · Lot A · Playwright normalise les espaces quand on cherche un texte (`getByText('…')`,
+  `toHaveText('…')`), pas quand on cherche une regex (`getByText(/…/)` lit le texte brut) : une
+  regex de spec qui lit nos textes écrit `\s` devant « : ; ? ! ».
+- 27/11 · Lot A · L'essai s'est figé de 16 h 30 à 16 h 52 : la remise à zéro de la démo restée à
+  « 12 dossiers » sans erreur, la recherche simulée des nouveaux venus muette ; aucun journal
+  (base d'essai, Vercel) ne l'a vu ; vert au second passage, sur le même code.
+
 ## La base
 
 - 29/10 · `npx supabase db push --linked` est refusé par la garde de permissions de Claude Code (lu comme

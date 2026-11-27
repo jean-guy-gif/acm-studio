@@ -1,0 +1,11 @@
+M. et Mme MartinÀ préparerOuvrir → : pas de synthèse
+Mme GarciaPrêt pour le LiveOuvrir → : pas de synthèse
+Mr and Mrs BernardPrêt, en présentation  : pas de synthèse
+M. LefebvreConclu, mandat signéOuvrir → : 1 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+M. et Mme LopezConclu, mandat signéOuvri : 1 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+Mme FerrandConclu, mandat signéOuvrir → : 1 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+M. et Mme DelmasConclu, mandat signéOuvr : 1 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+Mme PerrinConclu, mandat signéOuvrir → : 1 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+M. et Mme GarnierConclu, mandat signéOuv : 1 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+Mme NavarroConclu, mandat signéOuvrir → : 1 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+M. et Mme CastelConclu, mandat signéOuvr : 1 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0

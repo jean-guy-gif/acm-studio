@@ -73,10 +73,10 @@ Une mission tient en une heure et demie (CLAUDE.md) : chaque lot se découpe en 
 
 | Morceau | Ce qu'il fait                                                                                                                             | Durée prévue        | État                    |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------- |
-| A1      | La ville une fois au Live ; « probablement retiré sans vente »                                                                            | 1 h                 | sur la branche, le 27/11 |
-| A2      | Les espaces insécables : la règle et son test, sur les textes du vendeur et ses documents (Live, synthèse, Étude, Point marché, dossier acquéreur, courriers) | 1 h 30 | à faire |
-| A3      | La même règle sur tous les écrans du conseiller, le guide et le modèle d'e-mail « mot de passe oublié »                                | 1 h 30              | à faire                 |
-| A4      | Relecteur, suite complète sur l'essai, banc de l'Étude, captures avant / après                                                           | 1 h                 | à faire                 |
+| A1      | La ville une fois au Live ; « probablement retiré sans vente »                                                                            | 1 h                 | sur l'essai le 27/11, attend le « oui » |
+| A2      | Les espaces insécables : la règle et son test, sur les textes du vendeur et ses documents (Live, synthèse, Étude, Point marché, dossier acquéreur, courriers) | 1 h 30 | sur l'essai le 27/11, attend le « oui » |
+| A3      | La même règle sur tous les écrans du conseiller, le guide et le modèle d'e-mail « mot de passe oublié »                                | 1 h 30              | sur l'essai le 27/11, attend le « oui » |
+| A4      | Relecteur, suite complète sur l'essai, banc de l'Étude, captures avant / après                                                           | 1 h                 | sur l'essai le 27/11, attend le « oui » |
 | B1      | La migration du mode de financement, ses droits en toutes lettres, jouée sur la base d'essai, relue par le gardien-sql                   | 1 h 30              | à faire                 |
 | B2      | La fiche : « Comment finance-t-il ? », le prêt, la démo                                                                                   | 1 h 30              | à faire                 |
 | B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | à faire                 |
@@ -118,3 +118,48 @@ corriger ; il est corrigé dans le dépôt, et Jean-Guy le recollera dans Supaba
   libellé, en français et en anglais ; côté conseiller, le panneau du Point marché, l'étiquette
   et la ligne du Suivi. Les anciens points recomposent leur libellé à l'ouverture : ils disent
   aussi la nouvelle formule. Captures avant / après du Live dans `missions/maquettes/lot-a/`.
+- A2 et A3 (27/11), faits d'un seul tenant : leurs tests étaient mêlés, et le lot part entier après
+  le « oui ». Une seule règle (`src/lib/typography/french-spacing.ts`) : une espace insécable
+  (U+00A0) avant « : » et dans « », une espace fine insécable (U+202F) avant « ; ? ! » ; dans le
+  code, `\u00a0` et `\u202f` dans une chaîne, `&nbsp;` et `&#x202f;` dans le JSX. Le test
+  `french-spacing.test.ts` lit tout `src` par l'arbre de TypeScript (le texte JSX tel que React
+  l'affiche, les chaînes, les gabarits, les attributs), plus le guide de prise en main et les deux
+  modèles d'e-mail, et refuse toute espace où la ligne peut se couper ; un second contrôle refuse
+  toute espace insécable dans le CSS écrit dans le code. Environ 890 textes convertis, le guide
+  refait (deux pages), le modèle « mot de passe oublié » corrigé. Hors de la règle, avec leur
+  raison dans le test : les textes figés de l'offre d'achat et du bon de visite et les deux
+  documents signés ; les consignes envoyées à l'IA (et « Photo N : », envoyé au modèle) ; le CSS et
+  le code (un texte qui porte une accolade) ; après « · », un « ? » qui est un symbole (la légende
+  de la grille) ; les aides des tests. Le « À vérifier : … » d'avant, en base avec l'espace
+  ordinaire, se relit toujours (`OLD_TO_VERIFY`).
+- A4 (27/11) · Le relecteur, une passe : un bloquant, `@page :first` du CSS de la synthèse, du
+  Point marché et du dossier acquéreur avait reçu une espace insécable, Chromium jetait la règle et
+  la couverture imprimée débordait (que ni l'e2e ni le banc, qui n'imprime que l'Étude, ne voient)
+  — corrigé, et gardé par le test du CSS ; ses « à corriger » faits (les anciens Points marché
+  disent aussi « probablement retiré sans vente », comme leur note ; les tests du texte signé du
+  bon reprennent l'espace exacte ; deux vérifications négatives retrouvent leur sens ; deux regex
+  des specs). Barrières vertes (4 585 tests), banc de l'Étude vert (aucune page qui déborde, six
+  polices). Suite e2e complète sur l'essai : 42 parcours sur 42 ; un défaut de spec trouvé et
+  corrigé (`parcours`, une regex avec l'ancienne espace), un aléa de l'essai (16 h 30 à 16 h 52, la
+  remise à zéro de la démo restée bloquée sans erreur : vert au second passage) ; la démo rejouée
+  après les corrections.
+- Les preuves, dans `missions/maquettes/lot-a/` : le Live avant / après aux trois tailles, l'écran
+  « Un sérieux concurrent ? » et la révélation (« Maison · 5 pièces · 135 m² ·
+  Saint-Paul-de-Vence », la ville redite dessous, puis une fois) ; la synthèse de Mme Ferrand sur
+  téléphone avant / après (« Terrasse (vous » puis « : Terrasse) » à la ligne, puis le deux-points
+  gardé) ; la page 3 de la synthèse imprimée de M. Lefebvre avant / après (7 pages les deux) ; le
+  relevé des lignes coupées sur les dix synthèses de la démo (avant : de 49 à 77 endroits à risque
+  par synthèse, 13 lignes coupées sur téléphone ; après : aucun texte, seule la règle CSS
+  `@page :first` garde son espace).
+
+### Les questions du lot A, après la relecture
+
+6. Les anciens Points marché : un point écrit avant le lot disait « Retiré du marché sans vente »,
+   au-dessus de la note neuve « … : probablement retiré sans vente ». Par défaut, fait : le libellé
+   d'une annonce retirée se recompose à l'ouverture, comme la note ; les autres libellés restent
+   tels qu'écrits (M127, « chacun rouvre son document tel qu'il était »).
+7. La question 1, relue : la décision du 07/11 dit que les textes validés par la juriste ne
+   changent pas sans son accord ; seules des espaces y changent, aucun mot. Par défaut : la juriste
+   est prévenue après, avec l'avertissement des notes ; si Jean-Guy préfère son accord avant, le
+   lot A attend.
+
