@@ -55,7 +55,8 @@ describe('« à faire aujourd’hui » d’Acquéreurs : ce que la vue garde', (
   // choses à faire suivent, sous ses biens.
   it('le détail tient la personne sur ses biens par l’adresse ; la règle est dans le service', () => {
     expect(view).toContain('buyersTodayDetail(items, { personne, biens }');
-    expect(view).toContain('href={buyerTodayHref(item)}');
+    // Remarques de Jean-Guy (26/11) : le lien de la personne garde la vue choisie (`?agence=1`).
+    expect(view).toContain('href={withScope(buyerTodayHref(item), scope)}');
     expect(view).toContain('<OtherTasks tasks={detail.beside} today={today} day={day} />');
     // La vue ne décide plus seule de qui voit ses biens.
     expect(view).not.toMatch(/task\.kind === 'buyer_watch'/);

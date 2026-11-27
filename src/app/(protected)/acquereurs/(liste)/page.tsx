@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { showsAllBuyers } from '@/features/buyers/services/buyers-page';
+import { scopeFromQuery } from '@/features/today/services/today-scope';
 
 import { AllBuyers } from './all-buyers';
 import { BuyersTodayView } from './buyers-today-view';
@@ -16,6 +17,7 @@ type BuyersPageProps = {
     tous?: string;
     personne?: string;
     biens?: string;
+    agence?: string;
   }>;
 };
 
@@ -28,5 +30,11 @@ export default async function BuyersPage({ searchParams }: BuyersPageProps) {
   if (showsAllBuyers(query)) {
     return <AllBuyers q={query.q} archive={query.archive} vue={query.vue} etat={query.etat} />;
   }
-  return <BuyersTodayView personne={query.personne} biens={query.biens === '1'} />;
+  return (
+    <BuyersTodayView
+      personne={query.personne}
+      biens={query.biens === '1'}
+      scope={scopeFromQuery(query.agence)}
+    />
+  );
 }

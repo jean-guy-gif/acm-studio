@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 import {
+  PREPARATION_BUTTON,
+  PREPARATION_WHAT,
+  preparationItems,
+  sellersTodayCount,
   selectedSeller,
   sellersToday,
   sellerTaskButton,
@@ -150,5 +154,88 @@ describe('une carte par vendeur', () => {
     const early = task({ kind: 'follow_up_early', projectId: 'p-lambert' });
     expect(sellerTaskKey(relance)).not.toBe(sellerTaskKey(early));
     expect(sellerTaskKey({ ...relance })).toBe(sellerTaskKey(relance));
+  });
+});
+
+describe('un dossier en préparation a sa carte (remarques de Jean-Guy, 26/11)', () => {
+  const now = new Date('2026-11-27T08:00:00.000Z');
+  const draft = (partial: Partial<Parameters<typeof preparationItems>[0][number]>) => ({
+    projectId: 'p-martin',
+    name: 'M. et Mme Martin',
+    status: 'draft',
+    updatedAt: '2026-11-25T10:00:00.000Z',
+    advisorId: 'moi',
+    isExample: false,
+    href: '/builder/p-martin/comparables/find',
+    ...partial,
+  });
+
+  it('« Préparation en cours », et son bouton mène à l’étape à faire', () => {
+    const [item] = preparationItems([draft({})], { scope: 'mine', advisorId: 'moi', now });
+    expect(item).toMatchObject({
+      projectId: 'p-martin',
+      name: 'M. et Mme Martin',
+      task: null,
+      href: '/builder/p-martin/comparables/find',
+      what: 'Préparation en cours',
+      late: null,
+    });
+    expect(PREPARATION_WHAT).toBe('Préparation en cours');
+    expect(PREPARATION_BUTTON).toBe('Reprendre la préparation');
+  });
+
+  it('seulement les dossiers modifiés dans les 14 derniers jours', () => {
+    const items = preparationItems(
+      [
+        draft({ projectId: 'recent', updatedAt: '2026-11-13T09:00:00.000Z' }),
+        draft({ projectId: 'ancien', updatedAt: '2026-11-12T07:00:00.000Z' }),
+      ],
+      { scope: 'mine', advisorId: 'moi', now },
+    );
+    expect(items.map((item) => item.projectId)).toEqual(['recent']);
+  });
+
+  it('« Mes dossiers » : les siens ; « Toute l’agence » : ceux de l’agence', () => {
+    const drafts = [
+      draft({ projectId: 'a-moi' }),
+      draft({ projectId: 'collegue', advisorId: 'lui' }),
+    ];
+    expect(
+      preparationItems(drafts, { scope: 'mine', advisorId: 'moi', now }).map((i) => i.projectId),
+    ).toEqual(['a-moi']);
+    expect(
+      preparationItems(drafts, { scope: 'agency', advisorId: 'moi', now }).map((i) => i.projectId),
+    ).toEqual(['a-moi', 'collegue']);
+  });
+
+  it('jamais un dossier d’exemple, prêt ou conclu ; jamais deux fois un vendeur qui a une tâche', () => {
+    const items = preparationItems(
+      [
+        draft({ projectId: 'exemple', isExample: true }),
+        draft({ projectId: 'pret', status: 'ready_for_meeting' }),
+        draft({ projectId: 'conclu', status: 'meeting_completed' }),
+        draft({ projectId: 'deja' }),
+      ],
+      { scope: 'mine', advisorId: 'moi', now, skip: ['deja'] },
+    );
+    expect(items).toEqual([]);
+  });
+
+  it('le plus récemment modifié d’abord', () => {
+    const items = preparationItems(
+      [
+        draft({ projectId: 'avant-hier', updatedAt: '2026-11-25T10:00:00.000Z' }),
+        draft({ projectId: 'hier', updatedAt: '2026-11-26T10:00:00.000Z' }),
+      ],
+      { scope: 'mine', advisorId: 'moi', now },
+    );
+    expect(items.map((item) => item.projectId)).toEqual(['hier', 'avant-hier']);
+  });
+
+  it('le sous-titre compte les tâches du jour, et les préparations à part', () => {
+    expect(sellersTodayCount(2, 1)).toBe('2 choses à faire aujourd’hui · 1 préparation en cours');
+    expect(sellersTodayCount(1, 0)).toBe('1 chose à faire aujourd’hui');
+    expect(sellersTodayCount(0, 2)).toBe('2 préparations en cours');
+    expect(sellersTodayCount(0, 0)).toBe('Rien à faire aujourd’hui');
   });
 });

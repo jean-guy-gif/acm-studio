@@ -17,6 +17,24 @@ import {
 // de cartes, et le dossier est sa page. Les listes de Préparation, du Live et du Suivi sont derrière
 // « Tous mes vendeurs ». Joué sur la démo, remise à zéro : la relance des Lambert-Duval et le
 // premier Point marché de M. Lefebvre sont dus. Rien n'est écrit, hors la remise à zéro de la démo.
+// Remarques de Jean-Guy (26/11) — le dossier en préparation de M. et Mme Martin (créé par la remise
+// à zéro, donc modifié il y a moins de 14 jours) a sa carte, « Préparation en cours » et « Reprendre
+// la préparation » ; le compte de démonstration est manager : il choisit sa vue, « Mes dossiers »
+// ou « Toute l'agence », et le lien d'en bas dit ce qu'il compte.
+
+// Le sous-titre : les tâches du jour, puis les préparations, à part (`sellersTodayCount`).
+const countText = (things: number, preparations: number) => {
+  const prepared =
+    preparations > 0
+      ? `${preparations} ${preparations > 1 ? 'préparations' : 'préparation'} en cours`
+      : null;
+  if (things === 0 && prepared) return prepared;
+  const due =
+    things === 0
+      ? 'Rien à faire aujourd’hui'
+      : `${things} ${things > 1 ? 'choses' : 'chose'} à faire aujourd’hui`;
+  return prepared ? `${due} · ${prepared}` : due;
+};
 
 // Les boutons pleins visibles de l'écran (le repère `btn-filled`).
 const filledShown = (page: Page) =>
@@ -52,8 +70,17 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     const names = await rows.getByTestId('person-name').allInnerTexts();
     expect(new Set(names).size).toBe(names.length);
     const more = await page.getByTestId('task-card').getByTestId('sellers-today-other').count();
+    // Les dossiers en préparation ont leur ligne, comptée à part des tâches du jour.
+    const preparations = await rows
+      .getByTestId('person-task')
+      .filter({ hasText: /^Préparation en cours$/ })
+      .count();
+    expect(preparations).toBeGreaterThanOrEqual(1);
     await expect(page.getByTestId('sellers-today-count')).toHaveText(
-      `${count + more} ${count + more > 1 ? 'choses' : 'chose'} à faire aujourd’hui`,
+      countText(count - preparations + more, preparations),
+    );
+    await expect(row(page, 'M. et Mme Martin').getByTestId('person-task')).toHaveText(
+      'Préparation en cours',
     );
     // La relance des Lambert-Duval, avec son argument (un acquéreur prêt, M145 B), et le premier
     // Point marché de M. Lefebvre (un mois après la signature, M130 A).
@@ -127,6 +154,48 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     ).toHaveAttribute('href', new RegExp(`/suivi\\?relancer=${lambertId}`));
   });
 
+  await test.step('Un dossier en préparation : sa carte, et « Reprendre la préparation »', async () => {
+    const detail = page.getByTestId('sellers-today-detail');
+    await row(page, 'M. et Mme Martin').click();
+    await expect(detail.getByTestId('project-name')).toHaveText('M. et Mme Martin', {
+      timeout: 30_000,
+    });
+    await expect(detail.getByTestId('project-badge')).toHaveText('En préparation');
+    await expect(detail.getByTestId('sellers-today-task-title')).toHaveText('Préparation en cours');
+    // Le seul bouton plein : il mène à l'étape à faire du dossier (M97, M110).
+    const resume = detail.getByRole('link', { name: 'Reprendre la préparation' });
+    await expect(resume).toHaveAttribute(
+      'href',
+      /^\/builder\/[0-9a-f-]{36}(\/property|\/comparables\/find|\/avant-rendez-vous)?$/,
+    );
+    expect(await filledShown(page)).toEqual(['Reprendre la préparation']);
+    await expect(detail.getByTestId('overview-step')).toHaveCount(5);
+  });
+
+  await test.step('La vue : « Mes dossiers » ou « Toute l’agence », et ce que compte le lien', async () => {
+    const scope = page.getByTestId('sellers-scope');
+    const all = page.getByTestId('sellers-all-link');
+    await expect(scope.getByRole('link', { name: 'Mes dossiers' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(all).toContainText(/^Tous mes vendeurs\s*\d+/);
+    const mine = Number((await all.innerText()).replace(/\D/g, ''));
+    await scope.getByRole('link', { name: 'Toute l’agence' }).click();
+    await expect(page).toHaveURL(/\/vendeurs\?agence=1$/);
+    await expect(all).toContainText(/^Tous les vendeurs de l’agence\s*\d+/);
+    expect(Number((await all.innerText()).replace(/\D/g, ''))).toBeGreaterThanOrEqual(mine);
+    // Choisir un vendeur garde la vue.
+    await expect(page.getByTestId('person-row').first()).toHaveAttribute(
+      'href',
+      /\/vendeurs\?vendeur=[0-9a-f-]{36}&agence=1$/,
+    );
+    expect((await filledShown(page)).length).toBe(1);
+    await scope.getByRole('link', { name: 'Mes dossiers' }).click();
+    await expect(page).toHaveURL(/\/vendeurs$/);
+    await expect(all).toContainText(/^Tous mes vendeurs/);
+  });
+
   await test.step('« Tous mes vendeurs » : Préparation, Live et Suivi, par leurs onglets', async () => {
     const link = page.getByTestId('sellers-all-link');
     await expect(link).toContainText('Tous mes vendeurs');
@@ -193,6 +262,12 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     const buttons = await filledShown(page);
     expect(buttons).toHaveLength(1);
     await expect(cards.first().locator('.btn-filled')).toHaveCount(1);
+    // La carte d'un dossier en préparation : son geste, en contour.
+    await expect(
+      cards
+        .filter({ hasText: 'M. et Mme Martin' })
+        .getByRole('link', { name: 'Reprendre la préparation' }),
+    ).toBeVisible();
     await expect(page.getByTestId('shell-menu')).toBeVisible();
     await expectNoHorizontalScroll(page, 'Vendeurs (390 × 844)');
     // Son nom mène à son dossier : une page intérieure, sans menu du bas.
