@@ -14,6 +14,9 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 27/11 · Refonte (Jean-Guy) · Préparation, Live et Suivi filtrés sur « Mes dossiers » : tant
   qu'ils montrent toute l'agence (M59), le lien de Vendeurs dit « Tous les vendeurs de l'agence »
   et compte l'agence.
+- 27/11 · Lot A (Jean-Guy) · Sur téléphone, les noms de commune à trait d'union se coupent en fin
+  de ligne (« Juan-les- » puis « Pins », synthèse, concurrent 1) : un trait d'union insécable
+  (U+2011) suffira.
 - 27/11 · Lot A · Le nom accessible de la pastille du menu dit encore « Aujourd'hui, N lignes à
   faire », alors qu'elle compte les tâches depuis le lot F ; rien de visible.
 - 27/11 · Lot A (relecture) · L'aperçu « Sur le bon » du formulaire du bon de visite recopie une

@@ -73,10 +73,10 @@ Une mission tient en une heure et demie (CLAUDE.md) : chaque lot se découpe en 
 
 | Morceau | Ce qu'il fait                                                                                                                             | Durée prévue        | État                    |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------- |
-| A1      | La ville une fois au Live ; « probablement retiré sans vente »                                                                            | 1 h                 | sur l'essai le 27/11, attend le « oui » |
-| A2      | Les espaces insécables : la règle et son test, sur les textes du vendeur et ses documents (Live, synthèse, Étude, Point marché, dossier acquéreur, courriers) | 1 h 30 | sur l'essai le 27/11, attend le « oui » |
-| A3      | La même règle sur tous les écrans du conseiller, le guide et le modèle d'e-mail « mot de passe oublié »                                | 1 h 30              | sur l'essai le 27/11, attend le « oui » |
-| A4      | Relecteur, suite complète sur l'essai, banc de l'Étude, captures avant / après                                                           | 1 h                 | sur l'essai le 27/11, attend le « oui » |
+| A1      | La ville une fois au Live ; « probablement retiré sans vente »                                                                            | 1 h                 | en production le 27/11 au soir |
+| A2      | Les espaces insécables : la règle et son test, sur les textes du vendeur et ses documents (Live, synthèse, Étude, Point marché, dossier acquéreur, courriers) | 1 h 30 | en production le 27/11 au soir |
+| A3      | La même règle sur tous les écrans du conseiller, le guide et le modèle d'e-mail « mot de passe oublié »                                | 1 h 30              | en production le 27/11 au soir |
+| A4      | Relecteur, suite complète sur l'essai, banc de l'Étude, captures avant / après                                                           | 1 h                 | en production le 27/11 au soir |
 | B1      | La migration du mode de financement, ses droits en toutes lettres, jouée sur la base d'essai, relue par le gardien-sql                   | 1 h 30              | à faire                 |
 | B2      | La fiche : « Comment finance-t-il ? », le prêt, la démo                                                                                   | 1 h 30              | à faire                 |
 | B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | à faire                 |
@@ -154,11 +154,11 @@ corriger ; il est corrigé dans le dépôt, et Jean-Guy le recollera dans Supaba
 
 ### Les questions du lot A, après la relecture
 
-6. Les anciens Points marché : un point écrit avant le lot disait « Retiré du marché sans vente »,
+6. Réponse de Jean-Guy (27/11) : oui. Les anciens Points marché : un point écrit avant le lot disait « Retiré du marché sans vente »,
    au-dessus de la note neuve « … : probablement retiré sans vente ». Par défaut, fait : le libellé
    d'une annonce retirée se recompose à l'ouverture, comme la note ; les autres libellés restent
    tels qu'écrits (M127, « chacun rouvre son document tel qu'il était »).
-7. La question 1, relue : la décision du 07/11 dit que les textes validés par la juriste ne
+7. Réponse de Jean-Guy (27/11) : on prévient après, aucun accord à attendre. La question 1, relue : la décision du 07/11 dit que les textes validés par la juriste ne
    changent pas sans son accord ; seules des espaces y changent, aucun mot. Par défaut : la juriste
    est prévenue après, avec l'avertissement des notes ; si Jean-Guy préfère son accord avant, le
    lot A attend.

@@ -33,6 +33,14 @@ Faits le mercredi 25/11 ; ceux marqués ↻ se refont le vendredi 27/11, après 
 | Les sauvegardes                                       | Supabase sauvegarde la base chaque nuit ; la nôtre, qui prend aussi les photos et les signatures, est faite et vérifiée par restauration le 25/11         |
 | Le compte de Jean-Guy                                 | Parcours complet joué le 25/11, les deux recherches du forfait jouées ; les dossiers et l'acquéreur de test sont archivés, la visite de test est annulée |
 
+Refaits le vendredi 27/11 au soir, sur la production telle qu'elle est depuis le gel (13 h 12) : elle
+sert `main` (`b003f16`, le code du gel) ; la CI de `main` est verte ; la suite e2e du gel, 42 sur
+42 (de 13 h 13 à 13 h 56, sur l'essai, même code) ; aucune ligne au journal d'erreurs depuis le gel
+; chez Vercel, une seule erreur, une session expirée (un utilisateur, renvoyé vers la connexion) ;
+les cinq purges de la nuit du 26 au 27/11 réussies ; la veille des acquéreurs, 10 passages en sept
+jours, aucun échec. Tout est vert : livré le 27/11 au soir, sur le mot de Jean-Guy. Le lot A
+d'après la livraison (`missions/APRES_LIVRAISON.md`) part ensuite, sur son « oui ».
+
 ## Ce qui reste éteint, exprès
 
 | Quoi                                                         | Pourquoi                                                 | Qui l'allume                                                               |
