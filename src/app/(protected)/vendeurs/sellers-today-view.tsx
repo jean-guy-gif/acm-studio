@@ -111,11 +111,12 @@ function SellerAction({
 // une colonne de cartes ; sur tablette et ordinateur, la liste à gauche et, à droite, son dossier —
 // sa prochaine étape, trois chiffres, « Son dossier », « Tout le dossier » —, sans changer de page
 // (`?vendeur=`). Ce sont les tâches du bloc « Vendeurs » d'« Aujourd'hui » (« Mes tâches ») : mêmes
-// règles, mêmes gestes. « Tous mes vendeurs » mène aux listes de Préparation, du Live et du Suivi.
+// règles, mêmes gestes. « Tous les vendeurs de l'agence » mène aux listes de Préparation, du Live et
+// du Suivi.
 // Remarques de Jean-Guy (26/11) — un dossier en préparation, modifié dans les 14 derniers jours, a
 // sa carte : « Préparation en cours », « Reprendre la préparation » ; un manager choisit sa vue,
-// « Mes dossiers » ou « Toute l'agence » (`?agence=1`), comme sur « Aujourd'hui », et le lien d'en
-// bas compte ce qu'il dit (« Tous mes vendeurs » ou « Tous les vendeurs de l'agence »).
+// « Mes dossiers » ou « Toute l'agence » (`?agence=1`), comme sur « Aujourd'hui ». Le lien d'en bas
+// dit ce que la liste montre (Jean-Guy, 27/11) : « Tous les vendeurs de l'agence ».
 export async function SellersTodayView({
   selectedId,
   scope: asked = 'mine',
@@ -276,10 +277,12 @@ export async function SellersTodayView({
           </p>
         ) : null}
 
+        {/* Jean-Guy (27/11) — le lien dit ce que la liste montre : Préparation, Live et Suivi
+            montrent les dossiers de toute l'agence (M59), quelle que soit la vue. */}
         <RowLink
           href="/builder"
-          label={allPeopleLabel('vendeurs', scope)}
-          count={counts?.[scope]}
+          label={allPeopleLabel('vendeurs', 'agency')}
+          count={counts?.agency}
           testId="sellers-all-link"
         />
       </section>
@@ -323,7 +326,7 @@ export async function SellersTodayView({
               href="/builder"
               className="text-[15px] font-bold text-brand-deep stage:text-brand"
             >
-              Voir {allPeopleLabel('vendeurs', scope).toLowerCase()}
+              Voir {allPeopleLabel('vendeurs', 'agency').toLowerCase()}
             </Link>
           </div>
         )}

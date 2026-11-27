@@ -749,7 +749,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       ).toHaveText(/^[1-9]\d*$/);
 
       // Le bouton de la tâche mène à la carte du Suivi, la relance ouverte.
-      await task.getByRole('link', { name: 'Relancer' }).click();
+      await task.getByRole('link', { name: 'Préparer la relance' }).click();
       await expect(page).toHaveURL(/\/suivi\?relancer=/);
       const row = page.getByTestId('suivi-row').filter({ hasText: dossierName });
       await expect(row.getByTestId('suivi-next-step')).toContainText(/en retard/i);
@@ -781,7 +781,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
       await expect(panel).toHaveCount(0);
       // Un second passage par « Aujourd'hui » rouvre la relance.
       await openToday(page);
-      await task.getByRole('link', { name: 'Relancer' }).click();
+      await task.getByRole('link', { name: 'Préparer la relance' }).click();
       await expect(row.getByTestId('follow-up-panel')).toBeVisible();
       await row.getByTestId('follow-up-panel').getByRole('button', { name: 'Annuler' }).click();
 
