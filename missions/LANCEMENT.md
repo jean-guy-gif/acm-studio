@@ -701,8 +701,67 @@ lots D et E) : `vendeurs-a-faire`, `live-tablette` (trois), `parcours`, `present
 route : la démo cherchait l'exclusivité hors du pli ; le parcours, sur téléphone, attendait
 encore « Vendeurs » → Préparation.
 
+### Remarques de Jean-Guy du 26/11 sur les lots D et E (sur l'essai, attend le « oui »)
+
+Son « oui » pour les lots A à E (26/11 au soir) venait avec cinq réponses : 2 et 4, « oui » (la
+tuile « Prix ou surface à vérifier », « À faire aujourd'hui » dans le détail de Vendeurs) ; 1, 3
+et 5 se corrigent ici. À ouvrir sur l'essai, avec le compte de démonstration des tests (il est
+manager) : `https://acm-studio-essai.vercel.app/vendeurs` (la carte de M. et Mme Martin, puis
+« Toute l'agence ») et `/acquereurs` (« Toute l'agence »). Les captures :
+`missions/maquettes/REFONTE-R-telephone.png`, `-tablette.png`, `-ordinateur.png` (Vendeurs),
+`REFONTE-R-vendeurs-toute-l-agence-ordinateur.png`, `REFONTE-R-mes-fiches-ordinateur.png` et
+`REFONTE-R-toute-l-agence-ordinateur.png` (Acquéreurs).
+
+Ce qui change, en comportement :
+
+- **Un dossier en préparation a sa carte dans « à faire aujourd'hui »** (réponse 1) : « Préparation
+  en cours », et « Reprendre la préparation », qui mène à son étape à faire (le bien vendeur, les
+  concurrents ou la décision de prix, M97, M110). Sans la date du rendez-vous (pas en base) :
+  seulement les dossiers en préparation modifiés dans les 14 derniers jours, ceux de la vue choisie,
+  jamais un dossier d'exemple ; après les tâches du jour, le plus récemment modifié d'abord. Le
+  sous-titre les compte à part : « 2 choses à faire aujourd'hui · 1 préparation en cours ». Dans
+  le détail (tablette, ordinateur), son dossier, comme pour les autres vendeurs.
+- **Vendeurs et Acquéreurs suivent la vue choisie** (réponse 3) : un manager choisit « Mes
+  dossiers » (Acquéreurs : « Mes fiches ») ou « Toute l'agence », comme sur « Aujourd'hui » (M145
+  B) ; la vue change les tâches montrées, et le lien d'en bas compte ce qu'il dit : « Tous mes
+  vendeurs · N » (les dossiers dont il est le titulaire) ou « Tous les vendeurs de l'agence · N » ;
+  « Tous mes acquéreurs · N » ou « Tous les acquéreurs de l'agence · N », qui ouvre la liste dans
+  la vue « Toute l'agence ». Choisir une personne garde la vue. Un conseiller n'a pas le choix : ses
+  tâches, ses dossiers, ses fiches.
+- **L'avertissement de la lecture des notes** (réponse 5) : « N'écrivez, ne dictez ni ne
+  photographiez d'information sur la santé, la religion ou la vie privée de vos clients : l'outil
+  ne la relève pas, mais elle serait envoyée. » ; le reste du texte ne bouge pas, sur « Nouvel
+  acquéreur » comme sur « Compléter depuis mes notes ».
+- Dans `missions/PLUS_TARD.md` : un critère « jardin » distinct d'« extérieur » ; la date du
+  rendez-vous en base.
+
+Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
+
+- La vue des pages « à faire » se dit `?agence=1` : sur Acquéreurs, `?vue=agence` ouvre déjà la
+  liste entière des fiches (lot B), et treize specs s'en servent ; rien n'y change.
+- Le choix de vue n'est qu'au manager, comme sur « Aujourd'hui » (M145 B). Sur Acquéreurs, il dit
+  « Mes fiches », le mot de la liste des fiches (M146 B).
+- « Préparation en cours » ne compte que les dossiers « En cours » de Préparation ; un dossier prêt
+  pour le Live n'a pas de carte (son étape est « Lancer le Live », pas une préparation).
+- La carte d'un dossier en préparation ne compte pas dans « choses à faire » : ce ne sont pas des
+  tâches d'« Aujourd'hui » (ce que demande le point a du lot F).
+
+Les specs modifiées (ce qu'elles prouvent ne change pas ; elles prouvent en plus les remarques) :
+
+| Spec                         | Ce qui a changé                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `vendeurs-a-faire.spec.ts`   | le sous-titre compte à part la préparation de M. et Mme Martin. **Ajouté** : sa carte, « Reprendre la préparation » vers son étape à faire, le seul bouton plein ; la vue « Toute l'agence », son lien et son nombre, la vue gardée d'un vendeur à l'autre |
+| `acquereurs-a-faire.spec.ts` | **Ajouté** : la vue « Toute l'agence », « Tous les acquéreurs de l'agence » et la liste ouverte dans cette vue |
+
+Les tests : barrières vertes (4 568 tests unitaires). Sur l'essai : `vendeurs-a-faire`,
+`acquereurs-a-faire`, `depuis-mes-notes` (deux) et `parcours`, 5 parcours, verts au premier
+passage.
+
 ## Chaque soir
 
 La suite e2e complète, lancée par le chef en fin de journée (accord de Jean-Guy, 23/11), puis le
 point du soir en dix lignes. Depuis le 25/11 au soir, elle tourne sur la base d'essai : elle ne
-pèse plus sur la production. Le 25/11 : de 20 h 17 à 20 h 57, 37 parcours sur 37, un aléa.
+pèse plus sur la production. Le 25/11 : de 20 h 17 à 20 h 57, 37 parcours sur 37, un aléa. Le 26/11, sur le code des lots A à E mis en production : de 19 h 31 à 7 h 20 le 27/11 (le Mac
+s'est endormi pendant la nuit, la tranche en cours s'est arrêtée là), 42 parcours sur 42, un aléa
+— `suivi-de-l-acquereur`, le réseau coupé par la mise en veille (`ERR_NETWORK_IO_SUSPENDED`), vert
+au rejeu.
