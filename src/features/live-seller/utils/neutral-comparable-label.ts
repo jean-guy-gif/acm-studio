@@ -1,3 +1,4 @@
+import { communeKey } from '@/features/competitor-search/utils/commune-name';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { formatSquareMeters } from '@/lib/format';
 // LIVE — étapes AVANT la révélation du prix (« Est-il un sérieux concurrent ? »,
@@ -43,4 +44,19 @@ export function neutralComparableLabel(
     parts.push(location);
   }
   return parts.length > 0 ? parts.join(' · ') : texts.common.competitorFallback;
+}
+
+// Lot A (Jean-Guy, 27/11) — la ligne du lieu, sous le libellé neutre, au Live : elle ne redit jamais
+// ce que le libellé dit déjà. Le libellé finit par le quartier, sinon par la ville ; dessous, la
+// ville seulement quand le libellé a nommé le quartier et qu'elle n'est pas déjà dans son nom
+// (comparés comme partout, M71). Null : pas de ligne.
+export function locationBelowLabel(entry: {
+  city: string | null;
+  district: string | null;
+}): string | null {
+  const district = communeKey(entry.district);
+  const city = entry.city?.trim() || null;
+  const cityKey = communeKey(city);
+  if (!district || !city || !cityKey) return null;
+  return ` ${district} `.includes(` ${cityKey} `) ? null : city;
 }

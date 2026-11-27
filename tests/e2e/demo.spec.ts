@@ -760,7 +760,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       );
       expect(recordedText).toMatch(/[1-9] baisses?/);
       expect(recordedText).toContain('1 vente probable');
-      expect(recordedText).toContain('1 retiré sans vente');
+      expect(recordedText).toContain('1 probablement retiré sans vente');
       expect(recordedText).toMatch(/négociation estimée de 5 à 10 %/);
       await expect(row.getByTestId('market-updates')).toContainText(/Point du \d{2}\/\d{2}\/\d{4}/);
       await expect(row.getByTestId('dropped-since-meeting')).toContainText(
@@ -824,7 +824,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(
         document.getByText('Vente probable, négociation estimée de 5 à 10 %'),
       ).toBeVisible();
-      await expect(document.getByText('Retiré du marché sans vente').first()).toBeVisible();
+      await expect(document.getByText('Probablement retiré sans vente').first()).toBeVisible();
       // Mission 129 — le classement : verdict, trois étapes, une ligne par bien encore en vente
       // (3 concurrents, le nouveau venu, votre bien), la légende ; plus de couleur M116.
       const ranking = document.getByTestId('price-ranking');

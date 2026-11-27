@@ -23,7 +23,7 @@ export const MARKET_UPDATE_STATE_LABELS: Record<MarketUpdateState, string> = {
   raised: 'Hausse',
   unread: 'Non relu',
   probable_sale: 'Vente probable',
-  withdrawn: 'Retiré sans vente',
+  withdrawn: 'Probablement retiré sans vente',
   gone: 'Retirée',
   newcomer: 'Nouveau venu',
 };

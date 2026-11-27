@@ -332,7 +332,8 @@ export function buildMarketUpdateSummary(input: MarketUpdateInput): MarketUpdate
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
-// « 5 annonces relues · 2 baisses · 1 vente probable · 1 retiré sans vente · 2 nouveaux venus ».
+// « 5 annonces relues · 2 baisses · 1 vente probable · 1 probablement retiré sans vente · 2 nouveaux
+// venus ».
 export function marketUpdateLine(summary: MarketUpdateSummary): string {
   const c = summary.counts;
   return [
@@ -340,7 +341,9 @@ export function marketUpdateLine(summary: MarketUpdateSummary): string {
     c.dropped > 0 ? plural(c.dropped, 'baisse', 'baisses') : null,
     c.raised > 0 ? plural(c.raised, 'hausse', 'hausses') : null,
     c.probableSale > 0 ? plural(c.probableSale, 'vente probable', 'ventes probables') : null,
-    c.withdrawn > 0 ? plural(c.withdrawn, 'retiré sans vente', 'retirés sans vente') : null,
+    c.withdrawn > 0
+      ? plural(c.withdrawn, 'probablement retiré sans vente', 'probablement retirés sans vente')
+      : null,
     c.goneUnknown > 0
       ? plural(c.goneUnknown, 'retirée, durée inconnue', 'retirées, durée inconnue')
       : null,
