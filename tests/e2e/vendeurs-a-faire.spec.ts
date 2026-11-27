@@ -182,12 +182,13 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
       'aria-current',
       'true',
     );
-    await expect(all).toContainText(/^Tous mes vendeurs\s*\d+/);
+    // Le lien dit ce que la liste montre (Jean-Guy, 27/11) : toute l'agence, dans les deux vues.
+    await expect(all).toContainText(/^Tous les vendeurs de l’agence\s*\d+/);
     const mine = Number((await all.innerText()).replace(/\D/g, ''));
     await scope.getByRole('link', { name: 'Toute l’agence' }).click();
     await expect(page).toHaveURL(/\/vendeurs\?agence=1$/);
     await expect(all).toContainText(/^Tous les vendeurs de l’agence\s*\d+/);
-    expect(Number((await all.innerText()).replace(/\D/g, ''))).toBeGreaterThanOrEqual(mine);
+    expect(Number((await all.innerText()).replace(/\D/g, ''))).toBe(mine);
     // Choisir un vendeur garde la vue.
     await expect(page.getByTestId('person-row').first()).toHaveAttribute(
       'href',
@@ -196,12 +197,12 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     expect((await filledShown(page)).length).toBe(1);
     await scope.getByRole('link', { name: 'Mes dossiers' }).click();
     await expect(page).toHaveURL(/\/vendeurs$/);
-    await expect(all).toContainText(/^Tous mes vendeurs/);
+    await expect(all).toContainText(/^Tous les vendeurs de l’agence/);
   });
 
   await test.step('« Tous mes vendeurs » : Préparation, Live et Suivi, par leurs onglets', async () => {
     const link = page.getByTestId('sellers-all-link');
-    await expect(link).toContainText('Tous mes vendeurs');
+    await expect(link).toContainText('Tous les vendeurs de l’agence');
     await expect(link).toContainText(/\d+/);
     await link.click();
     await expect(page).toHaveURL(/\/builder$/);
