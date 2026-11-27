@@ -217,3 +217,7 @@ export const chipNeutral = `${chipBase} border-[#D5DAEA] bg-white font-semibold 
 export const chipGreen = `${chipBase} border-[#B5DFCB] bg-[#E3F4EC] font-bold text-[#0B6B4A] stage:border-emerald-400/30 stage:bg-emerald-400/15 stage:text-emerald-300`;
 
 export const chipOrange = `${chipBase} border-[#F3C9A6] bg-[#FDEBDD] font-bold text-[#7A2E08] stage:border-orange-400/30 stage:bg-orange-400/15 stage:text-orange-300`;
+
+// La refonte, lot F — une pastille à toucher, choisie (l'avis d'une visite, sa suite) : pleine,
+// dans la couleur de l'agence ; `aria-pressed` le dit aussi.
+export const chipSelected = `${chipBase} border-brand-deep bg-brand-deep font-bold text-white stage:border-white stage:bg-white stage:text-brand-deep`;

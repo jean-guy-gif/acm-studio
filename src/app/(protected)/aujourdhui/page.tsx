@@ -45,7 +45,8 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
   return (
     <div className="flex flex-col gap-5 md:gap-6" data-testid="today-page">
       {scope === 'mine' && today.failed.length === 0 ? (
-        <TodayCountSync count={board.lineCount} />
+        // La refonte, lot F — le badge compte les tâches, comme le sous-titre.
+        <TodayCountSync count={board.taskCount} />
       ) : null}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
@@ -54,9 +55,9 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
           <p className={pageSubtitle} data-testid="today-summary">
             {today.failed.length > 0
               ? 'Une partie des tâches n’a pas pu être lue : rechargez la page.'
-              : board.lineCount === 0
+              : board.taskCount === 0
                 ? 'Rien à faire aujourd’hui.'
-                : `${board.lineCount} ${board.lineCount > 1 ? 'choses' : 'chose'} à faire, la plus urgente en premier.`}
+                : `${board.taskCount} ${board.taskCount > 1 ? 'choses' : 'chose'} à faire, la plus urgente en premier.`}
           </p>
           {today.manager ? (
             <div
@@ -103,7 +104,7 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
         </p>
       ))}
 
-      {board.lineCount === 0 && today.failed.length === 0 ? (
+      {board.taskCount === 0 && today.failed.length === 0 ? (
         <div className={emptyState} data-testid="today-nothing">
           <p className="text-sm text-zinc-600 stage:text-white/70">
             {nothingTodayLabel(today.next)}
@@ -130,7 +131,12 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
               if (line.tasks.length === 1) {
                 const task = line.tasks[0]!;
                 return (
-                  <li key={line.key} data-testid="today-line" data-kind={line.kind}>
+                  <li
+                    key={line.key}
+                    data-testid="today-line"
+                    data-kind={line.kind}
+                    data-tasks={line.tasks.length}
+                  >
                     <TodayTask
                       task={task}
                       block={block.key}
@@ -142,7 +148,12 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
                 );
               }
               return (
-                <li key={line.key} data-testid="today-line" data-kind={line.kind}>
+                <li
+                  key={line.key}
+                  data-testid="today-line"
+                  data-kind={line.kind}
+                  data-tasks={line.tasks.length}
+                >
                   <TodaySeries
                     icon={<TodayIcon block={block.key} text={String(line.tasks.length)} />}
                     title={seriesTitle(line.kind, line.tasks, prospectAlerts)}

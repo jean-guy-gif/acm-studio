@@ -6,6 +6,7 @@ import {
   PREPARATION_WHAT,
   preparationItems,
   sellersTodayCount,
+  sellerTaskCount,
   selectedSeller,
   sellersToday,
   sellerTaskButton,
@@ -84,7 +85,7 @@ describe('ce qu’il y a à faire, sans redire son nom', () => {
   it('les boutons, dans les mots de la maquette', () => {
     expect(sellerTaskButton(relance)).toBe('Préparer la relance');
     expect(sellerTaskButton(point)).toBe('Faire le point marché');
-    expect(sellerTaskButton(task({ kind: 'follow_up_early' }))).toBe('Relancer');
+    expect(sellerTaskButton(task({ kind: 'follow_up_early' }))).toBe('Préparer la relance');
   });
 
   it('la teinte suit la tâche : un mandat signé en vert, un retard en orange', () => {
@@ -239,5 +240,14 @@ describe('un dossier en préparation a sa carte (remarques de Jean-Guy, 26/11)',
     expect(sellersTodayCount(1, 0)).toBe('1 chose à faire aujourd’hui');
     expect(sellersTodayCount(0, 2)).toBe('2\u00a0préparations en cours');
     expect(sellersTodayCount(0, 0)).toBe('Rien à faire aujourd’hui');
+  });
+});
+
+describe('un même chiffre partout (lot F, Jean-Guy, 26/11)', () => {
+  it('« N choses à faire » sur Vendeurs : les tâches du bloc « Vendeurs » d’« Aujourd’hui »', () => {
+    const buyer = task({ kind: 'buyer_watch', buyerId: 'b1', projectId: '' });
+    const second = task({ kind: 'follow_up', projectId: 'p2', sellerName: 'Mme Durand' });
+    expect(sellerTaskCount(board(relance, point, second, buyer))).toBe(3);
+    expect(sellerTaskCount(board(buyer))).toBe(0);
   });
 });

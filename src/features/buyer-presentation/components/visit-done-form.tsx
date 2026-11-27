@@ -3,7 +3,16 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { btnPrimary, btnSecondary, errorText, inputBase, link } from '@/components/ui/styles';
+import {
+  chipNeutral,
+  chipSelected,
+  errorText,
+  inputBase,
+  link,
+  socleBtnFilled,
+  socleBtnOutline,
+  socleBtnQuiet,
+} from '@/components/ui/styles';
 import {
   DISLIKED_LABELS,
   LIKED_LABELS,
@@ -28,18 +37,17 @@ import { FEEDBACK_MAX } from '@/features/buyer-presentation/services/visit-reque
 // son avis et la suite d'abord, en grands boutons — deux touchers et « Enregistrer » suffisent — ;
 // ce qui a plu, ce qui a gêné et la note sont facultatifs, repliés ; et l'on reste sur la page d'où
 // l'on vient (Visites ou la fiche acquéreur), ses messages ouverts aussitôt.
+// La refonte, lot F — les grands boutons de l'avis et de la suite, au dessin du socle (48 px, coins
+// de 14 px) ; le choisi, plein dans la couleur de l'agence, sans le repère des boutons pleins : ce
+// sont des choix, pas le geste de l'écran.
 const big = (on: boolean) =>
-  `flex min-h-12 items-center justify-center rounded-xl border px-3 py-2.5 text-center text-base font-semibold transition-colors ${
+  `flex min-h-12 items-center justify-center rounded-[14px] border-[1.5px] px-3 py-2.5 text-center text-base font-bold transition-colors ${
     on
-      ? 'border-brand bg-brand-deep text-white'
-      : 'border-zinc-300 bg-white text-zinc-800 hover:border-brand stage:border-white/20 stage:bg-transparent stage:text-white/85'
+      ? 'border-brand-deep bg-brand-deep text-white stage:border-white stage:bg-white stage:text-brand-deep'
+      : 'border-[#D5DAEA] bg-white text-brand-darker hover:border-brand-deep stage:border-white/15 stage:bg-white/10 stage:text-white'
   }`;
-const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-    on
-      ? 'border-brand bg-brand-deep text-white'
-      : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand stage:border-white/20 stage:bg-transparent stage:text-white/80'
-  }`;
+// La refonte, lot F — les pastilles à toucher du socle (44 px) : choisie, pleine.
+const chip = (on: boolean) => (on ? chipSelected : chipNeutral);
 const legend = 'text-sm font-semibold text-zinc-800 stage:text-white';
 
 // Mission 146 (partie B) — le formulaire seul : « Visite faite », l'étape ou le lien de la carte
@@ -194,13 +202,13 @@ export function VisitDoneForm({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="submit"
-          className={`${onBuyerPage ? btnSecondary : btnPrimary} min-h-12 px-5 text-base`}
+          className={onBuyerPage ? socleBtnOutline : socleBtnFilled}
           disabled={pending || !opinion || !nextStep}
           data-testid="visit-done-save"
         >
           {pending ? 'Enregistrement…' : 'Enregistrer le compte rendu'}
         </button>
-        <button type="button" className={btnSecondary} onClick={onCancel}>
+        <button type="button" className={socleBtnQuiet} onClick={onCancel}>
           Annuler
         </button>
       </div>

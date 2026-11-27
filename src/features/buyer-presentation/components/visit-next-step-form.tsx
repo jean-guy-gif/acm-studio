@@ -3,17 +3,19 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { btnPrimary, btnSecondary, errorText } from '@/components/ui/styles';
+import {
+  chipNeutral,
+  chipSelected,
+  errorText,
+  socleBtnFilled,
+  socleBtnQuiet,
+} from '@/components/ui/styles';
 import { NEXT_STEP_LABELS } from '@/features/buyer-messages/report';
 import { VISIT_NEXT_STEPS, type VisitNextStep } from '@/features/buyer-messages/templates/types';
 import { changeVisitNextStep } from '@/features/buyer-presentation/actions/visit-requests';
 
-const chip = (on: boolean) =>
-  `rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-    on
-      ? 'border-brand bg-brand-deep text-white'
-      : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand stage:border-white/20 stage:bg-transparent stage:text-white/80'
-  }`;
+// La refonte, lot F — les pastilles à toucher du socle (44 px) : choisie, pleine.
+const chip = (on: boolean) => (on ? chipSelected : chipNeutral);
 
 // Correctif du 13/11 (essai de Jean-Guy) — l'acquéreur change d'avis après la visite : la suite se
 // change sur place, depuis Visites et la fiche acquéreur ; le compte rendu reste. Ouvert, le
@@ -81,13 +83,13 @@ export function VisitNextStepForm({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="submit"
-          className={btnPrimary}
+          className={socleBtnFilled}
           disabled={pending || !nextStep}
           data-testid="visit-change-save"
         >
           {pending ? 'Enregistrement…' : 'Enregistrer la suite'}
         </button>
-        <button type="button" className={btnSecondary} onClick={onCancel}>
+        <button type="button" className={socleBtnQuiet} onClick={onCancel}>
           Annuler
         </button>
       </div>

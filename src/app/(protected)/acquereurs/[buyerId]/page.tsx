@@ -2,19 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import {
-  alertOk,
-  backLink,
-  badgeBrand,
-  btnSecondary,
-  card,
-  link,
-  socleBigStep,
-  socleBtnFilledBig,
-  socleCardBordered,
-  socleKicker,
-  socleStepLink,
-} from '@/components/ui/styles';
+import { alertOk, backLink, badgeBrand, btnSecondary, card, link } from '@/components/ui/styles';
 import { BuyerAnswers } from '@/features/buyer-deck/components/buyer-answers';
 import { BuyerSoftCriteria } from '@/features/buyer-notes/components/buyer-soft-criteria';
 import { VerifyAllBadge } from '@/features/buyer-notes/components/verify-all-badge';
@@ -30,7 +18,7 @@ import { readVisitLines } from '@/features/buyer-presentation/queries/get-visit-
 import { VISIT_OUTCOME_LABELS } from '@/features/buyer-presentation/types';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import { BuyerArchiveButton } from '@/features/buyers/components/buyer-archive-button';
-import { CompromiseActions } from '@/features/buyers/components/compromise-actions';
+import { BuyerNextStepCard } from '@/features/buyers/components/buyer-next-step-card';
 import { getSaleSeller } from '@/features/buyers/queries/get-sale-seller';
 import { AcademiaLinks } from '@/features/academia/components/academia-links';
 import { isDemoAgency } from '@/features/demo/services/is-demo-agency';
@@ -701,59 +689,13 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             sale ? 'lg:row-span-2' : ''
           }`}
         >
-          {/* UNE prochaine étape. La refonte, lot B (maquette REFONTE-4) — la carte du socle :
-              blanche, son sur-titre, ce qu'il y a à faire, puis le seul bouton plein de la fiche. */}
-          <section
-            className={`${socleCardBordered} flex flex-col gap-3 p-[18px] ${sale ? '' : 'lg:flex-1'}`}
-            data-testid="buyer-next-step"
-          >
-            <span className={socleKicker}>Prochaine étape</span>
-            {facts.unread ? (
-              <p role="alert" className="text-sm font-semibold text-red-700 stage:text-red-300">
-                L’avancement de cette fiche n’a pas pu être lu : rechargez la page.
-              </p>
-            ) : (
-              <>
-                <h2 className="text-lg leading-snug font-bold text-brand-darker stage:text-white">
-                  {next.title}
-                </h2>
-                <p className="text-[15px] text-[#5B6380] lg:grow stage:text-white/70">
-                  {next.phrase}
-                </p>
-                {/* Mission 145 — les mandats à lui proposer n'ont pas pu être lus (M98). */}
-                {loopProposals?.failed ? (
-                  <p role="alert" className="text-sm font-semibold text-red-700 stage:text-red-300">
-                    Les mandats à lui proposer n’ont pas pu être lus : rechargez la page.
-                  </p>
-                ) : null}
-                {next.compromiseOfferId ? (
-                  <CompromiseActions
-                    offerId={next.compromiseOfferId}
-                    notifyLabel={next.primary.label}
-                  />
-                ) : (
-                  <>
-                    <Link
-                      href={next.primary.href}
-                      data-testid="buyer-next-button"
-                      className={`${socleBtnFilledBig} ${socleBigStep}`}
-                    >
-                      {next.primary.label}
-                    </Link>
-                    {next.secondary ? (
-                      <Link
-                        href={next.secondary.href}
-                        data-testid="buyer-next-secondary"
-                        className={socleStepLink}
-                      >
-                        {next.secondary.label}
-                      </Link>
-                    ) : null}
-                  </>
-                )}
-              </>
-            )}
-          </section>
+          {/* UNE prochaine étape : la carte du socle, le seul bouton plein de la fiche (lot B). */}
+          <BuyerNextStepCard
+            next={next}
+            unread={facts.unread}
+            loopFailed={loopProposals?.failed ?? false}
+            className={sale ? '' : 'lg:flex-1'}
+          />
 
           {/* Mission 143 (B1) — « Avant le compromis » : coché = fait, lu dans ce qui existe. */}
           {sale ? (

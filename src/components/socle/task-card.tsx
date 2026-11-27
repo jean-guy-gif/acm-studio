@@ -23,6 +23,7 @@ export function PersonMark({
   return (
     <span
       aria-hidden="true"
+      data-testid="person-mark"
       className={`flex flex-none items-center justify-center rounded-full font-extrabold ${
         compact ? 'size-10 text-sm xl:size-11 xl:text-[15px]' : 'size-11 text-[15px]'
       } ${MARK_TONES[tone]}`}

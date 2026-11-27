@@ -4,12 +4,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { badgeBrand, badgeNeutral, btnSecondary, hintText } from '@/components/ui/styles';
+import { hintText, pillGreen, pillNeutral, socleBtnOutline } from '@/components/ui/styles';
 import { prepareBuyerLetter } from '@/features/buyer-prospecting/actions/prepare-buyer-letter';
 import type { BuyerLetterVersion } from '@/features/buyer-prospecting/services/buyer-letter';
 import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting/types';
-
-const small = 'px-3 py-1.5 text-xs';
 
 const PREPARE_LABELS: Record<BuyerLetterVersion, string> = {
   owner: 'Préparer le courrier au propriétaire',
@@ -71,13 +69,13 @@ export function VisitLetterAction({
       <div className="flex flex-wrap items-center gap-2" data-testid="visit-letter">
         {state.kind !== 'none' ? (
           <span
-            className={state.kind === 'done' ? badgeBrand : badgeNeutral}
+            className={state.kind === 'done' ? pillGreen : pillNeutral}
             data-testid="visit-letter-state"
           >
             {state.label}
           </span>
         ) : null}
-        <Link href={letterHref} className={`${btnSecondary} ${small}`}>
+        <Link href={letterHref} className={socleBtnOutline}>
           {colleague ? 'Ouvrir le dossier de collaboration' : 'Ouvrir le courrier'}
         </Link>
         {state.kind !== 'closed' ? (
@@ -141,7 +139,7 @@ export function VisitLetterAction({
           <button
             key={version}
             type="button"
-            className={`${btnSecondary} ${small}`}
+            className={socleBtnOutline}
             disabled={pending}
             onClick={() => prepare(version)}
             data-testid={

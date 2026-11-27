@@ -4,12 +4,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import {
-  btnPrimary,
-  btnSecondary,
   errorText,
   fieldLabel,
   hintText,
   inputBase,
+  socleBtnFilled,
+  socleBtnOutline,
+  socleBtnQuiet,
 } from '@/components/ui/styles';
 import { AGE_WARN_CLASS } from '@/features/academia/components/living-here-field';
 import type { LivingHereAgeLine } from '@/features/academia/services/living-here-age';
@@ -96,7 +97,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
         </label>
         <button
           type="button"
-          className={onBuyerPage ? btnSecondary : btnPrimary}
+          className={onBuyerPage ? socleBtnOutline : socleBtnFilled}
           disabled={pending}
           onClick={() => confirm()}
           data-testid="visit-confirm-prepare"
@@ -121,7 +122,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className={btnSecondary}
+              className={socleBtnQuiet}
               onClick={() => {
                 navigator.clipboard
                   ?.writeText(prepared.message)
@@ -132,13 +133,13 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
               Copier
             </button>
             {hrefs?.sms ? (
-              <a className={btnSecondary} href={hrefs.sms}>
+              <a className={socleBtnQuiet} href={hrefs.sms}>
                 SMS
               </a>
             ) : null}
             {hrefs?.whatsapp ? (
               <a
-                className={btnSecondary}
+                className={socleBtnQuiet}
                 href={hrefs.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -147,7 +148,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
               </a>
             ) : null}
             {hrefs ? (
-              <a className={btnSecondary} href={hrefs.email}>
+              <a className={socleBtnQuiet} href={hrefs.email}>
                 E-mail
               </a>
             ) : null}
@@ -172,7 +173,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
         <div className="flex flex-wrap gap-2" data-testid="visit-confirm-living-here-unread">
           <button
             type="button"
-            className={btnSecondary}
+            className={socleBtnQuiet}
             disabled={pending}
             onClick={() => confirm()}
             data-testid="visit-confirm-retry"
@@ -181,7 +182,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
           </button>
           <button
             type="button"
-            className={btnSecondary}
+            className={socleBtnQuiet}
             disabled={pending}
             onClick={() => confirm(true)}
             data-testid="visit-confirm-without-link"

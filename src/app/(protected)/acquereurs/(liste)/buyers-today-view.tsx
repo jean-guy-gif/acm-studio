@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { ScopeSwitch } from '@/components/socle/scope-switch';
+import { StatTiles } from '@/components/socle/stat-tiles';
 import { LateNote, PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
 import {
   alertError,
@@ -13,14 +14,16 @@ import {
   socleTitle,
 } from '@/components/ui/styles';
 import { proposedBuyerWords } from '@/features/buyer-deck/services/buyer-deck';
+import { BuyerNextStepCard } from '@/features/buyers/components/buyer-next-step-card';
 import { readBuyers } from '@/features/buyers/queries/get-buyers';
+import { loadBuyerTodaySummary } from '@/features/buyers/queries/load-buyer-today-summary';
 import { AGENCY_BUYERS_HREF, ALL_BUYERS_HREF } from '@/features/buyers/services/buyers-page';
 import {
   buyerOthersNote,
   buyersToday,
   buyersTodayCount,
   buyersTodayDetail,
-  buyersTodayThings,
+  buyersTodayTaskCount,
   buyerTaskKey,
   buyerTodayHref,
   watchDeckHref,
@@ -121,10 +124,10 @@ export async function BuyersTodayView({
   const scope = today.scope;
   const allHref = scope === 'agency' ? AGENCY_BUYERS_HREF : ALL_BUYERS_HREF;
   const day = parisDay(new Date());
-  const items = buyersToday(
-    today.board.blocks.flatMap((block) => block.lines.flatMap((line) => line.tasks)),
-    day,
+  const boardTasks = today.board.blocks.flatMap((block) =>
+    block.lines.flatMap((line) => line.tasks),
   );
+  const items = buyersToday(boardTasks, day);
   const mine = read.buyers.filter((buyer) => buyer.advisorId === profile.id);
   const inView = scope === 'agency' ? read.buyers : mine;
   const buyerById = (buyerId: string) => read.buyers.find((buyer) => buyer.id === buyerId) ?? null;
@@ -152,7 +155,7 @@ export async function BuyersTodayView({
             <p className={socleSubtitle} data-testid="buyers-today-count">
               {unread && items.length === 0
                 ? 'Une partie des tâches n’a pas pu être lue'
-                : buyersTodayCount(buyersTodayThings(items))}
+                : buyersTodayCount(buyersTodayTaskCount(boardTasks))}
             </p>
           </div>
           <Link
@@ -290,6 +293,7 @@ export async function BuyersTodayView({
               const buyer = buyerById(selected.buyerId);
               return buyer ? proposedBuyerWords(buyer) : null;
             })()}
+            buyer={buyerById(selected.buyerId)}
             today={today}
             day={day}
             // Des fiches illisibles : ses biens se lisent sur leur page, jamais un lien sans effet.
@@ -318,12 +322,14 @@ export async function BuyersTodayView({
 function BuyerTodayDetail({
   item,
   words,
+  buyer,
   today,
   day,
   watchOnPlace,
 }: {
   item: BuyerTodayItem;
   words: string | null;
+  buyer: Buyer | null;
   today: Today;
   day: string;
   watchOnPlace: boolean;
@@ -351,6 +357,39 @@ function BuyerTodayDetail({
       {item.others.length > 0 ? (
         <OtherTasks tasks={item.others} today={today} day={day} onPlace={watchOnPlace} />
       ) : null}
+
+      {/* La refonte, lot F (Jean-Guy, 26/11) — pas de bien à voir : sous ce qu'il y a à faire
+          aujourd'hui, sa prochaine étape et ses trois chiffres, ceux de sa fiche repliée. Lus à
+          part : la tâche du jour n'attend pas. */}
+      {buyer ? (
+        <Suspense fallback={null}>
+          <BuyerTodaySummary buyer={buyer} />
+        </Suspense>
+      ) : null}
+    </>
+  );
+}
+
+// Sa prochaine étape, en contour (la tâche du jour garde le seul bouton plein), et ses trois
+// chiffres : visités, envoyés en attente, refusés.
+async function BuyerTodaySummary({ buyer }: { buyer: Buyer }) {
+  const summary = await loadBuyerTodaySummary(buyer);
+  if (!summary) return null;
+  return (
+    <>
+      <BuyerNextStepCard
+        next={summary.next}
+        unread={summary.unread}
+        loopFailed={summary.loopFailed}
+        filled={false}
+      />
+      {summary.tiles ? (
+        <StatTiles testId="buyer-today-tiles" tiles={summary.tiles} />
+      ) : (
+        <p role="alert" className={alertError}>
+          Son suivi n’a pas pu être lu : ouvrez sa fiche.
+        </p>
+      )}
     </>
   );
 }

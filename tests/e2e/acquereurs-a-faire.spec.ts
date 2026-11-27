@@ -36,6 +36,32 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
   await login(page, demoCredentials());
   await resetDemoByScreen(page);
 
+  // La refonte, lot F (Jean-Guy, 26/11) — un même chiffre partout : le badge d'« Aujourd'hui » est
+  // le nombre de tâches que liste la page ; « N choses à faire » d'Acquéreurs, sa part (l'Urgent,
+  // les offres, et le bloc Acquéreurs), comptée pareil.
+  let buyersShare = 0;
+  await test.step('Un même chiffre partout : le badge, « Aujourd’hui » et Acquéreurs', async () => {
+    await page.goto('/aujourdhui');
+    const blocks = await page.getByTestId('today-block').evaluateAll((elements) =>
+      elements.map((element) => ({
+        key: element.getAttribute('data-block'),
+        tasks: [...element.querySelectorAll('[data-testid="today-line"]')].reduce(
+          (total, line) => total + Number(line.getAttribute('data-tasks') ?? 0),
+          0,
+        ),
+      })),
+    );
+    const total = blocks.reduce((sum, block) => sum + block.tasks, 0);
+    expect(total, 'La démo a des tâches aujourd’hui').toBeGreaterThan(1);
+    await expect(page.getByTestId('today-summary')).toHaveText(
+      `${total} choses à faire, la plus urgente en premier.`,
+    );
+    await expect(page.getByTestId('today-count')).toHaveText(String(total));
+    buyersShare = blocks
+      .filter((block) => block.key === 'urgent' || block.key === 'buyers')
+      .reduce((sum, block) => sum + block.tasks, 0);
+  });
+
   await test.step('Ordinateur : la liste à gauche, le détail de la première personne à droite', async () => {
     await sideNav(page)
       .getByRole('link', { name: /^Acquéreurs/ })
@@ -51,12 +77,18 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     // Les cartes du téléphone sont là, cachées : la même liste.
     await expect(page.getByTestId('task-card')).toHaveCount(count);
     await expect(page.getByTestId('task-card').first()).toBeHidden();
-    // Le nombre dit toutes les choses à faire : la première de chacun, et celles qui suivent.
+    // Le nombre dit sa part des tâches d'« Aujourd'hui », comptée pareil (lot F) : une tâche qui
+    // concerne deux acquéreurs a deux cartes, mais compte une fois.
     const more = await page.getByTestId('task-card').getByTestId('buyers-today-other').count();
     expect(more, 'Dans la démo, quelqu’un a plusieurs choses à faire').toBeGreaterThanOrEqual(1);
     await expect(page.getByTestId('buyers-today-count')).toHaveText(
-      `${count + more} choses à faire aujourd’hui`,
+      `${buyersShare} choses à faire aujourd’hui`,
     );
+    // Les initiales viennent des noms de famille (lot F) : jamais « M. », « Mme » ni « Famille ».
+    const mark = (name: string) => rows.filter({ hasText: name }).getByTestId('person-mark');
+    await expect(mark('Famille Keller')).toHaveText('K');
+    await expect(mark('M. Girard et Mme Chevalier')).toHaveText('GC');
+    await expect(mark('M. et Mme Rossi')).toHaveText('R');
 
     // La réponse du vendeur à l'offre des Keller est en tête (M138) ; elle est choisie d'emblée.
     await expect(rows.first().getByTestId('person-name')).toHaveText('Famille Keller');
@@ -68,6 +100,18 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     await expect(detail.getByTestId('buyers-today-name')).toHaveText('Famille Keller');
     await expect(detail.getByTestId('buyers-today-task')).toContainText('Offre acceptée');
     // Un seul bouton plein, et il y en a un : le premier geste de la personne choisie.
+    expect(await filledShown(page)).toEqual(['Prévenir l’acquéreur']);
+    // Pas de bien à voir (lot F) : sous ce qu'il y a à faire, sa prochaine étape et ses trois
+    // chiffres, ceux de sa fiche repliée ; la prochaine étape ne prend pas le bouton plein.
+    const next = detail.getByTestId('buyer-next-step');
+    await expect(next).toContainText('Prochaine étape', { timeout: 30_000 });
+    await expect(next.locator('h2')).toHaveText('Lancer le compromis');
+    await expect(detail.getByTestId('buyer-today-tiles').locator(':scope > div')).toHaveCount(3);
+    await expect(detail.getByTestId('buyer-today-tile-visited')).toContainText('Visités');
+    await expect(detail.getByTestId('buyer-today-tile-waiting')).toContainText(
+      'Envoyés, en attente',
+    );
+    await expect(detail.getByTestId('buyer-today-tile-refused')).toContainText('Refusés');
     expect(await filledShown(page)).toEqual(['Prévenir l’acquéreur']);
     await expectOneFilled(page, 'Acquéreurs, à faire aujourd’hui (ordinateur)');
     await expectNoHorizontalScroll(page, 'Acquéreurs, à faire aujourd’hui (1440 × 900)');

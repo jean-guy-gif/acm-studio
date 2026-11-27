@@ -66,14 +66,13 @@ export function sellerTaskWhat(task: SuiviTask, context: SellerTaskContext | und
 
 // Le bouton d'une tâche, dans les mots de la maquette (REFONTE-7) : il ouvre la carte du Suivi sur
 // son geste, comme sur « Aujourd'hui ».
+// Lot F (Jean-Guy, 26/11) — un geste, un nom : « Relancer plus tôt ? » ouvre la même relance.
 export function sellerTaskButton(task: SuiviTask): string {
   switch (task.kind) {
-    case 'follow_up':
-      return 'Préparer la relance';
     case 'market_update':
       return 'Faire le point marché';
     default:
-      return 'Relancer';
+      return 'Préparer la relance';
   }
 }
 
@@ -185,6 +184,15 @@ export function sellersTodayCount(things: number, preparations: number): string 
       ? 'Rien à faire aujourd’hui'
       : `${things} ${things > 1 ? 'choses' : 'chose'} à faire aujourd’hui`;
   return prepared ? `${due} · ${prepared}` : due;
+}
+
+// La refonte, lot F (Jean-Guy, 26/11) — « N choses à faire » sur Vendeurs : sa part des tâches
+// d'« Aujourd'hui » (le bloc « Vendeurs »), comptée comme elle.
+export function sellerTaskCount(board: Pick<TodayBoard, 'blocks'>): number {
+  return (
+    board.blocks.find((block) => block.key === 'sellers')?.lines.flatMap((line) => line.tasks)
+      .length ?? 0
+  );
 }
 
 // L'adresse d'un vendeur dans la liste (tablette, ordinateur) : son détail à droite.

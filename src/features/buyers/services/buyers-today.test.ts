@@ -6,6 +6,7 @@ import {
   buyerOthersNote,
   buyersTodayCount,
   buyersTodayDetail,
+  buyersTodayTaskCount,
   buyersTodayThings,
   buyerTaskKey,
   buyerTaskTone,
@@ -301,6 +302,24 @@ describe('une carte par personne', () => {
     expect(items).toHaveLength(2);
     expect(buyersTodayThings(items)).toBe(3);
     expect(buyersTodayThings([])).toBe(0);
+  });
+
+  // La refonte, lot F (Jean-Guy, 26/11) — un même chiffre partout : « N choses à faire » est la
+  // part d'Acquéreurs des tâches d'« Aujourd'hui », comptée comme elle.
+  it('une tâche qui concerne deux acquéreurs a deux cartes, mais compte une fois', () => {
+    const shared = task({
+      kind: 'buyer_watch',
+      watchBuyers: [
+        { id: 'keller', name: 'Famille Keller' },
+        { id: 'rossi', name: 'M. et Mme Rossi' },
+      ],
+      count: 1,
+    });
+    const seller = task({ kind: 'follow_up', projectId: 'p1', sellerName: 'M. Lambert' });
+    const prospect = task({ kind: 'prospect', projectId: 'p2', count: 2 });
+    const tasks = [shared, recontact, seller, prospect];
+    expect(buyersToday(tasks, TODAY)).toHaveLength(3);
+    expect(buyersTodayTaskCount(tasks)).toBe(2);
   });
 
   // Relecture du lot B — dans la liste, une ligne par personne : ses autres tâches se disent en

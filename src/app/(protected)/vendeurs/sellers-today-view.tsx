@@ -35,6 +35,7 @@ import {
   sellersToday,
   sellersTodayCount,
   sellerTaskButton,
+  sellerTaskCount,
   sellerTaskKey,
   sellerTodayHref,
   type SellerTodayItem,
@@ -157,7 +158,8 @@ export async function SellersTodayView({
   const selected = selectedSeller(items, selectedId);
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
   const unread = today.failed.length > 0;
-  const things = tasks.reduce((total, item) => total + 1 + item.others.length, 0);
+  // La refonte, lot F — sa part des tâches d'« Aujourd'hui », comptée comme elle.
+  const things = sellerTaskCount(today.board);
   const scoped = (href: string) => withScope(href, scope);
 
   return (

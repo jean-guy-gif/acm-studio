@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 
-import { btnSecondary, link } from '@/components/ui/styles';
+import { link, socleBtnOutline } from '@/components/ui/styles';
 import { VisitMessagesPanel } from '@/features/buyer-messages/components/visit-messages-panel';
 import type { VisitNextStep as ReportNextStep } from '@/features/buyer-messages/templates/types';
 import { VisitDoneForm } from '@/features/buyer-presentation/components/visit-done-form';
@@ -13,7 +13,6 @@ import { VisitLetterAction } from '@/features/buyer-prospecting/components/visit
 import type { VisitAction, VisitLetterState } from '@/features/buyer-prospecting/types';
 import { VisitConfirmForm } from '@/features/buyer-presentation/components/visit-confirm-form';
 
-const small = 'px-3 py-1.5 text-xs';
 const linkButton = `${link} text-sm hover:underline`;
 
 const PILL: Record<'done' | 'now' | 'later', string> = {
@@ -105,7 +104,7 @@ export function VisitActions({
       stepAction = projectId ? (
         <Link
           href={`/builder/${projectId}`}
-          className={`${btnSecondary} ${small}`}
+          className={socleBtnOutline}
           data-testid="visit-seller-action"
         >
           Rappeler : « j’ai un acquéreur »
@@ -117,7 +116,7 @@ export function VisitActions({
       stepAction = (
         <button
           type="button"
-          className={`${btnSecondary} ${small}`}
+          className={socleBtnOutline}
           aria-expanded={opened === 'confirm'}
           onClick={() => toggle('confirm')}
           data-testid="visit-confirm-open"
@@ -129,11 +128,7 @@ export function VisitActions({
     case 'voucher':
       phrase = 'Le jour de la visite, faites signer le bon au visiteur.';
       stepAction = (
-        <Link
-          href={voucherHref}
-          className={`${btnSecondary} ${small}`}
-          data-testid="visit-voucher-step"
-        >
+        <Link href={voucherHref} className={socleBtnOutline} data-testid="visit-voucher-step">
           Signer le bon de visite
         </Link>
       );
@@ -143,7 +138,7 @@ export function VisitActions({
       stepAction = (
         <button
           type="button"
-          className={`${btnSecondary} ${small}`}
+          className={socleBtnOutline}
           aria-expanded={opened === 'done'}
           onClick={() => toggle('done')}
           data-testid="visit-done-open"
@@ -154,11 +149,7 @@ export function VisitActions({
       break;
     case 'offer':
       stepAction = (
-        <Link
-          href={offerHref}
-          className={`${btnSecondary} ${small}`}
-          data-testid="visit-offer-open"
-        >
+        <Link href={offerHref} className={socleBtnOutline} data-testid="visit-offer-open">
           Offre d’achat
         </Link>
       );
@@ -167,7 +158,7 @@ export function VisitActions({
       stepAction = (
         <button
           type="button"
-          className={`${btnSecondary} ${small}`}
+          className={socleBtnOutline}
           aria-expanded={opened === 'messages'}
           onClick={() => toggle('messages')}
           data-testid="visit-messages-open"
