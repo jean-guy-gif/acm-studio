@@ -45,7 +45,9 @@ describe('le rond aux initiales', () => {
     expect(initialsOf('Exemple — M. et Mme Démo')).toBe('D');
     // Un nom tapé avec son prénom : une lettre chacun, deux au plus.
     expect(initialsOf('Jean Dupont')).toBe('JD');
-    expect(initialsOf('M. Lambert-Duval et Mme Martin')).toBe('LD');
+    expect(initialsOf('M. Lambert-Duval et Mme Martin')).toBe('LM');
+    // Le rond du compte (prénom et nom) : une lettre chacun, le prénom composé n'en donne qu'une.
+    expect(initialsOf('Jean-Guy Ourmières')).toBe('JO');
     // Rien qu'une civilité : sa première lettre, jamais un rond vide.
     expect(initialsOf('Famille')).toBe('F');
     expect(initialsOf('  ')).toBe('?');

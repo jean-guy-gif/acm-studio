@@ -46,7 +46,6 @@ function groupByBuyer(
 // La refonte, lot F — sa ligne : « 2 visites à planifier · 3 faites ».
 function visitsCount(pending: number, done: number): string {
   const visits = (n: number) => `${n}\u00a0${n > 1 ? 'visites' : 'visite'}`;
-  if (pending === 0 && done === 0) return 'Aucune visite pour l’instant';
   if (pending === 0) return `${visits(done)} ${done > 1 ? 'faites' : 'faite'}`;
   const toPlan = `${visits(pending)} à planifier`;
   return done > 0 ? `${toPlan} · ${done}\u00a0${done > 1 ? 'faites' : 'faite'}` : toPlan;
@@ -88,9 +87,11 @@ export default async function VisitsPage({
     <div className="flex max-w-3xl flex-col gap-5 md:gap-6">
       <div className="flex flex-col gap-0.5">
         <h1 className={`${socleTitle} md:text-[26px] xl:text-[30px]`}>Visites</h1>
-        <p className={socleSubtitle} data-testid="visits-count">
-          {visitsCount(pending.length, done.length)}
-        </p>
+        {lines.length > 0 ? (
+          <p className={socleSubtitle} data-testid="visits-count">
+            {visitsCount(pending.length, done.length)}
+          </p>
+        ) : null}
       </div>
       {offerAnswers == null ? (
         <p role="alert" className={alertError}>
