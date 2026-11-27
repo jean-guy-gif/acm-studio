@@ -122,7 +122,10 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
           <h2 className="flex items-baseline gap-2 font-title text-xl font-bold text-brand-darker stage:text-white">
             {TODAY_BLOCK_TITLES[block.key]}
             <small className="font-sans text-xs font-semibold text-zinc-500 stage:text-white/60">
-              · {TODAY_BLOCK_NOTES[block.key] ?? block.lines.length}
+              {/* La refonte, lot F — un même chiffre partout : les tâches du bloc, pas ses lignes. */}
+              ·{' '}
+              {TODAY_BLOCK_NOTES[block.key] ??
+                block.lines.reduce((total, line) => total + line.tasks.length, 0)}
             </small>
           </h2>
           <ol className="flex flex-col divide-y divide-zinc-100 stage:divide-white/10">

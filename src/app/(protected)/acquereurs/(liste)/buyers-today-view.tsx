@@ -354,17 +354,17 @@ function BuyerTodayDetail({
         </div>
       </div>
 
-      {item.others.length > 0 ? (
-        <OtherTasks tasks={item.others} today={today} day={day} onPlace={watchOnPlace} />
-      ) : null}
-
-      {/* La refonte, lot F (Jean-Guy, 26/11) — pas de bien à voir : sous ce qu'il y a à faire
-          aujourd'hui, sa prochaine étape et ses trois chiffres, ceux de sa fiche repliée. Lus à
-          part : la tâche du jour n'attend pas. */}
+      {/* La refonte, lot F (Jean-Guy, 26/11) — pas de bien à voir : sous sa tâche du jour, sa
+          prochaine étape et ses trois chiffres, ceux de sa fiche repliée. Lus à part : la tâche du
+          jour n'attend pas. */}
       {buyer ? (
         <Suspense fallback={null}>
           <BuyerTodaySummary buyer={buyer} />
         </Suspense>
+      ) : null}
+
+      {item.others.length > 0 ? (
+        <OtherTasks tasks={item.others} today={today} day={day} onPlace={watchOnPlace} />
       ) : null}
     </>
   );

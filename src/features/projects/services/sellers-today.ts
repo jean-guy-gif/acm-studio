@@ -13,7 +13,8 @@ import type { TodayBoard } from '@/features/today/services/today-board';
 // bloc « Vendeurs » d'« Aujourd'hui » (M130 A, M145 B), « Mes tâches », mêmes règles, mêmes gestes :
 // la relance d'un vendeur à relancer, « Relancer plus tôt ? », le Point marché d'un mandat signé.
 // Aucune règle nouvelle ; un dossier en préparation n'a pas de tâche du jour (la date du
-// rendez-vous n'est pas en base) : il est sous « Tous mes vendeurs ». Pur.
+// rendez-vous n'est pas en base) : il a sa carte « Préparation en cours », plus bas, à part des
+// tâches (remarques de Jean-Guy, 26/11). Pur.
 
 // Ce que la ligne d'une tâche sait du dossier (le motif de relance, la signature du mandat).
 export type SellerTaskContext = { motiveLabel: string | null; signedOn: string | null };

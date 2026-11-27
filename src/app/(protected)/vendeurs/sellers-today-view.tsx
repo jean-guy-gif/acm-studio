@@ -25,7 +25,7 @@ import {
 } from '@/features/projects/components/project-summary';
 import { OverviewSteps } from '@/features/projects/components/overview-steps';
 import { countSellerProjects } from '@/features/projects/queries/count-seller-projects';
-import { getPreparationDossiers } from '@/features/projects/queries/get-preparation-dossiers';
+import { readPreparationDossiers } from '@/features/projects/queries/get-preparation-dossiers';
 import { loadProjectSummary } from '@/features/projects/queries/load-project-summary';
 import { nextDossierAction } from '@/features/projects/services/dossier-steps';
 import {
@@ -126,7 +126,7 @@ export async function SellersTodayView({
   const [today, counts, drafts, profile] = await Promise.all([
     getToday(asked),
     countSellerProjects(),
-    getPreparationDossiers(false),
+    readPreparationDossiers(false),
     getProfile(),
   ]);
   if (!today || !profile) notFound();
@@ -135,11 +135,12 @@ export async function SellersTodayView({
   const scope = today.scope;
   const tasks = sellersToday(today.board, (projectId) => today.context.get(projectId), day);
   const preparations = preparationItems(
-    drafts.map(({ project, readiness }) => ({
+    drafts.dossiers.map(({ project, readiness, lastActivityAt }) => ({
       projectId: project.id,
       name: project.seller_name,
       status: project.status,
-      updatedAt: project.updated_at,
+      // La dernière fois que le dossier a été travaillé (son bien, ses concurrents, sa décision).
+      updatedAt: lastActivityAt,
       advisorId: project.advisor_id,
       isExample: project.is_example,
       href: nextDossierAction(project.id, {
@@ -157,7 +158,7 @@ export async function SellersTodayView({
   const items = [...tasks, ...preparations];
   const selected = selectedSeller(items, selectedId);
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
-  const unread = today.failed.length > 0;
+  const unread = today.failed.length > 0 || drafts.failed;
   // La refonte, lot F — sa part des tâches d'« Aujourd'hui », comptée comme elle.
   const things = sellerTaskCount(today.board);
   const scoped = (href: string) => withScope(href, scope);
@@ -217,6 +218,11 @@ export async function SellersTodayView({
             {message}
           </p>
         ))}
+        {drafts.failed ? (
+          <p role="alert" className={alertError}>
+            Les dossiers en préparation n’ont pas pu être lus : rechargez la page.
+          </p>
+        ) : null}
 
         {/* Sur téléphone : une carte par vendeur, son bouton dessous. Un seul bouton plein, celui de
             la première carte : les autres restent en contour. Son nom mène à son dossier. */}

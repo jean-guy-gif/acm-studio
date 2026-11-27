@@ -51,9 +51,9 @@ export function initialsOf(name: string): string {
   );
   // Rien d'autre qu'une civilité (« Famille ») : sa première lettre, plutôt qu'un rond vide.
   if (family.length === 0) return letters(words[0]!).charAt(0).toUpperCase() || '?';
-  // Un nom composé (« Lambert-Duval ») : une lettre par partie.
-  const parts = family
-    .flatMap((word) => word.split(/[-‐–]+/))
+  // Un seul nom de famille, composé (« Lambert-Duval ») : une lettre par partie. Plusieurs mots
+  // (« Girard … Chevalier », un prénom et un nom comme « Jean-Guy Ourmières ») : une lettre par mot.
+  const parts = (family.length === 1 ? family[0]!.split(/[-‐–]+/) : family.map((word) => word))
     .map(letters)
     .filter(Boolean);
   return parts
