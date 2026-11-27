@@ -67,7 +67,7 @@ export function projectTiles(input: {
       input.readyBuyers == null
         ? {
             value: '?',
-            label: 'Acquéreurs prêts : non lus',
+            label: 'Acquéreurs prêts\u00a0: non lus',
             tone: 'watch',
             testId: 'project-tile-buyers',
           }

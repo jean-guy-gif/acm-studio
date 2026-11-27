@@ -63,12 +63,12 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
     return {
       ok: false,
       error:
-        'Le bon est incomplet : vérifiez la civilité, le prénom et le nom du visiteur, les biens et la signature.',
+        'Le bon est incomplet\u00a0: vérifiez la civilité, le prénom et le nom du visiteur, les biens et la signature.',
     };
   }
   const input = parsed.data;
   if (input.signatures.length !== input.visitors.length) {
-    return { ok: false, error: 'Chaque visiteur signe : une signature par visiteur.' };
+    return { ok: false, error: 'Chaque visiteur signe\u00a0: une signature par visiteur.' };
   }
   const read = await getVoucherContext(input.buyerId);
   if (!read.ok) return { ok: false, error: read.error };
@@ -76,7 +76,7 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   if (!context.agency) {
     return {
       ok: false,
-      error: `Identité légale de l’agence à compléter (Administration → Identité) : ${context.gaps.join(', ')}.`,
+      error: `Identité légale de l’agence à compléter (Administration → Identité)\u00a0: ${context.gaps.join(', ')}.`,
     };
   }
   const visits = new Map(context.visits.map((visit) => [visit.visitId, visit]));
@@ -127,7 +127,7 @@ export async function signVisitVoucher(raw: unknown): Promise<SignVoucherResult>
   }
   const signatures = input.signatures.map(decodeSignature);
   if (signatures.some((bytes) => bytes == null)) {
-    return { ok: false, error: 'La signature n’a pas pu être lue : signez de nouveau.' };
+    return { ok: false, error: 'La signature n’a pas pu être lue\u00a0: signez de nouveau.' };
   }
 
   const admin = createServiceRoleClient();

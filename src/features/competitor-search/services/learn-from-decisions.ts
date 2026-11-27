@@ -146,7 +146,7 @@ export function learnFromDecisions(
   // Un plancher au-dessus du plafond signifie des décisions contradictoires :
   // on préfère ne rien appliquer plutôt que d'écarter toute la fourchette.
   if (priceFloor != null && priceCeiling != null && priceFloor >= priceCeiling) {
-    notes.push('Vos décisions de prix se contredisent : aucune limite n’a été retenue.');
+    notes.push('Vos décisions de prix se contredisent\u00a0: aucune limite n’a été retenue.');
     priceFloor = null;
     priceCeiling = null;
   }
@@ -162,7 +162,7 @@ export function learnFromDecisions(
     // trouvé un concurrent valable.
     if (count >= MIN_AGREEING && !acceptedDistricts.has(district)) {
       demotedDistricts.push(district);
-      notes.push(`Vous écartez régulièrement le quartier « ${district} ».`);
+      notes.push(`Vous écartez régulièrement le quartier «\u00a0${district}\u00a0».`);
     }
   }
 

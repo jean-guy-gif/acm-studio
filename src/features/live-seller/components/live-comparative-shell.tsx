@@ -206,7 +206,10 @@ export function LiveComparativeShell({
         if (!r.ok) {
           console.error('[live] enregistrement échoué', { key, error: r.error });
           // Mission 100 — au journal des erreurs ; l'écran du vendeur ne change pas (M92).
-          signalClientError('live', `Enregistrement de fond échoué (${key}) : ${r.error ?? ''}`);
+          signalClientError(
+            'live',
+            `Enregistrement de fond échoué (${key})\u00a0: ${r.error ?? ''}`,
+          );
         }
         const retry = () => retriesRef.current.get(key)?.();
         setSaves((s) => ({

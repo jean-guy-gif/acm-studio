@@ -19,26 +19,26 @@ import { addressKey } from '@/features/prospecting/services/address-key';
 export const MANUAL_OPPOSITION_MAX_LENGTH = 200;
 
 export const MANUAL_OPPOSITION_INCOMPLETE =
-  'Saisissez l’adresse complète : numéro, rue, code postal, ville.';
+  'Saisissez l’adresse complète\u00a0: numéro, rue, code postal, ville.';
 export const MANUAL_OPPOSITION_NO_COMMUNE =
-  'Ajoutez le code postal, ou la ville après une virgule : sans commune, l’adresse ne bloquerait rien.';
+  'Ajoutez le code postal, ou la ville après une virgule\u00a0: sans commune, l’adresse ne bloquerait rien.';
 export const MANUAL_OPPOSITION_UNKNOWN_POSTAL_CODE =
-  'Ce code postal n’est pas reconnu : vérifiez l’adresse.';
+  'Ce code postal n’est pas reconnu\u00a0: vérifiez l’adresse.';
 export const MANUAL_OPPOSITION_UNKNOWN_COMMUNE =
-  'Cette commune n’est pas reconnue : vérifiez son nom, ou ajoutez le code postal.';
+  'Cette commune n’est pas reconnue\u00a0: vérifiez son nom, ou ajoutez le code postal.';
 export const MANUAL_OPPOSITION_MISMATCH =
-  'La ville ne correspond pas au code postal : vérifiez l’adresse.';
+  'La ville ne correspond pas au code postal\u00a0: vérifiez l’adresse.';
 export const MANUAL_OPPOSITION_ARRONDISSEMENT =
-  'Indiquez l’arrondissement, ou le code postal : la ville seule ne bloquerait rien.';
+  'Indiquez l’arrondissement, ou le code postal\u00a0: la ville seule ne bloquerait rien.';
 export const MANUAL_OPPOSITION_CHOOSE =
-  'Ce code postal couvre plusieurs communes : choisissez la commune.';
+  'Ce code postal couvre plusieurs communes\u00a0: choisissez la commune.';
 // Mission 104 — le service ne répond pas, et seule la commune manquait : il faut la taper.
 export const MANUAL_OPPOSITION_UNAVAILABLE =
-  'Service des communes indisponible : tapez le nom de la commune.';
+  'Service des communes indisponible\u00a0: tapez le nom de la commune.';
 export const COMMUNE_UNVERIFIED_LABEL = 'commune non vérifiée';
 // Mission 108 — l'adresse saisie par le conseiller : pas de liste de communes à l'écran.
 export const TYPED_ADDRESS_CHOOSE_COMMUNE =
-  'Ce code postal couvre plusieurs communes : ajoutez le nom de la commune après une virgule.';
+  'Ce code postal couvre plusieurs communes\u00a0: ajoutez le nom de la commune après une virgule.';
 
 export type ManualAddressParts = {
   // « 14 chemin des Oliviers » — le numéro et la voie, tels que tapés.

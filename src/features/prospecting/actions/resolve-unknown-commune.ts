@@ -52,7 +52,10 @@ export async function correctOppositionCommune(
   const geo = await geoProviderFor(s.profile.agency_id);
   const found = await geo.fetchCommunes({ name: manualCommuneLookupName(commune) });
   if (found == null) {
-    return { ok: false, error: 'Service des communes indisponible : réessayez dans un instant.' };
+    return {
+      ok: false,
+      error: 'Service des communes indisponible\u00a0: réessayez dans un instant.',
+    };
   }
   const key = correctedOppositionKey({
     addressKey: s.row.address_key,
@@ -64,7 +67,7 @@ export async function correctOppositionCommune(
     return {
       ok: false,
       error:
-        'Commune non reconnue : vérifiez son nom (et l’arrondissement à Paris, Lyon, Marseille).',
+        'Commune non reconnue\u00a0: vérifiez son nom (et l’arrondissement à Paris, Lyon, Marseille).',
     };
   }
   const { error: insertError } = await s.admin

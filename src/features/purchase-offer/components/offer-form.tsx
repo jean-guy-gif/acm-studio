@@ -175,7 +175,7 @@ export function OfferForm({
           />
         ) : (
           <p role="alert" className={errorText}>
-            Les liens n’ont pas pu être créés : rechargez la page de l’offre.
+            Les liens n’ont pas pu être créés&nbsp;: rechargez la page de l’offre.
           </p>
         )}
         <Link
@@ -314,7 +314,7 @@ export function OfferForm({
             contractDeadline,
             signatures: signatures.slice(0, offrants.length),
             approved,
-          }).catch(() => ({ ok: false as const, error: 'Connexion perdue : réessayez.' }));
+          }).catch(() => ({ ok: false as const, error: 'Connexion perdue\u00a0: réessayez.' }));
           if (!result.ok) {
             setError(result.error);
             return;
@@ -374,7 +374,7 @@ export function OfferForm({
             <OutsideTitleFields
               draft={title}
               onChange={setTitle}
-              missingText="Choisissez à quel titre vous intervenez : sans lui, l’offre ne se prépare pas."
+              missingText="Choisissez à quel titre vous intervenez&nbsp;: sans lui, l’offre ne se prépare pas."
               colleagueHint={
                 visit?.suggestion?.kind === 'colleague' && !visit.suggestion.agency
                   ? 'Collaboration obtenue, sur sa carte de Prospection.'
@@ -386,7 +386,7 @@ export function OfferForm({
             />
             {visit?.propertyAddress ? (
               <p className="text-sm text-zinc-700" data-testid="offer-outside-address-known">
-                Adresse du bien : {visit.propertyAddress}
+                Adresse du bien&nbsp;: {visit.propertyAddress}
               </p>
             ) : (
               input('Adresse du bien', outsideAddress, setOutsideAddress, {
@@ -405,7 +405,7 @@ export function OfferForm({
           </>
         ) : visit?.mandateNumber ? (
           <p className="text-sm text-zinc-700" data-testid="offer-mandate-known">
-            N° de mandat : {visit.mandateNumber}
+            N° de mandat&nbsp;: {visit.mandateNumber}
           </p>
         ) : (
           input('N° de mandat', mandateNumber, setMandateNumber, { testId: 'offer-mandate' })
@@ -439,9 +439,10 @@ export function OfferForm({
                   })
                 }
               >
-                Reprendre « {visitor(context.lastVoucher.visitors[index]!)} » du bon de visite :
-                prénoms « {voucherVisitorName(context.lastVoucher.visitors[index]!).firstNames} »,
-                nom « {voucherVisitorName(context.lastVoucher.visitors[index]!).lastName} »
+                Reprendre «&nbsp;{visitor(context.lastVoucher.visitors[index]!)}&nbsp;» du bon de
+                visite&nbsp;: prénoms «&nbsp;
+                {voucherVisitorName(context.lastVoucher.visitors[index]!).firstNames}&nbsp;», nom
+                «&nbsp;{voucherVisitorName(context.lastVoucher.visitors[index]!).lastName}&nbsp;»
               </button>
             ) : null}
             <label className="flex flex-col gap-1">
@@ -514,7 +515,7 @@ export function OfferForm({
         )}
         {input('Adresse des offrants', address, setAddress, { testId: 'offer-address' })}
         {input('Situation matrimoniale et régime (facultatif)', matrimonial, setMatrimonial, {
-          hint: '« mariés sous le régime de la communauté réduite aux acquêts le 12/06/2010 à Lyon »',
+          hint: '«\u00a0mariés sous le régime de la communauté réduite aux acquêts le 12/06/2010 à Lyon\u00a0»',
         })}
         <fieldset className="flex flex-wrap gap-4 text-sm">
           <legend className={fieldLabel}>Résidence fiscale</legend>
@@ -576,7 +577,7 @@ export function OfferForm({
           hint: inWords(euros(deposit)),
         })}
         <p className={hintText}>
-          Financement : sans prêt.
+          Financement&nbsp;: sans prêt.
           {OFFRE_AVEC_PRET_VALIDEE
             ? ''
             : ' L’offre avec prêt sera proposée une fois sa clause validée par le juriste.'}
@@ -631,7 +632,7 @@ export function OfferForm({
         </button>
         {input('Contenance totale', totalArea, setTotalArea, {
           testId: 'offer-total-area',
-          hint: '« 18 a 40 ca »',
+          hint: '«\u00a018 a 40 ca\u00a0»',
         })}
         {condominium ? (
           <>

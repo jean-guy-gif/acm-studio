@@ -143,5 +143,5 @@ export function cardCopy(card: ProspectingCard, sellerId: string | null): Prospe
 export function sellersLabel(sellers: ProspectingSeller[]): string {
   return sellers
     .map((seller) => (seller.label ? `${seller.name} · ${seller.label}` : seller.name))
-    .join(' ; ');
+    .join('\u202f; ');
 }

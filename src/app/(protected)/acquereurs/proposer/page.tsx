@@ -112,7 +112,7 @@ export default async function ProposePropertyPage({ searchParams }: ProposePageP
         </p>
       ) : failed || !item || !loop ? (
         <p role="alert" className={alertError}>
-          Les acquéreurs n’ont pas pu être lus pour l’instant : rechargez la page.
+          Les acquéreurs n’ont pas pu être lus pour l’instant&nbsp;: rechargez la page.
         </p>
       ) : (
         <ProposeSeries

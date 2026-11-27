@@ -15,11 +15,13 @@ import type {
 // promet : combien de mandats, dont combien d'exclusifs, et à quel prix.
 
 export const OUTCOME_REQUIRED_MESSAGE =
-  'Choisissez une issue : Mandat signé, À relancer, Vendu ailleurs ou Retiré de la vente.';
-export const MANDATE_TYPE_REQUIRED_MESSAGE = 'Mandat signé : indiquez s’il est exclusif ou simple.';
-export const PRICE_REQUIRED_MESSAGE = 'Mandat signé : indiquez le prix de commercialisation.';
-export const MOTIVE_REQUIRED_MESSAGE = 'À relancer : choisissez un motif de relance.';
-export const MOTIVE_DETAIL_REQUIRED_MESSAGE = 'Motif « Autre » : précisez-le en une ligne.';
+  'Choisissez une issue\u00a0: Mandat signé, À relancer, Vendu ailleurs ou Retiré de la vente.';
+export const MANDATE_TYPE_REQUIRED_MESSAGE =
+  'Mandat signé\u00a0: indiquez s’il est exclusif ou simple.';
+export const PRICE_REQUIRED_MESSAGE = 'Mandat signé\u00a0: indiquez le prix de commercialisation.';
+export const MOTIVE_REQUIRED_MESSAGE = 'À relancer\u00a0: choisissez un motif de relance.';
+export const MOTIVE_DETAIL_REQUIRED_MESSAGE =
+  'Motif «\u00a0Autre\u00a0»\u00a0: précisez-le en une ligne.';
 export const PRICE_INVALID_MESSAGE = 'Saisissez un prix de commercialisation valide.';
 
 // Ce que la base sait déjà du dossier au moment du geste.

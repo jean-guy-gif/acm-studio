@@ -187,7 +187,7 @@ export function bothRhythmsLabel(
   accelerated: Pick<LiveSequence, 'estimatedMinutes'>,
   complete: Pick<LiveSequence, 'estimatedMinutes'>,
 ): string {
-  return `${RHYTHM_SHORT.accelerated} : ${durationLabel(accelerated)} · ${RHYTHM_SHORT.complete} : ${durationLabel(complete)}`;
+  return `${RHYTHM_SHORT.accelerated}\u00a0: ${durationLabel(accelerated)} · ${RHYTHM_SHORT.complete}\u00a0: ${durationLabel(complete)}`;
 }
 
 // Mission 92 — « 7 concurrents : environ 46 minutes de Live. Nous conseillons 6 au plus. »
@@ -199,5 +199,5 @@ export function tooManyCompetitorsNote(
   if (competitorCount <= ADVISED_MAX_COMPETITORS) {
     return null;
   }
-  return `${competitorCount} concurrents : environ ${sequence.estimatedMinutes} minutes de Live. Nous conseillons ${ADVISED_MAX_COMPETITORS} au plus.`;
+  return `${competitorCount} concurrents\u00a0: environ ${sequence.estimatedMinutes} minutes de Live. Nous conseillons ${ADVISED_MAX_COMPETITORS} au plus.`;
 }

@@ -23,7 +23,7 @@ export function SellerResponse({ token, validUntil }: { token: string; validUnti
     startTransition(async () => {
       const result = await respondToOffer(token, payload).catch(() => ({
         ok: false as const,
-        error: 'Connexion perdue : réessayez.',
+        error: 'Connexion perdue\u00a0: réessayez.',
       }));
       if (!result.ok) {
         setError(result.error);
@@ -45,7 +45,7 @@ export function SellerResponse({ token, validUntil }: { token: string; validUnti
       <h2 className="font-title text-lg font-bold text-zinc-900">Votre réponse</h2>
       <p className="text-sm text-zinc-600">
         L’offre est valable jusqu’au {validUntil} inclus. Pour l’accepter, chaque propriétaire écrit
-        son nom et signe « Bon pour acceptation ».
+        son nom et signe «&nbsp;Bon pour acceptation&nbsp;».
       </p>
       {signers.map((name, index) => (
         <div key={index} className="flex flex-col gap-2">
@@ -101,7 +101,7 @@ export function SellerResponse({ token, validUntil }: { token: string; validUnti
         </button>
         {confirmRefusal ? (
           <span className="flex flex-wrap items-center gap-2" role="group">
-            <span className="text-sm font-medium text-zinc-800">Refuser cette offre ?</span>
+            <span className="text-sm font-medium text-zinc-800">Refuser cette offre&#x202f;?</span>
             <button
               type="button"
               className={btnSecondary}

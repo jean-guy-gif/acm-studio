@@ -98,7 +98,7 @@ export function RefreshPricesButton({
       await conclude();
       router.refresh();
     } catch {
-      setMessage('La mise à jour s’est interrompue : réessayez.');
+      setMessage('La mise à jour s’est interrompue\u00a0: réessayez.');
     } finally {
       setProgress(null);
       setBusy(false);

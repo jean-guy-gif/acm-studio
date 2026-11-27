@@ -151,13 +151,13 @@ describe('le lien du dossier sur téléphone', () => {
   it('pas encore répondu : le déroulé, et « Télécharger en PDF » à la fin', () => {
     const page = render();
     expect(page).toContain('data-testid="dossier-phone-deck"');
-    expect(page).toContain('Vous m’avez dit :');
+    expect(page).toContain('Vous m’avez dit\u00a0:');
     expect(page).not.toContain('data-testid="dossier-thanks"');
     // Essai de Jean-Guy (26/10) : le premier écran est une couverture, avec un seul bouton
     // principal ; « Précédent » / « Suivant » n'y sont pas montrés.
     expect(page).toContain('data-testid="dossier-link-cover"');
     expect(page).toContain('Votre sélection du 24/10/2026');
-    expect(page).toContain('Votre conseiller : Carl Conseiller');
+    expect(page).toContain('Votre conseiller\u00a0: Carl Conseiller');
     expect(page).toContain('Voir ma sélection →');
     expect(page).toMatch(/<nav hidden=""[^>]*data-testid="dossier-nav"/);
   });
@@ -170,7 +170,7 @@ describe('le lien du dossier sur téléphone', () => {
     });
     expect(page).toContain('Merci, j’ai bien reçu votre réponse');
     expect(page).toContain('data-testid="dossier-recap-item"');
-    expect(page).toContain('Vos créneaux : Dimanche');
+    expect(page).toContain('Vos créneaux\u00a0: Dimanche');
     expect(page).not.toContain('data-testid="dossier-send"');
     expect(page).not.toContain('data-testid="dossier-phone-deck"');
     expect(page).toContain('Télécharger en PDF');
@@ -219,7 +219,7 @@ describe('le lien du dossier sur téléphone', () => {
     expect(page).toContain('Ce que nous avons vu ensemble');
     expect(page).toContain('Je veux le visiter');
     expect(page).toContain('Pas pour moi');
-    expect(page).toContain('Vos créneaux : Samedi matin');
+    expect(page).toContain('Vos créneaux\u00a0: Samedi matin');
     // Le numéro tient sur une ligne (rendus du 26/10) et s'appelle d'un toucher (M143, I11).
     expect(page).toMatch(
       /Carl Conseiller(<!-- -->)? · <a href="tel:0611223344" class="[^"]*whitespace-nowrap[^"]*"[^>]*>06 11 22 33 44<\/a>/,

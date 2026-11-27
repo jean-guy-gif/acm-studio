@@ -100,13 +100,13 @@ export const FRENCH_STUDY: StudyTexts = {
           : '';
       return `${first ? `${first} ` : ''}Chaque chiffre a sa source et sa date.`;
     },
-    valueTitle: (kind) => `Et la valeur de votre ${NOUNS[kind].one} ?`,
+    valueTitle: (kind) => `Et la valeur de votre ${NOUNS[kind].one}\u202f?`,
     value: (price, proposed) =>
-      `Cette étude ne la calcule pas : elle montre le marché tel que vos acheteurs le voient. ${
+      `Cette étude ne la calcule pas\u00a0: elle montre le marché tel que vos acheteurs le voient. ${
         price
           ? proposed
-            ? `Le prix proposé : ${price}.`
-            : `Le prix, nous l’avons retenu ensemble : ${price}.`
+            ? `Le prix proposé\u00a0: ${price}.`
+            : `Le prix, nous l’avons retenu ensemble\u00a0: ${price}.`
           : 'Le prix, nous le fixerons ensemble.'
       }`,
   },
@@ -125,12 +125,12 @@ export const FRENCH_STUDY: StudyTexts = {
       const they = n.feminine ? 'elles' : 'eux';
       if (inSale === 0) return `Voici ${n.feminine ? 'chacune' : 'chacun'}, face à votre ${n.one}.`;
       if (inSale === 1)
-        return `${prices ? `Son prix affiché : ${prices.from}. ` : ''}C’est ${
+        return `${prices ? `Son prix affiché\u00a0: ${prices.from}. ` : ''}C’est ${
           n.feminine ? 'elle' : 'lui'
-        } que vos acheteurs visitent aussi : ${n.feminine ? 'la' : 'le'} voici, face à votre ${n.one}.`;
+        } que vos acheteurs visitent aussi\u00a0: ${n.feminine ? 'la' : 'le'} voici, face à votre ${n.one}.`;
       return `${
         prices && prices.from !== prices.to ? `De ${prices.from} à ${prices.to}. ` : ''
-      }Ce sont ${they} que vos acheteurs visitent aussi : voici ${
+      }Ce sont ${they} que vos acheteurs visitent aussi\u00a0: voici ${
         n.feminine ? 'chacune' : 'chacun'
       }, face à votre ${n.one}.`;
     },
@@ -147,7 +147,7 @@ export const FRENCH_STUDY: StudyTexts = {
       const parts: string[] = [];
       if (advantaged > 0 && against)
         parts.push(
-          `${cap(word(advantaged, n.feminine))} ${advantaged > 1 ? 'ont' : 'a'} un avantage sur ${yours(n)} : ${against}.`,
+          `${cap(word(advantaged, n.feminine))} ${advantaged > 1 ? 'ont' : 'a'} un avantage sur ${yours(n)}\u00a0: ${against}.`,
         );
       if (weaker > 0 && strong)
         parts.push(
@@ -161,7 +161,7 @@ export const FRENCH_STUDY: StudyTexts = {
                   ? 'l’une d’entre elles'
                   : 'l’un d’entre eux'
                 : `${word(weaker, n.feminine)} d’entre ${n.feminine ? 'elles' : 'eux'}`
-          } : ${strong}.`,
+          }\u00a0: ${strong}.`,
         );
       if (parts.length === 0)
         parts.push(
@@ -179,10 +179,10 @@ export const FRENCH_STUDY: StudyTexts = {
       const it = n.feminine ? 'la' : 'le';
       const first =
         shown === 1
-          ? `Vos acheteurs ne verront pas votre ${n.one} ${alone} : ils ${it} compareront à ${
+          ? `Vos acheteurs ne verront pas votre ${n.one} ${alone}\u00a0: ils ${it} compareront à ${
               n.feminine ? 'celle-ci' : 'celui-ci'
             }.`
-          : `Vos acheteurs ne verront pas votre ${n.one} ${alone} : ils ${it} compareront à ${
+          : `Vos acheteurs ne verront pas votre ${n.one} ${alone}\u00a0: ils ${it} compareront à ${
               shown <= 10 ? `ces ${word(shown, n.feminine)}-là` : `ces ${shown} ${n.many}`
             }.`;
       const bigger = (count: number) => `plus grand${n.feminine ? 'e' : ''}${count > 1 ? 's' : ''}`;
@@ -197,15 +197,15 @@ export const FRENCH_STUDY: StudyTexts = {
             ? `${n.feminine ? 'Elle' : 'Il'} n’a pas d’avantage sur ${yours(n)} dans ce que dit l’annonce`
             : `${n.feminine ? 'Aucune' : 'Aucun'} n’a d’avantage sur ${yours(n)} dans ce que disent les annonces`;
       const third = strengths
-        ? ` ; ${yours(n)} a pour ${n.feminine ? 'elle' : 'lui'} ${strengths}. C’est ce que l’annonce doit montrer.`
+        ? `\u202f; ${yours(n)} a pour ${n.feminine ? 'elle' : 'lui'} ${strengths}. C’est ce que l’annonce doit montrer.`
         : `. L’annonce doit montrer ce qui fera choisir ${yours(n)}.`;
       return `${first} ${second}${third}`;
     },
     source: (day) =>
       `Annonces telles que connues le ${day}. Prix affichés, pas des prix de vente. Surfaces et caractéristiques telles qu’annoncées, à vérifier.`,
     faceTo: (kind) => `Face à votre ${NOUNS[kind].one}`,
-    youValue: (value) => `(vous : ${value})`,
-    equivalentOn: (criteria) => `Équivalent sur : ${criteria}.`,
+    youValue: (value) => `(vous\u00a0: ${value})`,
+    equivalentOn: (criteria) => `Équivalent sur\u00a0: ${criteria}.`,
     equivalentAll: (kind) =>
       `${NOUNS[kind].feminine ? 'Équivalente' : 'Équivalent'} à votre ${NOUNS[kind].one} sur tous les critères.`,
     criterion: {
@@ -261,7 +261,7 @@ export const FRENCH_STUDY: StudyTexts = {
       const signed = !prices
         ? ''
         : count === 1 || prices.from === prices.to
-          ? ` ${count === 1 ? 'Un prix signé' : 'Des prix signés'} chez le notaire : ${prices.from}.`
+          ? ` ${count === 1 ? 'Un prix signé' : 'Des prix signés'} chez le notaire\u00a0: ${prices.from}.`
           : ` Des prix signés chez le notaire, de ${prices.from} à ${prices.to}.`;
       return `${scope}.${signed}`;
     },
@@ -281,7 +281,7 @@ export const FRENCH_STUDY: StudyTexts = {
               : likeness
                 ? `J’en ai retenu ${word(kept, true)}, celles qui ressemblent le plus à votre ${
                     NOUNS[kind].one
-                  }${likeness.facts ? ` : ${likeness.facts}` : ''}.`
+                  }${likeness.facts ? `\u00a0: ${likeness.facts}` : ''}.`
                 : `J’en ai retenu ${word(kept, true)}, les plus récentes.`
           }`,
     tableTitle: (count, kept, kind, likeness) =>
@@ -299,7 +299,7 @@ export const FRENCH_STUDY: StudyTexts = {
           : likeness.rooms
             ? 'Choisies sur le nombre de pièces'
             : 'Choisies sur la surface'
-      }${likeness.facts ? ` : ${likeness.facts}` : ''}.`,
+      }${likeness.facts ? `\u00a0: ${likeness.facts}` : ''}.`,
     legendKept: (kept) =>
       kept === 1
         ? 'la vente retenue, numérotée comme le tableau'
@@ -308,7 +308,7 @@ export const FRENCH_STUDY: StudyTexts = {
     readTitle: 'Comment lire ces chiffres',
     read: [
       'Ce sont des prix de vente réels, pas des prix d’annonce.',
-      'Une vente ancienne s’est signée aux prix de son année : le marché a bougé depuis.',
+      'Une vente ancienne s’est signée aux prix de son année\u00a0: le marché a bougé depuis.',
       'Les ventes des derniers mois ne sont pas encore toutes publiées.',
     ],
     rooms: (values) => {
@@ -330,13 +330,13 @@ export const FRENCH_STUDY: StudyTexts = {
             : kind === 'appartement'
               ? 'Cet appartement'
               : 'Ce bien';
-        return `${these} ressemble ${toYours(n)}${facts ? ` : ${facts}` : ''}. Nous ${
+        return `${these} ressemble ${toYours(n)}${facts ? `\u00a0: ${facts}` : ''}. Nous ${
           n.feminine ? 'la' : 'le'
-        } regardons ensemble : ${checklist(kind)}.`;
+        } regardons ensemble\u00a0: ${checklist(kind)}.`;
       }
       return `Ces ${word(kept, n.feminine)} ${n.many} ressemblent ${toYours(n)}${
-        facts ? ` : ${facts}` : ''
-      }. Nous les regardons ensemble, ${n.feminine ? 'une par une' : 'un par un'} : ${checklist(kind)}.`;
+        facts ? `\u00a0: ${facts}` : ''
+      }. Nous les regardons ensemble, ${n.feminine ? 'une par une' : 'un par un'}\u00a0: ${checklist(kind)}.`;
     },
     privacy: 'Aucun nom de vendeur ni d’acheteur.',
   },
@@ -350,7 +350,7 @@ export const FRENCH_STUDY: StudyTexts = {
         : `Votre prix, face aux ${word(inSale, n.feminine)} ${n.many} en vente, du moins cher au plus cher.`;
     },
     itemBefore: 'Votre prix est ',
-    itemAfter: (total, count, kind) => ` sur ${total} : ${cheaperPhrase(count, NOUNS[kind])}.`,
+    itemAfter: (total, count, kind) => ` sur ${total}\u00a0: ${cheaperPhrase(count, NOUNS[kind])}.`,
     itemSub: (price, proposed, count, kind) => {
       const n = NOUNS[kind];
       const who =
@@ -366,12 +366,12 @@ export const FRENCH_STUDY: StudyTexts = {
       if (count > 0)
         return `Un acheteur commence souvent par les ${cheaper(n, true)}. ${
           strengths
-            ? `Ce qui distingue votre ${n.one} doit se voir dès l’annonce : ${strengths}.`
+            ? `Ce qui distingue votre ${n.one} doit se voir dès l’annonce\u00a0: ${strengths}.`
             : `L’annonce de votre ${n.one} doit montrer, dès la première photo, ce qui ${
                 n.feminine ? 'la' : 'le'
               } fera choisir.`
         }`;
-      return `${cap(cheaperPhrase(0, n))} : c’est souvent par les ${cheaper(n, true)} qu’un acheteur commence.${
+      return `${cap(cheaperPhrase(0, n))}\u00a0: c’est souvent par les ${cheaper(n, true)} qu’un acheteur commence.${
         strengths
           ? ` ${n.feminine ? 'Elle' : 'Il'} a aussi pour ${n.feminine ? 'elle' : 'lui'} ${strengths}.`
           : ''
@@ -388,7 +388,7 @@ export const FRENCH_STUDY: StudyTexts = {
   },
 
   quartier: {
-    title: (conclusion) => `Ce que votre acheteur demandera : ${conclusion}`,
+    title: (conclusion) => `Ce que votre acheteur demandera\u00a0: ${conclusion}`,
     parcelNothing: 'rien de relevé sur votre parcelle',
     parcelCount: (count) =>
       `${word(count, false)} élément${count > 1 ? 's' : ''} d’urbanisme sur votre parcelle`,
@@ -408,7 +408,7 @@ export const FRENCH_STUDY: StudyTexts = {
       };
       return `${cap(parts.map((part) => names[part]).join(', '))}. Votre acheteur ${
         parts.includes('risks') ? 'les recevra avant de signer' : 'les demandera'
-      } : les voici, tels que les données publiques les donnent.`;
+      }\u00a0: les voici, tels que les données publiques les donnent.`;
     },
     item: (conclusion) => `${cap(conclusion)}.`,
     riskPapers: 'Votre acheteur recevra l’état des risques avant de signer.',
@@ -418,11 +418,11 @@ export const FRENCH_STUDY: StudyTexts = {
     talk: [
       {
         lead: 'Le dire en premier.',
-        text: 'Un risque annoncé par le vendeur rassure ; découvert chez le notaire, il fait douter de tout le reste.',
+        text: 'Un risque annoncé par le vendeur rassure\u202f; découvert chez le notaire, il fait douter de tout le reste.',
       },
       {
         lead: 'Montrer ce qui a été vécu.',
-        text: 'Sinistres déclarés ou non, travaux faits : les faits comptent plus que la carte.',
+        text: 'Sinistres déclarés ou non, travaux faits\u00a0: les faits comptent plus que la carte.',
       },
       {
         lead: 'Préparer les papiers.',
@@ -431,20 +431,20 @@ export const FRENCH_STUDY: StudyTexts = {
     ],
     avisPermits: (count, dwellings, radius) =>
       count === 0
-        ? `Aucun permis de construire n’est relevé ${within(radius)} : c’est une question qu’un acheteur pose souvent, et nous avons la réponse.`
+        ? `Aucun permis de construire n’est relevé ${within(radius)}\u00a0: c’est une question qu’un acheteur pose souvent, et nous avons la réponse.`
         : `${cap(word(count, false))} permis de construire ${count > 1 ? 'sont relevés' : 'est relevé'} ${within(
             radius,
           )}${
             dwellings ? `, pour ${dwellings} logement${dwellings > 1 ? 's' : ''} en tout` : ''
-          } : c’est une question qu’un acheteur pose souvent, et nous avons la réponse, permis à l’appui.`,
+          }\u00a0: c’est une question qu’un acheteur pose souvent, et nous avons la réponse, permis à l’appui.`,
     avisFlood:
-      'Votre commune est classée en territoire à risque important d’inondation : nous le dirons en premier, et vous me direz ce que vous avez vécu.',
+      'Votre commune est classée en territoire à risque important d’inondation\u00a0: nous le dirons en premier, et vous me direz ce que vous avez vécu.',
     avisRisks:
-      'Les risques de votre adresse sont publics : nous les présenterons en premier, avec l’état des risques officiel.',
+      'Les risques de votre adresse sont publics\u00a0: nous les présenterons en premier, avec l’état des risques officiel.',
     avisParcel: (count) =>
       count === 0
-        ? 'Rien n’est relevé sur votre parcelle au plan d’urbanisme : c’est une question qu’un acheteur pose souvent, et nous avons la réponse.'
-        : `Le plan d’urbanisme relève ${word(count, false)} élément${count > 1 ? 's' : ''} sur votre parcelle : nous ${
+        ? 'Rien n’est relevé sur votre parcelle au plan d’urbanisme\u00a0: c’est une question qu’un acheteur pose souvent, et nous avons la réponse.'
+        : `Le plan d’urbanisme relève ${word(count, false)} élément${count > 1 ? 's' : ''} sur votre parcelle\u00a0: nous ${
             count > 1 ? 'les' : 'le'
           } regarderons ensemble avant la mise en vente.`,
   },
@@ -460,13 +460,13 @@ export const FRENCH_STUDY: StudyTexts = {
         },
         {
           title: 'La mise en vente',
-          text: `Annonce, photos, diagnostics : votre ${n.one} arrive sur le marché ${
+          text: `Annonce, photos, diagnostics\u00a0: votre ${n.one} arrive sur le marché ${
             n.feminine ? 'prête' : 'prêt'
           } à être comparé${e(n)}.`,
         },
         {
           title: 'Chaque mois',
-          text: 'Un point marché : ce qui a baissé, ce qui s’est vendu, où en est votre prix.',
+          text: 'Un point marché\u00a0: ce qui a baissé, ce qui s’est vendu, où en est votre prix.',
         },
       ];
     },
@@ -491,8 +491,8 @@ export const FRENCH_STUDY: StudyTexts = {
       return `Elle compare votre ${n.one} aux ${n.many} en vente le ${day}${
         withSales ? ' et aux ventes publiées autour de chez vous' : ''
       }. Les prix des biens en vente sont ceux des annonces, pas des prix de vente${
-        withSales ? ' ; ceux des ventes réelles ont été signés chez le notaire' : ''
-      } ; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one} : ${
+        withSales ? '\u202f; ceux des ventes réelles ont été signés chez le notaire' : ''
+      }\u202f; surfaces et caractéristiques telles qu’annoncées, à vérifier. Elle ne donne pas la valeur de votre ${n.one}\u00a0: ${
         price === 'agreed'
           ? 'le prix, nous l’avons retenu ensemble'
           : price === 'proposed'

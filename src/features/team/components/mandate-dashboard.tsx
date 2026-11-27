@@ -49,7 +49,7 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
         <Figure label="Délai médian après relance" value={days(agency.medianDaysToSignature)} />
         {/* Mission 130 — l'écart moyen a quitté le Suivi pour le tableau du manager. */}
         <Figure
-          label="Écart moyen : prix du vendeur → prix signé"
+          label="Écart moyen&nbsp;: prix du vendeur → prix signé"
           value={
             agency.averagePriceGap == null
               ? '—'
@@ -101,15 +101,15 @@ export function MandateDashboardView({ dashboard }: { dashboard: MandateDashboar
       )}
       {agency.signedUnknownPath > 0 ? (
         <p className={hintText} data-testid="unknown-path">
-          Parcours inconnu : {formatNumber(agency.signedUnknownPath)} mandat
+          Parcours inconnu&nbsp;: {formatNumber(agency.signedUnknownPath)} mandat
           {agency.signedUnknownPath > 1 ? 's' : ''} signé{agency.signedUnknownPath > 1 ? 's' : ''}{' '}
           avant que l’outil ne garde la première issue.
         </p>
       ) : null}
       <p className={hintText}>
-        « Au rendez-vous » : la première issue enregistrée est « Mandat signé ». « Après relance » :
-        signé ensuite ; le délai médian se compte depuis le rendez-vous. Le dossier d’exemple n’est
-        jamais compté.
+        «&nbsp;Au rendez-vous&nbsp;»&nbsp;: la première issue enregistrée est «&nbsp;Mandat
+        signé&nbsp;». «&nbsp;Après relance&nbsp;»&nbsp;: signé ensuite&#x202f;; le délai médian se
+        compte depuis le rendez-vous. Le dossier d’exemple n’est jamais compté.
       </p>
     </div>
   );
@@ -174,11 +174,11 @@ export function BuyerSearchDashboardView({ figures }: { figures: BuyerSearchFigu
             </div>
           ) : null}
           <p className={hintText}>
-            Des faits déclarés par les conseillers, cumulés : un mandat rentré compte aussi comme
-            rendez-vous et comme remise. Chaque bien est compté une fois, au conseiller qui a
+            Des faits déclarés par les conseillers, cumulés&nbsp;: un mandat rentré compte aussi
+            comme rendez-vous et comme remise. Chaque bien est compté une fois, au conseiller qui a
             préparé son premier courrier. Un bien démarché aussi pour un mandat signé compte ici et
-            dans la prise de mandat ; les collaborations de la prise de mandat ne comptent que les
-            concurrents retenus d’un dossier vendeur.
+            dans la prise de mandat&#x202f;; les collaborations de la prise de mandat ne comptent
+            que les concurrents retenus d’un dossier vendeur.
           </p>
         </>
       )}

@@ -186,8 +186,8 @@ export function ProposeSeries({
             : `${sent.length} ${sent.length > 1 ? 'envois notés' : 'envoi noté'}`}
         </h2>
         <p className={hintText}>
-          Chaque envoi est noté sur la fiche de l’acquéreur ; la tâche du Suivi se vide au fil des
-          envois.
+          Chaque envoi est noté sur la fiche de l’acquéreur&#x202f;; la tâche du Suivi se vide au
+          fil des envois.
         </p>
         <Link href="/suivi" className={`${btnSecondary} self-start`}>
           Revenir au Suivi
@@ -229,7 +229,7 @@ export function ProposeSeries({
       })
       .catch(() => {
         setPending(false);
-        setError('Connexion perdue : réessayez.');
+        setError('Connexion perdue\u00a0: réessayez.');
       });
   };
   const next = () => {
@@ -250,7 +250,7 @@ export function ProposeSeries({
         </h2>
         <p className={hintText}>
           {[current.phone, current.email].filter(Boolean).join(' · ') ||
-            'Ni téléphone ni e-mail sur sa fiche : copiez le message.'}
+            'Ni téléphone ni e-mail sur sa fiche\u00a0: copiez le message.'}
         </p>
       </div>
       <p
@@ -269,7 +269,9 @@ export function ProposeSeries({
               navigator.clipboard
                 ?.writeText(message)
                 .then(() => setCopied(true))
-                .catch(() => setError('La copie a échoué : sélectionnez le message ci-dessus.'));
+                .catch(() =>
+                  setError('La copie a échoué\u00a0: sélectionnez le message ci-dessus.'),
+                );
             }}
           >
             Copier
@@ -306,7 +308,7 @@ export function ProposeSeries({
           </button>
           <p className={hintText}>
             Une nouvelle sélection avec ce bien en tête. Son lien actuel, s’il en a un, cesse de
-            marcher ; ses réponses restent.
+            marcher&#x202f;; ses réponses restent.
           </p>
         </div>
       )}
@@ -314,7 +316,7 @@ export function ProposeSeries({
         {copied
           ? 'Message copié, lien compris.'
           : prepared
-            ? 'Le lien de sa sélection est prêt : envoyez-le, puis « Envoyé, suivant ». ACM n’envoie rien lui-même.'
+            ? 'Le lien de sa sélection est prêt\u00a0: envoyez-le, puis «\u00a0Envoyé, suivant\u00a0». ACM n’envoie rien lui-même.'
             : 'Préparez son lien, envoyez-le, puis notez l’envoi.'}
       </p>
       {error ? (
@@ -343,7 +345,7 @@ export function ProposeSeries({
               })
               .catch(() => {
                 setPending(false);
-                setError('Connexion perdue : réessayez.');
+                setError('Connexion perdue\u00a0: réessayez.');
               });
           }}
         >

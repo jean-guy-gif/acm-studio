@@ -148,7 +148,7 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
   if (!demo && apiKey == null) {
     return {
       ok: false,
-      error: 'La recherche de concurrents n’est pas activée : prévenez l’équipe ACM Studio.',
+      error: 'La recherche de concurrents n’est pas activée\u00a0: prévenez l’équipe ACM Studio.',
     };
   }
   // Mission 100 — le plafond mensuel, vérifié AVANT tout appel payant ; illisible ≠ libre.
@@ -167,7 +167,7 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
       ok: false,
       error:
         loaded.reason === 'no_city'
-          ? 'Renseignez d’abord la ville du bien vendeur : la recherche se base sur sa commune.'
+          ? 'Renseignez d’abord la ville du bien vendeur\u00a0: la recherche se base sur sa commune.'
           : GENERIC_ERROR,
     };
   }
@@ -180,7 +180,7 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
   if (!commune.ok) {
     return {
       ok: false,
-      error: `Commune introuvable (« ${[criteria.city, criteria.postalCode].filter(Boolean).join(' ')} ») : vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
+      error: `Commune introuvable («\u00a0${[criteria.city, criteria.postalCode].filter(Boolean).join(' ')}\u00a0»)\u00a0: vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
     };
   }
   const now = new Date();
@@ -188,7 +188,7 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     return {
       ok: false,
       error:
-        'La recherche ne trouve que des appartements et des maisons : précisez le type du bien vendeur.',
+        'La recherche ne trouve que des appartements et des maisons\u00a0: précisez le type du bien vendeur.',
     };
   }
   const geocode = await geo.geocodeSubject(loaded.address, criteria.postalCode, commune.name);
@@ -198,7 +198,7 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
     return {
       ok: false,
       error:
-        'Le rayon se mesure autour du bien : son adresse n’a pas été reconnue avec certitude. Aucune recherche lancée.',
+        'Le rayon se mesure autour du bien\u00a0: son adresse n’a pas été reconnue avec certitude. Aucune recherche lancée.',
     };
   }
   const departmentCommunes =
@@ -277,7 +277,7 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
       : reason === 'unreadable'
         ? BUDGET_UNREADABLE_MESSAGE
         : reason === 'refused'
-          ? 'La recherche a été refusée par le fournisseur des annonces : prévenez l’équipe ACM Studio. Aucun bien n’a été trouvé.'
+          ? 'La recherche a été refusée par le fournisseur des annonces\u00a0: prévenez l’équipe ACM Studio. Aucun bien n’a été trouvé.'
           : GENERIC_ERROR;
 
   const first = await runPass(ranges.first);

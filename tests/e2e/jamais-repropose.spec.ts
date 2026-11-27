@@ -55,7 +55,7 @@ test('un bien refusé ou visité n’est pas reproposé', async ({ page }) => {
   await expect(
     page
       .getByTestId('ideal-seen-mention')
-      .filter({ hasText: /^Refusé : / })
+      .filter({ hasText: /^Refusé\s: / })
       .first(),
   ).toBeVisible();
   if (process.env.E2E_CAPTURES === '1') {

@@ -52,7 +52,7 @@ export async function recordFollowUpContact(
   }
   const conclusion = await getConclusion(projectId);
   if (conclusion?.outcome !== 'follow_up') {
-    return { ok: false, error: 'Ce dossier n’est plus « à relancer ».' };
+    return { ok: false, error: 'Ce dossier n’est plus «\u00a0à relancer\u00a0».' };
   }
 
   // Mission 105 — la date de prochaine relance : celle de l'écran, relue ; vide, la date proposée

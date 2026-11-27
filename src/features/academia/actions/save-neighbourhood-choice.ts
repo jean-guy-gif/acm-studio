@@ -24,7 +24,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 export type SaveNeighbourhoodChoiceResult =
   { ok: true; keys: string[] } | { ok: false; error: string };
 
-const LIVE_STARTED = 'Le Live a commencé : le quartier montré au vendeur ne se modifie plus.';
+const LIVE_STARTED = 'Le Live a commencé\u00a0: le quartier montré au vendeur ne se modifie plus.';
 
 export async function saveNeighbourhoodChoice(
   projectId: unknown,
@@ -34,11 +34,11 @@ export async function saveNeighbourhoodChoice(
   if (!profile || profile.removed_at) return { ok: false, error: 'Vous devez être connecté.' };
   if (typeof projectId !== 'string') return { ok: false, error: 'Dossier introuvable.' };
   if (!Array.isArray(rawKeys) || rawKeys.length > NEIGHBOURHOOD_BLOCK_KEYS.length) {
-    return { ok: false, error: 'Choix illisible : rechargez la page.' };
+    return { ok: false, error: 'Choix illisible\u00a0: rechargez la page.' };
   }
   const keys = [...new Set(rawKeys)].filter(isNeighbourhoodBlockKey);
   if (keys.length !== rawKeys.length) {
-    return { ok: false, error: 'Choix illisible : rechargez la page.' };
+    return { ok: false, error: 'Choix illisible\u00a0: rechargez la page.' };
   }
 
   const supabase = await createClient();
@@ -109,7 +109,7 @@ export async function saveNeighbourhoodChoice(
   if (current.kind !== 'ok' || !address) {
     return {
       ok: false,
-      error: 'Le dossier d’adresse n’a pas pu être lu : réessayez dans un instant.',
+      error: 'Le dossier d’adresse n’a pas pu être lu\u00a0: réessayez dans un instant.',
     };
   }
   const blocks = pickNeighbourhoodBlocks(current.blocks, keys);

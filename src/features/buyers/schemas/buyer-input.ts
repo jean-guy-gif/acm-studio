@@ -68,19 +68,19 @@ const frNumber = (field: string, options: { integer?: boolean; min?: number; max
     const text = typeof value === 'number' ? String(value) : value;
     const parsed = Number(text.replace(/[\s  ]/g, '').replace(',', '.'));
     if (!Number.isFinite(parsed)) {
-      ctx.addIssue({ code: 'custom', message: `${field} : indiquez un nombre.` });
+      ctx.addIssue({ code: 'custom', message: `${field}\u00a0: indiquez un nombre.` });
       return z.NEVER;
     }
     if (options.integer && !Number.isInteger(parsed)) {
-      ctx.addIssue({ code: 'custom', message: `${field} : indiquez un nombre entier.` });
+      ctx.addIssue({ code: 'custom', message: `${field}\u00a0: indiquez un nombre entier.` });
       return z.NEVER;
     }
     if (options.min != null && parsed < options.min) {
-      ctx.addIssue({ code: 'custom', message: `${field} : au moins ${options.min}.` });
+      ctx.addIssue({ code: 'custom', message: `${field}\u00a0: au moins ${options.min}.` });
       return z.NEVER;
     }
     if (options.max != null && parsed > options.max) {
-      ctx.addIssue({ code: 'custom', message: `${field} : au plus ${options.max}.` });
+      ctx.addIssue({ code: 'custom', message: `${field}\u00a0: au plus ${options.max}.` });
       return z.NEVER;
     }
     return parsed;
@@ -177,7 +177,7 @@ const schema = z
 
 export type BuyerFormValues = z.input<typeof schema>;
 
-export const BUYER_FORM_ERROR = 'Vérifiez la fiche : un champ est à corriger.';
+export const BUYER_FORM_ERROR = 'Vérifiez la fiche\u00a0: un champ est à corriger.';
 
 export function parseBuyerInput(raw: unknown): ParsedBuyerInput {
   // Une clé absente vaut « non renseigné » : chaque champ est posé à null avant la relecture.
@@ -286,7 +286,7 @@ export const QUICK_STAR_CRITERIA = [
   'elevator',
 ] as const satisfies readonly (typeof BUYER_CRITERIA)[number][];
 export const QUICK_STARS_MAX = 2;
-export const QUICK_STARS_ERROR = `Deux indispensables au plus : le reste se complète ensuite.`;
+export const QUICK_STARS_ERROR = `Deux indispensables au plus\u00a0: le reste se complète ensuite.`;
 
 export function parseQuickBuyerInput(raw: unknown): ParsedBuyerInput {
   const parsed = parseBuyerInput(raw);

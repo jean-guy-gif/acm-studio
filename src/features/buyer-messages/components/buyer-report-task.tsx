@@ -83,7 +83,7 @@ export function BuyerReportTask({
             })
             .catch(() => {
               setPending(false);
-              setError('Connexion perdue : réessayez.');
+              setError('Connexion perdue\u00a0: réessayez.');
             });
         }}
       >
@@ -115,7 +115,7 @@ export function BuyerReportTask({
                 navigator.clipboard
                   ?.writeText(text)
                   .then(() => setNote('Message copié.'))
-                  .catch(() => setNote('La copie a échoué : sélectionnez le message.'));
+                  .catch(() => setNote('La copie a échoué\u00a0: sélectionnez le message.'));
               }}
             >
               Copier
@@ -160,7 +160,7 @@ export function BuyerReportTask({
                   })
                   .catch(() => {
                     setPending(false);
-                    setError('Connexion perdue : réessayez.');
+                    setError('Connexion perdue\u00a0: réessayez.');
                   });
               }}
             >

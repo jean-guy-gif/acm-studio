@@ -77,7 +77,7 @@ describe('« Bienvenue » (mission 97)', () => {
 
   it('propose le Localisateur en facultatif, sans jamais nommer sa version ACM', () => {
     const checklist = read('features', 'welcome', 'components', 'welcome-checklist.tsx');
-    expect(checklist).toContain('Facultatif : Localisateur Academia');
+    expect(checklist).toContain('Facultatif&nbsp;: Localisateur Academia');
     expect(checklist).toContain('Pour retrouver l’adresse d’un bien.');
     expect(checklist).not.toMatch(/acm1|3\.1\.1/i);
   });

@@ -255,13 +255,13 @@ export function propertyBuyersHeadline(readyCount: number, othersCount: number):
 
 export const NO_MATCHING_BUYER = 'Aucun acquéreur de l’agence ne correspond pour l’instant.';
 export const NO_REFERENCE_PRICE =
-  'Prix de référence à fixer : décidez votre prix, ou saisissez votre fourchette, pour rapprocher les acquéreurs de l’agence.';
+  'Prix de référence à fixer\u00a0: décidez votre prix, ou saisissez votre fourchette, pour rapprocher les acquéreurs de l’agence.';
 export const BUYERS_UNREAD =
-  'Les acquéreurs de l’agence n’ont pas pu être lus pour l’instant : rechargez la page.';
+  'Les acquéreurs de l’agence n’ont pas pu être lus pour l’instant\u00a0: rechargez la page.';
 
 // « Envoyer le lien » : refusé hors d'un mandat signé, ou pour un acquéreur qui ne correspond plus.
 export const NOT_SIGNED_MESSAGE =
-  'Ce bien n’est pas un mandat signé : il ne se propose pas encore.';
+  'Ce bien n’est pas un mandat signé\u00a0: il ne se propose pas encore.';
 export const NOT_MATCHING_MESSAGE = 'Cet acquéreur ne correspond plus à ce bien.';
 
 // Mission 134 — les indispensables ★ que le bien remplit, dits au conseiller (« ★ Piscine »).

@@ -57,7 +57,7 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
           <h1 className={pageTitle}>Préparation</h1>
           <p className={pageSubtitle}>
             {ready
-              ? 'Dossiers prêts : ils sont dans le Live, et restent modifiables ici.'
+              ? 'Dossiers prêts\u00a0: ils sont dans le Live, et restent modifiables ici.'
               : 'Préparez ici vos rendez-vous vendeurs. Un dossier complet bascule tout seul dans le Live.'}
           </p>
         </div>
@@ -90,7 +90,7 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
               </p>
               <p>
                 Complétez un dossier (bien vendeur, au moins trois concurrents exploitables et
-                décision de prix enregistrée) : il basculera tout seul ici et dans le Live.
+                décision de prix enregistrée)&nbsp;: il basculera tout seul ici et dans le Live.
               </p>
             </>
           ) : (
@@ -144,7 +144,7 @@ export default async function BuilderPage({ searchParams }: BuilderPageProps) {
                   {/* Mission 108 — la fourchette du conseiller (M38), jamais montrée au vendeur.
                       « Décision de prix » ne désigne que le prix décidé, dans l'avancement. */}
                   <span className="text-sm text-zinc-500 stage:text-white/60">
-                    {FOURCHETTE_LABEL} :{' '}
+                    {FOURCHETTE_LABEL}&nbsp;:{' '}
                     {fourchetteText ?? (
                       <span className="text-amber-700 stage:text-amber-300">
                         {FOURCHETTE_PENDING}

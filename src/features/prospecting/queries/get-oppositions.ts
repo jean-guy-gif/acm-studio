@@ -24,7 +24,7 @@ export async function getOppositions(supabase: Client, agencyId: string): Promis
       .order('id', { ascending: true })
       .range(from, from + OPPOSITIONS_PAGE_SIZE - 1);
     if (error || !data) {
-      throw new Error('La liste « Ne plus solliciter » n’a pas pu être lue.');
+      throw new Error('La liste «\u00a0Ne plus solliciter\u00a0» n’a pas pu être lue.');
     }
     rows.push(...data);
     if (data.length < OPPOSITIONS_PAGE_SIZE) {

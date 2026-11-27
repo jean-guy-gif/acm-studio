@@ -97,7 +97,7 @@ describe('le panneau du quartier dit pourquoi un bloc n’est pas proposé', () 
     );
     expect(html).toContain('data-testid="neighbourhood-choice-unavailable"');
     expect(html).toMatch(
-      /Risques<\/span> —\s*(<!-- -->)?non vérifié par la source : jamais proposé au vendeur/,
+      /Risques<\/span> —\s*(<!-- -->)?non vérifié par la source\s: jamais proposé au vendeur/,
     );
     expect(html).toMatch(
       /Population<\/span> —\s*(<!-- -->)?la source n’a pas pu être lue pour cette adresse/,

@@ -69,7 +69,7 @@ export async function detachBuyerOrigins(
     // concurrent, et le journal le dit (relecteur).
     if (!listingKey || !competitor.listing_url) {
       await reportServerError(
-        'détachement des origines acquéreur : concurrent sans annonce reconnue',
+        'détachement des origines acquéreur\u00a0: concurrent sans annonce reconnue',
         new Error('annonce sans identité'),
       );
       continue;

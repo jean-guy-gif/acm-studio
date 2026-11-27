@@ -92,7 +92,7 @@ export default async function BuyerLetterPage({
       ) : null}
       {context.blocker === 'phone_missing' ? (
         <Link href="/profil" className={`${btnSecondary} self-start`}>
-          Ouvrir « Mon profil »
+          Ouvrir «&nbsp;Mon profil&nbsp;»
         </Link>
       ) : null}
     </main>

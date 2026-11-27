@@ -31,7 +31,7 @@ function readWhole(text: string, label: string, min: number): number | null | { 
   const value = digits(text);
   if (value === '') return null;
   if (!/^\d+$/.test(value) || Number(value) < min) {
-    return { error: `${label} : un nombre entier${min > 0 ? ` d'au moins ${min}` : ''}.` };
+    return { error: `${label}\u00a0: un nombre entier${min > 0 ? ` d'au moins ${min}` : ''}.` };
   }
   return Number(value);
 }
@@ -53,5 +53,5 @@ export function readSearchFiltersInput(input: SearchFiltersInput): ReadFiltersRe
   });
   return parsed.success
     ? { ok: true, filters: parsed.data }
-    : { ok: false, error: 'Critères non reconnus : vérifiez les valeurs saisies.' };
+    : { ok: false, error: 'Critères non reconnus\u00a0: vérifiez les valeurs saisies.' };
 }

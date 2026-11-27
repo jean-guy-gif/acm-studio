@@ -34,7 +34,8 @@ const choiceActive =
   'border-brand bg-brand-soft text-brand-deep stage:bg-brand/15 stage:text-white';
 
 const REASON_LABELS: Record<Exclude<ConclusionOutcome, 'signed'>, string> = {
-  follow_up: 'Qu’est-ce qui retient le vendeur ? (note de travail — jamais montrée au vendeur)',
+  follow_up:
+    'Qu’est-ce qui retient le vendeur\u202f? (note de travail — jamais montrée au vendeur)',
   sold_elsewhere: 'Motif (facultatif — note de travail, jamais montrée au vendeur)',
   withdrawn: 'Motif (facultatif — note de travail, jamais montrée au vendeur)',
 };

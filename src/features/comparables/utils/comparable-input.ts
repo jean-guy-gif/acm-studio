@@ -201,11 +201,12 @@ export function parseComparableForm(formData: FormData): ComparableFormResult {
   }
   const outdoorSpaces = parseSelectArray(formData.getAll('outdoor_spaces'), OUTDOOR_SPACES);
   if (outdoorSpaces.includes(EXCLUSIVE_NONE) && outdoorSpaces.length > 1) {
-    fieldErrors.outdoor_spaces = '« Aucun » ne peut pas être combiné avec un autre choix.';
+    fieldErrors.outdoor_spaces =
+      '«\u00a0Aucun\u00a0» ne peut pas être combiné avec un autre choix.';
   }
   const parkingTypes = parseSelectArray(formData.getAll('parking_types'), PARKING_TYPES);
   if (parkingTypes.includes(EXCLUSIVE_NONE) && parkingTypes.length > 1) {
-    fieldErrors.parking_types = '« Aucun » ne peut pas être combiné avec un autre choix.';
+    fieldErrors.parking_types = '«\u00a0Aucun\u00a0» ne peut pas être combiné avec un autre choix.';
   }
 
   // Mission 33 — date de mise en ligne. Champ caché : elle vient de l'annonce

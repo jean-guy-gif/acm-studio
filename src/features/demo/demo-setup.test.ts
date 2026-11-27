@@ -68,7 +68,7 @@ describe('la vérification', () => {
     expect(check).toEqual({
       ok: false,
       message:
-        'La remise à zéro n’a pas abouti : 12 dossiers sur 12 (il manque « Prêt, en présentation directe » ; en double : « Prêt pour le Live »). Rien n’est prêt.',
+        'La remise à zéro n’a pas abouti\u00a0: 12 dossiers sur 12 (il manque «\u00a0Prêt, en présentation directe\u00a0»\u202f; en double\u00a0: «\u00a0Prêt pour le Live\u00a0»). Rien n’est prêt.',
     });
   });
 
@@ -78,21 +78,21 @@ describe('la vérification', () => {
       9,
     );
     expect(!check.ok && check.message).toContain(
-      '11 dossiers sur 12 (il manque « Conclu, mandat signé »)',
+      '11 dossiers sur 12 (il manque «\u00a0Conclu, mandat signé\u00a0»)',
     );
   });
 
   it('les acquéreurs manquants se disent aussi', () => {
     const check = checkDemoSetup(TWELVE, 8);
     expect(!check.ok && check.message).toBe(
-      'La remise à zéro n’a pas abouti : 8 acquéreurs sur 9. Rien n’est prêt.',
+      'La remise à zéro n’a pas abouti\u00a0: 8 acquéreurs sur 9. Rien n’est prêt.',
     );
   });
 
   it('en « Préparer », l’échec dit « La préparation de la démo » (Jean-Guy, 10/11)', () => {
     const check = checkDemoSetup(TWELVE, 8, 'prepare');
     expect(!check.ok && check.message).toBe(
-      'La préparation de la démo n’a pas abouti : 8 acquéreurs sur 9. Rien n’est prêt.',
+      'La préparation de la démo n’a pas abouti\u00a0: 8 acquéreurs sur 9. Rien n’est prêt.',
     );
   });
 

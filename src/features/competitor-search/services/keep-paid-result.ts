@@ -43,7 +43,7 @@ export async function keepPaidSearchResult(input: {
     if (error || (data != null && previous == null)) {
       await reportServerError(
         'keepPaidSearchResult',
-        error ?? new Error('résultat gardé illisible : suite non ajoutée'),
+        error ?? new Error('résultat gardé illisible\u00a0: suite non ajoutée'),
       );
       return false;
     }

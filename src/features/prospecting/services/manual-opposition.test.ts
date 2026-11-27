@@ -31,7 +31,7 @@ const POSTAL_06530: ManualCommune[] = [
 
 const decide = (raw: string, communes: ManualCommune[], chosen: string | null = null) => {
   const parts = parseManualAddress(raw);
-  if (!parts) throw new Error(`adresse non lue : ${raw}`);
+  if (!parts) throw new Error(`adresse non lue\u00a0: ${raw}`);
   return decideManualOpposition(parts, communes, chosen);
 };
 
@@ -198,7 +198,7 @@ describe('la même adresse, à la main et sur une carte, donne la même clé', (
 describe('service des communes indisponible', () => {
   const fallback = (raw: string) => {
     const parts = parseManualAddress(raw);
-    if (!parts) throw new Error(`adresse non lue : ${raw}`);
+    if (!parts) throw new Error(`adresse non lue\u00a0: ${raw}`);
     return unverifiedManualOpposition(parts);
   };
 
@@ -208,7 +208,7 @@ describe('service des communes indisponible', () => {
       error: MANUAL_OPPOSITION_UNAVAILABLE,
     });
     expect(MANUAL_OPPOSITION_UNAVAILABLE).toBe(
-      'Service des communes indisponible : tapez le nom de la commune.',
+      'Service des communes indisponible\u00a0: tapez le nom de la commune.',
     );
   });
 

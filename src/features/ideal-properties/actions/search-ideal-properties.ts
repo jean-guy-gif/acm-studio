@@ -152,7 +152,7 @@ export async function searchIdealProperties(
   if (!demo && apiKey == null) {
     return {
       ok: false,
-      error: 'La recherche du marché n’est pas activée : prévenez l’équipe ACM Studio.',
+      error: 'La recherche du marché n’est pas activée\u00a0: prévenez l’équipe ACM Studio.',
     };
   }
   const budgetRead = demo ? null : await getSearchBudget(profile.agency_id);
@@ -188,7 +188,7 @@ export async function searchIdealProperties(
     (resumeFrom.cursor.plan >= plans.length ||
       plans[resumeFrom.cursor.plan]!.tier !== resumeFrom.cursor.tier)
   ) {
-    return { ok: false, error: 'La fiche a changé depuis la recherche : relancez-la.' };
+    return { ok: false, error: 'La fiche a changé depuis la recherche\u00a0: relancez-la.' };
   }
 
   // 2. Le budget réservé avant l’appel (M105) ; rien en démo.
@@ -228,7 +228,7 @@ export async function searchIdealProperties(
       ok: false,
       error:
         outcome.reason === 'refused'
-          ? 'La recherche a été refusée par le fournisseur des annonces : prévenez l’équipe ACM Studio. Aucun bien n’a été trouvé.'
+          ? 'La recherche a été refusée par le fournisseur des annonces\u00a0: prévenez l’équipe ACM Studio. Aucun bien n’a été trouvé.'
           : GENERIC_ERROR,
     };
   }

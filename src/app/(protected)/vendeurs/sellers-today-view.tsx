@@ -221,7 +221,7 @@ export async function SellersTodayView({
         ))}
         {drafts.failed ? (
           <p role="alert" className={alertError}>
-            Les dossiers en préparation n’ont pas pu être lus : rechargez la page.
+            Les dossiers en préparation n’ont pas pu être lus&nbsp;: rechargez la page.
           </p>
         ) : null}
 
@@ -319,7 +319,7 @@ export async function SellersTodayView({
             <span className={socleKicker}>À faire aujourd’hui</span>
             <p className="text-[21px] leading-snug font-bold text-brand-darker stage:text-white">
               {unread
-                ? 'Une partie des tâches n’a pas pu être lue : rechargez la page.'
+                ? 'Une partie des tâches n’a pas pu être lue\u00a0: rechargez la page.'
                 : 'Rien à faire aujourd’hui pour vos vendeurs.'}
             </p>
             <Link
@@ -368,7 +368,7 @@ async function SellerDossier({
         <ProjectHeader name={item.name} badge={null} />
         <NextTask item={item} today={today} day={day} />
         <p role="alert" className={alertError}>
-          Son dossier n’a pas pu être lu : rechargez la page.
+          Son dossier n’a pas pu être lu&nbsp;: rechargez la page.
         </p>
       </>
     );

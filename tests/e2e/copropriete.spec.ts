@@ -61,11 +61,11 @@ test('la copropriété : biens idéaux et rapprochement des Lambert', async ({ p
     for (let index = 0; index < hitCount; index += 1) {
       await expect(hits.nth(index)).toContainText('Copropriété : à vérifier');
     }
-    await expect(page.getByText(/À vérifier :/)).toHaveCount(0);
+    await expect(page.getByText(/À vérifier\s:/)).toHaveCount(0);
     // Aucune ligne d'écartés ne cite la copropriété. Ligne par ligne : une expression lue sur la page
     // entière attrapait le bloc « Le marché », qui porte à la fois « 9 écartés : pas de piscine (9) »
     // et, sur ses annonces, « Copropriété : à vérifier » (M155).
-    const excludedLines = page.getByText(/\d+ écartés? :/);
+    const excludedLines = page.getByText(/\d+ écartés?\s:/);
     await expect(excludedLines.first()).toBeVisible();
     for (let index = 0; index < (await excludedLines.count()); index += 1) {
       await expect(excludedLines.nth(index)).not.toContainText(/copropriété/i);
@@ -81,6 +81,6 @@ test('la copropriété : biens idéaux et rapprochement des Lambert', async ({ p
     await expect(mandate).toHaveCount(1);
     await expect(mandate).not.toContainText('Copropriété');
     await expect(hits.filter({ hasText: 'Copropriété : à vérifier' }).first()).toBeVisible();
-    await expect(panel.getByText(/À vérifier :/)).toHaveCount(0);
+    await expect(panel.getByText(/À vérifier\s:/)).toHaveCount(0);
   });
 });

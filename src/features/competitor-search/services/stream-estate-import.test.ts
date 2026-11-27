@@ -43,13 +43,13 @@ describe('redirectedAwayFromListing', () => {
 describe('messages', () => {
   it('« annonce retirée depuis » le dernier passage, daté à l’heure de Paris', () => {
     expect(withdrawnReason(FACTS)).toBe(
-      'annonce retirée depuis le dernier passage de Stream Estate (vue en ligne le 02/10/2026) : la page d’origine sur SeLoger ne la montre plus — non importée',
+      'annonce retirée depuis le dernier passage de Stream Estate (vue en ligne le 02/10/2026)\u00a0: la page d’origine sur SeLoger ne la montre plus — non importée',
     );
   });
 
   it('sans date de passage, le message ne l’invente pas', () => {
     expect(withdrawnReason({ ...FACTS, lastSeenAt: null })).toMatch(
-      /^annonce retirée depuis le dernier passage de Stream Estate : /,
+      /^annonce retirée depuis le dernier passage de Stream Estate\s: /,
     );
   });
 

@@ -46,10 +46,10 @@ export default async function BuyerDossierPage({
           <SynthesisPrintButton />
         </div>
         <p className={hintText}>
-          Ce dossier suit sa recherche : ses mots, la grille de ses critères, un bien par page
-          décrit par ses critères, puis « Mes choix », à cocher au stylo. Il ne contient ni adresse,
-          ni titre, ni lien d’annonce. Sur le lien, l’acquéreur répond depuis son téléphone : une
-          seule réponse, qui arrive sur sa fiche et sur Visites.
+          Ce dossier suit sa recherche&nbsp;: ses mots, la grille de ses critères, un bien par page
+          décrit par ses critères, puis «&nbsp;Mes choix&nbsp;», à cocher au stylo. Il ne contient
+          ni adresse, ni titre, ni lien d’annonce. Sur le lien, l’acquéreur répond depuis son
+          téléphone&nbsp;: une seule réponse, qui arrive sur sa fiche et sur Visites.
         </p>
         <DossierPhotoChoices
           buyerId={buyerId}

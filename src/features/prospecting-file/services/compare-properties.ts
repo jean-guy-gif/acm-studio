@@ -228,7 +228,7 @@ export function closeness(facts: ProspectingFileFacts, options: { showPrices: bo
   if (facts.theirs.price != null) {
     items.push(
       options.showPrices && compared.price
-        ? `*Même gamme de prix* : ${formatEuro(compared.price.ours)} et ${formatEuro(compared.price.theirs)}`
+        ? `*Même gamme de prix*\u00a0: ${formatEuro(compared.price.ours)} et ${formatEuro(compared.price.theirs)}`
         : '*Même gamme de prix*',
     );
   }
@@ -237,7 +237,9 @@ export function closeness(facts: ProspectingFileFacts, options: { showPrices: bo
     const ours = squareMeters(compared.surface.ours);
     const theirs = squareMeters(compared.surface.theirs);
     items.push(
-      ours === theirs ? `*Même surface* : ${ours}` : `*Surface proche* : ${ours} et ${theirs}`,
+      ours === theirs
+        ? `*Même surface*\u00a0: ${ours}`
+        : `*Surface proche*\u00a0: ${ours} et ${theirs}`,
     );
   }
   return items;
@@ -281,7 +283,7 @@ export function differences(facts: ProspectingFileFacts): string[] {
   const wording = propertyWording(facts.kind);
   const distinct = distinctFacts(facts);
   const line = (owner: string, items: string[]): string | null =>
-    items.length > 0 ? `*${capitalize(owner)}* : ${items.join(', ')}` : null;
+    items.length > 0 ? `*${capitalize(owner)}*\u00a0: ${items.join(', ')}` : null;
   return [line(wording.ourOne, distinct.ours), line(wording.yourOne, distinct.theirs)].filter(
     (item): item is string => item !== null,
   );

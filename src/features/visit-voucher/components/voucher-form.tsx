@@ -233,7 +233,7 @@ export function VoucherForm({
             signatures: signatures.slice(0, visitors.length),
             title: tour ? null : validTitle,
             approved,
-          }).catch(() => ({ ok: false as const, error: 'Connexion perdue : réessayez.' }));
+          }).catch(() => ({ ok: false as const, error: 'Connexion perdue\u00a0: réessayez.' }));
           if (!result.ok) {
             setError(result.error);
             return;
@@ -282,7 +282,7 @@ export function VoucherForm({
                   <OutsideTitleFields
                     draft={titles[visit.visitId]!}
                     onChange={(next) => setTitleFor(visit.visitId, next)}
-                    missingText="Choisissez à quel titre vous intervenez pour ce bien : sans lui, le bon ne se signe pas."
+                    missingText="Choisissez à quel titre vous intervenez pour ce bien&nbsp;: sans lui, le bon ne se signe pas."
                     searchHint={
                       titles[visit.visitId]!.kind === 'search' &&
                       draftTitle(titles[visit.visitId]!) != null
@@ -300,7 +300,7 @@ export function VoucherForm({
                     <OutsideTitleFields
                       draft={title}
                       onChange={setTitle}
-                      missingText="Choisissez à quel titre vous intervenez : sans lui, le bon ne se signe pas."
+                      missingText="Choisissez à quel titre vous intervenez&nbsp;: sans lui, le bon ne se signe pas."
                       searchHint={searchHint}
                       colleagueHint={
                         visit.suggestion?.kind === 'colleague'
@@ -384,13 +384,13 @@ export function VoucherForm({
                 ? voucherOutsideLine(tourTitles[index]!, bien)
                 : severalTitles
                   ? voucherSaleLine(draft.mandate.trim() || '…', bien)
-                  : `Numéro du mandat : ${draft.mandate.trim() || '…'} · Prix de commercialisation : ${bien.price} € · Adresse du bien : ${bien.address}`;
+                  : `Numéro du mandat\u00a0: ${draft.mandate.trim() || '…'} · Prix de commercialisation\u00a0: ${bien.price} € · Adresse du bien\u00a0: ${bien.address}`;
               return (
                 <p
                   key={visit.visitId}
                   className="font-serif text-sm text-zinc-700 stage:text-white/80"
                 >
-                  « {line} »
+                  «&nbsp;{line}&nbsp;»
                 </p>
               );
             })}
@@ -407,7 +407,7 @@ export function VoucherForm({
                       className="text-xs text-zinc-600 stage:text-white/70"
                       data-testid={`voucher-tour-phrase-${kind}`}
                     >
-                      « {VOUCHER_TOUR_COMMITMENTS[kind]} »
+                      «&nbsp;{VOUCHER_TOUR_COMMITMENTS[kind]}&nbsp;»
                     </p>
                   ))}
               </>
@@ -427,12 +427,12 @@ export function VoucherForm({
                   key={visit.visitId}
                   className="font-serif text-sm text-zinc-700 stage:text-white/80"
                 >
-                  «{' '}
+                  «&nbsp;
                   {voucherOutsideLine(validTitle, {
                     price: voucherPrice(euros(draft.price) ?? 0),
                     address: draft.address.trim() || '…',
-                  })}{' '}
-                  »
+                  })}
+                  &nbsp;»
                 </p>
               );
             })}
@@ -452,8 +452,8 @@ export function VoucherForm({
             data-testid="voucher-take-buyer-name"
             onClick={() => setVisitor(0, { lastName: fromBuyer })}
           >
-            Reprendre « {context.buyer.name.trim()} » : nom « {fromBuyer} », civilité et prénom à
-            compléter
+            Reprendre «&nbsp;{context.buyer.name.trim()}&nbsp;»&nbsp;: nom «&nbsp;{fromBuyer}
+            &nbsp;», civilité et prénom à compléter
           </button>
         ) : null}
         {visitors.map((visitor, index) => {
@@ -476,8 +476,9 @@ export function VoucherForm({
                   data-testid={`voucher-take-last-visitor-${index + 1}`}
                   onClick={() => setVisitor(index, { civility: old.civility, ...oldSplit })}
                 >
-                  Reprendre « {old.civility} {old.name} » du dernier bon : prénom «{' '}
-                  {oldSplit.firstName} », nom « {oldSplit.lastName} »
+                  Reprendre «&nbsp;{old.civility} {old.name}&nbsp;» du dernier bon&nbsp;: prénom
+                  «&nbsp;
+                  {oldSplit.firstName}&nbsp;», nom «&nbsp;{oldSplit.lastName}&nbsp;»
                 </button>
               ) : null}
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_1fr]">
@@ -641,8 +642,8 @@ export function VoucherForm({
         ) : null}
         {missingTitles.length > 0 ? (
           <p className="text-sm font-semibold text-amber-800" data-testid="voucher-missing-titles">
-            Il manque : le titre pour{' '}
-            {missingTitles.map((visit) => `« ${visit.label} »`).join(', ')}
+            Il manque&nbsp;: le titre pour{' '}
+            {missingTitles.map((visit) => `«\u00a0${visit.label}\u00a0»`).join(', ')}
           </p>
         ) : null}
         {error ? (

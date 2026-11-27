@@ -99,8 +99,8 @@ export function visitReportLine(report: {
       .join(', ');
   return [
     OPINION_LABELS[report.opinion],
-    report.liked.length > 0 ? `a aimé : ${tags(report.liked, LIKED_LABELS)}` : '',
-    report.disliked.length > 0 ? `gêné : ${tags(report.disliked, DISLIKED_LABELS)}` : '',
+    report.liked.length > 0 ? `a aimé\u00a0: ${tags(report.liked, LIKED_LABELS)}` : '',
+    report.disliked.length > 0 ? `gêné\u00a0: ${tags(report.disliked, DISLIKED_LABELS)}` : '',
   ]
     .filter(Boolean)
     .join(' · ');

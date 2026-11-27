@@ -121,8 +121,10 @@ describe('« Depuis le rendez-vous : N concurrents ont baissé leur prix »', ()
       { guess: 1, revealedPrice: 250_000, currentPrice: 240_000 },
     ];
     expect(priceDropsSinceMeeting(competitors)).toBe(2);
-    expect(priceDropsLabel(2)).toBe('Depuis le rendez-vous : 2 concurrents ont baissé leur prix');
-    expect(priceDropsLabel(1)).toBe('Depuis le rendez-vous : 1 concurrent a baissé son prix');
+    expect(priceDropsLabel(2)).toBe(
+      'Depuis le rendez-vous\u00a0: 2 concurrents ont baissé leur prix',
+    );
+    expect(priceDropsLabel(1)).toBe('Depuis le rendez-vous\u00a0: 1 concurrent a baissé son prix');
   });
 
   it('sans prix révélé figé, on ne sait pas : rien ne compte et rien ne s’affiche', () => {
@@ -153,20 +155,20 @@ describe('le bloc n’affiche que des données existantes', () => {
       launchReadinessFirst: 7,
       launchReadinessLast: 10,
       launchReadinessMissing: ' Un avis de mon notaire ',
-      liveDuration: 'Durée du Live : 41 min',
+      liveDuration: 'Durée du Live\u00a0: 41 min',
     });
-    expect(said?.path.map((step) => `${step.label} : ${plain(step.value)}`)).toEqual([
-      'Au début : 350 000 €',
-      'Après avoir vu le marché : 325 000 €',
-      'Prix retenu : 330 000 €',
+    expect(said?.path.map((step) => `${step.label}\u00a0: ${plain(step.value)}`)).toEqual([
+      'Au début\u00a0: 350 000 €',
+      'Après avoir vu le marché\u00a0: 325 000 €',
+      'Prix retenu\u00a0: 330 000 €',
     ]);
     expect(said?.guesses).toHaveLength(1);
     // Le prix du concurrent le plus dangereux est celui qui a été RÉVÉLÉ, pas celui d'aujourd'hui.
     expect(plain(said!.dangerous!)).toBe('Appartement · 3 pièces · 68 m² · Antibes — 300 000 €');
     expect(said?.readiness).toBe('7/10 → 10/10');
     expect(said?.readinessMissing).toBe('Un avis de mon notaire');
-    expect(said?.liveDuration).toBe('Durée du Live : 41 min');
-    expect(said?.priceDrops).toBe('Depuis le rendez-vous : 1 concurrent a baissé son prix');
+    expect(said?.liveDuration).toBe('Durée du Live\u00a0: 41 min');
+    expect(said?.priceDrops).toBe('Depuis le rendez-vous\u00a0: 1 concurrent a baissé son prix');
   });
 
   it('une donnée absente n’a pas de ligne', () => {

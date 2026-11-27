@@ -200,7 +200,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
           {/* Mission 138 — une lecture en échec le dit, jamais « aucune réponse » (M98). */}
           {offerAnswers == null ? (
             <span role="alert" className="text-xs font-semibold text-red-700">
-              Les réponses aux offres n’ont pas pu être lues : rechargez la page.
+              Les réponses aux offres n’ont pas pu être lues&nbsp;: rechargez la page.
             </span>
           ) : null}
           {(offerAnswers ?? []).map((answer) => (
@@ -280,7 +280,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       <ProjectAllFold open={tout === '1'}>
         {glance ? <MarketGlanceCard glance={glance} /> : null}
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-600 stage:text-white/70">
-          <span>Autres actions :</span>
+          <span>Autres actions&nbsp;:</span>
           {/* Mission 131 — l'Étude de marché, pour remettre ou envoyer, avec ou sans Live. */}
           <Link
             href={`/builder/${projectId}/etude-de-marche`}

@@ -13,8 +13,8 @@ export const IDEAL_CATEGORY_LABELS: Record<IdealCategory, string> = {
 };
 export const IDEAL_CATEGORY_HINTS: Record<IdealCategory, string> = {
   strong: 'Tous les indispensables, et les préférences aussi.',
-  compromise: 'Tous les indispensables ; une ou plusieurs préférences non.',
-  explore: 'Un indispensable que l’annonce n’indique pas : à vérifier.',
+  compromise: 'Tous les indispensables\u202f; une ou plusieurs préférences non.',
+  explore: 'Un indispensable que l’annonce n’indique pas\u00a0: à vérifier.',
 };
 
 // La source d'un bien retenu : un dossier vendeur de l'agence, un concurrent à prospecter, une

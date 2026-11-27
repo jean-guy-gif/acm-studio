@@ -26,7 +26,7 @@ describe('ce que l’annonce dit de ce qui compte pour eux', () => {
     const pills = softWhyPills({
       judgments: [judgment({ quote: '12 rue des Lilas, au calme absolu' })],
     });
-    expect(pills).toEqual([{ tone: 'said', label: '« au calme » dans l’annonce' }]);
+    expect(pills).toEqual([{ tone: 'said', label: '«\u00a0au calme\u00a0» dans l’annonce' }]);
     expect(JSON.stringify(pills)).not.toContain('Lilas');
   });
 
@@ -45,9 +45,9 @@ describe('ce que l’annonce dit de ce qui compte pour eux', () => {
         ],
       }).map((pill) => pill.label),
     ).toEqual([
-      '« au calme » : à vérifier',
-      '« une vue » : à vérifier',
-      '« lumineux » : à vérifier',
+      '«\u00a0au calme\u00a0»\u00a0: à vérifier',
+      '«\u00a0une vue\u00a0»\u00a0: à vérifier',
+      '«\u00a0lumineux\u00a0»\u00a0: à vérifier',
     ]);
   });
 
@@ -72,8 +72,8 @@ describe('ce que l’annonce dit de ce qui compte pour eux', () => {
 
   it('en classement simplifié : les mots trouvés dans l’annonce', () => {
     expect(softWhyPills({ mentions: ['calme', 'vue'] }).map((pill) => pill.label)).toEqual([
-      '« calme » dans l’annonce',
-      '« vue » dans l’annonce',
+      '«\u00a0calme\u00a0» dans l’annonce',
+      '«\u00a0vue\u00a0» dans l’annonce',
     ]);
     expect(softWhyPills({ mentions: [] })).toEqual([]);
   });
@@ -88,7 +88,7 @@ describe('les raisons d’un bien, dans l’ordre', () => {
     ];
     expect(whyPills(met, { judgments: [judgment({})] }).map((pill) => pill.label)).toEqual([
       'Piscine',
-      '« au calme » dans l’annonce',
+      '«\u00a0au calme\u00a0» dans l’annonce',
       'Mougins',
       '2 pièces de plus',
     ]);

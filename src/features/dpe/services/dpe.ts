@@ -113,7 +113,7 @@ export function dpeMarket(
       reference,
       subject,
       verdict: 'unknown',
-      message: `Vos concurrents affichent surtout ${reference}. Après le passage du diagnostiqueur, votre bien devra être ${target} pour rester dans la course ; au-delà, il faudra peut-être ajuster la stratégie de prix.`,
+      message: `Vos concurrents affichent surtout ${reference}. Après le passage du diagnostiqueur, votre bien devra être ${target} pour rester dans la course\u202f; au-delà, il faudra peut-être ajuster la stratégie de prix.`,
     };
   }
   const gap = dpeGap(subject, reference);
@@ -138,6 +138,6 @@ export function dpeMarket(
     subject,
     verdict: 'worse',
     message:
-      'Votre DPE est moins bon que celui de la plupart de vos concurrents : les acheteurs compareront. À intégrer dans la stratégie de prix.',
+      'Votre DPE est moins bon que celui de la plupart de vos concurrents\u00a0: les acheteurs compareront. À intégrer dans la stratégie de prix.',
   };
 }

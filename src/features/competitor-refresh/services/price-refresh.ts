@@ -36,7 +36,7 @@ export function priceCheckOutcome(
 // « 5 annonces relues · 1 baisse de prix · 1 retirée depuis le rendez-vous · 1 illisible ».
 export function priceRefreshSummary(outcomes: PriceCheckOutcome[]): string {
   if (outcomes.length === 0) {
-    return 'Aucune annonce à relire : aucun concurrent retenu n’a d’annonce en ligne.';
+    return 'Aucune annonce à relire\u00a0: aucun concurrent retenu n’a d’annonce en ligne.';
   }
   const read = outcomes.filter((o) => o.status === 'unchanged' || o.status === 'changed').length;
   const drops = outcomes.filter((o) => o.status === 'changed' && o.price < o.previous).length;

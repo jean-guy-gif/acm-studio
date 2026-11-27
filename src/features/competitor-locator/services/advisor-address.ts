@@ -80,7 +80,10 @@ export function advisorAddressPatch(
   const address =
     typeof input.address === 'string' ? input.address.replace(/\s+/g, ' ').trim() : '';
   if (address.length < ADDRESS_MIN_LENGTH || address.length > ADDRESS_MAX_LENGTH) {
-    return { ok: false, error: 'Saisissez l’adresse complète : numéro, rue, code postal, ville.' };
+    return {
+      ok: false,
+      error: 'Saisissez l’adresse complète\u00a0: numéro, rue, code postal, ville.',
+    };
   }
   return {
     ok: true,

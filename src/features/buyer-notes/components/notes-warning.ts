@@ -5,4 +5,4 @@
 // d'information sur la santé » devient « N'écrivez, ne dictez ni ne photographiez d'information sur
 // la santé » ; le reste du texte ne bouge pas.
 export const NOTES_AI_WARNING =
-  'Vos notes sont lues par un service d’intelligence artificielle, qui propose une fiche : vous la vérifiez avant de l’enregistrer. La photo n’est pas gardée. N’écrivez, ne dictez ni ne photographiez d’information sur la santé, la religion ou la vie privée de vos clients : l’outil ne la relève pas, mais elle serait envoyée.';
+  'Vos notes sont lues par un service d’intelligence artificielle, qui propose une fiche\u00a0: vous la vérifiez avant de l’enregistrer. La photo n’est pas gardée. N’écrivez, ne dictez ni ne photographiez d’information sur la santé, la religion ou la vie privée de vos clients\u00a0: l’outil ne la relève pas, mais elle serait envoyée.';

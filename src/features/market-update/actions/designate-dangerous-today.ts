@@ -17,8 +17,8 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 export type DesignateDangerousResult = { ok: true } | { ok: false; error: string };
 
 const FAILURE = 'Le choix n’a pas été enregistré. Réessayez.';
-const NOT_LISTED = 'Ce bien n’est plus en vente : choisissez-en un autre.';
-const STALE = 'Mettez d’abord les concurrents à jour : un point déjà remis ne change plus.';
+const NOT_LISTED = 'Ce bien n’est plus en vente\u00a0: choisissez-en un autre.';
+const STALE = 'Mettez d’abord les concurrents à jour\u00a0: un point déjà remis ne change plus.';
 
 // Mission 129 — « Désigner le plus dangereux aujourd'hui », sur le Suivi d'un mandat signé, après
 // une mise à jour : un bien du point du jour, encore en vente et dans le classement, nouveaux venus compris ; `null`

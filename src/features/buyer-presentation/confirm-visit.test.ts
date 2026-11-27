@@ -159,7 +159,7 @@ describe('« Confirmer la visite »', () => {
     // Mission 161 — la préparation du message renouvelle d'abord le lien du mandat, s'il est vieux.
     expect(renewals.length).toBeGreaterThan(0);
     if (!result.ok) return;
-    expect(result.message).toContain('Votre sélection : https://x.test/dossier/abc');
+    expect(result.message).toContain('Votre sélection\u00a0: https://x.test/dossier/abc');
     expect(result.message).not.toContain('Vivre ici');
     expect(result.message).not.toContain('ce qui l’entoure');
     expect(service.writes()).toEqual(['update buyer_visit_requests']);
@@ -170,7 +170,7 @@ describe('« Confirmer la visite »', () => {
     state.projectLink = 'https://app.myacademia.ai/l/v3k9-2mq7.8f2c1a9e4b7d';
     const fr = await confirmVisit(VISIT, tomorrow(), '10:30');
     expect(fr.ok && fr.message).toContain(
-      'Vivre ici, autour du bien : https://app.myacademia.ai/l/v3k9-2mq7.8f2c1a9e4b7d',
+      'Vivre ici, autour du bien\u00a0: https://app.myacademia.ai/l/v3k9-2mq7.8f2c1a9e4b7d',
     );
     state.visit = { ...liveVisit, buyers: { ...liveVisit.buyers, language: 'en' } };
     const en = await confirmVisit(VISIT, tomorrow(), '10:30');
@@ -213,7 +213,7 @@ describe('« Confirmer la visite » : le lien Academia, sur preuve', () => {
     expect(await confirmVisit(VISIT, tomorrow(), '10:30')).toEqual({
       ok: false,
       error:
-        'Le lien « Vivre ici » du bien n’a pas pu être lu. Réessayez, ou préparez le message sans lui.',
+        'Le lien «\u00a0Vivre ici\u00a0» du bien n’a pas pu être lu. Réessayez, ou préparez le message sans lui.',
       livingHereUnread: true,
     });
     expect(service.writes()).toEqual([]);
@@ -222,7 +222,9 @@ describe('« Confirmer la visite » : le lien Academia, sur preuve', () => {
     service.reset();
     const without = await confirmVisit(VISIT, tomorrow(), '10:30', true);
     expect(without.ok).toBe(true);
-    expect(without.ok && without.message).toContain('Votre sélection : https://x.test/dossier/abc');
+    expect(without.ok && without.message).toContain(
+      'Votre sélection\u00a0: https://x.test/dossier/abc',
+    );
     expect(without.ok && without.message).not.toContain('Vivre ici');
     expect(
       service.calls.some((call) => call.method === 'from' && call.args[0] === 'projects'),
@@ -232,7 +234,7 @@ describe('« Confirmer la visite » : le lien Academia, sur preuve', () => {
     state.readFails = false;
     const retried = await confirmVisit(VISIT, tomorrow(), '10:30');
     expect(retried.ok && retried.message).toContain(
-      'Vivre ici, autour du bien : https://app.myacademia.ai/l/abc',
+      'Vivre ici, autour du bien\u00a0: https://app.myacademia.ai/l/abc',
     );
   });
 });

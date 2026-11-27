@@ -82,7 +82,9 @@ describe('le courrier au propriétaire d’une recherche acquéreur', () => {
     expect(page).toContain('CPI 0605 2026 000 000 001');
     expect(page).toContain('Ne peut recevoir aucun fonds');
     expect(page).toContain('déterminée à partir de données publiques');
-    expect(page).toContain('Finalité : vous présenter une recherche qui correspond à votre bien.');
+    expect(page).toContain(
+      'Finalité\u00a0: vous présenter une recherche qui correspond à votre bien.',
+    );
     expect(page).not.toContain('pour la vente de votre bien');
   });
 });
@@ -120,7 +122,7 @@ describe('le dossier de collaboration au confrère', () => {
     expect(page).toContain('Cher confrère,');
     expect(page).toContain('Je suis Natacha Conseil, conseiller chez Agence des Collines.');
     expect(page).toContain(
-      'Votre mandat est-il ouvert à la collaboration pour une visite de mon acquéreur ?',
+      'Votre mandat est-il ouvert à la collaboration pour une visite de mon acquéreur\u202f?',
     );
     expect(page).toContain('Annonce SeLoger n° 26ZEJMLWB13Y');
   });
@@ -149,7 +151,7 @@ describe('le dossier de collaboration au confrère', () => {
   });
 
   it('une question réécrite qui nomme l’acquéreur est refusée', () => {
-    expect(buyerLetterForbidden(['Un mandat pour la famille Keller ?'], buyer)).toBe(true);
+    expect(buyerLetterForbidden(['Un mandat pour la famille Keller\u202f?'], buyer)).toBe(true);
   });
 
   it('la version : le confrère en exclusivité, le propriétaire après un refus ou sans exclusivité', () => {

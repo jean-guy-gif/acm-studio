@@ -630,7 +630,7 @@ export function buildStudyStory(input: StudyStoryInput): MarketStudyStory {
         legend
           .slice(1)
           .filter((line) => line.text !== q.nothing)
-          .map((line) => `${line.title}${language === 'en' ? ':' : ' :'} ${line.text}`),
+          .map((line) => `${line.title}${language === 'en' ? ':' : '\u00a0:'} ${line.text}`),
       ),
       permits: tile(permitsView, (legend) =>
         legend.map((line) => [line.title, line.text].filter(Boolean).join(' · ')),

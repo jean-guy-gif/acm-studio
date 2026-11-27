@@ -35,7 +35,7 @@ export async function uploadTheirPhoto(
     new Uint8Array(await file.arrayBuffer()),
   );
   if (!stored.ok) {
-    return { ok: false, error: `Photo : ${stored.error}` };
+    return { ok: false, error: `Photo\u00a0: ${stored.error}` };
   }
   const [signed] = await signPropertyPhotos(supabase, [stored.path], PREVIEW_TTL_SECONDS);
   return { ok: true, path: stored.path, url: signed?.url ?? null };

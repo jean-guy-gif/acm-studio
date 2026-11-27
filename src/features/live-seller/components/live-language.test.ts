@@ -87,7 +87,7 @@ describe('le Live dans la langue du vendeur', () => {
 
   it('sans langue, le français d’avant', () => {
     expect(render(screens[1])).toContain(
-      'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente ?',
+      'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente\u202f?',
     );
     expect(render(screens[4])).toContain('Sur une échelle de 1 à 10');
   });

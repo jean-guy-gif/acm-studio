@@ -105,7 +105,7 @@ function checkControlledArray(
     errors[field] = 'Une valeur sélectionnée n’est pas autorisée.';
   }
   if (deduped.includes(EXCLUSIVE_NONE) && deduped.length > 1) {
-    errors[field] = '« Aucun » ne peut pas être combiné avec une autre valeur.';
+    errors[field] = '«\u00a0Aucun\u00a0» ne peut pas être combiné avec une autre valeur.';
   }
   return deduped;
 }

@@ -107,7 +107,10 @@ export async function getVisitLetters(lines: VisitLine[]): Promise<Map<string, V
   const closedWithoutLetter = (line: VisitLine): VisitLetterState | null => {
     if (line.itemSource === 'project') return null;
     if (oppositions == null) {
-      return { kind: 'closed', label: 'Liste « Ne plus solliciter » illisible, rechargez la page' };
+      return {
+        kind: 'closed',
+        label: 'Liste «\u00a0Ne plus solliciter\u00a0» illisible, rechargez la page',
+      };
     }
     if (line.itemSource === 'competitor') {
       const card = cards.find((candidate) =>

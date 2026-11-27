@@ -177,12 +177,12 @@ describe('les trois lignes de prix', () => {
       subjectPrice: 1639500,
     });
     expect(lines.meeting?.sentence).toBe(
-      'Au rendez-vous, votre prix retenu était sous le plus bas des 5 concurrents : le moins cher des 6 biens comparés.',
+      'Au rendez-vous, votre prix retenu était sous le plus bas des 5 concurrents\u00a0: le moins cher des 6 biens comparés.',
     );
     expect(lines.today).toMatchObject({ prices: [1590000, 1690000, 1695000], median: 1690000 });
     expect(lines.todayGone).toEqual({ probableSale: 1, withdrawn: 1, unknown: 0 });
     expect(lines.today?.sentence).toBe(
-      'Aujourd’hui, 1 concurrent sur 3 est sous votre prix, dont 1 passé dessous depuis le rendez-vous : vous êtes le 2e moins cher des 4 biens encore en vente. 2 annonces ont disparu : 1 vente probable, 1 retirée sans vente.',
+      'Aujourd’hui, 1 concurrent sur 3 est sous votre prix, dont 1 passé dessous depuis le rendez-vous\u00a0: vous êtes le 2e moins cher des 4 biens encore en vente. 2 annonces ont disparu\u00a0: 1 vente probable, 1 retirée sans vente.',
     );
     expect(lines.newcomers).toBeNull();
     expect(lines.newcomersCount).toBe(0);
@@ -198,7 +198,7 @@ describe('les trois lignes de prix', () => {
       1639500,
     );
     expect(lines.today?.sentence).toBe(
-      'Aujourd’hui, 1 concurrent sur 2 est sous votre prix : vous êtes dans la moyenne des 3 biens encore en vente.',
+      'Aujourd’hui, 1 concurrent sur 2 est sous votre prix\u00a0: vous êtes dans la moyenne des 3 biens encore en vente.',
     );
   });
 
@@ -212,7 +212,9 @@ describe('les trois lignes de prix', () => {
     );
     expect(lines.today?.prices).toEqual([1700000]);
     expect(lines.todayGone).toEqual({ probableSale: 0, withdrawn: 0, unknown: 1 });
-    expect(lines.today?.sentence).toContain('1 annonce a disparu : 1 retirée, durée inconnue.');
+    expect(lines.today?.sentence).toContain(
+      '1 annonce a disparu\u00a0: 1 retirée, durée inconnue.',
+    );
   });
 
   it('un plus dangereux disparu ne marque pas la ligne d’aujourd’hui', () => {
@@ -269,7 +271,9 @@ describe('le point daté', () => {
     expect(marketUpdateLine(summary)).toBe(
       '3 annonces relues · 2 baisses · 1 vente probable · 1 probablement retiré sans vente · 1 prix au rendez-vous non relu',
     );
-    expect(droppedSinceMeetingLabel(summary)).toBe('Ont baissé depuis le rendez-vous : 2 sur 4');
+    expect(droppedSinceMeetingLabel(summary)).toBe(
+      'Ont baissé depuis le rendez-vous\u00a0: 2 sur 4',
+    );
     expect(parseMarketUpdateSummary(JSON.parse(JSON.stringify(summary)))).toEqual(summary);
     expect(parseMarketUpdateSummary({ version: 2 })).toBeNull();
     // Un point écrit avant les champs ajoutés ensuite se relit, avec leurs valeurs par défaut.
@@ -297,7 +301,7 @@ describe('le point daté', () => {
       '1 650 000 € au rendez-vous → 1 590 000 € aujourd’hui · −3,6 % · baisse vue le 15/11/2026 · en vente depuis 142 jours',
     );
     expect(plain(competitorFactLine(summary.competitors[0], MADE_AT.toISOString()))).toMatch(
-      /^Prix au rendez-vous non relu ; prix du jour : 1 690 000 €/,
+      /^Prix au rendez-vous non relu\s; prix du jour\s: 1 690 000 €/,
     );
   });
 
@@ -318,7 +322,7 @@ describe('le point daté', () => {
     expect(summary.lines.today).toBeNull();
     expect(marketUpdateLine(summary)).toBe('0 annonce relue · 1 retirée, durée inconnue');
     expect(competitorFactLine(summary.competitors[0], MADE_AT.toISOString())).toBe(
-      'Retirée le 03/11/2026. Durée en vente inconnue : impossible de dire si elle est vendue.',
+      'Retirée le 03/11/2026. Durée en vente inconnue\u00a0: impossible de dire si elle est vendue.',
     );
   });
 

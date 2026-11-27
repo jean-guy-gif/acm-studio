@@ -62,10 +62,12 @@ describe('la ligne de résumé des compléments', () => {
   });
 
   it('écrit la ligne', () => {
-    expect(complementsSummary({ filled: 0, toVerify: 0 })).toBe('Compléments : aucun renseigné');
-    expect(complementsSummary({ filled: 1, toVerify: 0 })).toBe('Compléments : 1 renseigné');
+    expect(complementsSummary({ filled: 0, toVerify: 0 })).toBe(
+      'Compléments\u00a0: aucun renseigné',
+    );
+    expect(complementsSummary({ filled: 1, toVerify: 0 })).toBe('Compléments\u00a0: 1 renseigné');
     expect(complementsSummary({ filled: 9, toVerify: 2 })).toBe(
-      'Compléments : 9 renseignés, dont 2 à vérifier',
+      'Compléments\u00a0: 9 renseignés, dont 2 à vérifier',
     );
   });
 

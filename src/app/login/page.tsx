@@ -87,7 +87,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Se connecter
             </SubmitButton>
             <Link href="/mot-de-passe-oublie" className={`${link} self-center text-sm`}>
-              Mot de passe oublié ?
+              Mot de passe oublié&#x202f;?
             </Link>
           </form>
           <footer className="border-t border-zinc-200/80 pt-4 text-center text-xs stage:border-white/10">

@@ -7,7 +7,7 @@ import { setExpertMode } from '@/features/expert-mode/actions/set-expert-mode';
 
 export const EXPERT_MODE_LABEL = 'Mode expert';
 export const EXPERT_MODE_HINT =
-  'Pour qui connaît déjà l’outil : l’écran « Bienvenue » et les rappels d’entraînement sont masqués, l’ordre des concurrents au Live se choisit en les déplaçant, et « Exporter le comparatif » ouvre un tableur pour votre propre usage. La question « devant le vendeur ? » reste.';
+  'Pour qui connaît déjà l’outil\u00a0: l’écran «\u00a0Bienvenue\u00a0» et les rappels d’entraînement sont masqués, l’ordre des concurrents au Live se choisit en les déplaçant, et «\u00a0Exporter le comparatif\u00a0» ouvre un tableur pour votre propre usage. La question «\u00a0devant le vendeur\u202f?\u00a0» reste.';
 
 // Mission 110 — « Mon profil » : le mode expert, allumé ou éteint d'un geste.
 export function ExpertModeToggle({ initial }: { initial: boolean }) {

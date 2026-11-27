@@ -95,24 +95,25 @@ export function VisitActions({
     case 'closed':
       phrase = (
         <span data-testid="visit-outcome">
-          {letterState.kind === 'closed' ? letterState.label : null} : rien à envoyer pour ce bien.
+          {letterState.kind === 'closed' ? letterState.label : null}&nbsp;: rien à envoyer pour ce
+          bien.
         </span>
       );
       break;
     case 'call_seller':
-      phrase = 'Le vendeur est à relancer : dites-lui que vous avez un acquéreur.';
+      phrase = 'Le vendeur est à relancer\u00a0: dites-lui que vous avez un acquéreur.';
       stepAction = projectId ? (
         <Link
           href={`/builder/${projectId}`}
           className={socleBtnOutline}
           data-testid="visit-seller-action"
         >
-          Rappeler : « j’ai un acquéreur »
+          Rappeler&nbsp;: «&nbsp;j’ai un acquéreur&nbsp;»
         </Link>
       ) : null;
       break;
     case 'confirm':
-      phrase = 'Le jour et l’heure : un message prêt pour l’acquéreur.';
+      phrase = 'Le jour et l’heure\u00a0: un message prêt pour l’acquéreur.';
       stepAction = (
         <button
           type="button"
@@ -134,7 +135,7 @@ export function VisitActions({
       );
       break;
     case 'visit_done':
-      phrase = 'Après la visite : son avis, ce qui a plu et déplu, la suite.';
+      phrase = 'Après la visite\u00a0: son avis, ce qui a plu et déplu, la suite.';
       stepAction = (
         <button
           type="button"

@@ -88,7 +88,7 @@ export function PropertyBuyersBlock({
       ) : null}
       {result && result.price != null && headline ? (
         <p className={hintText}>
-          Prêts à visiter : financement validé, un échange il y a moins de 30 jours, un budget.
+          Prêts à visiter&nbsp;: financement validé, un échange il y a moins de 30 jours, un budget.
         </p>
       ) : null}
     </section>

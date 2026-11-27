@@ -301,7 +301,7 @@ function CandidateCard({
           {failed ? (
             // La cause réelle, visible sur la carte (pas seulement dans la console).
             <p className="text-xs font-medium text-amber-700 stage:text-amber-300">
-              L’import a échoué — cause : {failed}. Réessayez, ou ouvrez l’annonce.
+              L’import a échoué — cause&nbsp;: {failed}. Réessayez, ou ouvrez l’annonce.
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2 text-xs">
@@ -411,9 +411,9 @@ function PortalBlock({
 // la recherche. Au-delà, le lot passe à la suivante ; le bien, lui, reste enregistré en attente.
 const BATCH_ITEM_SAFETY_MS = 200_000;
 const RETAINED_NOT_SAVED_MESSAGE =
-  'Les concurrents retenus n’ont pas pu être enregistrés : rien n’a été lancé. Réessayez.';
+  'Les concurrents retenus n’ont pas pu être enregistrés\u00a0: rien n’a été lancé. Réessayez.';
 const RETAINED_SAVED_WITHOUT_EXTENSION_MESSAGE =
-  'Vos concurrents retenus sont enregistrés, en attente d’import : ils sont listés sur la page des concurrents, où « Réessayer » les importera';
+  'Vos concurrents retenus sont enregistrés, en attente d’import\u00a0: ils sont listés sur la page des concurrents, où «\u00a0Réessayer\u00a0» les importera';
 const pendingReason = (cause: keyof typeof READ_FAILURE_LABELS): string =>
   `en attente d’import — ${READ_FAILURE_LABELS[cause]}`;
 
@@ -914,7 +914,7 @@ export function CompetitorSearchPanel({
           setExtensionIssue('outdated');
         } else if (result.reason === 'none') {
           setError(
-            'Aucun onglet de recherche ouvert sur SeLoger, Bien’ici, Green Acres ou Maisons et Appartements. Cliquez d’abord sur « Ouvrir mes recherches ».',
+            'Aucun onglet de recherche ouvert sur SeLoger, Bien’ici, Green Acres ou Maisons et Appartements. Cliquez d’abord sur «\u00a0Ouvrir mes recherches\u00a0».',
           );
         } else {
           setError('Les onglets n’ont pas pu être lus. Réessayez.');
@@ -1161,7 +1161,7 @@ export function CompetitorSearchPanel({
       const outcome = await importOne(entry.candidate, new Map());
       if (outcome.status === 'pending') {
         setError(
-          `« ${entry.candidate.title ?? entry.candidate.url} » : ${pendingReason(outcome.cause)}.`,
+          `«\u00a0${entry.candidate.title ?? entry.candidate.url}\u00a0»\u00a0: ${pendingReason(outcome.cause)}.`,
         );
         return;
       }
@@ -1282,7 +1282,7 @@ export function CompetitorSearchPanel({
             settingsInput != null &&
             void namedSearch(
               () => searchSettings.saveNamedAction(name, settingsInput),
-              'Recherche enregistrée : vous la retrouverez sur vos autres dossiers.',
+              'Recherche enregistrée\u00a0: vous la retrouverez sur vos autres dossiers.',
             )
           }
           onApplyNamed={(id) => applyNamed(id)}
@@ -1341,7 +1341,7 @@ export function CompetitorSearchPanel({
                   : STREAM_ESTATE_SEARCH_BUTTON}
             </button>
           )}
-          <p className={hintText}>Critères : {criteriaLabel}</p>
+          <p className={hintText}>Critères&nbsp;: {criteriaLabel}</p>
           {budgetNotice ? (
             <p
               role="status"
@@ -1383,12 +1383,14 @@ export function CompetitorSearchPanel({
             >
               {reading ? 'Lecture en cours…' : 'Lire mes recherches'}
             </button>
-            {streamEstateAction ? null : <p className={hintText}>Critères : {criteriaLabel}</p>}
+            {streamEstateAction ? null : (
+              <p className={hintText}>Critères&nbsp;: {criteriaLabel}</p>
+            )}
           </div>
           <p className={hintText}>
-            « Ouvrir mes recherches » ouvre les portails déjà filtrés (SeLoger, la première fois
-            dans une commune, sans filtre) ; corrigez un filtre si besoin, puis « Lire mes
-            recherches ».
+            «&nbsp;Ouvrir mes recherches&nbsp;» ouvre les portails déjà filtrés (SeLoger, la
+            première fois dans une commune, sans filtre)&#x202f;; corrigez un filtre si besoin, puis
+            «&nbsp;Lire mes recherches&nbsp;».
           </p>
           {openedSearches ? (
             <div className={`${card} flex flex-col gap-2 p-4`}>
@@ -1416,9 +1418,11 @@ export function CompetitorSearchPanel({
           ) : null}
           {waitingTabs.length > 0 ? (
             <p role="alert" className={alertError}>
-              {waitingTabs.map((label) => `Cliquez une fois sur l’onglet ${label}`).join(' ; ')} —
-              {waitingTabs.length > 1 ? ' ces pages sont restées' : ' sa page est restée'} sur
-              l’écran d’attente du portail. Puis relancez « Lire mes recherches ».
+              {waitingTabs
+                .map((label) => `Cliquez une fois sur l’onglet ${label}`)
+                .join('\u202f; ')}{' '}
+              —{waitingTabs.length > 1 ? ' ces pages sont restées' : ' sa page est restée'} sur
+              l’écran d’attente du portail. Puis relancez «&nbsp;Lire mes recherches&nbsp;».
             </p>
           ) : null}
         </>
@@ -1523,12 +1527,12 @@ export function CompetitorSearchPanel({
                 {admissibility.belowMinimum ? (
                   <p>
                     Trop peu de concurrents comparables ({admissibility.rankedCount}), même après le
-                    dernier élargissement. On ne complète pas avec des biens hors bornes : une liste
-                    courte et juste vaut mieux qu’une liste pleine et fausse.
+                    dernier élargissement. On ne complète pas avec des biens hors bornes&nbsp;: une
+                    liste courte et juste vaut mieux qu’une liste pleine et fausse.
                   </p>
                 ) : null}
                 {excludedLines.length > 0 ? (
-                  <p>Écartées faute d’une donnée nécessaire : {excludedLines.join(' · ')}.</p>
+                  <p>Écartées faute d’une donnée nécessaire&nbsp;: {excludedLines.join(' · ')}.</p>
                 ) : null}
                 {admissibility.newBuildAdded > 0 ? (
                   <p>
@@ -1543,9 +1547,9 @@ export function CompetitorSearchPanel({
                       admissibility.newBuildHeld,
                       'bien neuf non proposé',
                       'biens neufs non proposés',
-                    )}{' '}
-                    : le neuf ne vient qu’en complément, quand il reste moins de 3 concurrents dans
-                    l’ancien.
+                    )}
+                    &nbsp;: le neuf ne vient qu’en complément, quand il reste moins de 3 concurrents
+                    dans l’ancien.
                   </p>
                 ) : null}
               </div>
@@ -1571,9 +1575,9 @@ export function CompetitorSearchPanel({
               : `Retenir et importer les ${checkedCount} concurrent${checkedCount > 1 ? 's' : ''} coché${checkedCount > 1 ? 's' : ''}`}
           </button>
           <p className={hintText}>
-            Les cochées sont importées dans le dossier ; les autres restent dans la liste, sans être
-            comptées comme écartées (pour écarter, « Écarter avec un motif »). Environ une seconde
-            par fiche — rien n’est enregistré avant ce clic.
+            Les cochées sont importées dans le dossier&#x202f;; les autres restent dans la liste,
+            sans être comptées comme écartées (pour écarter, «&nbsp;Écarter avec un motif&nbsp;»).
+            Environ une seconde par fiche — rien n’est enregistré avant ce clic.
           </p>
         </div>
       ) : null}
@@ -1586,14 +1590,14 @@ export function CompetitorSearchPanel({
           <p className={hintText}>
             Les portails ne proposent que les annonces de la commune, dans votre fourchette de prix,
             avec le même nombre de pièces et une surface proche. Stream Estate commence par
-            l’identique et n’élargit que s’il manque des biens ; chaque élargissement est écrit sur
-            la carte. L’ordre suit le % de correspondance (secteur, surface, prix, pièces,
-            stationnement, extérieur, puis état, étage, ascenseur, année, piscine, exposition) ; un
-            critère non indiqué sort du calcul.
+            l’identique et n’élargit que s’il manque des biens&#x202f;; chaque élargissement est
+            écrit sur la carte. L’ordre suit le % de correspondance (secteur, surface, prix, pièces,
+            stationnement, extérieur, puis état, étage, ascenseur, année, piscine,
+            exposition)&#x202f;; un critère non indiqué sort du calcul.
           </p>
           {sector ? (
             sector.status === 'located' ? (
-              <p className={hintText}>Distances mesurées depuis « {sector.label} ».</p>
+              <p className={hintText}>Distances mesurées depuis «&nbsp;{sector.label}&nbsp;».</p>
             ) : (
               <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                 {SECTOR_NEUTRAL_MESSAGES[sector.reason]}
@@ -1604,9 +1608,9 @@ export function CompetitorSearchPanel({
           {withdrawnImported > 0 ? (
             <p role="status" className={hintText}>
               {withdrawnImported} annonce{withdrawnImported > 1 ? 's' : ''} n’
-              {withdrawnImported > 1 ? 'étaient' : 'était'} plus en ligne : importée
-              {withdrawnImported > 1 ? 's' : ''} avec la mention « {LISTING_WITHDRAWN_LABEL} », sans
-              être retenue{withdrawnImported > 1 ? 's' : ''}. À vous de{' '}
+              {withdrawnImported > 1 ? 'étaient' : 'était'} plus en ligne&nbsp;: importée
+              {withdrawnImported > 1 ? 's' : ''} avec la mention «&nbsp;{LISTING_WITHDRAWN_LABEL}
+              &nbsp;», sans être retenue{withdrawnImported > 1 ? 's' : ''}. À vous de{' '}
               {withdrawnImported > 1 ? 'les' : 'la'} retenir sur la page des concurrents.
             </p>
           ) : null}
@@ -1626,7 +1630,7 @@ export function CompetitorSearchPanel({
                     {/* La cause réelle, visible sur la fiche en échec (pas seulement
                         dans la console) — mission 46 §2.4. */}
                     <span className="block text-xs text-amber-700 stage:text-amber-300">
-                      Cause : {reason}.
+                      Cause&nbsp;: {reason}.
                     </span>
                   </span>
                   <button

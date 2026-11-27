@@ -31,9 +31,9 @@ export type IdealCriteriaResult =
 
 export const IDEAL_CRITERIA_MESSAGES: Record<'no_type' | 'two_types' | 'no_city', string> = {
   no_type:
-    'Indiquez le type de bien recherché (appartement ou maison) sur la fiche : la recherche du marché en a besoin.',
+    'Indiquez le type de bien recherché (appartement ou maison) sur la fiche\u00a0: la recherche du marché en a besoin.',
   two_types:
-    'La recherche du marché ne cherche qu’un type à la fois : gardez appartement ou maison sur la fiche.',
+    'La recherche du marché ne cherche qu’un type à la fois\u00a0: gardez appartement ou maison sur la fiche.',
   no_city: 'Indiquez au moins une commune sur la fiche.',
 };
 

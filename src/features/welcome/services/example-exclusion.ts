@@ -12,4 +12,4 @@ export function withoutExamples<T extends MaybeExample>(dossiers: T[]): T[] {
 }
 
 export const EXAMPLE_SEARCH_MESSAGE =
-  'Dossier d’exemple : la recherche du marché est coupée. Ses concurrents fictifs sont déjà là.';
+  'Dossier d’exemple\u00a0: la recherche du marché est coupée. Ses concurrents fictifs sont déjà là.';

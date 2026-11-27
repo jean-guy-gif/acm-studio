@@ -21,6 +21,6 @@ export function forbiddenPortalMessage(raw: string): string | null {
     ({ suffix }) => host === suffix || host.endsWith(`.${suffix}`),
   );
   return portal
-    ? `${portal.name} interdit la lecture automatique de ses annonces : ACM ne peut pas la reprendre. Saisissez le bien à la main ci-dessous.`
+    ? `${portal.name} interdit la lecture automatique de ses annonces\u00a0: ACM ne peut pas la reprendre. Saisissez le bien à la main ci-dessous.`
     : null;
 }

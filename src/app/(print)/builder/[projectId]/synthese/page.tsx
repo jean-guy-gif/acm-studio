@@ -51,8 +51,8 @@ export default async function SellerSynthesisPage({
           <SynthesisPrintButton />
         </div>
         <p className={hintText}>
-          Ce document raconte le rendez-vous, dans l’ordre du Live : ce que vous avez montré et ce
-          que le vendeur a répondu. Il ne contient ni adresse, ni titre, ni lien d’annonce.
+          Ce document raconte le rendez-vous, dans l’ordre du Live&nbsp;: ce que vous avez montré et
+          ce que le vendeur a répondu. Il ne contient ni adresse, ni titre, ni lien d’annonce.
         </p>
         <SynthesisPhotoChoices
           projectId={projectId}

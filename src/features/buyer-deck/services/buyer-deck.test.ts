@@ -127,7 +127,7 @@ describe('la grille', () => {
   it('? à vérifier ensemble quand l’annonce ne dit rien', () => {
     expect(mark({ hasElevator: null }, 'elevator')).toEqual({
       mark: 'check',
-      text: 'Ascenseur : à vérifier à la visite',
+      text: 'Ascenseur\u00a0: à vérifier à la visite',
     });
     expect(mark({ outdoor: [] }, 'outdoor').mark).toBe('check');
   });
@@ -152,7 +152,7 @@ describe('la grille', () => {
     // Le signalement ne nomme que l'indispensable en cause, pas les préférences ✗.
     expect(outside.items[0]!.blockedBy).toEqual(['Pas d’extérieur']);
     expect(outside.items[1]!.blocked).toBe(false);
-    expect(outside.lead).toBe('Le bien B en coche le plus : 8 sur 9.');
+    expect(outside.lead).toBe('Le bien B en coche le plus\u00a0: 8 sur 9.');
     // La lettre du bien de tête vient du service.
     expect(outside.leadLetter).toBe('B');
     // Une préférence ✗ n'est pas un blocage ; un indispensable « ? » non plus.
@@ -178,7 +178,7 @@ describe('la phrase de tête', () => {
 
   it('tous les critères : « c’est par lui que je vous propose de commencer »', () => {
     expect(leadSentence([entry('A', 6, 7), entry('B', 7, 7)])).toBe(
-      'Le bien B coche tous vos critères : c’est par lui que je vous propose de commencer.',
+      'Le bien B coche tous vos critères\u00a0: c’est par lui que je vous propose de commencer.',
     );
   });
 
@@ -198,7 +198,7 @@ describe('la phrase de tête', () => {
 
   it('sinon le plus de ✓ ; à égalité, l’ordre de la sélection', () => {
     expect(leadSentence([entry('A', 6, 7), entry('B', 6, 7)])).toBe(
-      'Le bien A en coche le plus : 6 sur 7.',
+      'Le bien A en coche le plus\u00a0: 6 sur 7.',
     );
   });
 
@@ -208,7 +208,7 @@ describe('la phrase de tête', () => {
 
   it('jamais un bien bloqué ; aucun bien recommandable : pas de phrase', () => {
     expect(leadSentence([entry('A', 7, 7, true), entry('B', 5, 7)])).toBe(
-      'Le bien B en coche le plus : 5 sur 7.',
+      'Le bien B en coche le plus\u00a0: 5 sur 7.',
     );
     expect(leadSentence([entry('A', 7, 7, true)])).toBeNull();
   });
@@ -283,7 +283,7 @@ describe('« Pourquoi je vous le propose »', () => {
         hasElevator: null,
       }),
     ]).items[0]!;
-    expect(bare.pitch).toMatch(/^Il coche \d+ critères? sur \d+ : .* à voir ensemble\.$/);
+    expect(bare.pitch).toMatch(/^Il coche \d+ critères? sur \d+\s: .* à voir ensemble\.$/);
   });
 
   it('140 caractères au plus, coupée à un mot', () => {

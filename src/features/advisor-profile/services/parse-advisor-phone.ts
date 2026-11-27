@@ -11,7 +11,7 @@ export function parseAdvisorPhone(value: unknown): ParsedPhone {
     return { ok: true, phone: null };
   }
   if (!PHONE_RE.test(phone) || phone.replace(/\D/g, '').length < 9) {
-    return { ok: false, error: 'Téléphone invalide : par exemple 06 12 34 56 78.' };
+    return { ok: false, error: 'Téléphone invalide\u00a0: par exemple 06 12 34 56 78.' };
   }
   return { ok: true, phone };
 }

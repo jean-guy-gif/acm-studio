@@ -103,7 +103,7 @@ export function meetingSentence(subjectPrice: number | null, prices: number[]): 
       : subjectPrice > Math.max(...prices)
         ? `Au rendez-vous, votre prix retenu était au-dessus du plus haut des ${count}`
         : `Au rendez-vous, votre prix retenu était parmi ceux des ${count}`;
-  return `${lead} : ${place}.`;
+  return `${lead}\u00a0: ${place}.`;
 }
 
 // Un fait calculé, jamais une recommandation : « sous votre prix » compte les prix du jour
@@ -135,7 +135,7 @@ export function todaySentence(
               ? `, dont ${crossed} passé${crossed > 1 ? 's' : ''} dessous depuis le rendez-vous`
               : ''
           }`;
-    parts.push(place ? `${lead} : vous êtes ${place}.` : `${lead}.`);
+    parts.push(place ? `${lead}\u00a0: vous êtes ${place}.` : `${lead}.`);
   }
   const goneTotal = gone.probableSale + gone.withdrawn + gone.unknown;
   if (goneTotal > 0) {
@@ -153,7 +153,7 @@ export function todaySentence(
       .filter(Boolean)
       .join(', ');
     parts.push(
-      `${goneTotal > 1 ? `${goneTotal} annonces ont disparu` : '1 annonce a disparu'} : ${detail}.`,
+      `${goneTotal > 1 ? `${goneTotal} annonces ont disparu` : '1 annonce a disparu'}\u00a0: ${detail}.`,
     );
   }
   return parts.length > 0 ? parts.join(' ') : null;
@@ -167,7 +167,7 @@ export function newcomersSentence(subjectPrice: number | null, prices: number[])
   const count = plural(valid.length, 'nouveau venu', 'nouveaux venus');
   const lowest = Math.min(...valid);
   if (!positive(subjectPrice))
-    return `${count} depuis le rendez-vous : le moins cher à ${formatEuro(lowest)}.`;
+    return `${count} depuis le rendez-vous\u00a0: le moins cher à ${formatEuro(lowest)}.`;
   const gap = subjectPrice - lowest;
   const where =
     gap > 0
@@ -175,7 +175,7 @@ export function newcomersSentence(subjectPrice: number | null, prices: number[])
       : gap === 0
         ? 'au même prix que le vôtre'
         : `${formatEuro(-gap)} au-dessus du vôtre`;
-  return `${count} à votre prix ou moins : ${valid.length > 1 ? 'le moins cher ' : ''}à ${formatEuro(lowest)}, ${where}.`;
+  return `${count} à votre prix ou moins\u00a0: ${valid.length > 1 ? 'le moins cher ' : ''}à ${formatEuro(lowest)}, ${where}.`;
 }
 
 export const NO_NEWCOMER_LABEL = 'Aucun nouveau venu retenu depuis le rendez-vous';

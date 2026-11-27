@@ -153,7 +153,7 @@ export function NewcomersSearchPanel({
           setNotes((current) => ({
             ...current,
             [candidate.url]:
-              'Retenu, en attente d’import : installez ou activez l’extension ACM, puis « Réessayer » sur la page des concurrents.',
+              'Retenu, en attente d’import\u00a0: installez ou activez l’extension ACM, puis «\u00a0Réessayer\u00a0» sur la page des concurrents.',
           }));
           return;
         }
@@ -172,7 +172,7 @@ export function NewcomersSearchPanel({
         setStates((current) => ({ ...current, [candidate.url]: 'pending' }));
         setNotes((current) => ({
           ...current,
-          [candidate.url]: `Retenu, en attente d’import : ${READ_FAILURE_LABELS[outcome.cause]}.`,
+          [candidate.url]: `Retenu, en attente d’import\u00a0: ${READ_FAILURE_LABELS[outcome.cause]}.`,
         }));
         return;
       }
@@ -181,7 +181,7 @@ export function NewcomersSearchPanel({
         setNotes((current) => ({
           ...current,
           [candidate.url]:
-            'Cette annonce n’est plus en ligne : entrée dans le dossier, non retenue.',
+            'Cette annonce n’est plus en ligne\u00a0: entrée dans le dossier, non retenue.',
         }));
         return;
       }
@@ -201,8 +201,8 @@ export function NewcomersSearchPanel({
         ...current,
         [candidate.url]:
           outcome.status === 'imported_from_search'
-            ? 'Retenu ✓ : ajouté au dossier et à Prospection (annonce illisible : chiffres de la recherche, à vérifier)'
-            : 'Retenu ✓ : ajouté au dossier et à Prospection',
+            ? 'Retenu ✓\u00a0: ajouté au dossier et à Prospection (annonce illisible\u00a0: chiffres de la recherche, à vérifier)'
+            : 'Retenu ✓\u00a0: ajouté au dossier et à Prospection',
       }));
       if (rewritten.ok) onPointRewritten?.(rewritten.line);
       router.refresh();
@@ -259,9 +259,9 @@ export function NewcomersSearchPanel({
         : NEWCOMERS_LIMITED_LABEL,
       found.widened ? 'recherche élargie à 10 % sous le prix de commercialisation' : null,
       found.widenRefused === 'budget'
-        ? 'recherche non élargie : forfait du mois atteint'
+        ? 'recherche non élargie\u00a0: forfait du mois atteint'
         : found.widenRefused === 'unreadable'
-          ? 'recherche non élargie : forfait du mois illisible, réessayez plus tard'
+          ? 'recherche non élargie\u00a0: forfait du mois illisible, réessayez plus tard'
           : found.widenRefused === 'failed'
             ? 'recherche non élargie pour l’instant, réessayez plus tard'
             : null,
@@ -278,7 +278,7 @@ export function NewcomersSearchPanel({
         {found.excludedNoDate > 0 ? (
           <span className="text-xs text-zinc-500 stage:text-white/60">
             {found.excludedNoDate} annonce{found.excludedNoDate > 1 ? 's' : ''} écartée
-            {found.excludedNoDate > 1 ? 's' : ''} : on ne sait pas depuis quand{' '}
+            {found.excludedNoDate > 1 ? 's' : ''}&nbsp;: on ne sait pas depuis quand{' '}
             {found.excludedNoDate > 1 ? 'elles sont' : 'elle est'} en ligne.
           </span>
         ) : null}
@@ -328,7 +328,7 @@ export function NewcomersSearchPanel({
       data-testid="newcomers-proposal"
     >
       <span className="font-title text-sm font-bold text-zinc-900 stage:text-white">
-        Chercher les nouveaux venus sur le marché ?
+        Chercher les nouveaux venus sur le marché&#x202f;?
       </span>
       <p className={hintText}>
         Les biens vus sur le marché{since ? ` depuis le ${since}` : ' depuis le rendez-vous'}, avec
@@ -351,7 +351,8 @@ export function NewcomersSearchPanel({
         {busy ? (
           <span className={hintText}>
             {/* Rien ne dit « démonstration » à l'écran (décision du 23/10). */}
-            La recherche compte dans le forfait du mois ; seules les annonces reçues sont comptées.
+            La recherche compte dans le forfait du mois&#x202f;; seules les annonces reçues sont
+            comptées.
           </span>
         ) : (
           <button

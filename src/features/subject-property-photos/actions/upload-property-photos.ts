@@ -52,7 +52,7 @@ export async function uploadPropertyPhotos(
     const bytes = new Uint8Array(await file.arrayBuffer());
     const validation = validatePhotoBytes(bytes);
     if (!validation.ok) {
-      return { ok: false, error: `« ${file.name} » : ${validation.error}` };
+      return { ok: false, error: `«\u00a0${file.name}\u00a0»\u00a0: ${validation.error}` };
     }
     validated.push({ bytes, format: validation.format });
   }

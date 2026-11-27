@@ -159,10 +159,10 @@ describe('les mots de l’import en attente', () => {
     expect(pendingImportsTitle(1)).toBe('1 concurrent retenu n’est pas encore importé');
     expect(pendingImportsTitle(3)).toBe('3 concurrents retenus ne sont pas encore importés');
     expect(pendingCauseLabel('robots')).toBe(
-      'Dernier essai : le site refuse la lecture automatique de cette annonce.',
+      'Dernier essai\u00a0: le site refuse la lecture automatique de cette annonce.',
     );
     expect(pendingCauseLabel('no_price')).toBe(
-      'Dernier essai : la recherche ne donne pas le prix de ce bien.',
+      'Dernier essai\u00a0: la recherche ne donne pas le prix de ce bien.',
     );
     expect(pendingCauseLabel(null)).toBeNull();
     expect(pendingCauseLabel('inconnue')).toBeNull();
@@ -222,7 +222,7 @@ describe('le taux d’échec de lecture par portail', () => {
         failed: 2,
         read: 0,
         failureRate: 100,
-        causes: [{ cause: 'empty', label: 'page sans données (captcha ?)', count: 2 }],
+        causes: [{ cause: 'empty', label: 'page sans données (captcha\u202f?)', count: 2 }],
       },
     ]);
   });

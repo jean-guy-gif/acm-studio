@@ -132,7 +132,7 @@ describe('les photos dans le classement', () => {
     expect(rows[2]).toEqual({
       mark: '?',
       label: 'Une vue',
-      text: 'l’annonce n’en dit rien · à regarder : la photo 3 montre peut-être le contraire',
+      text: 'l’annonce n’en dit rien · à regarder\u00a0: la photo 3 montre peut-être le contraire',
     });
     expect(rows[3]?.text).toBe('l’annonce n’a pas pu être lue · la photo 1 le montre, à vérifier');
   });
@@ -146,7 +146,7 @@ describe('les photos dans le classement', () => {
     );
     expect(confirmed).toMatchObject({
       mark: '✓',
-      text: '« vue mer » · les photos 1, 4 et 6 le montrent aussi, à vérifier',
+      text: '«\u00a0vue mer\u00a0» · les photos 1, 4 et 6 le montrent aussi, à vérifier',
     });
     const [doubt] = whyRows(
       withPhotoJudgments(
@@ -156,7 +156,7 @@ describe('les photos dans le classement', () => {
     );
     expect(doubt).toMatchObject({
       mark: '✓',
-      text: '« sans vis-à-vis » · à regarder : la photo 3 montre peut-être le contraire',
+      text: '«\u00a0sans vis-à-vis\u00a0» · à regarder\u00a0: la photo 3 montre peut-être le contraire',
     });
   });
 
@@ -175,7 +175,7 @@ describe('les photos dans le classement', () => {
     );
     expect(shown).toMatchObject({
       mark: '✗',
-      text: 'le contraire : « travaux à prévoir » · pourtant la photo 3 le montre, à vérifier',
+      text: 'le contraire\u00a0: «\u00a0travaux à prévoir\u00a0» · pourtant la photo 3 le montre, à vérifier',
     });
     // Les photos confirment l'annonce : elles ne « montrent » pas « peut-être le contraire ».
     const [confirmed] = whyRows(
@@ -186,7 +186,7 @@ describe('les photos dans le classement', () => {
     );
     expect(confirmed).toMatchObject({
       mark: '✗',
-      text: 'le contraire : « travaux à prévoir » · comme sur les photos 2 et 3, à vérifier',
+      text: 'le contraire\u00a0: «\u00a0travaux à prévoir\u00a0» · comme sur les photos 2 et 3, à vérifier',
     });
     // Et rien ne bouge au score : les photos ne retirent ni n'ajoutent à ce que l'annonce dit.
     expect(softScore([against])).toBe(-2);

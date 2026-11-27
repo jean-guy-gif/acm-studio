@@ -22,7 +22,7 @@ const card = (over: Partial<DeckCard> = {}): DeckCard => ({
   budget: { tone: 'good', label: '110 000 € sous le budget' },
   why: [
     { tone: 'must', label: 'Piscine' },
-    { tone: 'said', label: '« au calme » dans l’annonce' },
+    { tone: 'said', label: '«\u00a0au calme\u00a0» dans l’annonce' },
     { tone: 'plain', label: 'Mougins' },
     { tone: 'plain', label: '2 pièces de plus' },
   ],
@@ -32,7 +32,7 @@ const card = (over: Partial<DeckCard> = {}): DeckCard => ({
 });
 const noop = () => {};
 const FULL_NOTE: DeckNote = {
-  text: 'Sélection complète : pour proposer ce bien, retirez-en un dans toute la liste.',
+  text: 'Sélection complète\u00a0: pour proposer ce bien, retirez-en un dans toute la liste.',
   retain: null,
 };
 const unsaved = (text: string, label: string, saving = false): DeckNote => ({
@@ -117,7 +117,7 @@ describe('un bien à la fois', () => {
     const html = render();
     expect(html.match(/data-testid="deck-why-pill"/g)).toHaveLength(4);
     expect(html).toMatch(/data-tone="must"[^>]*>Piscine</);
-    expect(html).toMatch(/data-tone="said"[^>]*>« au calme » dans l’annonce</);
+    expect(html).toMatch(/data-tone="said"[^>]*>«\sau calme\s» dans l’annonce</);
     expect(html).toMatch(/data-tone="plain"[^>]*>Mougins</);
   });
 
@@ -138,7 +138,7 @@ describe('un bien à la fois', () => {
     expect(tag(render(), 'deck-propose')).not.toMatch(/ disabled=""/);
     expect(tag(fullCard, 'deck-dismiss')).not.toMatch(/ disabled=""/);
     expect(fullCard).toContain(
-      'Sélection complète : pour proposer ce bien, retirez-en un dans toute la liste.',
+      'Sélection complète\u00a0: pour proposer ce bien, retirez-en un dans toute la liste.',
     );
     expect(fullCard).toContain('data-testid="deck-skip"');
     expect(fullCard).toContain('>Maison · 8 pièces · 200 m² · Mougins<');
@@ -192,9 +192,9 @@ describe('un bien à la fois', () => {
   });
 
   it('ce qui vient d’être enregistré se dit sur place', () => {
-    const html = render({}, { status: 'Sélection retenue : 2 biens.' });
+    const html = render({}, { status: 'Sélection retenue\u00a0: 2 biens.' });
     expect(html).toMatch(
-      /role="status"[^>]*data-testid="deck-saved"[^>]*>Sélection retenue : 2 biens\.</,
+      /role="status"[^>]*data-testid="deck-saved"[^>]*>Sélection retenue\s: 2 biens\.</,
     );
     expect(render()).not.toContain('data-testid="deck-saved"');
   });
@@ -208,10 +208,10 @@ describe('un bien à la fois', () => {
 
   it('la photo dit aussi « 8 critères sur 8 » aux lecteurs d’écran', () => {
     expect(tag(render(), 'deck-photo')).toContain(
-      'aria-label="Ouvrir la fiche : Maison · 8 pièces · 200 m² · Mougins, 8 critères sur 8"',
+      'aria-label="Ouvrir la fiche\u00a0: Maison · 8 pièces · 200 m² · Mougins, 8 critères sur 8"',
     );
     expect(tag(render({ criteria: null }), 'deck-photo')).toContain(
-      'aria-label="Ouvrir la fiche : Maison · 8 pièces · 200 m² · Mougins"',
+      'aria-label="Ouvrir la fiche\u00a0: Maison · 8 pièces · 200 m² · Mougins"',
     );
   });
 
@@ -225,9 +225,9 @@ describe('un bien à la fois', () => {
   it('ce qui est à savoir n’est jamais caché ; au-dessus du budget, la pastille est orange', () => {
     const html = render({
       budget: { tone: 'watch', label: '10 000 € au-dessus du budget, à négocier' },
-      notes: ['Pas de parking', 'Extérieur : à vérifier'],
+      notes: ['Pas de parking', 'Extérieur\u00a0: à vérifier'],
     });
-    expect(html).toContain('À savoir : Pas de parking · Extérieur : à vérifier');
+    expect(html).toContain('À savoir\u00a0: Pas de parking · Extérieur\u00a0: à vérifier');
     expect(tag(html, 'deck-budget')).toContain('bg-[#FDEBDD]');
     expect(tag(html, 'deck-budget')).not.toMatch(/red|rose/);
   });

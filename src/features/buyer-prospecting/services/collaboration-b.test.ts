@@ -44,7 +44,7 @@ describe('la visite relit la collaboration au confrère', () => {
     );
     expect(refused).toEqual({
       kind: 'address',
-      label: 'Collaboration refusée : courrier au propriétaire',
+      label: 'Collaboration refusée\u00a0: courrier au propriétaire',
     });
     expect(visitWaitingLabel(refused, 'owner')).toBe('En attente du propriétaire');
   });

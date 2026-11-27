@@ -55,7 +55,7 @@ export function buyerRuleGaps(criteria: BuyerCriteria, facts: BuyerFacts): Buyer
         criterion: 'city',
         detail: missingArrondissement(communes, facts.city)
           ? 'Arrondissement non renseigné'
-          : `Autre commune : ${communeDisplay(facts.city)}`,
+          : `Autre commune\u00a0: ${communeDisplay(facts.city)}`,
       });
     }
   }

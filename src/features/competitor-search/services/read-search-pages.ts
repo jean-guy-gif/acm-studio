@@ -75,6 +75,6 @@ export function readSearchPages(pages: SearchPageInput[]): SearchPagesRead {
 export function describeReadCounts(counts: PortalReadCount[], ranked: RankedCandidate[]): string[] {
   return counts.map(({ portal, label, cardsRead }) => {
     const kept = ranked.filter((entry) => entry.portal === portal).length;
-    return `${label} : ${cardsRead} annonce${cardsRead > 1 ? 's' : ''} lue${cardsRead > 1 ? 's' : ''}, ${kept} retenue${kept > 1 ? 's' : ''}`;
+    return `${label}\u00a0: ${cardsRead} annonce${cardsRead > 1 ? 's' : ''} lue${cardsRead > 1 ? 's' : ''}, ${kept} retenue${kept > 1 ? 's' : ''}`;
   });
 }

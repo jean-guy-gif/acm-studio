@@ -91,7 +91,7 @@ export function ManagerOverviewView({ overview }: { overview: ManagerOverview })
         <DormancyThresholds initial={overview.thresholds} />
         {dormant.length === 0 ? (
           <div className={`${card} p-5 text-sm text-zinc-500 stage:text-white/55`}>
-            Rien ne traîne : aucun dossier en préparation ni à relancer laissé de côté.
+            Rien ne traîne&nbsp;: aucun dossier en préparation ni à relancer laissé de côté.
           </div>
         ) : (
           <ul className="flex flex-col gap-2">

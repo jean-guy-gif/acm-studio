@@ -85,7 +85,7 @@ export function MarketGlanceCard({ glance }: { glance: MarketGlance }) {
           </div>
           <div className="flex justify-between gap-3 text-xs text-zinc-500 stage:text-white/50">
             <span>{formatEuroPerSquareMeter(first.pricePerSquareMeter)}</span>
-            <span>Trait : la médiane</span>
+            <span>Trait&nbsp;: la médiane</span>
             <span>{formatEuroPerSquareMeter(last.pricePerSquareMeter)}</span>
           </div>
         </div>

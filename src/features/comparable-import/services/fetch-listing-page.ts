@@ -33,17 +33,18 @@ const USER_AGENT = `Mozilla/5.0 (compatible; ACMStudioBot/1.0; +${CONTACT_URL})`
 // User-facing messages (already safe to display; no internal detail leaked).
 // Mission 105 — chaque message dit quoi faire, sans terme technique (« URL », « HTML »).
 export const ANNOUNCE_ADDRESS_INVALID =
-  'Adresse d’annonce non reconnue : copiez l’adresse complète de l’annonce depuis votre navigateur.';
+  'Adresse d’annonce non reconnue\u00a0: copiez l’adresse complète de l’annonce depuis votre navigateur.';
 export const FETCH_MESSAGES = {
   invalid: ANNOUNCE_ADDRESS_INVALID,
-  unanalyzable: 'Cette adresse ne peut pas être lue : saisissez le bien à la main.',
+  unanalyzable: 'Cette adresse ne peut pas être lue\u00a0: saisissez le bien à la main.',
   forbidden:
-    'Cette adresse n’est pas celle d’une annonce : copiez l’adresse de l’annonce elle-même.',
-  refused: 'Le site a refusé l’accès à l’annonce : réessayez, ou saisissez le bien à la main.',
-  timeout: 'L’annonce a mis trop de temps à répondre : réessayez.',
-  tooLarge: 'La page de l’annonce est trop lourde pour être lue : saisissez le bien à la main.',
-  notHtml: 'Ce lien n’ouvre pas une page d’annonce : copiez l’adresse de l’annonce elle-même.',
-  unavailable: 'L’annonce semble supprimée : vérifiez qu’elle est toujours en ligne.',
+    'Cette adresse n’est pas celle d’une annonce\u00a0: copiez l’adresse de l’annonce elle-même.',
+  refused: 'Le site a refusé l’accès à l’annonce\u00a0: réessayez, ou saisissez le bien à la main.',
+  timeout: 'L’annonce a mis trop de temps à répondre\u00a0: réessayez.',
+  tooLarge:
+    'La page de l’annonce est trop lourde pour être lue\u00a0: saisissez le bien à la main.',
+  notHtml: 'Ce lien n’ouvre pas une page d’annonce\u00a0: copiez l’adresse de l’annonce elle-même.',
+  unavailable: 'L’annonce semble supprimée\u00a0: vérifiez qu’elle est toujours en ligne.',
   robots:
     'Ce portail interdit l’analyse automatique de cette page. Saisissez le bien à la main ci-dessous.',
 } as const;

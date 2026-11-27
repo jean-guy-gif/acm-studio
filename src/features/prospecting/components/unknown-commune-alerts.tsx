@@ -44,7 +44,7 @@ function AlertRow({ alert }: { alert: UnknownCommuneOpposition }) {
     startTransition(async () => {
       const result = await action().catch(() => ({
         ok: false as const,
-        error: 'L’enregistrement n’a pas été confirmé : réessayez.',
+        error: 'L’enregistrement n’a pas été confirmé\u00a0: réessayez.',
       }));
       if (!result.ok) setError(result.error);
     });
@@ -54,7 +54,7 @@ function AlertRow({ alert }: { alert: UnknownCommuneOpposition }) {
     <li className="flex flex-col gap-1.5 border-t border-amber-200 pt-2 first:border-0 first:pt-0">
       <span>
         <span className="font-medium">{alert.addressKey}</span> — commune tapée «
-        {alert.communeTyped ?? '—'} », inscrite {formatRelativeMoment(alert.requestedAt)}
+        {alert.communeTyped ?? '—'}&nbsp;», inscrite {formatRelativeMoment(alert.requestedAt)}
         {alert.author ? ` par ${alert.author}` : ''}
       </span>
       <form

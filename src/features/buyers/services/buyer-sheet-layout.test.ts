@@ -60,10 +60,10 @@ describe('« Prêt à visiter ? », replié', () => {
       readinessLine({
         financing: 'validated',
         lastExchange: 'dernier échange il y a 3 j',
-        watch: 'Veille : dernière recherche le 21/11, prochaine le 28/11',
+        watch: 'Veille\u00a0: dernière recherche le 21/11, prochaine le 28/11',
       }),
     ).toBe(
-      'financement validé · dernier échange il y a 3 j · veille : dernière recherche le 21/11, prochaine le 28/11',
+      'financement validé · dernier échange il y a 3 j · veille\u00a0: dernière recherche le 21/11, prochaine le 28/11',
     );
     expect(readinessLine({ financing: 'validated', lastExchange: null, watch: null })).toBe(
       'financement validé',
@@ -125,7 +125,7 @@ describe('« Autres actions » : des liens discrets', () => {
       key: 'matches',
       label: 'Rapprocher',
       href: '/acquereurs/rapprochement?acquereur=b1#rapprochement',
-      unread: 'Correspondances illisibles pour l’instant : rechargez la page.',
+      unread: 'Correspondances illisibles pour l’instant\u00a0: rechargez la page.',
     });
   });
 
@@ -239,7 +239,7 @@ describe('la fiche repliée : « Tout le dossier »', () => {
 
   it('sa ligne dit ce qu’il contient, sans l’ouvrir', () => {
     expect(everythingLine(base)).toBe(
-      'les cinq étapes · autres actions · prêt à visiter ? · ce qui s’est passé · statut',
+      'les cinq étapes · autres actions · prêt à visiter\u202f? · ce qui s’est passé · statut',
     );
     expect(
       everythingLine({

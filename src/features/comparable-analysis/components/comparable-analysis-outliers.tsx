@@ -8,7 +8,7 @@ export function ComparableAnalysisOutliers({ outliers }: { outliers: ComparableO
       <h2 className={sectionTitle}>Concurrents atypiques</h2>
       {outliers.length === 0 ? (
         <p className={hintText}>
-          Aucun concurrent atypique : tous les prix au m² sont proches de la médiane.
+          Aucun concurrent atypique&nbsp;: tous les prix au m² sont proches de la médiane.
         </p>
       ) : (
         <ul className="flex flex-col gap-1.5">
@@ -18,7 +18,7 @@ export function ComparableAnalysisOutliers({ outliers }: { outliers: ComparableO
               className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm font-medium text-amber-800 stage:border-amber-400/30 stage:bg-amber-500/10 stage:text-amber-300"
             >
               <span className="font-medium">ATYPIQUE</span> —{' '}
-              {outlier.title?.trim() || 'Bien concurrent'} :{' '}
+              {outlier.title?.trim() || 'Bien concurrent'}&nbsp;:{' '}
               {formatEuroPerSquareMeter(outlier.pricePerSquareMeter)} (
               {formatPercent(outlier.deviationPercent, { signed: true })} vs médiane{' '}
               {formatEuroPerSquareMeter(outlier.medianPricePerSquareMeter)})

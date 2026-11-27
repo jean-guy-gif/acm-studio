@@ -29,7 +29,7 @@ describe('groupProspecting — une carte par bien', () => {
       ['b'],
     ]);
     expect(sellersLabel(cards[0].sellers)).toBe(
-      'Vendeur martin · Appartement · Vence ; Vendeur dupont · Appartement · Vence',
+      'Vendeur martin · Appartement · Vence\u202f; Vendeur dupont · Appartement · Vence',
     );
     expect(cards[1].sellers.map((item) => item.projectId)).toEqual(['martin']);
   });

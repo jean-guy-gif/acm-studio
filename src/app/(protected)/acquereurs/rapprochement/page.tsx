@@ -52,7 +52,8 @@ export default async function BuyerMatchingPage({ searchParams }: MatchingPagePr
         <span className={kickerLabel}>Acquéreurs</span>
         <h1 className={pageTitle}>Rapprochement acquéreur</h1>
         <p className={pageSubtitle}>
-          Ce que l’agence a déjà : mandats signés, vendeurs à relancer, concurrents à prospecter.
+          Ce que l’agence a déjà&nbsp;: mandats signés, vendeurs à relancer, concurrents à
+          prospecter.
         </p>
       </div>
       <BuyerSearchPanel

@@ -23,7 +23,8 @@ export function DeckWithPrelude({ deck, children }: { deck: BuyerDeck; children:
         ← {deck.buyerName}
       </Link>
       <p className="text-sm text-zinc-600">
-        Pour vous seul, avant de tourner l’écran : relisez ses mots et la phrase de chaque bien.
+        Pour vous seul, avant de tourner l’écran&nbsp;: relisez ses mots et la phrase de chaque
+        bien.
       </p>
       <DeckPrepare deck={deck} />
       <button

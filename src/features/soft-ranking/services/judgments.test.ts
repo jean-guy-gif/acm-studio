@@ -165,7 +165,7 @@ describe('le score et l’ordre (Jean-Guy, 12/11)', () => {
 describe('la forme simplifiée et la carte', () => {
   it('les mots trouvés, sans jugement', () => {
     expect(softMentions(listing, ['calme', 'cachet', 'vue'])).toEqual(['calme', 'caractère']);
-    expect(mentionsLine(['calme'])).toBe('L’annonce mentionne « calme »');
+    expect(mentionsLine(['calme'])).toBe('L’annonce mentionne «\u00a0calme\u00a0»');
     expect(mentionsLine([])).toBe('L’annonce ne mentionne aucun de leurs mots');
   });
 
@@ -188,7 +188,9 @@ describe('la forme simplifiée et la carte', () => {
       { key: 'vue', verdict: 'nothing', quote: null, counterQuote: null, toVerify: false },
     ]);
     expect(rows.map((row) => row.mark)).toEqual(['≈', '✗', '?']);
-    expect(rows[0]!.text).toBe('avec réserve : « calme » mais « la gare »');
+    expect(rows[0]!.text).toBe(
+      'avec réserve\u00a0: «\u00a0calme\u00a0» mais «\u00a0la gare\u00a0»',
+    );
     expect(rows[2]!.text).toBe('l’annonce n’en dit rien');
   });
 
@@ -264,7 +266,7 @@ describe('le bandeau (planches 4 et 4 b)', () => {
       'jusqu’à la recherche du marché',
     );
     expect(softBanner({ mode: 'simple', reason: 'budget' }, labels).text).toBe(
-      ' : forfait du mois atteint.',
+      '\u00a0: forfait du mois atteint.',
     );
     expect(softBanner({ mode: 'simple', reason: 'closed' }, labels)).toEqual({
       strong: 'Classement simplifié',

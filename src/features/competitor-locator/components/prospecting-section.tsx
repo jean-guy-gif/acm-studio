@@ -24,8 +24,8 @@ export function ProspectingSection({
         <div className="flex flex-col gap-1">
           <h2 className={sectionTitle}>Concurrents à prospecter</h2>
           <p className={hintText}>
-            Le mandat est signé : vos acquéreurs visiteront aussi ces biens. Écran conseiller — le
-            vendeur ne le voit pas.
+            Le mandat est signé&nbsp;: vos acquéreurs visiteront aussi ces biens. Écran conseiller —
+            le vendeur ne le voit pas.
           </p>
         </div>
         {rows.length > 0 ? (

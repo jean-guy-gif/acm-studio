@@ -60,7 +60,7 @@ export function useOfferMessages(offerId: string, onPrepared?: () => void) {
       })
       .catch(() => {
         setPending(false);
-        setError('Connexion perdue : réessayez.');
+        setError('Connexion perdue\u00a0: réessayez.');
       });
   };
 
@@ -113,7 +113,9 @@ export function OfferMessagePanel({
                 navigator.clipboard
                   ?.writeText(shown.message)
                   .then(() => setNote('Message copié.'))
-                  .catch(() => setError('La copie a échoué : sélectionnez le message ci-dessus.'));
+                  .catch(() =>
+                    setError('La copie a échoué\u00a0: sélectionnez le message ci-dessus.'),
+                  );
               }}
             >
               Copier
@@ -136,8 +138,8 @@ export function OfferMessagePanel({
           </div>
           {open === 'notary' ? (
             <p className={hint}>
-              Le lien du notaire s’ajoute à ceux des offrants et du vendeur : il ne les remplace
-              pas. Valable 30 jours.
+              Le lien du notaire s’ajoute à ceux des offrants et du vendeur&nbsp;: il ne les
+              remplace pas. Valable 30 jours.
             </p>
           ) : null}
         </div>
@@ -200,7 +202,7 @@ export function OfferAnswerTask({
         className="text-sm font-semibold text-emerald-700"
         data-testid="offer-answer-done"
       >
-        Noté : la tâche est faite.
+        Noté&nbsp;: la tâche est faite.
       </p>
     );
   }
@@ -275,7 +277,7 @@ export function OfferAnswerTask({
               })
               .catch(() => {
                 setPending(false);
-                setError('Connexion perdue : réessayez.');
+                setError('Connexion perdue\u00a0: réessayez.');
               });
           }}
         >

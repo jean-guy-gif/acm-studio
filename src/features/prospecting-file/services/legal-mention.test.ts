@@ -20,7 +20,7 @@ describe('ownerLegalMention — le pied du courrier au propriétaire', () => {
 
   it('nomme le responsable du traitement : l’agence et son adresse', () => {
     expect(mention).toContain(
-      'Responsable du traitement : Agence du Port, 12 avenue de la Libération, 06600 Antibes.',
+      'Responsable du traitement\u00a0: Agence du Port, 12 avenue de la Libération, 06600 Antibes.',
     );
   });
 
@@ -80,19 +80,21 @@ describe('ownerLegalMention — le pied du courrier au propriétaire', () => {
 
   it('dit la finalité et la durée de conservation : 3 ans', () => {
     expect(OWNER_ADDRESS_RETENTION_YEARS).toBe(3);
-    expect(mention).toContain('Finalité : vous proposer nos services pour la vente de votre bien.');
-    expect(mention).toContain('Conservation : 3 ans au plus sans contact entre nous.');
+    expect(mention).toContain(
+      'Finalité\u00a0: vous proposer nos services pour la vente de votre bien.',
+    );
+    expect(mention).toContain('Conservation\u00a0: 3 ans au plus sans contact entre nous.');
   });
 
   it('dit les droits d’accès, d’opposition et d’effacement, et comment les exercer', () => {
     expect(mention).toContain(
-      'Vos droits d’accès, d’opposition et d’effacement : 06 12 34 56 78 ou conseiller@agence.test.',
+      'Vos droits d’accès, d’opposition et d’effacement\u00a0: 06 12 34 56 78 ou conseiller@agence.test.',
     );
   });
 
   it('rappelle le droit de saisir la CNIL et donne la page de confidentialité', () => {
     expect(mention).toContain('Vous pouvez saisir la CNIL (cnil.fr).');
-    expect(mention).toContain('Confidentialité : acm-studio.vercel.app/confidentialite.');
+    expect(mention).toContain('Confidentialité\u00a0: acm-studio.vercel.app/confidentialite.');
   });
 
   it('ne parle jamais de « mandat » (version propriétaire, M84)', () => {

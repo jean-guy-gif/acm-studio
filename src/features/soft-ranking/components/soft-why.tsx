@@ -105,15 +105,15 @@ export function softBanner(
     case 'before':
       return {
         strong: 'Classement simplifié',
-        text: ' jusqu’à la recherche du marché : les biens de l’agence sont rangés par ressemblance, puis par prix. Au lancement de la recherche, leurs annonces sont lues pour ce qui compte pour eux, avec celles du marché.',
+        text: ' jusqu’à la recherche du marché\u00a0: les biens de l’agence sont rangés par ressemblance, puis par prix. Au lancement de la recherche, leurs annonces sont lues pour ce qui compte pour eux, avec celles du marché.',
       };
     case 'failed':
       return {
         strong: 'Classement simplifié',
-        text: ' : la lecture des annonces n’a pas abouti à temps. Les biens sont rangés par ressemblance, puis par prix ; aucun n’est écarté.',
+        text: '\u00a0: la lecture des annonces n’a pas abouti à temps. Les biens sont rangés par ressemblance, puis par prix\u202f; aucun n’est écarté.',
       };
     case 'budget':
-      return { strong: 'Classement simplifié', text: ' : forfait du mois atteint.' };
+      return { strong: 'Classement simplifié', text: '\u00a0: forfait du mois atteint.' };
     default:
       return { strong: 'Classement simplifié', text: '' };
   }

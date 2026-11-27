@@ -92,7 +92,10 @@ export async function cancelVisitRequest(requestId: string): Promise<VisitAction
     } | null
   )?.buyer_selections.presented_at;
   if (existing?.requested_during === 'presentation' && presentedAt != null) {
-    return { ok: false, error: 'La présentation est terminée : elle se relit sans se modifier.' };
+    return {
+      ok: false,
+      error: 'La présentation est terminée\u00a0: elle se relit sans se modifier.',
+    };
   }
   const { data, error } = await client
     .from('buyer_visit_requests')
@@ -214,7 +217,7 @@ export async function changeVisitNextStep(
   if (visit.visited_at == null) {
     return {
       ok: false,
-      error: 'Cette visite n’est pas encore faite : notez d’abord son compte rendu.',
+      error: 'Cette visite n’est pas encore faite\u00a0: notez d’abord son compte rendu.',
     };
   }
   const { buyers: _buyers, ...row } = visit; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -229,7 +232,8 @@ export async function changeVisitNextStep(
   ) {
     return {
       ok: false,
-      error: 'Son avis était « Pas pour moi » : « Offre envisagée » le contredit.',
+      error:
+        'Son avis était «\u00a0Pas pour moi\u00a0»\u00a0: «\u00a0Offre envisagée\u00a0» le contredit.',
     };
   }
   if (visit.outcome === 'offer') {
@@ -246,7 +250,7 @@ export async function changeVisitNextStep(
     if ((offers ?? []).length > 0) {
       return {
         ok: false,
-        error: 'Une offre d’achat est signée sur cette visite : sa suite ne change plus.',
+        error: 'Une offre d’achat est signée sur cette visite\u00a0: sa suite ne change plus.',
       };
     }
   }

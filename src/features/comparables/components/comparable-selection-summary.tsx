@@ -41,7 +41,8 @@ export function ComparableSelectionSummaryView({
       <section className="flex flex-col gap-2">
         <h2 className={sectionTitle}>Synthèse</h2>
         <p className={hintText}>
-          Données insuffisantes : retenez au moins un bien concurrent pour calculer la synthèse.
+          Données insuffisantes&nbsp;: retenez au moins un bien concurrent pour calculer la
+          synthèse.
         </p>
       </section>
     );

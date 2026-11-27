@@ -45,12 +45,12 @@ function DeckPrepareBody({ deck }: { deck: BuyerDeck }) {
     <div className="flex flex-col gap-5" data-testid="deck-prepare-body">
       <div className="flex flex-col gap-1">
         <p className={hintText}>
-          Relisez ses mots et la phrase de chaque bien : c’est ce que l’acquéreur verra. Les phrases
-          proposées ne disent que ce que la grille dit.
+          Relisez ses mots et la phrase de chaque bien&nbsp;: c’est ce que l’acquéreur verra. Les
+          phrases proposées ne disent que ce que la grille dit.
         </p>
       </div>
       <TextEditor
-        label="Vous m’avez dit :"
+        label="Vous m’avez dit&nbsp;:"
         testId="deck-words-editor"
         value={deck.words}
         proposed={deck.wordsProposed}
@@ -97,12 +97,12 @@ function PrepareItem({ item }: { item: DeckItem }) {
       {item.blocked ? (
         <div className={`${alertError} flex flex-col gap-2`} data-testid="deck-blocked">
           <p>
-            Ce bien ne satisfait plus un critère indispensable : {item.blockedBy.join(' · ')}. Il ne
-            sera pas recommandé en tête.
+            Ce bien ne satisfait plus un critère indispensable&nbsp;: {item.blockedBy.join(' · ')}.
+            Il ne sera pas recommandé en tête.
           </p>
           {confirming ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span>Retirer le bien {item.letter} de la sélection ?</span>
+              <span>Retirer le bien {item.letter} de la sélection&#x202f;?</span>
               <button type="button" className={btnGhost} onClick={() => setConfirming(false)}>
                 Annuler
               </button>

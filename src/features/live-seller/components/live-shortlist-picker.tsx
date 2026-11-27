@@ -44,12 +44,12 @@ export function LiveShortlistPicker({
   return (
     <section className={`${card} flex flex-col gap-3 p-5`} data-testid="live-shortlist">
       <h2 className={sectionTitle}>
-        {shortlist.retainedCount} concurrents retenus : lesquels montrer au vendeur ?
+        {shortlist.retainedCount} concurrents retenus&nbsp;: lesquels montrer au vendeur&#x202f;?
       </h2>
       <p className={hintText}>
         Nous vous proposons les {LIVE_SHORTLIST_SIZE} plus proches de son bien. Ceux que vous
-        décochez restent retenus : ils comptent dans le prix des concurrents et la Prospection, ils
-        ne passent simplement pas pendant le Live.
+        décochez restent retenus&nbsp;: ils comptent dans le prix des concurrents et la Prospection,
+        ils ne passent simplement pas pendant le Live.
       </p>
       <ul className="flex flex-col gap-1.5">
         {shortlist.entries.map((entry) => (

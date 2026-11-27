@@ -48,14 +48,17 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
   if (!profile || profile.removed_at) return { ok: false, error: 'Vous devez être connecté.' };
   const parsed = offerInputSchema.safeParse(raw);
   if (typeof raw !== 'object' || raw == null || (raw as { approved?: unknown }).approved !== true) {
-    return { ok: false, error: 'Les offrants relisent l’offre et cochent « Lu et approuvé ».' };
+    return {
+      ok: false,
+      error: 'Les offrants relisent l’offre et cochent «\u00a0Lu et approuvé\u00a0».',
+    };
   }
   if (!parsed.success) {
     return {
       ok: false,
       error:
         parsed.error.issues.find((issue) => issue.code === 'custom')?.message ??
-        'L’offre est incomplète : vérifiez les offrants, le prix, les dates, le cadastre et la signature.',
+        'L’offre est incomplète\u00a0: vérifiez les offrants, le prix, les dates, le cadastre et la signature.',
     };
   }
   const input = parsed.data;
@@ -68,7 +71,7 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
   if (!context.agency) {
     return {
       ok: false,
-      error: `Identité légale de l’agence à compléter (Administration → Identité) : ${context.gaps.join(', ')}.`,
+      error: `Identité légale de l’agence à compléter (Administration → Identité)\u00a0: ${context.gaps.join(', ')}.`,
     };
   }
   const visit = context.visits.find((entry) => entry.visitId === input.visitId);
@@ -91,17 +94,17 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
       ok: false,
       error: visit.outside
         ? 'Indiquez l’adresse du bien.'
-        : 'Adresse du bien vendeur manquante : complétez la fiche du bien.',
+        : 'Adresse du bien vendeur manquante\u00a0: complétez la fiche du bien.',
     };
   }
   // Mission 153 (relecteur) — hors mandat, la copropriété est celle que déclare le conseiller.
   const condominium = visit.outside ? input.condominium : visit.condominium;
   if (condominium && input.lots.length === 0) {
-    return { ok: false, error: 'Le bien est en copropriété : indiquez au moins un lot.' };
+    return { ok: false, error: 'Le bien est en copropriété\u00a0: indiquez au moins un lot.' };
   }
   const signatures = input.signatures.map(decodeSignature);
   if (signatures.some((bytes) => bytes == null)) {
-    return { ok: false, error: 'Une signature n’a pas pu être lue : signez de nouveau.' };
+    return { ok: false, error: 'Une signature n’a pas pu être lue\u00a0: signez de nouveau.' };
   }
   // Le n° de mandat déjà gardé sur la conclusion l'emporte (il se remplit seul, § 12).
   const mandateNumber = title ? '' : visit.mandateNumber?.trim() || input.mandateNumber;

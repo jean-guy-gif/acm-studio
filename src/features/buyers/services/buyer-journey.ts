@@ -221,7 +221,7 @@ export function buyerNextAction(
     if (offer.decision == null && offer.validUntil != null && offer.validUntil >= today) {
       return {
         title: 'Attendre la réponse du vendeur',
-        phrase: `L’offre est valable jusqu’au ${buyerDateLabel(offer.validUntil)} : le vendeur répond sur son lien.`,
+        phrase: `L’offre est valable jusqu’au ${buyerDateLabel(offer.validUntil)}\u00a0: le vendeur répond sur son lien.`,
         primary: { label: 'Voir l’offre', href: `/acquereurs/${id}/offre/${offer.documentId}` },
         secondary: null,
         since: offer.signedAt,
@@ -234,7 +234,7 @@ export function buyerNextAction(
   if (!offer && facts.offerConsidered && buyer.status !== 'purchased') {
     return {
       title: 'Préparer son offre d’achat',
-      phrase: `Il envisage une offre après sa visite${facts.lastVisitDoneAt ? ` du ${dayMonth(facts.lastVisitDoneAt)}` : ''} : préparez-la avec lui.`,
+      phrase: `Il envisage une offre après sa visite${facts.lastVisitDoneAt ? ` du ${dayMonth(facts.lastVisitDoneAt)}` : ''}\u00a0: préparez-la avec lui.`,
       primary: { label: 'Préparer l’offre d’achat', href: `/acquereurs/${id}/offre` },
       secondary: { label: 'Trouver d’autres biens', href: `/acquereurs/${id}/biens-ideaux` },
       since: facts.lastVisitDoneAt ?? null,
@@ -248,7 +248,7 @@ export function buyerNextAction(
     if (propose) return propose;
     return {
       title: 'Trouver ses biens idéaux',
-      phrase: 'Ce que l’agence a déjà, puis le marché ; vous retenez trois biens au plus.',
+      phrase: 'Ce que l’agence a déjà, puis le marché\u202f; vous retenez trois biens au plus.',
       primary: ideal,
       secondary: null,
       since: buyer.createdAt,
@@ -259,7 +259,7 @@ export function buyerNextAction(
       return {
         title: 'Lui présenter sa sélection',
         phrase:
-          'En rendez-vous ou en visio : il répond bien par bien. Ou envoyez-lui le lien, il répond depuis son téléphone.',
+          'En rendez-vous ou en visio\u00a0: il répond bien par bien. Ou envoyez-lui le lien, il répond depuis son téléphone.',
         primary: present,
         secondary: link,
         since: facts.selectionAt ?? null,
@@ -268,7 +268,7 @@ export function buyerNextAction(
     const linkDay = facts.linkAt ? ` depuis le ${buyerDateLabel(facts.linkAt)}` : '';
     return {
       title: 'Relancer sa réponse',
-      phrase: `Le lien est envoyé${linkDay} ; il n’a pas encore répondu.`,
+      phrase: `Le lien est envoyé${linkDay}\u202f; il n’a pas encore répondu.`,
       primary: buyer.phone
         ? { label: 'L’appeler', href: telHref(buyer.phone) }
         : { label: 'Revoir le lien', href: `/acquereurs/${id}/dossier` },
@@ -279,7 +279,7 @@ export function buyerNextAction(
   if (facts.visitsToOrganize > 0) {
     return {
       title: 'Organiser la visite',
-      phrase: `${plural(facts.visitsToOrganize, 'visite demandée', 'visites demandées')} : contactez le propriétaire ou le confrère, puis notez le retour de visite.`,
+      phrase: `${plural(facts.visitsToOrganize, 'visite demandée', 'visites demandées')}\u00a0: contactez le propriétaire ou le confrère, puis notez le retour de visite.`,
       primary: { label: 'Organiser les visites', href: '/visites' },
       secondary: null,
       since: facts.answeredAt ?? facts.presentedAt ?? null,
@@ -290,8 +290,8 @@ export function buyerNextAction(
     title: 'Lui proposer d’autres biens',
     phrase:
       (facts.visitsDone ?? 0) > 0
-        ? 'Ses visites sont faites : une nouvelle sélection relance la recherche.'
-        : 'Il n’a demandé aucune visite : une nouvelle sélection relance la recherche.',
+        ? 'Ses visites sont faites\u00a0: une nouvelle sélection relance la recherche.'
+        : 'Il n’a demandé aucune visite\u00a0: une nouvelle sélection relance la recherche.',
     primary: { label: 'Trouver d’autres biens', href: `/acquereurs/${id}/biens-ideaux` },
     secondary: null,
     since: facts.answeredAt ?? facts.presentedAt ?? null,
@@ -378,7 +378,7 @@ export function buyerTimeline(input: TimelineInput): TimelineEntry[] {
     ].filter(Boolean);
     entries.push({
       at: selection.createdAt,
-      text: `${plural(total, 'bien sélectionné', 'biens sélectionnés')}${parts.length > 0 ? ` : ${parts.join(', ')}` : ''}`,
+      text: `${plural(total, 'bien sélectionné', 'biens sélectionnés')}${parts.length > 0 ? `\u00a0: ${parts.join(', ')}` : ''}`,
     });
   }
   if (input.presentedAt) entries.push({ at: input.presentedAt, text: 'Sélection présentée' });
@@ -390,25 +390,25 @@ export function buyerTimeline(input: TimelineInput): TimelineEntry[] {
       at: event.at,
       text:
         event.kind === 'relaunch'
-          ? 'Relancé : sa sélection restée sans réponse'
-          : `Recherche ajustée : ${event.summary ?? ''}`.trim(),
+          ? 'Relancé\u00a0: sa sélection restée sans réponse'
+          : `Recherche ajustée\u00a0: ${event.summary ?? ''}`.trim(),
     });
   }
   for (const proposal of input.proposals ?? []) {
-    entries.push({ at: proposal.at, text: `Bien proposé : ${proposal.label}` });
+    entries.push({ at: proposal.at, text: `Bien proposé\u00a0: ${proposal.label}` });
   }
   for (const letter of input.letters ?? []) {
-    entries.push({ at: letter.at, text: `Courrier préparé : ${letter.label}` });
+    entries.push({ at: letter.at, text: `Courrier préparé\u00a0: ${letter.label}` });
   }
   for (const visit of input.visits) {
     entries.push({
       at: visit.requestedAt,
-      text: `Visite demandée : ${visit.label}${visit.during === 'dossier' ? ' (depuis le lien)' : ''}`,
+      text: `Visite demandée\u00a0: ${visit.label}${visit.during === 'dossier' ? ' (depuis le lien)' : ''}`,
     });
     if (visit.visitedAt) {
       entries.push({
         at: visit.visitedAt,
-        text: `Visite faite : ${visit.label}${visit.outcomeLabel ? ` · ${visit.outcomeLabel}` : ''}`,
+        text: `Visite faite\u00a0: ${visit.label}${visit.outcomeLabel ? ` · ${visit.outcomeLabel}` : ''}`,
       });
     }
   }

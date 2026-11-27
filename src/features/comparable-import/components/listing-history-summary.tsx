@@ -66,9 +66,9 @@ export function ListingHistorySummary({
       ) : null}
       {change ? (
         <p className="font-medium text-amber-700 stage:text-amber-300">
-          {change.amount >= 0 ? 'Baisse' : 'Hausse'} constatée par ACM : {euro(change.fromPrice)} le{' '}
-          {frDate(change.fromDate)}, {euro(change.toPrice)} le {frDate(change.toDate)}, soit{' '}
-          {change.amount >= 0 ? '−' : '+'}
+          {change.amount >= 0 ? 'Baisse' : 'Hausse'} constatée par ACM&nbsp;:{' '}
+          {euro(change.fromPrice)} le {frDate(change.fromDate)}, {euro(change.toPrice)} le{' '}
+          {frDate(change.toDate)}, soit {change.amount >= 0 ? '−' : '+'}
           {euro(Math.abs(change.amount))} ({change.amount >= 0 ? '−' : '+'}
           {formatPercent(Math.abs(change.percentage))}). À valider avant d’enregistrer.
         </p>

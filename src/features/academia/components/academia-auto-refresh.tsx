@@ -50,8 +50,8 @@ export function AcademiaAutoRefresh({ testId }: { testId: string }) {
   return (
     <div className="flex flex-col gap-1.5" data-testid={testId}>
       <p className={hintText}>
-        La préparation prend plus de temps que prévu. Revenez sur cette page dans quelques minutes :
-        la demande continue chez Academia.
+        La préparation prend plus de temps que prévu. Revenez sur cette page dans quelques
+        minutes&nbsp;: la demande continue chez Academia.
       </p>
       <button
         type="button"

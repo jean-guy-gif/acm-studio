@@ -93,7 +93,7 @@ export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) 
           Acquéreurs
         </Link>
         <div className="flex flex-col gap-1">
-          <h1 className={socleTitle}>Que cherche-t-il ?</h1>
+          <h1 className={socleTitle}>Que cherche-t-il&#x202f;?</h1>
           <p className={socleSubtitle}>Écrivez-le comme il vous l’a dit. Une phrase suffit.</p>
         </div>
         <PhraseFlow demo={isDemo ? { text: DEMO_PHRASE_TEXT, photo: DEMO_NOTES_PHOTO } : null}>
@@ -113,8 +113,8 @@ export default async function NewBuyerPage({ searchParams }: NewBuyerPageProps) 
         <h1 className={pageTitle}>Nouvel acquéreur</h1>
         <p className={pageSubtitle}>
           {fromSearch
-            ? 'Les critères du rapprochement sont posés : nommez l’acquéreur, puis enregistrez.'
-            : 'Qui il est, ce qu’il cherche, en quelques gestes ; le reste se complète plus tard.'}
+            ? 'Les critères du rapprochement sont posés\u00a0: nommez l’acquéreur, puis enregistrez.'
+            : 'Qui il est, ce qu’il cherche, en quelques gestes\u202f; le reste se complète plus tard.'}
         </p>
       </div>
       {fromSearch ? (

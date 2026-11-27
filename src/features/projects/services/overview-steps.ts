@@ -119,12 +119,12 @@ export function overviewSteps(
 export const NEXT_STEP_PHRASES: Record<string, string> = {
   property: 'Importez l’annonce ou la fiche du bien, puis relisez-la.',
   competitors: 'Trouvez au moins trois biens en vente qui ressemblent au sien.',
-  decision: 'Le marché en un coup d’œil, puis votre prix, sur « Avant le rendez-vous ».',
+  decision: 'Le marché en un coup d’œil, puis votre prix, sur «\u00a0Avant le rendez-vous\u00a0».',
   launch: 'Sur la tablette. Ses réponses sont enregistrées pour de bon.',
-  resume: 'Le Live a commencé : il reprend là où il s’est arrêté.',
-  conclude: 'L’issue du rendez-vous : mandat signé, à relancer, vendu ailleurs ou retiré.',
-  market_study: 'Le vendeur ne fait pas le Live : remettez-lui l’Étude de marché.',
-  suivi: 'Le dossier est conclu : sa suite vit dans le Suivi.',
+  resume: 'Le Live a commencé\u00a0: il reprend là où il s’est arrêté.',
+  conclude: 'L’issue du rendez-vous\u00a0: mandat signé, à relancer, vendu ailleurs ou retiré.',
+  market_study: 'Le vendeur ne fait pas le Live\u00a0: remettez-lui l’Étude de marché.',
+  suivi: 'Le dossier est conclu\u00a0: sa suite vit dans le Suivi.',
 };
 
 // « Tablette, environ 37 minutes. Ses réponses sont enregistrées pour de bon. » (maquette
@@ -162,6 +162,6 @@ export function followUpNextStep(
       href: `/suivi?relancer=${projectId}#suivi-${projectId}`,
     },
     title: `Relancer ${sellerName}`,
-    phrase: `${count} : rentrez le mandat pour pouvoir le proposer.`,
+    phrase: `${count}\u00a0: rentrez le mandat pour pouvoir le proposer.`,
   };
 }

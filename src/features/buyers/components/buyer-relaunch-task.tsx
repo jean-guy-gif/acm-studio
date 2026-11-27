@@ -79,7 +79,7 @@ export function BuyerRelaunchTask({
     : null;
   const fail = () => {
     setPending(false);
-    setError('Connexion perdue : réessayez.');
+    setError('Connexion perdue\u00a0: réessayez.');
   };
 
   return (
@@ -100,7 +100,9 @@ export function BuyerRelaunchTask({
                 navigator.clipboard
                   ?.writeText(prepared.message)
                   .then(() => setCopied(true))
-                  .catch(() => setError('La copie a échoué : sélectionnez le message ci-dessus.'));
+                  .catch(() =>
+                    setError('La copie a échoué\u00a0: sélectionnez le message ci-dessus.'),
+                  );
               }}
             >
               Copier

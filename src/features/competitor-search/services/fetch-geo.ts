@@ -81,7 +81,7 @@ export async function resolveCommune(
 ): Promise<InseeResolution | { ok: false; reason: 'unavailable' }> {
   try {
     const communes = await getJson(geoCommunesUrl(city, postalCode));
-    if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr : réponse inattendue');
+    if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr\u00a0: réponse inattendue');
     return pickInseeCode(communes as GeoCommune[], city, postalCode);
   } catch (error) {
     await reportServerError('resolveCommune', error);
@@ -94,7 +94,7 @@ export async function resolveCommune(
 export async function fetchDepartmentCommunes(departement: string): Promise<GeoCommune[] | null> {
   try {
     const communes = await getJson(geoDepartmentCommunesUrl(departement));
-    if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr : réponse inattendue');
+    if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr\u00a0: réponse inattendue');
     return communes as GeoCommune[];
   } catch (error) {
     await reportServerError('fetchDepartmentCommunes', error);
@@ -109,7 +109,7 @@ export async function fetchCommunes(
 ): Promise<GeoCommune[] | null> {
   try {
     const communes = await getJson(geoCommuneLookupUrl(query));
-    if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr : réponse inattendue');
+    if (!Array.isArray(communes)) throw new Error('geo.api.gouv.fr\u00a0: réponse inattendue');
     return communes as GeoCommune[];
   } catch (error) {
     await reportServerError('fetchCommunes', error);

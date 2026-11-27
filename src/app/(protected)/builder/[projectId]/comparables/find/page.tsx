@@ -157,7 +157,9 @@ export default async function FindCompetitorsPage({ params }: FindCompetitorsPag
         <div
           className={`${softPanel} flex flex-col gap-2 p-4 text-sm text-zinc-600 stage:text-white/70`}
         >
-          <p>La recherche se base sur le type et la localisation du bien vendeur. Il manque :</p>
+          <p>
+            La recherche se base sur le type et la localisation du bien vendeur. Il manque&nbsp;:
+          </p>
           <ul className="flex flex-col gap-1">
             {missing.map((name) => (
               <li key={name}>

@@ -26,7 +26,7 @@ export function liveDurationLabel(
   endedAt: string | null | undefined,
 ): string | null {
   const minutes = liveDurationMinutes(startedAt, endedAt);
-  return minutes == null ? null : `Durée du Live : ${minutes} min`;
+  return minutes == null ? null : `Durée du Live\u00a0: ${minutes} min`;
 }
 
 // Le rythme se choisit AVANT le Live. Une fois le Live commencé — une heure de début relevée,
@@ -38,7 +38,7 @@ export function canChangeLiveRhythm(state: {
   return state.liveStartedAt == null && !state.hasSellerAnswers;
 }
 
-export const RHYTHM_LOCKED_MESSAGE = 'Le Live a commencé : le rythme ne se modifie plus.';
+export const RHYTHM_LOCKED_MESSAGE = 'Le Live a commencé\u00a0: le rythme ne se modifie plus.';
 // Mission 110 — l'ordre des concurrents suit la même règle : une fois le Live commencé, les
 // flèches et le glisser-déposer sont désactivés, et l'écran le dit.
-export const LIVE_ORDER_FROZEN = 'Ordre figé : le Live a commencé';
+export const LIVE_ORDER_FROZEN = 'Ordre figé\u00a0: le Live a commencé';

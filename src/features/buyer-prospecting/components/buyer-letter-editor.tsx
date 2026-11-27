@@ -155,8 +155,8 @@ export function BuyerLetterEditor({
             </h1>
             <p className={hintText}>
               {colleague
-                ? 'Né de la recherche de votre acquéreur, pour l’agence qui a ce bien en exclusivité. Il ne dit ni son nom, ni son budget, ne promet rien et ne pose aucune condition. Chaque texte est modifiable ; un champ vidé reprend le texte proposé.'
-                : 'Né de la recherche de votre acquéreur. Il ne dit ni son nom, ni son budget, et ne promet rien. Chaque texte est modifiable ; un champ vidé reprend le texte proposé.'}
+                ? 'Né de la recherche de votre acquéreur, pour l’agence qui a ce bien en exclusivité. Il ne dit ni son nom, ni son budget, ne promet rien et ne pose aucune condition. Chaque texte est modifiable\u202f; un champ vidé reprend le texte proposé.'
+                : 'Né de la recherche de votre acquéreur. Il ne dit ni son nom, ni son budget, et ne promet rien. Chaque texte est modifiable\u202f; un champ vidé reprend le texte proposé.'}
             </p>
           </div>
           <label className="flex flex-col gap-1.5">
@@ -275,9 +275,9 @@ export function BuyerLetterEditor({
             </span>
           ) : null}
           <span className="text-xs text-zinc-500">
-            Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF », format A4, sans
-            marges. {colleague ? 'Le dossier' : 'Le courrier'} se retrouve dans Prospection, «
-            Recherche acquéreur ».
+            Dans la fenêtre d’impression, choisissez «&nbsp;Enregistrer au format PDF&nbsp;», format
+            A4, sans marges. {colleague ? 'Le dossier' : 'Le courrier'} se retrouve dans
+            Prospection, «&nbsp;Recherche acquéreur&nbsp;».
           </span>
         </>
       }

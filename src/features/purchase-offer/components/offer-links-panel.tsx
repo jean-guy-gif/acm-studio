@@ -55,7 +55,7 @@ export function OfferLinksPanel(props: {
             })
             .catch(() => {
               setPending(false);
-              setError('Connexion perdue : réessayez.');
+              setError('Connexion perdue\u00a0: réessayez.');
             });
         }}
       >

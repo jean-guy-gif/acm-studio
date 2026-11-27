@@ -113,10 +113,10 @@ export function selectionAsInputs(selection: IdealSelection): SelectionItemInput
   }));
 }
 
-const OLD_TO_VERIFY = /^À vérifier : (.+)$/;
+const OLD_TO_VERIFY = /^À vérifier\s:\s(.+)$/;
 export function oneToVerifyForm(gap: string): string {
   const match = OLD_TO_VERIFY.exec(gap);
-  return match ? `${match[1]} : à vérifier` : gap;
+  return match ? `${match[1]}\u00a0: à vérifier` : gap;
 }
 
 export function toSelection(row: SelectionRow, items: SelectionItemRow[]): IdealSelection {

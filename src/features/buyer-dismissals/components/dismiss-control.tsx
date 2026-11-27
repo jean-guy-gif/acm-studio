@@ -40,7 +40,7 @@ export function DismissControl({
   return (
     <div className="flex w-full flex-col gap-1.5" data-testid="dismiss-reasons">
       <span className="text-xs font-semibold text-zinc-700 stage:text-white/80">
-        Pourquoi l’écarter ?
+        Pourquoi l’écarter&#x202f;?
       </span>
       <div className="flex flex-wrap gap-1.5">
         {DISMISS_REASONS.map((reason) => (
@@ -64,7 +64,7 @@ export function DismissControl({
                 })
                 .catch(() => {
                   setPending(false);
-                  setError('Connexion perdue : réessayez.');
+                  setError('Connexion perdue\u00a0: réessayez.');
                 });
             }}
           >

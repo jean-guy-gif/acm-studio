@@ -66,19 +66,19 @@ describe('la navigation de la présentation', () => {
 
   it('sur le lien, « Envoyer ma réponse » avec des biens sans réponse demande confirmation', () => {
     expect(sendConfirmation(unansweredLetters(items, [response('c', 'visit')]))).toBe(
-      '2 biens sans réponse : A et B. Envoyer quand même ?',
+      '2 biens sans réponse\u00a0: A et B. Envoyer quand même\u202f?',
     );
-    expect(sendConfirmation(['B'])).toBe('1 bien sans réponse : B. Envoyer quand même ?');
+    expect(sendConfirmation(['B'])).toBe('1 bien sans réponse\u00a0: B. Envoyer quand même\u202f?');
     expect(sendConfirmation([])).toBeNull();
   });
 
   it('« Terminer » avec des biens sans réponse demande confirmation, en les nommant', () => {
     expect(finishConfirmation(unansweredLetters(items, [response('c', 'visit')]))).toBe(
-      '2 biens sans réponse : A et B. Terminer quand même ?',
+      '2 biens sans réponse\u00a0: A et B. Terminer quand même\u202f?',
     );
     expect(
       finishConfirmation(unansweredLetters(items, [response('c', 'visit'), response('a', 'no')])),
-    ).toBe('1 bien sans réponse : B. Terminer quand même ?');
+    ).toBe('1 bien sans réponse\u00a0: B. Terminer quand même\u202f?');
     expect(
       finishConfirmation(
         unansweredLetters(items, [

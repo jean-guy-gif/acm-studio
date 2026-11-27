@@ -21,7 +21,7 @@ export type AddProspectingOppositionResult = { ok: true } | { ok: false; error: 
 
 // Mission 104 — dit quand l'écriture n'est pas confirmée en base : rien n'est promis.
 const FAILURE =
-  'L’inscription n’a pas été confirmée : l’adresse n’est pas sur la liste « Ne plus solliciter ». Réessayez.';
+  'L’inscription n’a pas été confirmée\u00a0: l’adresse n’est pas sur la liste «\u00a0Ne plus solliciter\u00a0». Réessayez.';
 
 // Mission 98 — « Ne plus solliciter » : l'adresse confirmée de cette carte entre dans la liste
 // d'opposition de l'agence. L'adresse n'est jamais reçue du navigateur : elle est relue en base.
@@ -55,7 +55,7 @@ export async function addProspectingOpposition(
   if (addressKeys.length === 0 && listingKeys.length === 0) {
     return {
       ok: false,
-      error: 'Ni adresse confirmée ni annonce : saisissez l’adresse du bien pour l’inscrire.',
+      error: 'Ni adresse confirmée ni annonce\u00a0: saisissez l’adresse du bien pour l’inscrire.',
     };
   }
 

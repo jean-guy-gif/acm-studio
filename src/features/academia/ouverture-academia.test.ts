@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 // (`missions/M159-confidentialite-pour-le-juriste.md`). La page dit ce que le code fait (M73).
 const page = readFileSync(join(__dirname, '..', '..', 'app', 'confidentialite', 'page.tsx'), 'utf8')
   .replace(/\{' '\}/g, ' ')
+  .replace(/&nbsp;|&#x202f;/g, ' ')
   .replace(/\s+/g, ' ');
 
 describe('/confidentialite à l’ouverture d’Academia', () => {

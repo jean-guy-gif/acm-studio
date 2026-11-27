@@ -41,7 +41,7 @@ function collectValues(formData: FormData): Record<string, string> {
 }
 
 const DUPLICATE_RETAINED_MESSAGE =
-  'Déjà dans le dossier : cette annonce a déjà sa fiche, retenue. Aucune fiche n’a été ajoutée.';
+  'Déjà dans le dossier\u00a0: cette annonce a déjà sa fiche, retenue. Aucune fiche n’a été ajoutée.';
 
 // projectId is bound server-side from the route; never taken from the client.
 export async function createComparable(

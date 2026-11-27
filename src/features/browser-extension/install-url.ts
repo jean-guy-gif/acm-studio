@@ -28,7 +28,7 @@ export function extensionInstallUrl(): string | null {
 export const EXTENSION_NO_SITE_ACCESS_TITLE = 'Extension installée, mais sans accès à ACM Studio';
 export const EXTENSION_NO_SITE_ACCESS_STEPS =
   'Chrome → Extensions → ACM Studio → Détails → Accès aux sites → Sur tous les sites';
-export const EXTENSION_ALREADY_INSTALLED_HINT = 'Déjà installée ? Vérifiez l’accès aux sites';
+export const EXTENSION_ALREADY_INSTALLED_HINT = 'Déjà installée\u202f? Vérifiez l’accès aux sites';
 
 // Mission 108 — sous le message d'installation : la détection complète, refaite à la demande.
 export const EXTENSION_RETRY_LABEL = 'Réessayer';

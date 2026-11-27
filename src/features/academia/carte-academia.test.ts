@@ -113,14 +113,14 @@ describe('une agence qui a l’accès : la carte sans les deux boutons', () => {
     expect(html).not.toContain('data-testid="academia-living"');
     expect(html).not.toContain('Adresse copiée en un toucher');
     expect(html).not.toContain('s’ouvrent dans Academia, dans un nouvel onglet');
-    expect(html).toContain('Créer le lien « Vivre ici »');
+    expect(html).toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
   });
 
   it('la phrase du haut dit où se lit le dossier d’adresse, en lien', () => {
     const html = cardHtml({ api: IDLE });
     expect(html).toMatch(/Le dossier d’adresse d’Academia se lit sur/);
     expect(html).toContain('href="/builder/p1/avant-rendez-vous"');
-    expect(html).toContain('le lien « Vivre ici » se crée ici, en un clic.');
+    expect(html).toContain('le lien «\u00a0Vivre ici\u00a0» se crée ici, en un clic.');
     expect(html).not.toContain('btn-filled');
   });
 
@@ -185,7 +185,7 @@ describe('un lien déjà collé à la main avant l’ouverture', () => {
     expect(html).toContain(PASTED);
     expect(html).toContain('Collé le 02/11.');
     expect(html).toContain('Retirer');
-    expect(html).toContain('Créer le lien « Vivre ici »');
+    expect(html).toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
     expect(html).not.toContain('Coller le lien à la main');
     expect(html).not.toContain(`value="${PASTED}"`);
   });
@@ -203,7 +203,7 @@ describe('un lien déjà collé à la main avant l’ouverture', () => {
       expect(html).toContain(PASTED);
       expect(html).toContain('data-testid="living-here-pasted-remove"');
       expect(html).toContain('n’est plus montré, ni au vendeur ni aux acquéreurs');
-      expect(html).toContain('Créer le lien « Vivre ici »');
+      expect(html).toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
     }
   });
 
@@ -216,18 +216,18 @@ describe('« Enregistrez d’abord la fiche »', () => {
   it('une adresse tapée sur une fiche sans adresse : à la place de « Il faut l’adresse du bien »', () => {
     const html = cardHtml({ api: IDLE, address: null, typed: ADDRESS });
     expect(html).toContain(
-      'Enregistrez d’abord la fiche : le lien se crée sur l’adresse enregistrée du bien.',
+      'Enregistrez d’abord la fiche\u00a0: le lien se crée sur l’adresse enregistrée du bien.',
     );
     expect(html).not.toContain('Il faut l’adresse du bien');
-    expect(html).not.toContain('Créer le lien « Vivre ici »');
+    expect(html).not.toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
   });
 
   it('une adresse enregistrée puis modifiée : le dire, pas de lien sur l’ancienne', () => {
     const html = cardHtml({ api: IDLE, typed: '6 chemin des Restanques Hautes, 06140 Vence' });
     expect(html).toContain(
-      'Enregistrez d’abord la fiche : le lien se crée sur l’adresse enregistrée du bien (vous l’avez modifiée).',
+      'Enregistrez d’abord la fiche\u00a0: le lien se crée sur l’adresse enregistrée du bien (vous l’avez modifiée).',
     );
-    expect(html).not.toContain('Créer le lien « Vivre ici »');
+    expect(html).not.toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
   });
 
   it('une agence sans accès : « Enregistrez d’abord la fiche » au lieu de « Ajoutez l’adresse du bien »', () => {
@@ -235,7 +235,7 @@ describe('« Enregistrez d’abord la fiche »', () => {
     expect(html).toContain('Enregistrez d’abord la fiche');
     expect(html).not.toContain('Ajoutez l’adresse du bien');
     // Le champ à coller reste, comme aujourd'hui.
-    expect(html).toContain('Lien « Vivre ici » à montrer aux acquéreurs (facultatif)');
+    expect(html).toContain('Lien «\u00a0Vivre ici\u00a0» à montrer aux acquéreurs (facultatif)');
   });
 
   it('rien de tapé : la carte d’aujourd’hui', () => {

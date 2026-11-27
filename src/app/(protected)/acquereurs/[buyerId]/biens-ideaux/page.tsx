@@ -42,8 +42,9 @@ export default async function IdealPropertiesPage({ params, searchParams }: Prop
               Les biens idéaux de {buyer.name}
             </h1>
             <p className={pageSubtitle}>
-              Ce que l’agence a déjà, puis le marché en trois catégories ; retenez jusqu’à trois
-              biens. Cet écran est pour vous : le dossier remis à l’acquéreur viendra ensuite.
+              Ce que l’agence a déjà, puis le marché en trois catégories&#x202f;; retenez jusqu’à
+              trois biens. Cet écran est pour vous&nbsp;: le dossier remis à l’acquéreur viendra
+              ensuite.
             </p>
             {/* La refonte, lot D — la fiche vient d'être créée par « Trouver ses biens ». */}
             {query.enregistre ? (

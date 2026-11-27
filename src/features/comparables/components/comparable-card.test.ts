@@ -54,7 +54,7 @@ describe('réintégrer une annonce retirée', () => {
       }),
     );
     expect(WITHDRAWN_REINTEGRATE_WARNING).toBe(
-      'Cette annonce n’est plus en ligne : elle sera présentée au vendeur comme un bien en vente. Continuer ?',
+      'Cette annonce n’est plus en ligne\u00a0: elle sera présentée au vendeur comme un bien en vente. Continuer\u202f?',
     );
     expect(html).toContain(WITHDRAWN_REINTEGRATE_WARNING);
     expect(html).toContain('name="comparableId" value="c1"');
@@ -136,7 +136,7 @@ describe('une carte de concurrent retenu', () => {
   });
 
   it('la suppression se confirme dans l’écran : aucune boîte du navigateur', () => {
-    expect(DELETE_COMPETITOR_TITLE).toBe('Supprimer ce concurrent ?');
+    expect(DELETE_COMPETITOR_TITLE).toBe('Supprimer ce concurrent\u202f?');
     expect(deleteCompetitorText('Maison 5 pièces')).toContain('écartez-le');
   });
 });

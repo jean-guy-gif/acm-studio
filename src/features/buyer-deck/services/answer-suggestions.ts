@@ -51,7 +51,7 @@ const REFUSED: Record<NoReason, string> = {
   price: 'Le prix a été refusé',
   works: 'Les travaux ont été refusés',
   photos: 'Les photos ont été refusées',
-  other: 'La raison « Autre » a été donnée',
+  other: 'La raison «\u00a0Autre\u00a0» a été donnée',
 };
 
 const TIMES = ['', 'une fois', 'deux fois', 'trois fois', 'quatre fois', 'cinq fois'];
@@ -88,24 +88,27 @@ function proposal(
       if (buyer.surfaceMin != null && buyer.surfaceMin >= value) return null;
       return {
         patch: { surfaceMin: value },
-        text: `passer la surface minimum à ${formatSquareMeters(value)} ?`,
+        text: `passer la surface minimum à ${formatSquareMeters(value)}\u202f?`,
       };
     }
     case 'outdoor':
       if (buyer.outdoor === true && buyer.mustHave.includes('outdoor')) return null;
       return {
         patch: { outdoor: true, mustHave: withMust(buyer, 'outdoor') },
-        text: 'rendre l’extérieur indispensable ?',
+        text: 'rendre l’extérieur indispensable\u202f?',
       };
     case 'parking':
       if (buyer.parking === true && buyer.mustHave.includes('parking')) return null;
       return {
         patch: { parking: true, mustHave: withMust(buyer, 'parking') },
-        text: 'rendre le parking indispensable ?',
+        text: 'rendre le parking indispensable\u202f?',
       };
     case 'works':
       if (buyer.worksAccepted === false) return null;
-      return { patch: { worksAccepted: false }, text: 'passer « Travaux acceptés » à non ?' };
+      return {
+        patch: { worksAccepted: false },
+        text: 'passer «\u00a0Travaux acceptés\u00a0» à non\u202f?',
+      };
     case 'price': {
       const prices = refused
         .map((answer) => answer.price)
@@ -121,7 +124,7 @@ function proposal(
           // Le budget idéal ne dépasse jamais le plafond (M117).
           ...(buyer.budgetIdeal != null && buyer.budgetIdeal > value ? { budgetIdeal: value } : {}),
         },
-        text: `passer le budget plafond à ${formatEuro(value)} ?`,
+        text: `passer le budget plafond à ${formatEuro(value)}\u202f?`,
       };
     }
     // Mission 135 (décision de Jean-Guy, 06/11) — « Le quartier » : la commune de la fiche qui porte
@@ -142,7 +145,7 @@ function proposal(
       if (buyer.cities.length < 2) return undefined;
       return {
         patch: { cities: buyer.cities.filter((entry) => communeKey(entry) !== key) },
-        text: `retirer ${city} de sa recherche ?`,
+        text: `retirer ${city} de sa recherche\u202f?`,
       };
     }
     default:
@@ -156,21 +159,21 @@ export function adjustmentSummary(buyer: BuyerInput, patch: BuyerPatch): string 
   const parts: string[] = [];
   if (patch.budgetMax !== undefined) {
     parts.push(
-      `Budget plafond : ${buyer.budgetMax != null ? `${formatEuro(buyer.budgetMax)} → ` : ''}${formatEuro(patch.budgetMax)}`,
+      `Budget plafond\u00a0: ${buyer.budgetMax != null ? `${formatEuro(buyer.budgetMax)} → ` : ''}${formatEuro(patch.budgetMax)}`,
     );
   }
   if (patch.surfaceMin !== undefined) {
     parts.push(
-      `Surface minimum : ${buyer.surfaceMin != null ? `${formatSquareMeters(buyer.surfaceMin)} → ` : ''}${formatSquareMeters(patch.surfaceMin)}`,
+      `Surface minimum\u00a0: ${buyer.surfaceMin != null ? `${formatSquareMeters(buyer.surfaceMin)} → ` : ''}${formatSquareMeters(patch.surfaceMin)}`,
     );
   }
   if (patch.cities !== undefined) {
     const removed = buyer.cities.filter((city) => !patch.cities!.includes(city));
-    parts.push(`Communes : ${removed.join(', ')} retirée${removed.length > 1 ? 's' : ''}`);
+    parts.push(`Communes\u00a0: ${removed.join(', ')} retirée${removed.length > 1 ? 's' : ''}`);
   }
   if (patch.outdoor !== undefined) parts.push('Extérieur indispensable');
   if (patch.parking !== undefined) parts.push('Parking indispensable');
-  if (patch.worksAccepted !== undefined) parts.push('Travaux acceptés : non');
+  if (patch.worksAccepted !== undefined) parts.push('Travaux acceptés\u00a0: non');
   const text = parts.join(' · ') || 'Recherche ajustée';
   return text.length > 200 ? `${text.slice(0, 199)}…` : text;
 }
@@ -192,7 +195,7 @@ export function answerSuggestions(
     suggestions.push({
       kind,
       count: refused.length,
-      text: proposed ? `${head} : ${proposed.text}` : `${head}.`,
+      text: proposed ? `${head}\u00a0: ${proposed.text}` : `${head}.`,
       patch: proposed ? proposed.patch : null,
     });
   }

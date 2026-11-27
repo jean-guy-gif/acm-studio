@@ -44,7 +44,7 @@ export function ProspectionFilters({
         }
         className={select}
       >
-        <option value="">Bien vendeur : tous</option>
+        <option value="">Bien vendeur&nbsp;: tous</option>
         {sellers.map((seller) => (
           <option key={seller.projectId} value={seller.projectId}>
             {seller.name}

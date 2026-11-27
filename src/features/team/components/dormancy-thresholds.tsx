@@ -55,12 +55,12 @@ export function DormancyThresholds({ initial }: { initial: DormancyThresholds })
           onChange={(event) => setPreparationDays(event.target.value)}
           className={numberInput}
         />
-        <span>jours, ou qu’un « à relancer » n’a pas bougé depuis plus de</span>
+        <span>jours, ou qu’un «&nbsp;à relancer&nbsp;» n’a pas bougé depuis plus de</span>
         <input
           type="number"
           min={1}
           step={1}
-          aria-label="Jours avant qu’un « à relancer » soit signalé dormant"
+          aria-label="Jours avant qu’un «&nbsp;à relancer&nbsp;» soit signalé dormant"
           value={followUpDays}
           onChange={(event) => setFollowUpDays(event.target.value)}
           className={numberInput}

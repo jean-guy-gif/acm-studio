@@ -33,7 +33,7 @@ import { createClient } from '@/lib/supabase/server';
 const MANDATE_IN = 'Mandat rentré';
 
 export const VOUCHER_NOT_AGENCY =
-  'Bon de visite : seulement pour un bien de l’agence (mandat signé ou rentré) ou en collaboration obtenue.';
+  'Bon de visite\u00a0: seulement pour un bien de l’agence (mandat signé ou rentré) ou en collaboration obtenue.';
 
 export type VoucherVisit = {
   visitId: string;
@@ -128,7 +128,10 @@ export async function getVoucherContext(
     .limit(20);
   // Une lecture en échec n'est jamais lue comme « aucun bon » (M98, relecteur).
   if (!legal.ok || branding.error || visitRead.failed || lastDocument.error) {
-    return { ok: false, error: 'Le bon de visite n’a pas pu être préparé : rechargez la page.' };
+    return {
+      ok: false,
+      error: 'Le bon de visite n’a pas pu être préparé\u00a0: rechargez la page.',
+    };
   }
   const mentions = {
     documentName: branding.data?.document_name ?? null,
@@ -203,7 +206,10 @@ export async function getVoucherContext(
     prospects.error ||
     buyerDocuments.error
   ) {
-    return { ok: false, error: 'Le bon de visite n’a pas pu être préparé : rechargez la page.' };
+    return {
+      ok: false,
+      error: 'Le bon de visite n’a pas pu être préparé\u00a0: rechargez la page.',
+    };
   }
   const conclusionOf = new Map((conclusions.data ?? []).map((row) => [row.project_id, row]));
   const subjectOf = new Map((subjects.data ?? []).map((row) => [row.project_id, row]));
@@ -280,7 +286,7 @@ export async function getVoucherContext(
       if (HORS_MANDAT_OUVERT && !(state?.kind === 'done' && state.label === MANDATE_IN)) {
         if (state?.kind === 'closed') {
           eligible = false;
-          note = `${state.label} : pas de bon de visite pour ce bien.`;
+          note = `${state.label}\u00a0: pas de bon de visite pour ce bien.`;
         } else {
           eligible = true;
           outside = true;

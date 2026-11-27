@@ -57,7 +57,7 @@ export default async function AgencyIdentityPage() {
 
       {legal && !legal.ok ? (
         <p role="alert" className="text-sm font-semibold text-red-700">
-          L’identité légale n’a pas pu être lue : rechargez la page.
+          L’identité légale n’a pas pu être lue&nbsp;: rechargez la page.
         </p>
       ) : (
         <LegalIdentityForm

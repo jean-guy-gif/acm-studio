@@ -11,11 +11,12 @@ export const BUDGET_WARNING_RATIO = 0.8;
 
 // Lancement, mission 5 (Jean-Guy, 23/11) — plus aucun coût en euros devant le conseiller : le
 // plafond atteint se dit sans montant ; les montants restent pour l'opérateur seul (`/erreurs`).
-export const BUDGET_REACHED_LABEL = 'Votre forfait du mois est atteint : contactez votre agence';
+export const BUDGET_REACHED_LABEL =
+  'Votre forfait du mois est atteint\u00a0: contactez votre agence';
 export const BUDGET_REACHED_HINT =
-  '« Ouvrir mes recherches » et l’import par l’extension restent possibles.';
+  '«\u00a0Ouvrir mes recherches\u00a0» et l’import par l’extension restent possibles.';
 export const BUDGET_UNREADABLE_MESSAGE =
-  'Le forfait du mois n’a pas pu être vérifié : aucune recherche lancée. Réessayez.';
+  'Le forfait du mois n’a pas pu être vérifié\u00a0: aucune recherche lancée. Réessayez.';
 
 export type SearchBudget = {
   spentCents: number;

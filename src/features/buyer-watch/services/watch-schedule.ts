@@ -64,12 +64,12 @@ export function watchLine(input: {
   // Le plafond de la veille de l'agence est à 0 € : elle ne cherche pour personne.
   off?: boolean;
 }): string {
-  if (input.off) return 'Veille arrêtée : coupée par l’agence';
-  if (!input.ready) return 'Veille arrêtée : pas prêt à visiter';
+  if (input.off) return 'Veille arrêtée\u00a0: coupée par l’agence';
+  if (!input.ready) return 'Veille arrêtée\u00a0: pas prêt à visiter';
   const next = nextWatchOn(input.lastRunAt, input.now);
   const nextLabel = next <= parisDay(input.now) ? 'la nuit prochaine' : `le ${dayLabel(next)}`;
-  if (!input.lastRunAt) return `Veille : première recherche ${nextLabel}`;
-  return `Veille : dernière recherche le ${dayLabel(parisDay(new Date(input.lastRunAt)))}, prochaine ${nextLabel}`;
+  if (!input.lastRunAt) return `Veille\u00a0: première recherche ${nextLabel}`;
+  return `Veille\u00a0: dernière recherche le ${dayLabel(parisDay(new Date(input.lastRunAt)))}, prochaine ${nextLabel}`;
 }
 
 // Le plafond de la veille effectivement disponible : le sien, jamais plus de la moitié de celui de
@@ -98,7 +98,7 @@ export function watchBudgetState(input: {
 
 export const WATCH_BUDGET_LABELS: Record<WatchBudgetState, string> = {
   off: 'Veille coupée',
-  paused: 'Veille en pause : forfait du mois atteint',
+  paused: 'Veille en pause\u00a0: forfait du mois atteint',
   active: 'Veille active',
 };
 
@@ -122,7 +122,7 @@ export function parseWatchCapEuros(
   if (cents > max) {
     return {
       ok: false,
-      error: `La veille ne peut pas dépasser la moitié du plafond de recherche de l’agence : ${formatEuro(max / 100)} au plus.`,
+      error: `La veille ne peut pas dépasser la moitié du plafond de recherche de l’agence\u00a0: ${formatEuro(max / 100)} au plus.`,
     };
   }
   return { ok: true, cents };

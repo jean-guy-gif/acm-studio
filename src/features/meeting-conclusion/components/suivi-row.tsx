@@ -488,7 +488,7 @@ export function SuiviRow({
             <span className="text-sm text-zinc-500 stage:text-white/60">{step.phrase}</span>
             {missingMotive ? (
               <span className="text-xs font-semibold text-orange-700">
-                Pourquoi le relancer ? Non noté.
+                Pourquoi le relancer&#x202f;? Non noté.
               </span>
             ) : null}
             {relancedOn ? (
@@ -689,8 +689,8 @@ export function SuiviRow({
               <span className={metaLabel}>Point marché</span>
               {outcome === 'signed' ? null : (
                 <span className="text-xs text-zinc-500 stage:text-white/60">
-                  ACM relit les annonces des concurrents (sans compter dans le forfait) : vous voyez
-                  ce qui a bougé depuis le rendez-vous, et le message de relance le dit.
+                  ACM relit les annonces des concurrents (sans compter dans le forfait)&nbsp;: vous
+                  voyez ce qui a bougé depuis le rendez-vous, et le message de relance le dit.
                 </span>
               )}
               <RefreshPricesButton

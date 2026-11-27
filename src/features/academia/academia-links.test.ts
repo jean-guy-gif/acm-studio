@@ -49,7 +49,7 @@ describe('AcademiaLinks', () => {
     expect(html).toContain('Vivre ici ↗');
     expect(html.match(/target="_blank"/g)).toHaveLength(2);
     expect(html.match(/rel="noopener noreferrer"/g)).toHaveLength(2);
-    expect(html).toContain('Adresse copiée en un toucher :');
+    expect(html).toContain('Adresse copiée en un toucher\u00a0:');
     expect(html).toContain(ADDRESS);
   });
 
@@ -92,8 +92,8 @@ describe('AcademiaLinks', () => {
       ),
     );
     expect(html.indexOf('Offre d’achat signée')).toBeLessThan(html.indexOf('Dossier d’adresse'));
-    expect(html).toContain('Adresse du bien :');
-    expect(html.indexOf('Adresse du bien :')).toBeLessThan(html.indexOf(ADDRESS));
+    expect(html).toContain('Adresse du bien\u00a0:');
+    expect(html.indexOf('Adresse du bien\u00a0:')).toBeLessThan(html.indexOf(ADDRESS));
     const unread = plain(
       renderToStaticMarkup(
         createElement(AcademiaLinks, {
@@ -153,11 +153,11 @@ describe('AcademiaCard', () => {
     const before = card(false, null);
     expect(before).toContain('Le bien dans Academia');
     expect(before).toContain('Pour vous seul.');
-    expect(before).toContain('Lien « Vivre ici » à montrer aux acquéreurs (facultatif)');
+    expect(before).toContain('Lien «\u00a0Vivre ici\u00a0» à montrer aux acquéreurs (facultatif)');
     expect(before).toContain('Montré aux acquéreurs une fois le mandat signé.');
     expect(before).not.toContain('Retirer');
     const signed = card(true, 'https://app.myacademia.ai/l/abc');
-    expect(signed).toContain('Lien « Vivre ici » montré aux acquéreurs');
+    expect(signed).toContain('Lien «\u00a0Vivre ici\u00a0» montré aux acquéreurs');
     expect(signed).toContain('Montré sur le lien de chaque acquéreur');
     expect(signed).toContain('value="https://app.myacademia.ai/l/abc"');
     expect(signed).toContain('Retirer');
@@ -167,7 +167,7 @@ describe('AcademiaCard', () => {
 
   it('mission 156 — l’âge du lien du mandat, et l’avertissement orange, sans cacher le lien', () => {
     const warn =
-      'Collé il y a 34 jours : un lien d’Academia vaut 30 jours, il ne s’ouvre peut-être plus. Collez un lien neuf.';
+      'Collé il y a 34 jours\u00a0: un lien d’Academia vaut 30 jours, il ne s’ouvre peut-être plus. Collez un lien neuf.';
     const old = card(true, 'https://app.myacademia.ai/l/abc', { tone: 'warn', text: warn });
     expect(old).toContain(warn);
     expect(old).toContain('value="https://app.myacademia.ai/l/abc"');
@@ -205,7 +205,7 @@ describe('AcademiaCard, l’API ouverte', () => {
 
   it('rien encore : l’adresse enregistrée, le bouton en contour, pas de repli (correctifs 161)', () => {
     const html = withApi({ kind: 'idle', stale: false });
-    expect(html).toContain('Créer le lien « Vivre ici »');
+    expect(html).toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
     expect(html).toContain(ADDRESS);
     expect(html).not.toContain('Coller le lien à la main');
     expect(html).not.toContain('btn-filled');
@@ -226,7 +226,7 @@ describe('AcademiaCard, l’API ouverte', () => {
       ),
     );
     expect(html).toContain('Academia prépare la page du quartier du bien');
-    expect(html).toContain('Créer le lien « Vivre ici »');
+    expect(html).toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
     // L'adresse du bien reste (la copie de M147 A) ; celle qui part vers Academia, jamais.
     const intro = html.match(/data-testid="living-here-intro">([^<]*)</)?.[1] ?? '';
     expect(intro).not.toContain(ADDRESS);
@@ -284,7 +284,7 @@ describe('AcademiaCard, l’API ouverte', () => {
     expect(html).toContain('Ouvrir ↗');
     expect(html).toContain('Copier');
     expect(html).toContain('Retirer');
-    expect(html).not.toContain('Créer le lien « Vivre ici »');
+    expect(html).not.toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
   });
 
   it('bientôt expiré : en orange, « Créer un lien neuf » ; expiré : plus montré', () => {
@@ -302,7 +302,9 @@ describe('AcademiaCard, l’API ouverte', () => {
       expiresAt: '2026-11-14T00:00:00Z',
       expiry: { level: 'expired', days: 0 },
     });
-    expect(expired).toContain('Le lien a expiré le 14/11 : il n’est plus montré aux acquéreurs.');
+    expect(expired).toContain(
+      'Le lien a expiré le 14/11\u00a0: il n’est plus montré aux acquéreurs.',
+    );
     expect(expired).not.toContain(LINK);
     expect(expired).toContain('Créer un lien neuf');
   });
@@ -310,19 +312,19 @@ describe('AcademiaCard, l’API ouverte', () => {
   it('sans adresse : « Ajoutez l’adresse du bien », aucun bouton', () => {
     const html = withApi({ kind: 'idle', stale: false }, null);
     expect(html).toContain('Il faut l’adresse du bien pour créer le lien.');
-    expect(html).not.toContain('Créer le lien « Vivre ici »');
+    expect(html).not.toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
   });
 
   it('l’adresse du bien a changé : le lien de l’ancienne adresse n’est plus montré, le dire', () => {
     const html = withApi({ kind: 'idle', stale: true }, ADDRESS, LINK);
     expect(html).toContain('L’adresse du bien a changé');
-    expect(html).toContain('Créer le lien « Vivre ici »');
+    expect(html).toContain('Créer le lien «\u00a0Vivre ici\u00a0»');
     expect(html).not.toMatch(/data-testid="living-here-fallback" open/);
   });
 
   it('la demande illisible : le dire, jamais « rien » ; le repli reste', () => {
     const html = withApi({ kind: 'unread' });
-    expect(html).toContain('La demande à Academia n’a pas pu être lue : rechargez la page.');
+    expect(html).toContain('La demande à Academia n’a pas pu être lue\u00a0: rechargez la page.');
     expect(html).toContain('Coller le lien à la main');
   });
 
@@ -348,7 +350,7 @@ describe('AcademiaCard, l’API ouverte', () => {
 
   it('en préparation : l’attente, dite (20 à 60 secondes, vérifiée toutes les 5 s, M161)', () => {
     const html = withApi({ kind: 'waiting' });
-    expect(html).toContain('Academia prépare le dossier de cette adresse : 20 à 60 secondes.');
+    expect(html).toContain('Academia prépare le dossier de cette adresse\u00a0: 20 à 60 secondes.');
     expect(html).toContain(
       'La page vérifie toute seule, toutes les 5 secondes, deux minutes au plus.',
     );

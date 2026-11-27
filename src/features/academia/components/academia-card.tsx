@@ -49,11 +49,11 @@ export function AcademiaCard({
   const field = (
     <LivingHereField
       inputId="academia-living-url"
-      label="Lien « Vivre ici » montré aux acquéreurs"
-      emptyLabel="Lien « Vivre ici » à montrer aux acquéreurs (facultatif)"
+      label="Lien «&nbsp;Vivre ici&nbsp;» montré aux acquéreurs"
+      emptyLabel="Lien «&nbsp;Vivre ici&nbsp;» à montrer aux acquéreurs (facultatif)"
       hint={
         signed
-          ? 'Montré sur le lien de chaque acquéreur qui a ce bien dans sa sélection, et dans « Confirmer la visite ».'
+          ? 'Montré sur le lien de chaque acquéreur qui a ce bien dans sa sélection, et dans «\u00a0Confirmer la visite\u00a0».'
           : 'Montré aux acquéreurs une fois le mandat signé.'
       }
       savedUrl={savedUrl}
@@ -71,14 +71,14 @@ export function AcademiaCard({
           Pour vous seul. Le dossier d’adresse d’Academia se lit sur{' '}
           <Link href={`/builder/${projectId}/avant-rendez-vous`} className={linkStyle}>
             Avant le rendez-vous
-          </Link>{' '}
-          ; le lien « Vivre ici » se crée ici, en un clic.
+          </Link>
+          &#x202f;; le lien «&nbsp;Vivre ici&nbsp;» se crée ici, en un clic.
         </p>
       ) : (
         <>
           <p className={hintText}>
             Pour vous seul. Le dossier d’adresse (ventes réelles, DPE, risques, urbanisme, cadastre,
-            copropriété) et « Vivre ici » s’ouvrent dans Academia, dans un nouvel onglet.
+            copropriété) et «&nbsp;Vivre ici&nbsp;» s’ouvrent dans Academia, dans un nouvel onglet.
           </p>
           <AcademiaLinks
             addressLink={addressLink}

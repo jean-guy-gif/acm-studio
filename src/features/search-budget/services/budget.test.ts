@@ -57,7 +57,9 @@ describe('searchBudget', () => {
       expect(budget.remainingAdverts).toBe(0);
     }
     // Lancement, mission 5 — le plafond atteint se dit sans montant.
-    expect(BUDGET_REACHED_LABEL).toBe('Votre forfait du mois est atteint : contactez votre agence');
+    expect(BUDGET_REACHED_LABEL).toBe(
+      'Votre forfait du mois est atteint\u00a0: contactez votre agence',
+    );
     expect(forfaitUsageLabel(searchBudget(3045, null))).toBe('Forfait du mois atteint');
   });
 

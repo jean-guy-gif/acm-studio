@@ -118,8 +118,8 @@ export function priceDropsLabel(count: number): string | null {
     return null;
   }
   return count === 1
-    ? 'Depuis le rendez-vous : 1 concurrent a baissé son prix'
-    : `Depuis le rendez-vous : ${count} concurrents ont baissé leur prix`;
+    ? 'Depuis le rendez-vous\u00a0: 1 concurrent a baissé son prix'
+    : `Depuis le rendez-vous\u00a0: ${count} concurrents ont baissé leur prix`;
 }
 
 export type SellerSaidInput = {

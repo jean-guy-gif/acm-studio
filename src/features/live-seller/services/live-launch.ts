@@ -10,24 +10,25 @@ import { priceOrSurfaceToVerifyLabel } from '@/features/imported-fields/services
 // Aucun autre blocage : le choix reste au conseiller.
 
 export const NO_COMPETITOR_REASON = 'Retenez au moins un concurrent pour lancer le Live';
-export const FEW_COMPETITORS_WARNING = 'Peu de concurrents : la lecture du marché sera fragile.';
+export const FEW_COMPETITORS_WARNING =
+  'Peu de concurrents\u00a0: la lecture du marché sera fragile.';
 export const REAL_DOSSIER_CONFIRMATION =
-  'Vous êtes devant le vendeur ? Ses réponses seront enregistrées pour de bon. Pour vous entraîner, ouvrez le dossier d’exemple.';
+  'Vous êtes devant le vendeur\u202f? Ses réponses seront enregistrées pour de bon. Pour vous entraîner, ouvrez le dossier d’exemple.';
 // Sur « Avant le rendez-vous », près du bouton : la même chose, dite avant le clic.
 export const REAL_DOSSIER_NOTE =
   'Devant le vendeur, ses réponses sont enregistrées pour de bon. Pour vous entraîner, ouvrez le dossier d’exemple.';
 // Mission 108 — une décision de prix périmée est rappelée, sans bloquer : devant le vendeur, le
 // prix décidé reste montré, « Prix retenu par votre conseiller », jamais le calcul du jour.
 export const OUTDATED_DECISION_NOTICE =
-  'Décision de prix à actualiser : le marché a changé depuis votre décision. Le vendeur verra le prix que vous avez décidé.';
+  'Décision de prix à actualiser\u00a0: le marché a changé depuis votre décision. Le vendeur verra le prix que vous avez décidé.';
 // Mission 109 — aucune décision de prix enregistrée : le vendeur ne verra aucun prix final. Dit au
 // lancement, avec un lien vers « Avant le rendez-vous » ; le lancement reste possible.
 export const NO_DECISION_NOTICE =
-  'Aucune décision de prix : le vendeur ne verra pas de prix final. Décidez votre prix avant le rendez-vous';
+  'Aucune décision de prix\u00a0: le vendeur ne verra pas de prix final. Décidez votre prix avant le rendez-vous';
 // Mission 152 — les annonces des concurrents n'ont pas été vérifiées depuis plus de 24 h : rappelé
 // au lancement, sans bloquer (M52), avec « Avant le rendez-vous » où se fait la vérification.
 export const LISTINGS_CHECK_NOTICE =
-  'Annonces des concurrents non vérifiées depuis plus de 24 h : un prix a pu changer, une annonce a pu disparaître';
+  'Annonces des concurrents non vérifiées depuis plus de 24 h\u00a0: un prix a pu changer, une annonce a pu disparaître';
 export const LAUNCH_FOR_REAL_LABEL = 'Lancer devant le vendeur';
 export const OPEN_EXAMPLE_LABEL = 'Ouvrir le dossier d’exemple';
 
@@ -71,7 +72,7 @@ export function liveLaunchCheck(input: {
 
 function toVerifyNotice(count: number): string | null {
   const label = priceOrSurfaceToVerifyLabel(count);
-  return label ? `${label} : ils entrent tels quels dans le prix des concurrents.` : null;
+  return label ? `${label}\u00a0: ils entrent tels quels dans le prix des concurrents.` : null;
 }
 
 // Mission 112 — des concurrents retenus attendent encore leur import (M101, M108) : rappelé avant

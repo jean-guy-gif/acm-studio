@@ -50,7 +50,7 @@ describe('la fiche acquéreur, relue par le serveur', () => {
   it('les communes se dédoublonnent par leur clé (alias M86, arrondissements M99)', () => {
     const parsed = parseBuyerInput({
       ...base,
-      cities: 'Antibes ; antibes, Paris 15e, 75015 Paris',
+      cities: 'Antibes\u202f; antibes, Paris 15e, 75015 Paris',
     });
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
@@ -80,7 +80,7 @@ describe('la fiche acquéreur, relue par le serveur', () => {
     const ko = parseBuyerInput({ ...base, budget_max: 'quatre cent mille' });
     expect(ko.ok).toBe(false);
     if (ko.ok) return;
-    expect(ko.errors.budget_max).toBe('Budget plafond : indiquez un nombre.');
+    expect(ko.errors.budget_max).toBe('Budget plafond\u00a0: indiquez un nombre.');
   });
 
   it('listes et oui/non : hors liste ignoré, « yes »/« no » lus, vide = non renseigné', () => {

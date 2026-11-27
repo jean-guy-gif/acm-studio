@@ -41,7 +41,7 @@ export type LocatorAvailability = 'ready' | 'sharing_off' | 'unavailable';
 export const LOCATOR_UNAVAILABLE_MESSAGE =
   'Installez le Localisateur Academia pour retrouver les adresses des concurrents';
 export const LOCATOR_SHARING_OFF_MESSAGE =
-  'Activez « Partager avec ACM Studio » dans le Localisateur';
+  'Activez «\u00a0Partager avec ACM Studio\u00a0» dans le Localisateur';
 
 // Un concurrent retenu dont l'adresse reste à demander au Localisateur.
 export type CompetitorToLocate = { id: string; listingUrl: string };

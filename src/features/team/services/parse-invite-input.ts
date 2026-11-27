@@ -17,7 +17,7 @@ export function parseInviteInput(formData: FormData): InviteInputResult {
   }
   const role = String(formData.get('role') ?? '');
   if (role !== 'manager' && role !== 'advisor') {
-    return { ok: false, error: 'Choisissez un rôle : conseiller ou manager.' };
+    return { ok: false, error: 'Choisissez un rôle\u00a0: conseiller ou manager.' };
   }
   return { ok: true, value: { email, role } };
 }

@@ -151,7 +151,7 @@ function describePriceDrop(
   if (!change || change.amount <= 0) {
     return null;
   }
-  return `Baisse constatée par ACM : ${formatEuro(change.fromPrice)} le ${frDate(change.fromDate)}, ${formatEuro(change.toPrice)} le ${frDate(change.toDate)} (−${formatPercent(change.percentage)})`;
+  return `Baisse constatée par ACM\u00a0: ${formatEuro(change.fromPrice)} le ${frDate(change.fromDate)}, ${formatEuro(change.toPrice)} le ${frDate(change.toDate)} (−${formatPercent(change.percentage)})`;
 }
 
 const clean = (value: string | null): string | null => value?.trim() || null;
