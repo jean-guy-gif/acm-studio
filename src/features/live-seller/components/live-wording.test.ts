@@ -263,9 +263,9 @@ describe('le vendeur reformule son prix, puis lit le marché (mission 94)', () =
     }
     // La ligne n'existe que si un nombre de baisses est connu.
     expect(glance).toMatch(
-      /droppedCount\s!= null\) \{\s+figures\.push\(\{\s+label: 'Baisse de prix connue'/,
+      /droppedCount != null\) \{\s+figures\.push\(\{\s+label: 'Baisse de prix connue'/,
     );
-    expect(analysis).toMatch(/droppedCount\s!= null\) \{\s+figures\.push\(\{\s+label: t\.dropped/);
+    expect(analysis).toMatch(/droppedCount != null\) \{\s+figures\.push\(\{\s+label: t\.dropped/);
   });
 });
 

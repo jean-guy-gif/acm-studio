@@ -1605,7 +1605,7 @@ test('parcours complet : Préparation → Live → Suivi', async ({ page }) => {
     // Le concurrent du test n'est ni en exclusivité ni chez un particulier : ACM ne sait pas à
     // qui écrire. Il est listé en tête avec sa raison, et n'est pas imprimé.
     await expect(page.getByText(TOUR_ADDRESS)).toBeVisible();
-    await expect(page.getByText(/À qui s’adresser \?/)).toBeVisible();
+    await expect(page.getByText(/À qui s’adresser\s\?/)).toBeVisible();
     // Mission 105 — l'adresse « Ne plus solliciter » est listée en tête avec sa raison, et jamais
     // imprimée.
     await expect(page.locator('li').filter({ hasText: OPPOSED_ADDRESS })).toContainText(

@@ -1148,7 +1148,7 @@ async function walkLive(
       name: 'Pourquoi est-il toujours sur le marché ?',
     });
     const dangerous = page.getByRole('heading', {
-      name: /Quel concurrent vous paraît le plus dangereux|Le DPE face au marché|Est-il un sérieux concurrent|Un sérieux concurrent \? Et à quel prix/,
+      name: /Quel concurrent vous paraît le plus dangereux|Le DPE face au marché|Est-il un sérieux concurrent|Un sérieux concurrent\s\? Et à quel prix/,
     });
     await expect(duration.or(dangerous).first()).toBeVisible();
     if (await duration.isVisible()) {

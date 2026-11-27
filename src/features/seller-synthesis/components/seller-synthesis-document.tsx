@@ -616,7 +616,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
 
   // Chrome met toutes les pages à la largeur de la première : les marges de côté sont donc nulles
   // partout (la couverture va bord à bord) et les 14 mm de côté vivent dans le contenu.
-  const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page\u00a0:first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
+  const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
 
   return (
     <article

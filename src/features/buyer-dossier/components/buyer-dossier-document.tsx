@@ -100,7 +100,7 @@ export function BuyerDossierDocument({ dossier }: { dossier: BuyerDossier }) {
   const t = texts.buyer.screens;
   const day = buyerDateIn(dossier.selectedAt, language);
   const footer = `${t.confidential} · ${dossier.sector} · ${day}`;
-  const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page\u00a0:first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
+  const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   // La photo du bien A en pleine page ; s'il est « Sans photo » ou n'en a pas, la première photo de
   // la sélection — un aplat seulement quand aucun bien n'a de photo, et jamais vide : sa phrase,
   // la date et le conseiller y sont toujours.

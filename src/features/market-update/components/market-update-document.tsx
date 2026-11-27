@@ -183,7 +183,9 @@ function PriceBlock({
           <div className={kicker}>{gone ? t.conclusion : t.gap}</div>
           {gone && item.conclusion ? (
             <div className="font-title text-base leading-snug font-bold text-zinc-900">
-              {language === 'fr'
+              {/* Lot A (Jean-Guy, 27/11) — « probablement retiré sans vente » : un point écrit
+                  avant se redit ainsi, comme sa note ; les autres libellés, tels qu'écrits. */}
+              {language === 'fr' && item.conclusion.kind !== 'withdrawn'
                 ? item.conclusion.label
                 : goneConclusionLabel(item.conclusion, language)}
             </div>
@@ -383,7 +385,7 @@ export function MarketUpdateDocument({ document }: { document: MarketUpdateDocum
     'lines',
   ].filter((key): key is string => key != null);
   const sectionNumber = (key: string) => sections.indexOf(key) + 1;
-  const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page\u00a0:first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
+  const pageRules = `@page{size:A4;margin:12mm 0 16mm 0;@bottom-left{content:${cssString(footer)};padding-left:14mm;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:#64748b}@bottom-right{content:counter(page,decimal-leading-zero) " / " counter(pages,decimal-leading-zero);padding-right:14mm;font-size:7.5pt;color:#64748b}}@page :first{margin:0;@bottom-left{content:none}@bottom-right{content:none}}`;
   const coverFigures = [
     summary.agreedPrice != null
       ? { label: t.agreedPrice, value: formatEuro(summary.agreedPrice, { language }) }
