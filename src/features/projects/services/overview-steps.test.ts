@@ -150,7 +150,11 @@ describe('la prochaine étape (mission 143)', () => {
 describe('la relance, Prochaine étape d’un vendeur à relancer', () => {
   it('« Relancer M. et Mme … », l’argument, la carte du Suivi ouverte sur la relance', () => {
     expect(followUpNextStep('p1', 'M. et Mme Lambert-Duval', 1)).toEqual({
-      action: { key: 'follow_up', label: 'Relancer', href: '/suivi?relancer=p1#suivi-p1' },
+      action: {
+        key: 'follow_up',
+        label: 'Préparer la relance',
+        href: '/suivi?relancer=p1#suivi-p1',
+      },
       title: 'Relancer M. et Mme Lambert-Duval',
       phrase: '1 acquéreur prêt correspond à ce bien : rentrez le mandat pour pouvoir le proposer.',
     });

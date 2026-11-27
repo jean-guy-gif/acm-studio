@@ -32,13 +32,23 @@ import {
 
 // La refonte, lot A — les blocs du socle (maquettes REFONTE-1 à 8).
 describe('le rond aux initiales', () => {
-  it('la première lettre du premier mot et celle du dernier ; rien n’est deviné', () => {
-    expect(initialsOf('M. et Mme Moreau')).toBe('MM');
-    expect(initialsOf('Mme Rossi')).toBe('MR');
-    expect(initialsOf('Famille Keller')).toBe('FK');
-    expect(initialsOf('M. et Mme Lambert-Duval')).toBe('ML');
-    expect(initialsOf('Jean-Guy Ourmières')).toBe('JO');
-    expect(initialsOf('Keller')).toBe('KE');
+  // Lot F (Jean-Guy, 26/11) — les noms de famille, jamais « M. », « Mme » ni « Famille ».
+  it('les initiales des noms de famille ; rien n’est deviné', () => {
+    expect(initialsOf('M. et Mme Lambert-Duval')).toBe('LD');
+    expect(initialsOf('M. Girard et Mme Chevalier')).toBe('GC');
+    expect(initialsOf('Famille Keller')).toBe('K');
+    expect(initialsOf('M. et Mme Rossi')).toBe('R');
+    expect(initialsOf('Mme Rossi')).toBe('R');
+    expect(initialsOf('Keller')).toBe('K');
+    expect(initialsOf('Mr and Mrs Wilson')).toBe('W');
+    expect(initialsOf('Monsieur et Madame Moreau')).toBe('M');
+    expect(initialsOf('M. de Villiers')).toBe('V');
+    expect(initialsOf('Exemple — M. et Mme Démo')).toBe('D');
+    // Un nom tapé avec son prénom : une lettre chacun, deux au plus.
+    expect(initialsOf('Jean Dupont')).toBe('JD');
+    expect(initialsOf('M. Lambert-Duval et Mme Martin')).toBe('LD');
+    // Rien qu'une civilité : sa première lettre, jamais un rond vide.
+    expect(initialsOf('Famille')).toBe('F');
     expect(initialsOf('  ')).toBe('?');
   });
 
@@ -141,7 +151,7 @@ describe('la carte « à faire »', () => {
       }),
     );
     expect(html).toContain('data-testid="task-card"');
-    expect(html).toContain('>MM<');
+    expect(html).toContain('>M<');
     const order = ['M. et Mme Moreau', '4 nouveaux biens pour eux', 'Voir les biens'];
     const positions = order.map((text) => html.indexOf(text));
     expect(positions.every((position) => position >= 0)).toBe(true);

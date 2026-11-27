@@ -1357,10 +1357,10 @@ async function expectTodayAlerts(page: Page): Promise<void> {
   await expect(next.getByTestId('overview-next-step-phrase')).toHaveText(
     '1 acquéreur prêt correspond à ce bien : rentrez le mandat pour pouvoir le proposer.',
   );
-  await expect(next.getByRole('link', { name: 'Relancer', exact: true })).toHaveAttribute(
-    'href',
-    /\/suivi\?relancer=/,
-  );
+  // La refonte, lot F — un geste, un nom : « Préparer la relance ».
+  await expect(
+    next.getByRole('link', { name: 'Préparer la relance', exact: true }),
+  ).toHaveAttribute('href', /\/suivi\?relancer=/);
   await expect(block.getByRole('link', { name: /^Relancer/ })).toHaveCount(0);
   await expect(block.getByTestId('propose-property')).toHaveCount(0);
   await page.goto('/suivi');

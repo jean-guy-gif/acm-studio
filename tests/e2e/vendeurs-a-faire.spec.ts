@@ -82,6 +82,9 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     await expect(row(page, 'M. et Mme Martin').getByTestId('person-task')).toHaveText(
       'Préparation en cours',
     );
+    // Les initiales viennent des noms de famille (lot F) : « M. et Mme Lambert-Duval » → LD.
+    await expect(row(page, 'M. et Mme Lambert-Duval').getByTestId('person-mark')).toHaveText('LD');
+    await expect(row(page, 'M. Lefebvre').getByTestId('person-mark')).toHaveText('L');
     // La relance des Lambert-Duval, avec son argument (un acquéreur prêt, M145 B), et le premier
     // Point marché de M. Lefebvre (un mois après la signature, M130 A).
     await expect(row(page, 'M. et Mme Lambert-Duval').getByTestId('person-task')).toHaveText(

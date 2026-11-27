@@ -26,7 +26,7 @@ describe('la fiche acquéreur, repliée', () => {
   it('à l’ouverture, dans l’ordre : qui il est, la prochaine étape, son suivi, « Tout le dossier »', () => {
     const order = [
       at('data-testid="buyer-header"'),
-      at('data-testid="buyer-next-step"'),
+      at('<BuyerNextStepCard'),
       at('<BuyerFollowUp'),
       at('data-testid="buyer-all"'),
     ];
@@ -34,10 +34,7 @@ describe('la fiche acquéreur, repliée', () => {
   });
 
   it('le premier bloc : son nom, son statut en simple badge, sa phrase, son téléphone', () => {
-    const header = page.slice(
-      at('data-testid="buyer-header"'),
-      at('data-testid="buyer-next-step"'),
-    );
+    const header = page.slice(at('data-testid="buyer-header"'), at('<BuyerNextStepCard'));
     for (const marker of [
       'data-testid="buyer-name"',
       'data-testid="buyer-status-pill"',
@@ -53,10 +50,7 @@ describe('la fiche acquéreur, repliée', () => {
   });
 
   it('ses critères et « Ce qui compte pour eux » sont repliés, dans le premier bloc', () => {
-    const header = page.slice(
-      at('data-testid="buyer-header"'),
-      at('data-testid="buyer-next-step"'),
-    );
+    const header = page.slice(at('data-testid="buyer-header"'), at('<BuyerNextStepCard'));
     const fold = header.slice(header.indexOf('data-testid="buyer-search-fold"'));
     expect(fold).toContain('<summary');
     expect(fold).toContain('Ses critères et ce qui compte pour eux');
@@ -67,10 +61,7 @@ describe('la fiche acquéreur, repliée', () => {
 
   it('« Modifier sa recherche » n’apparaît qu’une fois, sous ses critères', () => {
     expect(page.match(/Modifier sa recherche\s*</g) ?? []).toHaveLength(1);
-    const header = page.slice(
-      at('data-testid="buyer-header"'),
-      at('data-testid="buyer-next-step"'),
-    );
+    const header = page.slice(at('data-testid="buyer-header"'), at('<BuyerNextStepCard'));
     expect(header).toContain('data-testid="buyer-edit-search"');
     // Ni « Ce qui compte pour eux », ni « Autres actions » ne le redisent.
     expect(read('features', 'buyer-notes', 'components', 'buyer-soft-criteria.tsx')).not.toMatch(
@@ -84,13 +75,18 @@ describe('la fiche acquéreur, repliée', () => {
   it('un seul bouton plein à l’ouverture : la prochaine étape', () => {
     // La refonte, lot B — le grand bouton plein du socle (il porte le repère `btn-filled`).
     expect(socleBtnFilledBig).toMatch(/^btn-filled /);
-    expect(page.match(/btn-filled|socleBtnFilled\w*\}/g) ?? []).toHaveLength(1);
-    expect(
-      page.slice(
-        at('data-testid="buyer-next-button"') - 200,
-        at('data-testid="buyer-next-button"') + 200,
-      ),
-    ).toContain('socleBtnFilledBig');
+    // La refonte, lot F — la carte de la prochaine étape est sortie de la fiche (le détail
+    // d'Acquéreurs la reprend) : la page n'écrit plus de bouton plein elle-même ; la carte en porte
+    // un, plein par défaut, et la fiche ne le passe pas en contour.
+    expect(page.match(/btn-filled|socleBtnFilled\w*\}/g) ?? []).toHaveLength(0);
+    const card = read('features', 'buyers', 'components', 'buyer-next-step-card.tsx');
+    expect(card).toContain('filled = true');
+    expect(card.slice(card.indexOf('data-testid="buyer-next-button"'))).toContain(
+      'socleBtnFilledBig',
+    );
+    expect(page.slice(at('<BuyerNextStepCard'), at('<BuyerNextStepCard') + 300)).not.toContain(
+      'filled={false}',
+    );
     // Ni le suivi ni « Tout le dossier » n'en portent : ni le repère, ni un style de bouton plein
     // (ceux du socle comme `btnPrimary`).
     expect(read('features', 'buyers', 'components', 'buyer-follow-up.tsx')).not.toMatch(
