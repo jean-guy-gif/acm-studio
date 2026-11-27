@@ -836,3 +836,29 @@ pèse plus sur la production. Le 25/11 : de 20 h 17 à 20 h 57, 37 parcours sur 
 s'est endormi pendant la nuit, la tranche en cours s'est arrêtée là), 42 parcours sur 42, un aléa
 — `suivi-de-l-acquereur`, le réseau coupé par la mise en veille (`ERR_NETWORK_IO_SUSPENDED`), vert
 au rejeu.
+
+## Le gel, vendredi 27/11
+
+Plus aucune nouveauté depuis 13 h 12 : en production, les lots A à F, les remarques de Jean-Guy du
+26/11 et ses corrections du 27/11 (`3934534`) ; l'essai joue le même code (`13d398b`).
+
+- La suite e2e complète, sur l'essai : de 13 h 13 à 13 h 56, 42 parcours sur 42, tous au premier
+  passage, aucun aléa.
+- Le parcours sur le compte de Jean-Guy, en production, dans son Chrome, sans toucher un bouton,
+  aux trois tailles (téléphone 390 × 844, tablette 1024 × 768, ordinateur 1440 × 900) :
+  Aujourd'hui, Vendeurs, Préparation, Live, Suivi, Acquéreurs, les acquéreurs de l'agence, une
+  fiche acquéreur, Visites, Prospection et la page d'un dossier, 33 affichages. Aucune page ne
+  déborde ni ne s'ouvre en erreur ; au plus un bouton plein par page, sauf Préparation quand aucun
+  dossier n'est en préparation : « Créer un dossier », dans la liste vide, y est plein à côté de
+  « Nouveau dossier vendeur », ainsi depuis la mission 52 (la version d'avant la refonte,
+  `6bf564c6`, a le même) ; noté dans `missions/PLUS_TARD.md`, pas corrigé pendant le gel. « Avant
+  le rendez-vous » n'est pas ouvert : son ouverture peut demander un lien « Vivre ici » neuf à
+  Academia (M161).
+- Le journal d'erreurs : aucune ligne au journal de la production depuis le 26/11 à 13 h ; aucune
+  erreur relevée par Vercel depuis 13 h.
+
+En cas de défaut d'ici la livraison (CLAUDE.md : revenir tout de suite à la version précédente,
+puis prévenir Jean-Guy) : avant les corrections du 27/11, `dpl_FhHqLd9jpBcHR4yowGw1HUUrHfay`
+(`196694d`) ; avant les remarques et le lot F, `dpl_7qRj6AVVVNGfaWwoJPHZXUhTwV5G` (`61ecc4d`) ;
+avant la refonte, `dpl_5NZwEMe1H4VBrVJXGBUJfXADXGpV` (`6bf564c6`, le 25/11 à 21 h 30). Reste le
+mot « livraison » de Jean-Guy, vendredi soir.

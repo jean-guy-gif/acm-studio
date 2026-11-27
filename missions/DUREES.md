@@ -71,6 +71,12 @@ base d'essai.
 | 26/11 – 27/11 | Refonte : les lots A à E en production, un par un, chacun vérifié sur le compte de Jean-Guy (19 h 10 à 19 h 30) ; la suite de la nuit, 42 parcours sur 42 (de 19 h 31 à 7 h 20, le Mac endormi pendant la nuit) | Sensible | 1 h 10 (hors la nuit) | 0 | 50 min |
 | 27/11 | Refonte, les remarques de Jean-Guy du 26/11 : la carte d'un dossier en préparation, la vue choisie sur Vendeurs et Acquéreurs, l'avertissement de la lecture des notes, deux notes dans PLUS_TARD ; ses specs (5 parcours), les captures ; à 7 h 45, attend le « oui » | Sensible | 40 min | 0 | 10 min |
 | 27/11 | Refonte, lot F — a, b, c, d (un même chiffre, les initiales, « Préparer la relance », la prochaine étape et les trois chiffres dans le détail d'Acquéreurs), Visites et le compte rendu sur le socle, `/socle` retiré, le guide ; le relecteur une passe (un bloquant levé) ; 24 parcours ; les captures avant / après ; à 10 h 05, attend le « oui » | Sensible | 2 h 20 | 0 | 45 min |
+| 27/11 | Refonte : les remarques et le lot F en production à 13 h, sur le « oui » de Jean-Guy, vérifiés sur son compte ; puis ses corrections avant le gel (« Tous les vendeurs de l'agence », « Préparer la relance » dans « Aujourd'hui », trois lignes en tête de PLUS_TARD) : les barrières, `parcours` et `vendeurs-a-faire` sur l'essai, en production à 13 h 12, vérifiées | Sensible | 20 min | 0 | 5 min |
+| 27/11 | Le gel : la suite complète sur l'essai (42 parcours sur 42, de 13 h 13 à 13 h 56), le parcours sur le compte de Jean-Guy aux trois tailles (33 affichages), le journal d'erreurs, le point | Sensible | 1 h 05 | 0 | 45 min |
+
+Le 27/11, de 7 h 05 au gel (14 h 15) : 4 h 25 de travail — les remarques, le lot F, les mises en
+production, les corrections avant le gel et le gel. De 10 h 05 à 12 h 57, les deux lots
+attendaient le « oui » de Jean-Guy. Reste le soir : son mot « livraison ».
 
 Le 26/11, de 0 h à 19 h 05 : 10 h 25 de travail pour les lots A (sa fin), B, C, D et E, hors la
 session coupée de 5 h 26 à 6 h 40, le poste sans réseau de 7 h 27 à 8 h 56 et la session arrêtée
