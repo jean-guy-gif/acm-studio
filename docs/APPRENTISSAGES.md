@@ -948,6 +948,22 @@ de la fenêtre`), pas seulement qu'ils existent : sur ordinateur, « Écarter »
 - 26/11 · Refonte, lot C · Les nombres d'une maquette sont une règle : « 4 nouveaux biens » sur la
   ligne, « Bien 1 sur 4 » dans le détail. Le parcours montrait aussi les biens de l'agence
   (« Bien 1 sur 4 » pour « 2 nouveaux biens ») ; relire les maquettes côte à côte, pas une à une.
+- 26/11 · Refonte, lot D · `supabase db query` (sortie JSON) rend une ligne de la base dans une
+  chaîne : ses guillemets y sont échappés (`\"fields_to_verify\":[\"name\"]`). Une expression
+  qui attend `"name"` ne trouve rien et l'assertion compare une chaîne vide ; lire avec `\\?"`, ou
+  décoder la sortie.
+- 26/11 · Refonte, lot D · La limite d'un modèle (Fable) arrête la session entière, pas seulement
+  l'agent qui l'atteint : rien n'a bougé de 11 h 15 à 17 h 10, jusqu'à « relance avec opus ». Le
+  relecteur se lance alors sur Opus (`model: "opus"`), et le chef le dit dans le rapport.
+- 26/11 · Refonte, lot E · Ranger un bloc dans un pli fermé (`<details>`) casse en silence ce qui
+  y menait : une ancre (`#acquereurs`) fait seulement défiler la page, sans ouvrir le pli (Next 16) ;
+  `getByRole` ne trouve plus un groupe caché ; `expectOneFilled` ne voit plus le contenu du pli.
+  Une adresse qui l'ouvre (`?tout=1`) règle les trois ; chercher toute ancre, tout lien et toute
+  spec qui touchent le bloc déplacé avant de pousser.
+- 26/11 · Refonte, lot E · Une liste qui reprend les tâches d'un autre écran reprend son ORDRE
+  (les lignes du bloc d'« Aujourd'hui ») au lieu de les retrier : retrier par `sortDueTasks`
+  perdait la règle de M145 B (la relance qui porte l'argument en tête), et le bouton plein
+  changeait de carte.
 
 ## La base
 

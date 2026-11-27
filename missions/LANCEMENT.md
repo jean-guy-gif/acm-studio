@@ -134,11 +134,11 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 
 | Lot | Contenu                                                                                           | Maquettes       | Durée prévue | État    |
 | --- | ------------------------------------------------------------------------------------------------- | --------------- | ------------ | ------- |
-| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | sur l'essai depuis le 26/11 à 0 h 10, complété à 0 h 30 (3 h 05) : attend le « oui » |
-| B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | sur l'essai depuis le 26/11 à 1 h 20, relu et corrigé à 2 h 50 (3 h 05) : attend le « oui » |
-| C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | sur l'essai depuis le 26/11 à 9 h 10, relu et corrigé à 10 h 15 : attend le « oui » |
-| D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | sur l'essai depuis le 26/11 à 11 h 10 : attend le « oui » |
-| E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | à faire |
+| A   | Le socle : le menu aux trois tailles, la carte « à faire », les boutons plein et contour, les pastilles, les tuiles de chiffres | toutes          | 4 h          | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
+| B   | Acquéreurs : « à faire aujourd'hui » ; la fiche acquéreur repliée alignée sur le socle             | REFONTE-1, 4, 5, 6 | 2 h 30    | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
+| C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
+| D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
+| E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
 | F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | à faire |
 
 Pour chaque lot : sur l'essai, ses specs vertes, trois captures (téléphone, tablette, ordinateur)
@@ -188,7 +188,7 @@ avance avec elle, Jean-Guy corrige) :
    (`E2E_DEMO_EMAIL`, dans `.env.e2e.local`) : son propre compte n'existe pas dans la base d'essai.
 10. Le guide de prise en main nomme le menu d'aujourd'hui : il suit le nouveau menu avant le gel.
 
-### Lot A — le socle (sur l'essai, attend le « oui » de Jean-Guy)
+### Lot A — le socle (en production le 26/11 au soir)
 
 À ouvrir sur l'essai, avec le compte de démonstration des tests (question 9) :
 `https://acm-studio-essai.vercel.app/aujourdhui` (le menu aux trois tailles ; sur téléphone, le
@@ -268,7 +268,7 @@ entrées aux trois tailles remplace M145 B (les trois groupes), M149 (leurs titr
 barre du haut et ☰) ; les trois onglets de « Vendeurs » ; le compte aux trois tailles (précise
 M125) ; la teinte qui suit la tâche.
 
-### Lot B — Acquéreurs : « à faire aujourd'hui » (sur l'essai, attend le « oui » de Jean-Guy)
+### Lot B — Acquéreurs : « à faire aujourd'hui » (en production le 26/11 au soir)
 
 À ouvrir sur l'essai : `https://acm-studio-essai.vercel.app/acquereurs` (« à faire aujourd'hui » ;
 sur ordinateur et tablette, toucher une autre personne dans la liste), puis « Ouvrir sa fiche » (la
@@ -384,7 +384,7 @@ personne a toutes ses tâches du jour, la première en carte, les autres sous «
 un seul bouton plein, geste ouvert compris ; « Visites à organiser » sous les trois chiffres
 (remplace l'ordre du Lancement 6) ; le message préparé passe à la ligne.
 
-### Lot C — un bien à la fois (sur l'essai, attend le « oui » de Jean-Guy)
+### Lot C — un bien à la fois (en production le 26/11 au soir)
 
 À ouvrir sur l'essai : `https://acm-studio-essai.vercel.app/acquereurs`, puis la famille Keller
 (« 2 nouveaux biens trouvés par la veille ») : sur ordinateur et tablette, le bien s'affiche à
@@ -508,7 +508,7 @@ parcours rejoués, verts au premier passage — `un-bien-a-la-fois` (deux), `acq
 relecture, dix-neuf parcours sur la première version (les mêmes, plus `langue-de-l-acquereur`,
 `presentation-directe` et `suivi-de-l-acquereur`).
 
-### Lot D — nouvel acquéreur par une phrase (sur l'essai, attend le « oui » de Jean-Guy)
+### Lot D — nouvel acquéreur par une phrase (en production le 26/11 au soir)
 
 À ouvrir sur l'essai : `https://acm-studio-essai.vercel.app/acquereurs/nouveau` (ou « + » en haut
 d'Acquéreurs). La phrase des Arnaud est d'avance dans l'écran : « Voir ce que j'ai compris », puis
@@ -611,6 +611,95 @@ l'écran ; le focus revient à la pastille ; « 1er étage », la surface comme 
 lit. Restent dans `missions/PLUS_TARD.md` : le même « vider avant de partir » dans « Compléter
 depuis mes notes » (M151) ; « deux ★ au plus » et « une ★ sur le budget exige un montant », tenus
 par l'écran, pas par le serveur, sur le chemin de la lecture des notes (comme pour la M151).
+
+Les tests : barrières vertes (4 558 tests unitaires, avec le lot E). Sur l'essai, après la
+relecture, la spec du lot, `depuis-mes-notes` : ses deux parcours verts, sur le code du lot D seul
+(`3d7f9747`) puis sur le dernier essai, qui porte aussi le lot E (`f9f929f2`). La spec avait trouvé
+deux attentes fausses d'elle-même, pas de l'écran : un texte réservé aux lecteurs d'écran, lu avec
+la pastille (il passe dans son nom accessible : le texte visible reste la pastille seule) ; la
+fiche lue en base, dont la sortie échappe les guillemets.
+
+### Lot E — Vendeurs : « à faire aujourd'hui » et le dossier (en production le 26/11 au soir)
+
+À ouvrir sur l'essai, avec le compte de démonstration des tests :
+`https://acm-studio-essai.vercel.app/vendeurs` (touchez M. Lefebvre, puis « Tout le dossier »).
+Les captures, prises sur le code relu : `missions/maquettes/REFONTE-E-telephone.png`,
+`-tablette.png`, `-ordinateur.png`, la page d'un dossier en `REFONTE-E-dossier-telephone.png` et
+`-dossier-ordinateur.png`, les mêmes en `…-charte-start-academy.png`.
+
+Ce qui change, en comportement :
+
+- **« Vendeurs » s'ouvre sur « à faire aujourd'hui »** (maquettes REFONTE-7 et 8) : une carte par
+  vendeur, ce qu'il y a à faire et son bouton — la relance d'un vendeur à relancer (« Préparer la
+  relance », avec son argument quand des acquéreurs prêts correspondent), « Relancer plus tôt ? »,
+  le Point marché d'un mandat signé (« Faire le point marché »). Ce sont les tâches du bloc
+  « Vendeurs » d'« Aujourd'hui », dans son ordre (la relance qui porte l'argument en tête, M145 B),
+  avec les mêmes gestes : la carte du Suivi s'ouvre sur la relance ou le Point marché. Un seul
+  bouton plein, celui de la première carte ; « + » crée un dossier vendeur.
+- **Sur tablette et ordinateur**, la liste à gauche et le vendeur choisi à droite, sans changer de
+  page (`/vendeurs?vendeur=…`) : son nom, son bien, son état ; « À faire aujourd'hui » et son
+  bouton ; trois chiffres (concurrents retenus, prix ou surface à vérifier, acquéreurs prêts à
+  visiter) ; « Son dossier », ses cinq étapes ; « Tout le dossier », qui ouvre sa page dépliée. Sur
+  téléphone, une colonne de cartes ; le nom mène au dossier.
+- **« Tous mes vendeurs · 12 »** mène aux listes de Préparation, du Live et du Suivi (leurs trois
+  onglets) et compte ce qu'elles montrent ensemble : les dossiers de l'agence, hors archivés et
+  hors dossier d'exemple (M59, M97).
+- **La page du dossier** (la Vue d'ensemble) : son nom, son bien, son état en pastille ; sa
+  prochaine étape et son bouton, le seul plein (M143, la même règle) ; les trois chiffres ; « Son
+  dossier », ses cinq étapes, sous les mots de la maquette — Le bien, Les concurrents, Le prix, Le
+  rendez-vous (« Étude de marché » en document seul), Conclure — ; puis « Tout le dossier »,
+  replié, qui garde tout ce que la page montrait sous ses étapes : le marché en un coup d'œil,
+  l'Étude de marché, « Voir ou corriger l'issue », « Supprimer le dossier… », les acquéreurs de
+  l'agence, les concurrents à prospecter, la réouverture du Live. Rien n'est retiré. L'adresse
+  `?tout=1` l'ouvre : c'est ainsi que le Suivi mène au bloc des acquéreurs. Le lien de retour dit
+  « ← Vendeurs ».
+- Rien ne change à la Préparation, au Live, au Suivi ni à « Aujourd'hui ».
+
+Tranché seul par le chef, à corriger par Jean-Guy s'il le veut :
+
+- Un dossier en préparation n'a pas de tâche du jour : la date du rendez-vous n'est pas en base
+  (question 7, aucune migration). La carte « Rendez-vous demain · 2 prix ont changé » de la
+  maquette n'existe donc pas ; un dossier prêt se rejoint par « Tous mes vendeurs », puis l'onglet
+  du Live (trois touchers).
+- Le détail dit « À faire aujourd'hui », comme Acquéreurs au lot B ; la page du dossier dit
+  « Prochaine étape ». Pour un mandat signé, la tâche du jour (le Point marché) n'est pas la
+  prochaine étape du dossier (« Voir le Suivi », M110) : deux mots pour deux choses.
+- Les boutons disent les mots de la maquette, « Préparer la relance » et « Faire le point
+  marché » ; « Aujourd'hui » garde les siens (« Relancer », « Faire le point ») pour le même geste.
+- La deuxième tuile compte les concurrents retenus dont le prix ou la surface importés sont « À
+  vérifier » (M104), sous ce nom. La maquette dit « Prix à revérifier », qui parlerait plutôt des
+  annonces à relire avant le rendez-vous (« Vérifier les annonces », M152 A).
+- « Concurrents retenus » dit le nombre de l'étape « Les concurrents » (les exploitables, M52) :
+  jamais deux nombres « retenus » différents sur un même écran.
+- « Tous mes vendeurs » compte les dossiers de toute l'agence, comme les listes qu'il ouvre
+  (M59), pas les seuls dossiers du conseiller.
+
+Les specs modifiées (un libellé ou un emplacement ; ce qu'elles prouvent ne change pas) :
+
+| Spec                           | Ce qui a changé                                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `parcours.spec.ts`             | « Vendeurs » mène à « à faire aujourd'hui » : « Tous mes vendeurs » pour rejoindre les listes (sur ordinateur et sur téléphone). **Ajouté** : « Tout le dossier » ouvert, toujours un seul bouton plein |
+| `presentation-directe.spec.ts` | les acquéreurs de l'agence et l'Étude sont sous « Tout le dossier », ouvert avant de les lire. **Ajouté** : un seul bouton plein, le pli ouvert |
+| `demo.spec.ts`                 | les acquéreurs de l'agence et les concurrents à prospecter sont sous « Tout le dossier » (ouvert ; par l'adresse `?tout=1` pour corriger l'exclusivité, qui recharge la page) |
+| `vendeurs-a-faire.spec.ts`     | **nouvelle** : Vendeurs aux trois tailles, un autre vendeur sans changer de page, « Tous mes vendeurs », la page du dossier et « Tout le dossier » |
+
+Le relecteur, une passe (sur Opus) : deux bloquants, levés — « Bien vendeur non renseigné »
+s'affichait le temps de lire le dossier (un bien pas encore lu n'a plus de ligne) ; les liens du
+Suivi vers les acquéreurs de l'agence menaient à un pli fermé (ils l'ouvrent : `?tout=1`). Ses « à
+corriger », faits : l'ordre d'« Aujourd'hui » ; « À faire aujourd'hui » dans le détail ; « Tous mes
+vendeurs » compte ce que le lien ouvre ; « Tout le dossier » s'ouvre déplié ; la confirmation du
+Live prend toute la largeur de la carte ; « Relancer plus tôt ? » à l'allure du socle ; le nombre
+de retenus ; une lecture en échec ne fait plus dire « 0 » à la tuile des prix à vérifier ; le code
+dit `project`, l'adresse `?vendeur=` (CLAUDE.md : `dossier` ne désigne que le Dossier acquéreur) ;
+les specs reprouvent le bouton plein, le pli ouvert ; la spec de Vendeurs accepte un Point marché
+en retard (un 29, 30 ou 31). Restent dans `missions/PLUS_TARD.md` : les lectures en double des
+acquéreurs à chaque affichage de Vendeurs.
+
+Les tests : barrières vertes (4 558 tests unitaires). Sur l'essai, sur le code relu (`f9f929f2`,
+lots D et E) : `vendeurs-a-faire`, `live-tablette` (trois), `parcours`, `presentation-directe`
+(huit), `demo`, 14 parcours, verts. Deux attentes fausses des specs, pas de l'écran, corrigées en
+route : la démo cherchait l'exclusivité hors du pli ; le parcours, sur téléphone, attendait
+encore « Vendeurs » → Préparation.
 
 ## Chaque soir
 
