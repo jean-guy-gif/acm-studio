@@ -233,8 +233,8 @@ export function ProspectingFileEditor({
             <h1 className={sectionTitle}>Dossier de prospection</h1>
             <p className={hintText}>
               Version {PROSPECTING_FILE_VERSION_LABELS[version].toLowerCase()}. Chaque texte est
-              modifiable ; entre astérisques, un passage est *mis en valeur*. Un champ vidé reprend
-              le texte proposé.
+              modifiable&#x202f;; entre astérisques, un passage est *mis en valeur*. Un champ vidé
+              reprend le texte proposé.
             </p>
           </div>
 
@@ -308,8 +308,8 @@ export function ProspectingFileEditor({
               <span className="font-medium">Afficher les prix</span>
               <span className="text-xs text-zinc-500">
                 {canShowPrices
-                  ? 'Éteint, la ligne devient « Même gamme de prix », sans chiffre.'
-                  : 'Le prix de commercialisation n’est pas renseigné à la conclusion : aucun chiffre.'}
+                  ? 'Éteint, la ligne devient «\u00a0Même gamme de prix\u00a0», sans chiffre.'
+                  : 'Le prix de commercialisation n’est pas renseigné à la conclusion\u00a0: aucun chiffre.'}
               </span>
             </span>
           </label>
@@ -423,8 +423,8 @@ export function ProspectingFileEditor({
                 {uploading
                   ? 'Import en cours…'
                   : uploaded
-                    ? 'Ma photo : en importer une autre'
-                    : 'Ma photo : importer'}
+                    ? 'Ma photo\u00a0: en importer une autre'
+                    : 'Ma photo\u00a0: importer'}
               </button>
               <input
                 ref={fileInput}
@@ -442,7 +442,7 @@ export function ProspectingFileEditor({
             <span className="text-xs text-zinc-500">
               {theirPhoto.listing.length > 0
                 ? 'Les photos de son annonce, une photo que vous importez (la façade prise sur place), ou aucune.'
-                : 'Son annonce n’a pas de photo : importez la vôtre (la façade prise sur place), ou laissez sans photo.'}
+                : 'Son annonce n’a pas de photo\u00a0: importez la vôtre (la façade prise sur place), ou laissez sans photo.'}
             </span>
             {uploadError ? <span className={errorText}>{uploadError}</span> : null}
           </fieldset>
@@ -470,8 +470,8 @@ export function ProspectingFileEditor({
           </div>
           {state ? <span className={state.ok ? okText : errorText}>{state.message}</span> : null}
           <span className="text-xs text-zinc-500">
-            Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF », format A4, sans
-            marges.
+            Dans la fenêtre d’impression, choisissez «&nbsp;Enregistrer au format PDF&nbsp;», format
+            A4, sans marges.
           </span>
         </>
       }

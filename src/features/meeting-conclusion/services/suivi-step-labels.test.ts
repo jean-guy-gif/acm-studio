@@ -97,7 +97,7 @@ describe('« À faire aujourd’hui »', () => {
       TODAY,
     );
     expect(line.title).toBe(
-      'Relancer plus tôt ? 1 acquéreur prêt correspond au bien de M. et Mme Martin',
+      'Relancer plus tôt\u202f? 1 acquéreur prêt correspond au bien de M. et Mme Martin',
     );
     expect(line.detail).toBe('relance prévue le 20/11 · Réfléchit au prix');
     expect(line.late).toBeNull();
@@ -118,7 +118,7 @@ describe('« À faire aujourd’hui »', () => {
       lineContext,
       TODAY,
     );
-    expect(ready.title).toBe('Démarcher : 2 acquéreurs prêts correspondent');
+    expect(ready.title).toBe('Démarcher\u00a0: 2 acquéreurs prêts correspondent');
     expect(ready.button).toBe('Préparer le courrier');
     expect(ready.href).toBe('/builder/p1/prospection/c1?version=owner');
     expect(ready.late).toBeNull();
@@ -191,7 +191,7 @@ describe('« À faire aujourd’hui »', () => {
 
   it('rien à faire : la prochaine tâche, ou aucune', () => {
     expect(nothingTodayLabel(task({ dueOn: '2026-11-12' }))).toBe(
-      'Rien à faire aujourd’hui. Prochaine tâche : relancer M. et Mme Martin le 12/11.',
+      'Rien à faire aujourd’hui. Prochaine tâche\u00a0: relancer M. et Mme Martin le 12/11.',
     );
     expect(nothingTodayLabel(null)).toBe('Rien à faire aujourd’hui, et aucune tâche prévue.');
   });

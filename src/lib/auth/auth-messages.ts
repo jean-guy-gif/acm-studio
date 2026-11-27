@@ -6,10 +6,10 @@
 export const LOGIN_ERROR_MESSAGES = {
   identifiants: 'Adresse e-mail ou mot de passe incorrect.',
   'email-non-confirme':
-    'Votre adresse e-mail n’est pas encore confirmée : ouvrez le lien reçu par e-mail.',
+    'Votre adresse e-mail n’est pas encore confirmée\u00a0: ouvrez le lien reçu par e-mail.',
   'trop-de-tentatives': 'Trop de tentatives. Patientez quelques minutes avant de réessayer.',
   'lien-invalide':
-    'Ce lien n’est plus valable : il a expiré ou a déjà servi. Demandez-en un nouveau.',
+    'Ce lien n’est plus valable\u00a0: il a expiré ou a déjà servi. Demandez-en un nouveau.',
   indisponible: 'La connexion est momentanément indisponible. Réessayez dans un instant.',
 } as const;
 
@@ -76,4 +76,4 @@ export const PASSWORD_TOO_SHORT_MESSAGE = `Choisissez un mot de passe d’au moi
 
 // Invitation en attente : on ne crée pas d'agence, on finalise son inscription.
 export const PENDING_INVITATION_MESSAGE =
-  'Vous avez été invité par une agence : finalisez votre inscription.';
+  'Vous avez été invité par une agence\u00a0: finalisez votre inscription.';

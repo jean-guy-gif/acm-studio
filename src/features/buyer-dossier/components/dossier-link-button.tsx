@@ -77,7 +77,7 @@ export function DossierLinkButton({
       {replacing && !created ? (
         <p className={hintText}>
           Le lien ne s’affiche qu’à sa création. Un nouveau lien remplace l’ancien, qui cesse de
-          marcher ; la réponse déjà reçue reste.
+          marcher&#x202f;; la réponse déjà reçue reste.
         </p>
       ) : null}
       {created ? (
@@ -106,7 +106,7 @@ export function DossierLinkButton({
                     const result = await removeDossierLink(buyerId, item.id);
                     if (result.ok) {
                       if (created?.linkId === item.id) setCreated(null);
-                      setMessage('Lien retiré : il ne s’ouvre plus.');
+                      setMessage('Lien retiré\u00a0: il ne s’ouvre plus.');
                       router.refresh();
                     } else if (result.gone) {
                       setGone(true);
@@ -203,8 +203,8 @@ export function DossierLinkShare({
         {copied === 'ok'
           ? 'Message copié, lien compris.'
           : copied === 'failed'
-            ? 'La copie a échoué : sélectionnez le message ci-dessus.'
-            : 'Le lien ne s’affichera plus. Il expire dans 30 jours ; l’outil n’envoie rien. L’acquéreur répond depuis son téléphone, une seule fois : sa réponse arrive sur sa fiche et sur Visites.'}
+            ? 'La copie a échoué\u00a0: sélectionnez le message ci-dessus.'
+            : 'Le lien ne s’affichera plus. Il expire dans 30 jours\u202f; l’outil n’envoie rien. L’acquéreur répond depuis son téléphone, une seule fois\u00a0: sa réponse arrive sur sa fiche et sur Visites.'}
       </p>
     </div>
   );

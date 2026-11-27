@@ -151,7 +151,7 @@ export function isFollowUpDueNow(
 }
 
 export const FIRST_FOLLOW_UP_INVALID =
-  'Date de première relance invalide : choisissez un jour d’aujourd’hui à un an.';
+  'Date de première relance invalide\u00a0: choisissez un jour d’aujourd’hui à un an.';
 
 // Mission 108 — la date de première relance reçue avec l'issue « à relancer », relue comme celle
 // d'une relance (M105) : vide, la date proposée. null pour toute autre issue.

@@ -180,7 +180,7 @@ export function SelectedComparablesList({
           {confirmingDelete ? (
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium text-zinc-800 stage:text-white">
-                Supprimer définitivement {noun(count)} ? Cette action est irréversible.
+                Supprimer définitivement {noun(count)}&#x202f;? Cette action est irréversible.
               </p>
               <div className="flex flex-wrap gap-2">
                 <button

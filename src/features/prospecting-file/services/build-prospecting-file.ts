@@ -49,7 +49,7 @@ function nearness(facts: ProspectingFileFacts): { owner: string; colleague: stri
 }
 
 export const COLLABORATION_DECLINED_SENTENCE =
-  'J’ai proposé à l’agence qui détient votre mandat exclusif de travailler ensemble sur votre vente ; elle a refusé cette collaboration. Je m’adresse donc à vous directement.';
+  'J’ai proposé à l’agence qui détient votre mandat exclusif de travailler ensemble sur votre vente\u202f; elle a refusé cette collaboration. Je m’adresse donc à vous directement.';
 
 function ownerTexts(facts: ProspectingFileFacts): ProspectingFileTexts {
   const wording = propertyWording(facts.kind);
@@ -58,7 +58,7 @@ function ownerTexts(facts: ProspectingFileFacts): ProspectingFileTexts {
     title: `${capitalize(wording.yourNoun)} et ${wording.ourOne}\nattirent *les mêmes acquéreurs.*`,
     letter: [
       'Madame, Monsieur,',
-      `Je viens de mettre en vente ${wording.a} ${nearness(facts).owner}. En préparant sa mise sur le marché, j’ai étudié les biens qui lui ressemblent vraiment : le vôtre en fait partie.`,
+      `Je viens de mettre en vente ${wording.a} ${nearness(facts).owner}. En préparant sa mise sur le marché, j’ai étudié les biens qui lui ressemblent vraiment\u00a0: le vôtre en fait partie.`,
       // Mission 115 — après un refus de collaboration du confrère : une phrase proposée, que le
       // conseiller peut réécrire.
       ...(facts.collaborationDeclined ? [COLLABORATION_DECLINED_SENTENCE] : []),
@@ -85,17 +85,17 @@ function colleagueTexts(facts: ProspectingFileFacts): ProspectingFileTexts {
       : '';
   const city = facts.theirs.city?.trim() ? ` à ${facts.theirs.city.trim()}` : '';
   return {
-    title: 'Deux biens, les mêmes acquéreurs :\n*croisons nos fichiers.*',
+    title: 'Deux biens, les mêmes acquéreurs\u00a0:\n*croisons nos fichiers.*',
     letter: [
       'Cher confrère,',
-      `Vous avez en exclusivité ${wording.the}${rooms}${city}. Je viens de rentrer en mandat ${wording.a} comparable${nearness(facts).colleague}. Nos deux biens s’adressent aux mêmes acquéreurs : je vous propose de travailler ensemble plutôt que l’un contre l’autre.`,
+      `Vous avez en exclusivité ${wording.the}${rooms}${city}. Je viens de rentrer en mandat ${wording.a} comparable${nearness(facts).colleague}. Nos deux biens s’adressent aux mêmes acquéreurs\u00a0: je vous propose de travailler ensemble plutôt que l’un contre l’autre.`,
     ].join('\n\n'),
     // La version confrère tient en une page : pas de message clé.
     keyMessage: '',
     proposals: [
       '*Échange des acquéreurs qualifiés* sur les deux biens, dès cette semaine.',
       '*Honoraires partagés* selon un accord inter-cabinet écrit, à définir ensemble.',
-      '*Chaque agence garde la main sur son mandat* : visites organisées et accompagnées par le titulaire.',
+      '*Chaque agence garde la main sur son mandat*\u00a0: visites organisées et accompagnées par le titulaire.',
     ],
     contactHook: `On s’appelle cette semaine${NBSP}?`,
   };
@@ -252,7 +252,7 @@ export function professionalMentions(
   const guarantee = sender.financialGuarantee?.trim();
   return [
     professionalCardMention(sender),
-    guarantee ? `Garantie financière : ${guarantee}` : NO_FUNDS_MENTION,
+    guarantee ? `Garantie financière\u00a0: ${guarantee}` : NO_FUNDS_MENTION,
   ].filter((mention): mention is string => Boolean(mention));
 }
 

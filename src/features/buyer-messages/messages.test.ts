@@ -70,9 +70,9 @@ describe('le compte rendu de visite, à l’acquéreur', () => {
       [
         'Bonjour Famille Keller,',
         'Merci pour la visite de la maison de Mougins le 6 novembre.',
-        'Ce qui vous a plu : l’extérieur et la piscine.',
-        'Ce qui vous a gêné : le prix.',
-        'Comme convenu, nous préparons ensemble votre offre d’achat : je vous appelle pour en fixer les termes.',
+        'Ce qui vous a plu\u00a0: l’extérieur et la piscine.',
+        'Ce qui vous a gêné\u00a0: le prix.',
+        'Comme convenu, nous préparons ensemble votre offre d’achat\u00a0: je vous appelle pour en fixer les termes.',
         'Natacha',
       ].join('\n'),
     );
@@ -163,9 +163,9 @@ describe('le retour au vendeur', () => {
     expect(message).toBe(
       [
         'Bonjour M. Lefebvre,',
-        'La visite de votre bien du 6 novembre : l’acquéreur a été intéressé.',
-        'Ce qui lui a plu : l’extérieur et la piscine.',
-        'Ce qui l’a gêné : le prix.',
+        'La visite de votre bien du 6 novembre\u00a0: l’acquéreur a été intéressé.',
+        'Ce qui lui a plu\u00a0: l’extérieur et la piscine.',
+        'Ce qui l’a gêné\u00a0: le prix.',
         'Je reviens vers vous très vite.',
         'Natacha',
       ].join('\n'),
@@ -182,13 +182,13 @@ describe('le retour au vendeur', () => {
         advisorFirstName: null,
       }).split('\n')[1];
     expect(line('love')).toBe(
-      'La visite de votre bien du 6 novembre : l’acquéreur a eu un coup de cœur.',
+      'La visite de votre bien du 6 novembre\u00a0: l’acquéreur a eu un coup de cœur.',
     );
     expect(line('mixed')).toBe(
-      'La visite de votre bien du 6 novembre : l’acquéreur est resté mitigé.',
+      'La visite de votre bien du 6 novembre\u00a0: l’acquéreur est resté mitigé.',
     );
     expect(line('not_for_me')).toBe(
-      'La visite de votre bien du 6 novembre : le bien n’a pas convaincu l’acquéreur.',
+      'La visite de votre bien du 6 novembre\u00a0: le bien n’a pas convaincu l’acquéreur.',
     );
   });
 });
@@ -249,7 +249,7 @@ describe('le compte rendu, relu au serveur', () => {
 
   it('ce que le conseiller relit sur la visite', () => {
     expect(visitReportLine(KELLER)).toBe(
-      'Intéressé · a aimé : l’extérieur, la piscine · gêné : le prix',
+      'Intéressé · a aimé\u00a0: l’extérieur, la piscine · gêné\u00a0: le prix',
     );
   });
 });
@@ -312,7 +312,7 @@ describe('le point de la semaine', () => {
       [
         'Bonjour M. et Mme Lambert,',
         'Voici le point de la semaine sur votre recherche.',
-        'Cette semaine pour vous : 6 biens étudiés, 4 écartés (2 pour le stationnement, 1 pour le secteur, 1 pour le prix), 2 retenus, 1 visite.',
+        'Cette semaine pour vous\u00a0: 6 biens étudiés, 4 écartés (2 pour le stationnement, 1 pour le secteur, 1 pour le prix), 2 retenus, 1 visite.',
         'Je reste à votre disposition.',
         'Natacha',
       ].join('\n'),
@@ -329,7 +329,7 @@ describe('le point de la semaine', () => {
         figures: empty,
         advisorFirstName: null,
       }),
-    ).toContain('Pas de nouveau bien correspondant cette semaine ; je reste attentif.');
+    ).toContain('Pas de nouveau bien correspondant cette semaine\u202f; je reste attentif.');
     const one = weeklyReportMessage({
       language: 'en',
       buyerName: 'Mr and Mrs Wilson',

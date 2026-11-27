@@ -344,7 +344,7 @@ export function followUpFacts(entry: FollowUpEntry, now: Date = new Date()): str
   for (const answer of entry.answers) {
     const reasons = answer.reasons.map((reason) => NO_REASON_LABELS[reason]);
     facts.push(
-      `${ITEM_ANSWER_REPORT[answer.answer]}${reasons.length > 0 ? ` : ${reasons.join(', ')}` : ''} · ${formatRelativeDay(answer.at, now)}, ${ANSWERED_DURING_LABELS[answer.during]}`,
+      `${ITEM_ANSWER_REPORT[answer.answer]}${reasons.length > 0 ? `\u00a0: ${reasons.join(', ')}` : ''} · ${formatRelativeDay(answer.at, now)}, ${ANSWERED_DURING_LABELS[answer.during]}`,
     );
   }
   if (entry.dismissed) {
@@ -352,7 +352,7 @@ export function followUpFacts(entry: FollowUpEntry, now: Date = new Date()): str
       entry.dismissed.reason
     ];
     facts.push(
-      `Écarté pour lui ${formatRelativeDay(entry.dismissed.at, now)}${reason ? ` : ${reason}` : ''}`,
+      `Écarté pour lui ${formatRelativeDay(entry.dismissed.at, now)}${reason ? `\u00a0: ${reason}` : ''}`,
     );
   }
   return facts;
@@ -468,12 +468,12 @@ function seenMention(
         .filter((tag) => (disliked ?? []).includes(tag))
         .map((tag) => DISLIKED_LABELS[tag].toLowerCase());
       return words.length > 0
-        ? `Refusé après la visite : ${words.join(', ')}`
+        ? `Refusé après la visite\u00a0: ${words.join(', ')}`
         : 'Refusé après la visite';
     }
     const reasons = last.reasons.map((reason) => NO_REASON_LABELS[reason]);
     return reasons.length > 0
-      ? `Refusé : ${reasons.join(', ')}`
+      ? `Refusé\u00a0: ${reasons.join(', ')}`
       : `Refusé ${formatRelativeDay(last.at, now)}`;
   }
   if (entry.group === 'visited') {

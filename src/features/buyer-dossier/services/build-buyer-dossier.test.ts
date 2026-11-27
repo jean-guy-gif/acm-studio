@@ -217,7 +217,7 @@ describe('le PDF du dossier qui fait agir', () => {
       page.indexOf('data-testid="dossier-grid"'),
     );
     expect(cover).toContain('Votre sélection du 24/10/2026');
-    expect(cover).toContain('« Une maison à Mougins, avec une piscine. »');
+    expect(cover).toContain('«\u00a0Une maison à Mougins, avec une piscine.\u00a0»');
     expect(cover).toContain('https://photos.example/1.jpg');
     expect(cover).not.toContain('https://photos.example/b.jpg');
   });
@@ -269,7 +269,7 @@ describe('le PDF du dossier qui fait agir', () => {
     );
     expect(cover).toContain('https://photos.example/b.jpg');
     expect(cover).toContain('data-testid="dossier-cover-advisor"');
-    expect(cover).toContain('Votre conseiller : Carl Conseiller · 06 11 22 33 44');
+    expect(cover).toContain('Votre conseiller\u00a0: Carl Conseiller · 06 11 22 33 44');
   });
 
   it('chaque bien commence une page et ne se coupe pas, photos comprises', () => {

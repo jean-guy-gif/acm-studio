@@ -19,7 +19,7 @@ const small = 'px-3 py-1.5 text-xs';
 
 // Mission 104 — l'appel lui-même a échoué (réseau, serveur) : rien n'est confirmé, on le dit.
 export const OPPOSITION_NOT_CONFIRMED =
-  'L’inscription n’a pas été confirmée : vérifiez la connexion, puis réessayez.';
+  'L’inscription n’a pas été confirmée\u00a0: vérifiez la connexion, puis réessayez.';
 
 // Mission 102 — inscrire À LA MAIN une adresse sur la liste « Ne plus solliciter » : un
 // propriétaire appelle, son bien n'est sur aucune carte. L'adresse est bloquée pour toute
@@ -81,7 +81,7 @@ export function ManualOppositionForm() {
   return (
     <details className="rounded-2xl border border-zinc-200 bg-white p-4 stage:border-white/10 stage:bg-white/5">
       <summary className="cursor-pointer text-sm font-semibold text-zinc-700 stage:text-white/80">
-        Inscrire une adresse « Ne plus solliciter »
+        Inscrire une adresse «&nbsp;Ne plus solliciter&nbsp;»
       </summary>
       <form
         className="mt-3 flex flex-col gap-2"
@@ -152,10 +152,10 @@ export function ManualOppositionForm() {
               {understood.verified ? null : (
                 <span data-testid="manual-opposition-unverified">
                   {' '}
-                  ({COMMUNE_UNVERIFIED_LABEL} : le service des communes ne répond pas)
+                  ({COMMUNE_UNVERIFIED_LABEL}&nbsp;: le service des communes ne répond pas)
                 </span>
               )}{' '}
-              — Inscrire&nbsp;?
+              — Inscrire&#x202f;?
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <button

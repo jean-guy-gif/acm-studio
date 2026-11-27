@@ -26,21 +26,25 @@ export function ComparableAnalysisSurfaces({
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
       <h2 className={sectionTitle}>Analyse des surfaces</h2>
       <p className="text-sm text-zinc-600 stage:text-white/65">
-        Amplitude :{' '}
+        Amplitude&nbsp;:{' '}
         {surfaceAnalysis.surfaceRange != null
           ? formatSquareMeters(surfaceAnalysis.surfaceRange)
           : '—'}{' '}
-        · Dispersion :{' '}
+        · Dispersion&nbsp;:{' '}
         {surfaceAnalysis.dispersion ? DISPERSION_LABEL[surfaceAnalysis.dispersion] : '—'}
         {surfaceAnalysis.surfaceSpreadPercent != null
           ? ` (${formatPercent(surfaceAnalysis.surfaceSpreadPercent)})`
           : ''}
       </p>
       <ul className="text-sm text-zinc-600 stage:text-white/65">
-        <li>Le plus petit : {surfaceAnalysis.smallest ? label(surfaceAnalysis.smallest) : '—'}</li>
-        <li>Le plus grand : {surfaceAnalysis.largest ? label(surfaceAnalysis.largest) : '—'}</li>
         <li>
-          Proches du bien vendeur (±10 %) : {surfaceAnalysis.nearSellerSurface.length} bien(s)
+          Le plus petit&nbsp;: {surfaceAnalysis.smallest ? label(surfaceAnalysis.smallest) : '—'}
+        </li>
+        <li>
+          Le plus grand&nbsp;: {surfaceAnalysis.largest ? label(surfaceAnalysis.largest) : '—'}
+        </li>
+        <li>
+          Proches du bien vendeur (±10 %)&nbsp;: {surfaceAnalysis.nearSellerSurface.length} bien(s)
         </li>
       </ul>
     </section>

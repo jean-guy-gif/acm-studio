@@ -289,10 +289,10 @@ describe('les mots qui disent vrai', () => {
     const sales = story.sales!;
     expect(sales.tableTitle).toBe('Les six ventes qui ressemblent le plus à votre maison');
     expect(sales.tableNote).toMatch(
-      /^Choisies d’abord sur le nombre de pièces, puis sur la surface : .*pièces?.*m²\.$/,
+      /^Choisies d’abord sur le nombre de pièces, puis sur la surface\s: .*pièces?.*m²\.$/,
     );
     const item = story.summary.items.find((entry) => entry.chapter === 'sales')!;
-    expect(item.sub).toMatch(/celles qui ressemblent le plus à votre maison : .*pièces?/);
+    expect(item.sub).toMatch(/celles qui ressemblent le plus à votre maison\s: .*pièces?/);
     const all = JSON.stringify(story);
     expect(all).not.toMatch(/plus proches/);
     const english = buildMarketStudy({ ...garcia(), language: 'en' }).story.sales!;
@@ -521,7 +521,7 @@ describe('l’avis du conseiller : avec son chapitre s’il tient, sinon en têt
                 const data = many(n);
                 sweep.push([
                   `${language}, ${n} concurrents${priced ? ', un prix' : ''}, ${blocks}${
-                    vivre ? ', « Vivre ici »' : ''
+                    vivre ? ', «\u00a0Vivre ici\u00a0»' : ''
                   }${flat ? ', un appartement' : ''}${equal ? ', des fiches égales' : ''}`,
                   {
                     ...data,
@@ -563,7 +563,7 @@ describe('l’avis du conseiller : avec son chapitre s’il tient, sinon en têt
           const following = page.units[index + 1];
           if (index === 0) {
             // En tête de page : ce qui suit commence sur la même page.
-            expect(following, `${name} : un avis seul sur sa page`).toBeDefined();
+            expect(following, `${name}\u00a0: un avis seul sur sa page`).toBeDefined();
             expect(following!.chapter, name).not.toBe(unit.chapter);
           } else {
             // Sinon, derrière le dernier bloc de son chapitre.

@@ -115,15 +115,19 @@ export function liveRhythm(value: string | null | undefined): LiveRhythm {
 }
 
 const QUICK_STEPS: { type: LivePageType; step: 1 | 2; title: string }[] = [
-  { type: 'comparable_quick_guess', step: 1, title: 'Un sérieux concurrent, et à quel prix ?' },
-  { type: 'comparable_quick_reveal', step: 2, title: 'Son prix, et depuis quand ?' },
+  {
+    type: 'comparable_quick_guess',
+    step: 1,
+    title: 'Un sérieux concurrent, et à quel prix\u202f?',
+  },
+  { type: 'comparable_quick_reveal', step: 2, title: 'Son prix, et depuis quand\u202f?' },
 ];
 
 const COMPARABLE_STEPS: { type: LivePageType; step: 1 | 2 | 3 | 4; title: string }[] = [
-  { type: 'comparable_competition', step: 1, title: 'Un sérieux concurrent ?' },
-  { type: 'comparable_price', step: 2, title: 'À quel prix ?' },
-  { type: 'comparable_price_reveal', step: 3, title: 'Ce prix vous paraît-il cohérent ?' },
-  { type: 'comparable_duration', step: 4, title: 'Pourquoi toujours en vente ?' },
+  { type: 'comparable_competition', step: 1, title: 'Un sérieux concurrent\u202f?' },
+  { type: 'comparable_price', step: 2, title: 'À quel prix\u202f?' },
+  { type: 'comparable_price_reveal', step: 3, title: 'Ce prix vous paraît-il cohérent\u202f?' },
+  { type: 'comparable_duration', step: 4, title: 'Pourquoi toujours en vente\u202f?' },
 ];
 
 // `hasSubjectProperty` decides whether the "Votre bien" recognition slide (Act 1)
@@ -344,7 +348,7 @@ export function buildLivePages(
     pages.push({
       key: 'closing_question',
       type: 'closing_question',
-      title: 'Prêt à lancer ?',
+      title: 'Prêt à lancer\u202f?',
       comparableId: null,
       comparableIndex: null,
       step: null,

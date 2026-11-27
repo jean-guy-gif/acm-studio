@@ -79,7 +79,7 @@ describe('saveIdealSelection', () => {
     expect(direct).toEqual({
       ok: false,
       error:
-        'L’un de ces biens a déjà été vu avec lui, ou écarté pour lui : il ne se retient plus. Rechargez la page.',
+        'L’un de ces biens a déjà été vu avec lui, ou écarté pour lui\u00a0: il ne se retient plus. Rechargez la page.',
     });
     // La même maison, rendue par la recherche sous une autre annonce : son identifiant chez le
     // fournisseur est celui que la sélection présentée a gardé.

@@ -51,7 +51,7 @@ export async function parseBrochureText(pages: string[]): Promise<ParseBrochureR
     return {
       ok: false,
       error:
-        'Aucune information reconnue dans ce PDF. L’outil lit les fiches de votre logiciel ; si la vôtre vient d’un autre, envoyez-la nous et on l’ajoute.',
+        'Aucune information reconnue dans ce PDF. L’outil lit les fiches de votre logiciel\u202f; si la vôtre vient d’un autre, envoyez-la nous et on l’ajoute.',
     };
   }
   return { ok: true, data };

@@ -28,7 +28,7 @@ export async function prepareOpenSearches(projectId: string): Promise<PrepareOpe
       ok: false,
       error:
         loaded.reason === 'no_city'
-          ? 'Renseignez d’abord la ville du bien vendeur : les recherches se basent sur sa localisation.'
+          ? 'Renseignez d’abord la ville du bien vendeur\u00a0: les recherches se basent sur sa localisation.'
           : 'Les recherches n’ont pas pu être préparées. Réessayez.',
     };
   }

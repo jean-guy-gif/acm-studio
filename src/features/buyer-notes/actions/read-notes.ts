@@ -132,7 +132,10 @@ export async function readBuyerNotes(formData: FormData): Promise<ReadNotesResul
   if (!answer.ok) {
     await settleAiBudget({ usageId: reservation.usageId, costMillicents: cost, outcome: 'failed' });
     // La cause seule, fixe : jamais le message du fournisseur ni la réponse (M100).
-    await reportServerError('readBuyerNotes', new Error(`lecture des notes : ${answer.cause}`));
+    await reportServerError(
+      'readBuyerNotes',
+      new Error(`lecture des notes\u00a0: ${answer.cause}`),
+    );
     return {
       ok: false,
       cause:

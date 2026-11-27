@@ -40,12 +40,12 @@ export function demoAddressLine(
 }
 
 const CONDITION_LABELS: Record<string, string> = {
-  new: 'Etat : neuf',
-  excellent: 'Etat : très bon',
-  good: 'Etat : bon',
-  to_refresh: 'Etat : à rafraîchir',
-  to_renovate: 'Etat : à rénover',
-  major_renovation: 'Etat : gros travaux',
+  new: 'Etat\u00a0: neuf',
+  excellent: 'Etat\u00a0: très bon',
+  good: 'Etat\u00a0: bon',
+  to_refresh: 'Etat\u00a0: à rafraîchir',
+  to_renovate: 'Etat\u00a0: à rénover',
+  major_renovation: 'Etat\u00a0: gros travaux',
 };
 
 const EXPOSURE_LABELS: Record<string, string> = {

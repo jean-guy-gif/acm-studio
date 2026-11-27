@@ -183,7 +183,9 @@ function PriceBlock({
           <div className={kicker}>{gone ? t.conclusion : t.gap}</div>
           {gone && item.conclusion ? (
             <div className="font-title text-base leading-snug font-bold text-zinc-900">
-              {language === 'fr'
+              {/* Lot A (Jean-Guy, 27/11) — « probablement retiré sans vente » : un point écrit
+                  avant se redit ainsi, comme sa note ; les autres libellés, tels qu'écrits. */}
+              {language === 'fr' && item.conclusion.kind !== 'withdrawn'
                 ? item.conclusion.label
                 : goneConclusionLabel(item.conclusion, language)}
             </div>

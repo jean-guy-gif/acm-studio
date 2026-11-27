@@ -148,8 +148,8 @@ describe('l’identité légale', () => {
     );
     expect(gaps).toEqual([
       'Carte professionnelle',
-      'Responsabilité civile professionnelle : N° de contrat',
-      'Garantie financière : Montant de la garantie (en euros)',
+      'Responsabilité civile professionnelle\u00a0: N° de contrat',
+      'Garantie financière\u00a0: Montant de la garantie (en euros)',
     ]);
     expect(
       voucherAgency({

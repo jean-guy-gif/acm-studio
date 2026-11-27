@@ -250,7 +250,7 @@ describe('ce que la tâche et le message disent', () => {
       '2026-11-06',
     );
     expect(line.title).toMatch(/^4 acquéreurs pour la maison de Vence \(140\sm², 779\s000\s€\)$/);
-    expect(line.detail).toMatch(/bien du marché : à vérifier avant d’envoyer/);
+    expect(line.detail).toMatch(/bien du marché\s: à vérifier avant d’envoyer/);
     expect(line.late).toBeNull();
     expect(line.href).toBe('/acquereurs/proposer?bien=listing%3Aseloger%3A123');
   });
@@ -263,7 +263,7 @@ describe('ce que la tâche et le message disent', () => {
         { motiveLabel: null, lastContactDays: null, signedOn: null, propertyLabel: null },
         '2026-11-06',
       ).detail;
-    expect(line('follow_up')).toMatch(/vendeur à relancer : à proposer après son accord/);
+    expect(line('follow_up')).toMatch(/vendeur à relancer\s: à proposer après son accord/);
     expect(line('newcomer')).toMatch(/nouveau sur le marché depuis le rendez-vous/);
   });
 
@@ -295,7 +295,7 @@ describe('ce que la tâche et le message disent', () => {
       url: 'u',
       advisorFirstName: null,
     });
-    expect(text).toMatch(/J’ai un bien pour vous : à Vence/);
+    expect(text).toMatch(/J’ai un bien pour vous\s: à Vence/);
     expect(text).not.toMatch(/bien à Vence/);
   });
 

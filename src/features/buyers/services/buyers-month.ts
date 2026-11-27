@@ -24,7 +24,7 @@ export type BuyersMonth = { proposed: number; answers: number; visits: number };
 
 export function buyersMonthLine(month: BuyersMonth): string {
   const plural = (count: number, one: string, many: string) => `${count} ${count > 1 ? many : one}`;
-  return `Ce mois-ci : ${plural(month.proposed, 'bien proposé', 'biens proposés')} · ${plural(
+  return `Ce mois-ci\u00a0: ${plural(month.proposed, 'bien proposé', 'biens proposés')} · ${plural(
     month.answers,
     'réponse',
     'réponses',
@@ -40,5 +40,5 @@ export function lastAnswerLabel(answer: { at: string; answer: string; reasons: s
   const reasons = answer.reasons
     .filter((reason): reason is NoReason => reason in NO_REASON_LABELS)
     .map((reason) => NO_REASON_LABELS[reason]);
-  return `Dernière réponse le ${day}/${month} : ${[said, ...reasons].join(' · ')}`;
+  return `Dernière réponse le ${day}/${month}\u00a0: ${[said, ...reasons].join(' · ')}`;
 }

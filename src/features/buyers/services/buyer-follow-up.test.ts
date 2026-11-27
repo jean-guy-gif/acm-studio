@@ -137,7 +137,7 @@ describe('son suivi : un bien, une ligne', () => {
     const refused = one(base, 'project:p3');
     expect(followUpFacts(refused, NOW)).toEqual([
       'Envoyé le 14/11, en présentation',
-      'Pas pour lui : Le quartier, Le prix · le 14/11, depuis le lien',
+      'Pas pour lui\u00a0: Le quartier, Le prix · le 14/11, depuis le lien',
     ]);
     expect(followUpPill(refused)).toEqual({ text: 'Refusé', tone: 'no' });
   });
@@ -159,7 +159,7 @@ describe('son suivi : un bien, une ligne', () => {
     expect(dismissed.itemId).toBeNull();
     expect(followUpOrigin(dismissed)).toBeNull();
     expect(followUpFacts(dismissed, NOW)).toEqual([
-      'Écarté pour lui il y a 4 jours : Prix au-dessus du budget',
+      'Écarté pour lui il y a 4 jours\u00a0: Prix au-dessus du budget',
     ]);
     expect(followUpPill(dismissed)).toEqual({ text: 'Écarté pour lui', tone: 'off' });
   });
@@ -254,7 +254,7 @@ describe('son suivi : un bien, une ligne', () => {
     // M122 — chaque réponse reste lisible, avec ses raisons, son moment et sa date.
     expect(followUpFacts(p3[0]!, NOW)).toEqual([
       'Envoyé le 14/11, en présentation',
-      'Pas pour lui : Le quartier, Le prix · le 14/11, depuis le lien',
+      'Pas pour lui\u00a0: Le quartier, Le prix · le 14/11, depuis le lien',
       'Veut le visiter · il y a 6 jours, pendant la présentation',
     ]);
     expect(followUpPill(p3[0]!)).toEqual({ text: 'Veut le visiter', tone: 'ok' });
@@ -417,7 +417,7 @@ describe('« Déjà vus avec lui »', () => {
     // Dates du conseiller, relatives (M143) : « il y a 4 jours », puis « le 14/11 ».
     expect(mention('p1')).toBe('Visité il y a 4 jours');
     expect(mention('p2')).toBe('Présenté le 14/11');
-    expect(mention('p3')).toBe('Refusé : Le quartier, Le prix');
+    expect(mention('p3')).toBe('Refusé\u00a0: Le quartier, Le prix');
     expect(mention('p4')).toBe('Présenté le 14/11');
     expect(list()).toHaveLength(4);
   });
@@ -476,7 +476,9 @@ describe('« Déjà vus avec lui »', () => {
         refused.visits.map((one) => ({ ...one, disliked })),
         NOW,
       ).find((line) => line.label.endsWith('p1'))?.mention;
-    expect(mention(['price', 'district'])).toBe('Refusé après la visite : le quartier, le prix');
+    expect(mention(['price', 'district'])).toBe(
+      'Refusé après la visite\u00a0: le quartier, le prix',
+    );
     expect(mention([])).toBe('Refusé après la visite');
   });
 

@@ -201,7 +201,7 @@ export async function addBuyerProspectOpposition(
     return {
       ok: false,
       error:
-        'L’inscription n’a pas été confirmée : l’adresse n’est pas sur la liste « Ne plus solliciter ». Réessayez.',
+        'L’inscription n’a pas été confirmée\u00a0: l’adresse n’est pas sur la liste «\u00a0Ne plus solliciter\u00a0». Réessayez.',
     };
   }
   revalidate();

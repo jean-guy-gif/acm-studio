@@ -129,9 +129,9 @@ export function BrochureImportPanel({
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
       <h2 className={formSectionTitle}>Importer depuis votre fiche (PDF)</h2>
       <p className={hintText}>
-        Le bien n’est pas encore commercialisé ? Importez la fiche produite par votre logiciel
-        d’agence : caractéristiques, diagnostics et copropriété sont repris, à relire avant
-        d’enregistrer.
+        Le bien n’est pas encore commercialisé&#x202f;? Importez la fiche produite par votre
+        logiciel d’agence&nbsp;: caractéristiques, diagnostics et copropriété sont repris, à relire
+        avant d’enregistrer.
       </p>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -159,7 +159,7 @@ export function BrochureImportPanel({
       </div>
       {demoBrochures && demoBrochures.length > 0 ? (
         <div className="flex flex-wrap items-center gap-2" data-testid="demo-brochure-choices">
-          <span className={hintText}>Fiches à importer :</span>
+          <span className={hintText}>Fiches à importer&nbsp;:</span>
           {demoBrochures.map((choice) => (
             <button
               key={choice.url}
@@ -202,14 +202,14 @@ export function BrochureImportPanel({
                 Prix lu sur la fiche
               </p>
               <p className="text-zinc-600 stage:text-white/65">
-                {euro(info.readPrice)} — pour information : l’outil ne l’enregistre pas et ne
+                {euro(info.readPrice)} — pour information&nbsp;: l’outil ne l’enregistre pas et ne
                 préremplit pas votre fourchette.
               </p>
             </div>
           ) : null}
           {chargesDiverge ? (
             <p className="text-amber-700 stage:text-amber-300">
-              Attention : les charges mensuelles et la quote-part annuelle du pied de page ne
+              Attention&nbsp;: les charges mensuelles et la quote-part annuelle du pied de page ne
               concordent pas (12 × mensuel ≠ annuel). À vérifier sur la fiche.
             </p>
           ) : null}
@@ -226,8 +226,8 @@ export function BrochureImportPanel({
             {deposit ? (
               <p className="text-zinc-600 stage:text-white/65">
                 {deposit.deposited} photo(s) récupérée(s)
-                {deposit.failed > 0 ? ` · ${deposit.failed} ignorée(s)` : ''} — visibles dans «
-                Photos du bien vendeur ».
+                {deposit.failed > 0 ? ` · ${deposit.failed} ignorée(s)` : ''} — visibles dans
+                «&nbsp;Photos du bien vendeur&nbsp;».
               </p>
             ) : (
               <p className="text-xs text-zinc-500 stage:text-white/40">

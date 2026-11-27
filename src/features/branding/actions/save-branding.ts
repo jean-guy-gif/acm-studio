@@ -41,7 +41,7 @@ async function uploadLogo(
   }
   const ext = ACCEPTED.get(file.type);
   if (!ext) {
-    return { ok: false, error: 'Logo : formats acceptés SVG, PNG, WebP, JPEG.' };
+    return { ok: false, error: 'Logo\u00a0: formats acceptés SVG, PNG, WebP, JPEG.' };
   }
   const path = `${agencyId}/logo-${variant}.${ext}`;
   // On téléverse les OCTETS (Uint8Array), pas l'objet File : plus fiable côté serveur.

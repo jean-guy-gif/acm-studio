@@ -174,9 +174,9 @@ describe('le bloc quand la vue n’est pas là (maquette M158-1, « Quand il n�
     expect(render({ kind: 'none' })).toContain('Créez le dossier d’adresse depuis Bien vendeur');
     // Mission 161 — l'attente se dit, et la page se relit toute seule (5 s, deux minutes au plus).
     expect(render({ kind: 'waiting' })).toContain(
-      'Academia prépare le dossier d’adresse : 20 à 60 secondes.',
+      'Academia prépare le dossier d’adresse\u00a0: 20 à 60 secondes.',
     );
-    expect(render({ kind: 'request_failed' })).toContain('Recréez le lien « Vivre ici »');
+    expect(render({ kind: 'request_failed' })).toContain('Recréez le lien «\u00a0Vivre ici\u00a0»');
     expect(render({ kind: 'failed' })).toContain('n’a pas pu être lu');
     expect(render({ kind: 'missing_facts', missing: ['type', 'rooms', 'surface'] })).toContain(
       'le type (maison ou appartement), le nombre de pièces et la surface',

@@ -217,7 +217,8 @@ describe('signer le bon de visite', () => {
     const result = await signVisitVoucher(input());
     expect(result).toEqual({
       ok: false,
-      error: 'Identité légale de l’agence à compléter (Administration → Identité) : N° de TVA.',
+      error:
+        'Identité légale de l’agence à compléter (Administration → Identité)\u00a0: N° de TVA.',
     });
     expect(state.writes).toEqual([]);
     expect(state.uploads).toEqual([]);

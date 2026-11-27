@@ -127,7 +127,7 @@ describe('le courrier au propriétaire', () => {
   it('le texte proposé : la recherche, la question de la visite, rien d’autre', () => {
     const texts = defaultBuyerLetter(villa, keller);
     expect(texts.letter).toContain(
-      `J’accompagne une recherche qui correspond aux caractéristiques de votre bien : maison de 7 pièces, ${M2}, avec une terrasse et un jardin.`,
+      `J’accompagne une recherche qui correspond aux caractéristiques de votre bien\u00a0: maison de 7 pièces, ${M2}, avec une terrasse et un jardin.`,
     );
     expect(texts.letter).toContain(
       'Je souhaiterais vérifier avec vous si une visite est envisageable.',

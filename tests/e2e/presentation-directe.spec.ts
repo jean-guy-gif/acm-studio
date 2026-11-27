@@ -506,7 +506,7 @@ test('des fiches qui font visiter : la relance sur place, l’ajustement appliqu
 
   await test.step('Les refus des Keller : l’ajustement s’applique', async () => {
     await page.goto('/acquereurs?tous=1');
-    await expect(page.getByTestId('buyers-month')).toContainText(/^Ce mois-ci : /);
+    await expect(page.getByTestId('buyers-month')).toContainText(/^Ce mois-ci\s: /);
     const kellerRow = page.getByTestId('buyer-row').filter({ hasText: 'Famille Keller' });
     await expect(kellerRow.getByTestId('buyer-row-last-answer')).toContainText(
       'Pas pour moi · Le prix',
@@ -612,7 +612,7 @@ test('la veille des acquéreurs : la tâche des Keller, leurs nouveaux biens, le
     await page.getByRole('link', { name: 'Famille Keller', exact: true }).click();
     await openFold(page, 'buyer-readiness');
     await expect(page.getByTestId('buyer-watch-line')).toHaveText(
-      /^Veille : dernière recherche le \d{2}\/\d{2}, prochaine le \d{2}\/\d{2}$/,
+      /^Veille\s: dernière recherche le \d{2}\/\d{2}, prochaine le \d{2}\/\d{2}$/,
     );
   });
 
@@ -691,7 +691,7 @@ test('le bon de visite : celui de la démo, puis un bon signé au doigt et son l
     await expect(document).toContainText('la gestion et le suivi de de relations commerciales');
     await expect(document).not.toContainText(/réseau|\{|\}/);
     await expect(document.getByTestId('voucher-signatures').locator('img')).toHaveCount(1);
-    await expect(document).toContainText(/empreinte du texte signé : [0-9a-f]{64}/);
+    await expect(document).toContainText(/empreinte du texte signé\s: [0-9a-f]{64}/);
   });
 
   let linkPath = '';
@@ -988,8 +988,8 @@ test('après la visite : le compte rendu, le point de la semaine, écarter pour 
     await expect(buyer).toHaveValue(
       /^Bonjour Famille Keller,\nMerci pour la visite de la maison de Mougins le /,
     );
-    await expect(buyer).toHaveValue(/Ce qui vous a plu : l’extérieur et la piscine\./);
-    await expect(buyer).toHaveValue(/Ce qui vous a gêné : le prix\./);
+    await expect(buyer).toHaveValue(/Ce qui vous a plu\s: l’extérieur et la piscine\./);
+    await expect(buyer).toHaveValue(/Ce qui vous a gêné\s: le prix\./);
     const seller = done.getByTestId('visit-message-seller-text').first();
     await expect(seller).toHaveValue(/^Bonjour M\. Lefebvre,\nLa visite de votre bien du /);
     await expect(seller).not.toHaveValue(/Keller|budget|offre/i);

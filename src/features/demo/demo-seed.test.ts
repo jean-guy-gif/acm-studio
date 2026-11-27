@@ -211,7 +211,7 @@ describe('la sélection des Keller', async () => {
 
   it('le bien à vérifier : sa piscine n’est pas indiquée', () => {
     expect(poolFromLabels(plan[2]!.imported!.listingFeatures)).toBeNull();
-    expect(plan[2]!.gaps).toEqual(['Piscine : à vérifier']);
+    expect(plan[2]!.gaps).toEqual(['Piscine\u00a0: à vérifier']);
     // Le compromis, lui, a sa piscine.
     expect(poolFromLabels(plan[1]!.imported!.listingFeatures)).toBe(true);
   });
@@ -387,7 +387,7 @@ describe('le parcours des acquéreurs de la démo', () => {
         (buyer.budgetMax ?? 0) * 1.05,
       );
       const city = demoSeedPlan(journey.mandate, NOW).property!.city as string;
-      expect(buyer.cities.includes(city), `${journey.buyer} : ${city}`).toBe(true);
+      expect(buyer.cities.includes(city), `${journey.buyer}\u00a0: ${city}`).toBe(true);
       for (const visit of journey.visits ?? []) expect(visit.item).toBeLessThan(plan.length);
     }
   });

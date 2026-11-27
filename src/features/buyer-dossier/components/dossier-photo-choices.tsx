@@ -27,8 +27,8 @@ export function DossierPhotoChoices({
     <fieldset className="flex flex-col gap-2 print:hidden" data-testid="dossier-photo-choices">
       <legend className="text-sm font-semibold text-zinc-800">Photos des biens</legend>
       <p className={hintText}>
-        Chaque photo est celle de l’annonce ou du bien, telle que montrée à l’acquéreur. Cochez «
-        Sans photo » pour la retirer du document et du lien.
+        Chaque photo est celle de l’annonce ou du bien, telle que montrée à l’acquéreur. Cochez
+        «&nbsp;Sans photo&nbsp;» pour la retirer du document et du lien.
       </p>
       <ul className="flex flex-col gap-1.5">
         {items.map((item) => (

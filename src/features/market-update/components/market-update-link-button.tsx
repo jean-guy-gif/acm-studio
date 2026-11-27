@@ -52,7 +52,7 @@ export function MarketUpdateLinkButton({
       const result = await removeMarketUpdateLink(projectId, linkId);
       if (result.ok) {
         if (created?.linkId === linkId) setCreated(null);
-        setMessage('Lien retiré : il ne s’ouvre plus.');
+        setMessage('Lien retiré\u00a0: il ne s’ouvre plus.');
         router.refresh();
       } else {
         setMessage(result.error);
@@ -86,7 +86,7 @@ export function MarketUpdateLinkButton({
             : 'Créer un lien pour le vendeur (30 jours)'}
       </button>
       <p className={hintText}>
-        Sans compte, jamais indexé, 30 jours ; l’outil n’envoie rien.
+        Sans compte, jamais indexé, 30 jours&#x202f;; l’outil n’envoie rien.
         {links.length > 0 || created ? ' Un nouveau lien remplace le précédent.' : ''}
       </p>
       {created
@@ -151,8 +151,8 @@ export function MarketUpdateLinkButton({
                   {copied === 'ok'
                     ? 'Message copié, lien compris.'
                     : copied === 'failed'
-                      ? 'La copie a échoué : sélectionnez le message ci-dessus.'
-                      : 'Le lien ne s’affichera plus. Il expire dans 30 jours ; l’outil n’envoie rien.'}
+                      ? 'La copie a échoué\u00a0: sélectionnez le message ci-dessus.'
+                      : 'Le lien ne s’affichera plus. Il expire dans 30 jours\u202f; l’outil n’envoie rien.'}
                 </p>
               </div>
             );

@@ -54,7 +54,7 @@ export default async function TodayPage({ searchParams }: TodayPageProps) {
           <h1 className={pageTitle}>Aujourd’hui</h1>
           <p className={pageSubtitle} data-testid="today-summary">
             {today.failed.length > 0
-              ? 'Une partie des tâches n’a pas pu être lue : rechargez la page.'
+              ? 'Une partie des tâches n’a pas pu être lue\u00a0: rechargez la page.'
               : board.taskCount === 0
                 ? 'Rien à faire aujourd’hui.'
                 : `${board.taskCount} ${board.taskCount > 1 ? 'choses' : 'chose'} à faire, la plus urgente en premier.`}

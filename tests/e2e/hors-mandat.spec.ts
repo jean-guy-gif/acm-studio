@@ -88,7 +88,7 @@ test('hors mandat : le bon de visite et l’offre d’achat au titre du mandat d
       await address.fill('3 rue du Vieux Pressoir, 06600 Antibes');
     }
     await expect(form.getByTestId('voucher-outside-preview')).toContainText(
-      /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché : [\d\s ]+ €/,
+      /Mandat de recherche n° R-2026-031 du 04\/11\/2026 · Prix affiché\s: [\d\s ]+ €/,
     );
     // Mission 154 — le nom de la fiche, suggéré d'un geste, jamais rempli d'office.
     await expect(form.getByTestId('voucher-visitor-last-1')).toHaveValue('');

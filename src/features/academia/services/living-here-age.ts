@@ -76,13 +76,13 @@ export function livingHereAgeLine(
   if (!pastedAt) {
     return {
       tone: 'warn',
-      text: `Collé sans date connue : ce lien ${NOT_SHOWN}. ${make} un lien neuf.`,
+      text: `Collé sans date connue\u00a0: ce lien ${NOT_SHOWN}. ${make} un lien neuf.`,
     };
   }
   if (options.moved) {
     return {
       tone: 'warn',
-      text: `L’adresse du bien a changé depuis le collage : ce lien ${NOT_SHOWN}. ${make} celui de la nouvelle adresse.`,
+      text: `L’adresse du bien a changé depuis le collage\u00a0: ce lien ${NOT_SHOWN}. ${make} celui de la nouvelle adresse.`,
     };
   }
   const age = livingHereAge(pastedAt, now);
@@ -90,7 +90,7 @@ export function livingHereAgeLine(
   if (age.level === 'fresh') {
     return { tone: 'hint', text: `Collé ${formatRelativeDay(pastedAt, now)}` };
   }
-  const head = `Collé il y a ${age.days} jours : un lien d’Academia vaut 30 jours`;
+  const head = `Collé il y a ${age.days} jours\u00a0: un lien d’Academia vaut 30 jours`;
   return {
     tone: 'warn',
     text:

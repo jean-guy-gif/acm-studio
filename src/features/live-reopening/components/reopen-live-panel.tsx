@@ -36,7 +36,7 @@ export function ReopenLivePanel({
       setReason('');
       setMessage({
         ok: true,
-        text: `Live rouvert : ${result.responses} réponse${result.responses > 1 ? 's' : ''} effacée${result.responses > 1 ? 's' : ''}, gardée${result.responses > 1 ? 's' : ''} dans la trace.`,
+        text: `Live rouvert\u00a0: ${result.responses} réponse${result.responses > 1 ? 's' : ''} effacée${result.responses > 1 ? 's' : ''}, gardée${result.responses > 1 ? 's' : ''} dans la trace.`,
       });
     });
   };
@@ -72,7 +72,7 @@ export function ReopenLivePanel({
               aria-label="Confirmer la réouverture"
               className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-sm text-amber-900 stage:border-amber-300/40 stage:bg-amber-300/10 stage:text-amber-100"
             >
-              <span>Effacer les réponses de ce Live ?</span>
+              <span>Effacer les réponses de ce Live&#x202f;?</span>
               <button
                 type="button"
                 className={btnSecondary}
@@ -98,7 +98,7 @@ export function ReopenLivePanel({
         </div>
       ) : (
         <p className={hintText}>
-          Rien à rouvrir : le Live n’a pas commencé, ou le dossier est conclu.
+          Rien à rouvrir&nbsp;: le Live n’a pas commencé, ou le dossier est conclu.
         </p>
       )}
       {message ? (
@@ -117,7 +117,7 @@ export function ReopenLivePanel({
         <ul className="flex flex-col gap-1 text-xs text-zinc-500 stage:text-white/55">
           {history.map((entry) => (
             <li key={`${entry.createdAt}-${entry.operatorEmail}`}>
-              Rouvert {formatRelativeMoment(entry.createdAt)} par {entry.operatorEmail} :{' '}
+              Rouvert {formatRelativeMoment(entry.createdAt)} par {entry.operatorEmail}&nbsp;:{' '}
               {entry.reason}
             </li>
           ))}

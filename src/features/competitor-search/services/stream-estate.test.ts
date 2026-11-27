@@ -486,7 +486,7 @@ describe('les biens Stream Estate passent par rankCandidates', () => {
     expect(search.ranked.every((entry) => !entry.loosenedSurface)).toBe(true);
     expect(search.ranked.map((entry) => entry.candidate.surfaceArea).sort()).toEqual([72, 73, 79]);
     expect(search.ranked.find((entry) => entry.candidate.surfaceArea === 79)!.gapLine).toContain(
-      'Plus grand : 79\u00A0m² (+20\u00A0%)',
+      'Plus grand\u00a0: 79\u00A0m² (+20\u00A0%)',
     );
   });
 });

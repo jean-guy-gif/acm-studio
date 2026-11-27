@@ -31,10 +31,10 @@ export const LIVE_PRESENTATION_MODE_LABELS: Record<LivePresentationMode, string>
 
 // Côté conseiller seulement (« Avant le rendez-vous ») : ce que chaque façon fait.
 export const LIVE_PRESENTATION_MODE_HINTS: Record<LivePresentationMode, string> = {
-  interactive: 'Le vendeur répond à chaque écran : son prix, ses devinettes, sa note.',
+  interactive: 'Le vendeur répond à chaque écran\u00a0: son prix, ses devinettes, sa note.',
   direct:
-    'Le même Live, sans rien lui demander : chaque concurrent arrive avec son prix affiché, vous commentez.',
-  document: 'Pas de Live : vous remettez l’Étude de marché et concluez depuis le dossier.',
+    'Le même Live, sans rien lui demander\u00a0: chaque concurrent arrive avec son prix affiché, vous commentez.',
+  document: 'Pas de Live\u00a0: vous remettez l’Étude de marché et concluez depuis le dossier.',
 };
 
 // Le prix d'un concurrent a-t-il été MONTRÉ au vendeur ? Deviné (M41), ou montré en directe
@@ -54,6 +54,6 @@ export function shownDirectly(response: ShownResponse | undefined): boolean {
 
 // Messages d'un changement refusé (côté conseiller).
 export const PRESENTATION_MODE_CONCLUDED_MESSAGE =
-  'Rendez-vous conclu : la façon de présenter ne change plus.';
+  'Rendez-vous conclu\u00a0: la façon de présenter ne change plus.';
 export const PRESENTATION_MODE_STARTED_MESSAGE =
-  'Le Live a commencé : il ne devient pas un document seul.';
+  'Le Live a commencé\u00a0: il ne devient pas un document seul.';

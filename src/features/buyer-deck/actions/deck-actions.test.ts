@@ -168,7 +168,7 @@ describe('les gestes du dossier qui fait agir', () => {
     state.respond = () => ({ data: null, error: { message: 'presentation_finished' } });
     expect(await answerItem(ITEM, 'visit', [])).toEqual({
       ok: false,
-      error: 'La présentation est terminée : elle se relit sans se modifier.',
+      error: 'La présentation est terminée\u00a0: elle se relit sans se modifier.',
     });
     state.respond = () => ({ data: null, error: { message: 'buyer_archived' } });
     expect(await answerItem(ITEM, 'visit', [])).toEqual({

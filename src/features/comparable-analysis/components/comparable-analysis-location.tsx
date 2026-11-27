@@ -19,7 +19,7 @@ export function ComparableAnalysisLocation({
             <ul className="text-sm text-zinc-600 stage:text-white/65">
               {locationAnalysis.byCity.map((entry) => (
                 <li key={entry.label}>
-                  {entry.label} : {entry.count}
+                  {entry.label}&nbsp;: {entry.count}
                 </li>
               ))}
             </ul>
@@ -34,7 +34,7 @@ export function ComparableAnalysisLocation({
             <ul className="text-sm text-zinc-600 stage:text-white/65">
               {locationAnalysis.byDistrict.map((entry) => (
                 <li key={entry.label}>
-                  {entry.label} : {entry.count}
+                  {entry.label}&nbsp;: {entry.count}
                 </li>
               ))}
             </ul>
@@ -43,7 +43,7 @@ export function ComparableAnalysisLocation({
       </div>
 
       <p className="text-sm text-zinc-600 stage:text-white/65">
-        Saisis à la main : {locationAnalysis.sources.manual} · Importés depuis l’annonce :{' '}
+        Saisis à la main&nbsp;: {locationAnalysis.sources.manual} · Importés depuis l’annonce&nbsp;:{' '}
         {locationAnalysis.sources.url}
       </p>
     </section>

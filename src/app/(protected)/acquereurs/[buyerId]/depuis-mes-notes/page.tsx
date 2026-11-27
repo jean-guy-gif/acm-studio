@@ -42,7 +42,7 @@ export default async function CompleteFromNotesPage({
         <span className={kickerLabel}>Acquéreurs</span>
         <h1 className={pageTitle}>{buyer.name}</h1>
         <p className={pageSubtitle}>
-          Ce que vos notes ajoutent à sa fiche : vous choisissez ce qui change.
+          Ce que vos notes ajoutent à sa fiche&nbsp;: vous choisissez ce qui change.
         </p>
       </div>
       <NotesFlow

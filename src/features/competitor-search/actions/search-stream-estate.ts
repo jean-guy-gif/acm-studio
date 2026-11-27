@@ -146,7 +146,7 @@ export async function searchStreamEstate(
   if (!demo && apiKey == null) {
     return {
       ok: false,
-      error: 'La recherche de concurrents n’est pas activée : prévenez l’équipe ACM Studio.',
+      error: 'La recherche de concurrents n’est pas activée\u00a0: prévenez l’équipe ACM Studio.',
     };
   }
 
@@ -171,7 +171,7 @@ export async function searchStreamEstate(
       ok: false,
       error:
         loaded.reason === 'no_city'
-          ? 'Renseignez d’abord la ville du bien vendeur : la recherche se base sur sa commune.'
+          ? 'Renseignez d’abord la ville du bien vendeur\u00a0: la recherche se base sur sa commune.'
           : GENERIC_ERROR,
     };
   }
@@ -183,10 +183,10 @@ export async function searchStreamEstate(
     const where = [criteria.city, criteria.postalCode].filter(Boolean).join(' ');
     const reasons: Record<typeof commune.reason, string> = {
       unavailable:
-        'Le service des communes ne répond pas : réessayez dans un instant. Aucune recherche lancée.',
-      arrondissements: `${criteria.city} se cherche par arrondissement : indiquez le code postal du bien vendeur (75015, 69003, 13008…) ou son arrondissement dans la ville (« Paris 15e »), et vérifiez qu’ils disent le même. Aucune recherche lancée.`,
-      ambiguous: `Plusieurs communes répondent à « ${where} » : vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
-      not_found: `Commune introuvable (« ${where} ») : vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
+        'Le service des communes ne répond pas\u00a0: réessayez dans un instant. Aucune recherche lancée.',
+      arrondissements: `${criteria.city} se cherche par arrondissement\u00a0: indiquez le code postal du bien vendeur (75015, 69003, 13008…) ou son arrondissement dans la ville («\u00a0Paris 15e\u00a0»), et vérifiez qu’ils disent le même. Aucune recherche lancée.`,
+      ambiguous: `Plusieurs communes répondent à «\u00a0${where}\u00a0»\u00a0: vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
+      not_found: `Commune introuvable («\u00a0${where}\u00a0»)\u00a0: vérifiez la ville et le code postal du bien vendeur. Aucune recherche lancée.`,
     };
     return { ok: false, error: reasons[commune.reason] };
   }
@@ -196,7 +196,7 @@ export async function searchStreamEstate(
     return {
       ok: false,
       error:
-        'La recherche ne trouve que des appartements et des maisons : précisez le type du bien vendeur.',
+        'La recherche ne trouve que des appartements et des maisons\u00a0: précisez le type du bien vendeur.',
     };
   }
 
@@ -212,7 +212,7 @@ export async function searchStreamEstate(
     return {
       ok: false,
       error:
-        'Le rayon se mesure autour du bien : son adresse n’a pas été reconnue avec certitude. Précisez-la sur la fiche (numéro et rue), ou choisissez « Toute la commune » dans les réglages. Aucune recherche lancée.',
+        'Le rayon se mesure autour du bien\u00a0: son adresse n’a pas été reconnue avec certitude. Précisez-la sur la fiche (numéro et rue), ou choisissez «\u00a0Toute la commune\u00a0» dans les réglages. Aucune recherche lancée.',
     };
   }
 
@@ -270,7 +270,7 @@ export async function searchStreamEstate(
     // mêmes, on ne reprend pas à l'aveugle.
     return {
       ok: false,
-      error: `Le bien vendeur a changé depuis la recherche : relancez « ${STREAM_ESTATE_SEARCH_BUTTON} ».`,
+      error: `Le bien vendeur a changé depuis la recherche\u00a0: relancez «\u00a0${STREAM_ESTATE_SEARCH_BUTTON}\u00a0».`,
     };
   }
   // Mission 105 — le coût maximal est réservé AVANT l'appel payant, compteur de l'agence
@@ -321,7 +321,7 @@ export async function searchStreamEstate(
       ok: false,
       error:
         outcome.reason === 'refused'
-          ? 'La recherche a été refusée par le fournisseur des annonces : prévenez l’équipe ACM Studio. Aucun bien n’a été trouvé.'
+          ? 'La recherche a été refusée par le fournisseur des annonces\u00a0: prévenez l’équipe ACM Studio. Aucun bien n’a été trouvé.'
           : GENERIC_ERROR,
     };
   }

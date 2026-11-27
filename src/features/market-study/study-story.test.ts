@@ -181,9 +181,9 @@ describe('le fil de l’Étude : les pages dans l’ordre', () => {
     expect(plain(story.sales!.band.title)).toBe(
       'Onze maisons comme la vôtre se sont vendues autour de chez vous'.replace('Onze', '11'),
     );
-    expect(plain(story.quartier!.band.title)).toMatch(/^Ce que votre acheteur demandera : /);
+    expect(plain(story.quartier!.band.title)).toMatch(/^Ce que votre acheteur demandera\s: /);
     expect(story.summary.lead.startsWith('Madame, voici ce que disent')).toBe(true);
-    expect(story.summary.value).toContain('nous l’avons retenu ensemble : 745');
+    expect(story.summary.value).toContain('nous l’avons retenu ensemble\u00a0: 745');
   });
 
   it('la couverture n’a plus de verdict ; le conseiller y est nommé sans mot qui dise son genre', () => {
@@ -202,7 +202,7 @@ describe('le fil de l’Étude : les pages dans l’ordre', () => {
     expect(first!.diffs.map((line) => [line.label, line.status])).toEqual([
       ['Exposition', 'competitor_weakness'],
     ]);
-    expect(first!.equivalentOn).toMatch(/^Équivalent sur : surface/);
+    expect(first!.equivalentOn).toMatch(/^Équivalent sur\s: surface/);
     expect(second!.diffs.map((line) => line.label)).toEqual(['Surface', 'Exposition']);
     expect(plain(second!.diffs[0]!.value)).toBe('142 m² (vous : 135 m²)');
     expect(third!.diffs).toEqual([]);
@@ -461,10 +461,10 @@ describe('les variantes des phrases', () => {
   it('l’avis des biens en vente ne dit que ce que portent les chiffres', () => {
     const t = FRENCH_STUDY.competitors;
     expect(t.avis(5, 'maison', 0, null, false, null)).toBe(
-      'Vos acheteurs ne verront pas votre maison seule : ils la compareront à ces cinq-là. Aucune n’a d’avantage sur la vôtre dans ce que disent les annonces. L’annonce doit montrer ce qui fera choisir la vôtre.',
+      'Vos acheteurs ne verront pas votre maison seule\u00a0: ils la compareront à ces cinq-là. Aucune n’a d’avantage sur la vôtre dans ce que disent les annonces. L’annonce doit montrer ce qui fera choisir la vôtre.',
     );
     expect(t.avis(5, 'maison', 2, 'la surface', true, 'son exposition sud')).toBe(
-      'Vos acheteurs ne verront pas votre maison seule : ils la compareront à ces cinq-là. Deux sont plus grandes ; la vôtre a pour elle son exposition sud. C’est ce que l’annonce doit montrer.',
+      'Vos acheteurs ne verront pas votre maison seule\u00a0: ils la compareront à ces cinq-là. Deux sont plus grandes\u202f; la vôtre a pour elle son exposition sud. C’est ce que l’annonce doit montrer.',
     );
   });
 

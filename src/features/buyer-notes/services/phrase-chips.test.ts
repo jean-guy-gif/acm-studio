@@ -118,8 +118,8 @@ describe('ce que j’ai compris : les pastilles', () => {
     const unsureChips = phraseChips(unsure, proposal);
     const unknown = chip(unsureChips, 'cities:unknown');
     expect(unknown.tone).toBe('missing');
-    expect(unknown.label).toBe('Commune à préciser : Tourettes');
-    expect(unknown.hint).toContain('« Tourettes »');
+    expect(unknown.label).toBe('Commune à préciser\u00a0: Tourettes');
+    expect(unknown.hint).toContain('«\u00a0Tourettes\u00a0»');
     // Les communes corrigées par le conseiller : plus rien à préciser.
     const fixed = editDraft(unsure, {
       type: 'text',
@@ -134,7 +134,7 @@ describe('ce que j’ai compris : les pastilles', () => {
     const proposal: NoteProposal = { ...empty, cashSuggestion: true, financingSource: 'cash' };
     const draftCash = draftFromProposal(proposal);
     const cash = chip(phraseChips(draftCash, proposal), 'cash');
-    expect(cash.label).toBe('Achat comptant : à vérifier');
+    expect(cash.label).toBe('Achat comptant\u00a0: à vérifier');
     expect(cash.editor.kind).toBe('cash');
     const validated = editDraft(draftCash, { type: 'cash' });
     expect(validated.financing).toBe('validated');
@@ -164,7 +164,7 @@ describe('toucher pour corriger', () => {
     const noBudget = editDraft(draft, { type: 'number', field: 'budgetIdeal', value: null });
     expect(phraseChips(noBudget, arnaud).some((item) => item.id === 'budgetIdeal')).toBe(false);
     const noName = editDraft(draft, { type: 'text', field: 'name', value: '   ' });
-    expect(chip(phraseChips(noName, arnaud), 'name').label).toBe('Son nom ?');
+    expect(chip(phraseChips(noName, arnaud), 'name').label).toBe('Son nom\u202f?');
     expect(draftMissing(noName)).toEqual(['son nom']);
     const noCity = editDraft(draft, { type: 'text', field: 'cities', value: '' });
     expect(draftMissing(noCity)).toEqual(['une commune']);
@@ -182,7 +182,7 @@ describe('toucher pour corriger', () => {
     });
     const starred = editDraft(withPool, { type: 'star', star: 'pool', on: true });
     expect(starred.stars).toEqual(['outdoor', 'pool']);
-    expect(chip(phraseChips(starred, arnaud), 'pool').label).toBe('Indispensable : piscine');
+    expect(chip(phraseChips(starred, arnaud), 'pool').label).toBe('Indispensable\u00a0: piscine');
     // Deux indispensables : un troisième ne s'ajoute pas, et l'écran ne l'offre pas.
     const third = editDraft(starred, { type: 'star', star: 'parking', on: true });
     expect(third.stars).toEqual(['outdoor', 'pool']);
@@ -200,7 +200,9 @@ describe('toucher pour corriger', () => {
     expect(calm.soft.map((soft) => soft.key)).not.toContain('calme');
     expect(editDraft(draft, { type: 'remove', id: 'financing' }).financing).toBeNull();
     const starred = { ...draft, stars: [...draft.stars, 'budget' as const] };
-    expect(chip(phraseChips(starred, arnaud), 'star:budget').label).toBe('Indispensable : budget');
+    expect(chip(phraseChips(starred, arnaud), 'star:budget').label).toBe(
+      'Indispensable\u00a0: budget',
+    );
     expect(editDraft(starred, { type: 'remove', id: 'star:budget' }).stars).toEqual(['outdoor']);
     // Une pastille inconnue ne change rien.
     expect(editDraft(draft, { type: 'remove', id: 'inconnue' })).toBe(draft);
@@ -336,9 +338,9 @@ describe('relecture du lot D', () => {
     };
     const cities = chip(phraseChips(draftFromProposal(proposal), proposal), 'cities');
     expect(cities.tone).toBe('missing');
-    expect(cities.label).toBe('Vence, Tourrettes-sur-Loup : à vérifier');
-    expect(cities.hint).toContain('Tourrettes-sur-Loup : lu « Tourettes »');
-    expect(cities.hint).toContain('« Vence » : commune non vérifiée');
+    expect(cities.label).toBe('Vence, Tourrettes-sur-Loup\u00a0: à vérifier');
+    expect(cities.hint).toContain('Tourrettes-sur-Loup\u00a0: lu «\u00a0Tourettes\u00a0»');
+    expect(cities.hint).toContain('«\u00a0Vence\u00a0»\u00a0: commune non vérifiée');
     // Retapées par le conseiller : plus rien à dire.
     const fixed = editDraft(draftFromProposal(proposal), {
       type: 'text',

@@ -12,8 +12,8 @@ export function BasculeBanner({ projectId }: { projectId: string }) {
       className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-900 stage:border-emerald-400/40 stage:bg-emerald-400/10 stage:text-emerald-200"
     >
       <span className="text-sm font-medium">
-        Ce dossier est prêt : il vient de basculer dans le Live et sort de la liste « En cours » de
-        la Préparation. Il reste modifiable ici.
+        Ce dossier est prêt&nbsp;: il vient de basculer dans le Live et sort de la liste «&nbsp;En
+        cours&nbsp;» de la Préparation. Il reste modifiable ici.
       </span>
       <Link
         // Mission 107 — le même contrôle que « Lancer le Live » : confirmation sur un vrai dossier.

@@ -76,27 +76,27 @@ export function NeighbourhoodChoicePanel({
       const kept = checked.filter((key) => result.keys.includes(key));
       setChecked(kept);
       setSaved(kept);
-      setMessage('Choix enregistré : le Live et les documents montreront ces blocs.');
+      setMessage('Choix enregistré\u00a0: le Live et les documents montreront ces blocs.');
       router.refresh();
     });
 
   return (
     <section className={`${card} flex flex-col gap-3 p-5`} data-testid="neighbourhood-choice">
-      <h2 className={sectionTitle}>Ce que verra le vendeur : le quartier</h2>
+      <h2 className={sectionTitle}>Ce que verra le vendeur&nbsp;: le quartier</h2>
       <p className={hintText}>
-        Rien n’est montré par défaut : cochez bloc par bloc. Chaque bloc coché devient un écran du
-        Live et une page de l’Étude de marché et de la synthèse. Jamais la valeur indicative, jamais
-        le DPE.
+        Rien n’est montré par défaut&nbsp;: cochez bloc par bloc. Chaque bloc coché devient un écran
+        du Live et une page de l’Étude de marché et de la synthèse. Jamais la valeur indicative,
+        jamais le DPE.
       </p>
       {stale ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 stage:bg-amber-500/10 stage:text-amber-200">
-          L’adresse, le type, les pièces ou la surface du bien ont changé depuis votre choix : il
-          n’est plus montré au vendeur. Cochez de nouveau, puis enregistrez.
+          L’adresse, le type, les pièces ou la surface du bien ont changé depuis votre choix&nbsp;:
+          il n’est plus montré au vendeur. Cochez de nouveau, puis enregistrez.
         </p>
       ) : null}
       {locked ? (
         <p className={hintText}>
-          Le Live a commencé : le quartier montré au vendeur ne se modifie plus.
+          Le Live a commencé&nbsp;: le quartier montré au vendeur ne se modifie plus.
         </p>
       ) : null}
       <ul className="flex flex-col gap-2">
@@ -126,8 +126,8 @@ export function NeighbourhoodChoicePanel({
                 </span>
                 <span className="shrink-0 rounded-full bg-brand/10 px-2 py-0.5 text-xs text-brand-deep stage:text-brand">
                   {key === 'ventes'
-                    ? 'à la fin, avec « Analyse des prix »'
-                    : 'après « Votre valeur perçue »'}
+                    ? 'à la fin, avec «\u00a0Analyse des prix\u00a0»'
+                    : 'après «\u00a0Votre valeur perçue\u00a0»'}
                 </span>
               </label>
             </li>
@@ -156,9 +156,9 @@ export function NeighbourhoodChoicePanel({
               <span>
                 <span className="font-semibold">{NAMES[key]}</span> —{' '}
                 {key === 'ventes' && blocks.ventes != null && blocks.ventes.listRadius == null
-                  ? 'moins de 5 ventes comparables autour du bien : Academia ne donne pas de liste'
+                  ? 'moins de 5 ventes comparables autour du bien\u00a0: Academia ne donne pas de liste'
                   : statuses?.[key] === 'unchecked'
-                    ? 'non vérifié par la source : jamais proposé au vendeur'
+                    ? 'non vérifié par la source\u00a0: jamais proposé au vendeur'
                     : statuses?.[key] === 'unread'
                       ? 'la source n’a pas pu être lue pour cette adresse'
                       : 'rien à montrer pour cette adresse'}
@@ -168,7 +168,7 @@ export function NeighbourhoodChoicePanel({
         </ul>
       ) : null}
       <p className={hintText}>
-        Ordre au Live : Introduction → Votre bien → Votre valeur perçue →{' '}
+        Ordre au Live&nbsp;: Introduction → Votre bien → Votre valeur perçue →{' '}
         <b>les blocs du quartier cochés</b> → les concurrents → … → <b>Ventes réelles</b> → Analyse
         des prix → Conclusion.
       </p>

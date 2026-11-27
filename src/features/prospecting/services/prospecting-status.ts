@@ -132,7 +132,7 @@ export function applyProspectingMove(
   }
   if (move === 'declined') {
     return status === 'mandate' || status === 'collaboration' || status === 'declined'
-      ? refuse('« Pas intéressé » ne se note plus pour ce concurrent.')
+      ? refuse('«\u00a0Pas intéressé\u00a0» ne se note plus pour ce concurrent.')
       : { ok: true, patch: { prospecting_declined_at: now } };
   }
   // Retour d'un cran. Annuler « pas intéressé » n'efface que lui : le concurrent retrouve le

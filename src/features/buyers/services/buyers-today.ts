@@ -112,7 +112,7 @@ export function buyerTaskWhat(task: SuiviTask, today: string): string {
           : `Le vendeur a répondu à l’offre le ${dayLabel(task.dueOn)}`;
     case 'offer_expiry': {
       const last = task.validUntil ?? task.dueOn;
-      return `L’offre expire ${last <= today ? 'ce soir' : 'demain'} : le vendeur n’a pas répondu`;
+      return `L’offre expire ${last <= today ? 'ce soir' : 'demain'}\u00a0: le vendeur n’a pas répondu`;
     }
     case 'visit_report':
       return ['Compte rendu de visite à saisir', task.propertyLabel ?? null]
@@ -121,12 +121,12 @@ export function buyerTaskWhat(task: SuiviTask, today: string): string {
     case 'visit': {
       const where = taskProperty(task);
       return (task.count ?? 1) > 1
-        ? `${task.count} visites demandées : ${where}`
-        : `Visite demandée : ${where}`;
+        ? `${task.count} visites demandées\u00a0: ${where}`
+        : `Visite demandée\u00a0: ${where}`;
     }
     case 'propose_buyers': {
       const figures = task.figures ? propertyFigures(task.figures) : null;
-      return `Un bien à proposer : ${taskProperty(task)}${figures ? ` (${figures})` : ''}`;
+      return `Un bien à proposer\u00a0: ${taskProperty(task)}${figures ? ` (${figures})` : ''}`;
     }
     case 'buyer_watch': {
       const count = task.count ?? 1;
@@ -143,7 +143,7 @@ export function buyerTaskWhat(task: SuiviTask, today: string): string {
     case 'buyer_recontact':
       return `Aucun échange depuis ${plural(task.sinceDays ?? 30, 'jour', 'jours')}`;
     case 'buyer_meeting':
-      return 'Prêt à visiter : un point à proposer, à l’agence ou en visio';
+      return 'Prêt à visiter\u00a0: un point à proposer, à l’agence ou en visio';
     case 'buyer_weekly_report': {
       const start = task.weekStart ?? addDays(task.dueOn, -7);
       return `Point de la semaine du ${dayLabel(start)} au ${dayLabel(addDays(start, 6))} à envoyer`;

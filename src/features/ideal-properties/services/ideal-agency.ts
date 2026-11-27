@@ -17,4 +17,4 @@ export function idealAgencyCandidates(
 }
 
 export const NOT_PROPOSABLE =
-  'Ce bien ne se propose pas : seul un mandat signé, sans offre acceptée, se propose à un acquéreur.';
+  'Ce bien ne se propose pas\u00a0: seul un mandat signé, sans offre acceptée, se propose à un acquéreur.';

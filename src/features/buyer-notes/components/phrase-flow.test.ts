@@ -115,7 +115,7 @@ describe('« Ce que j’ai compris » : les pastilles à toucher', () => {
     const html = render(null);
     expect(html).toContain('>Ce que j’ai compris<');
     // M151 — tout ce que la lecture propose est à vérifier (relecture du lot D).
-    expect(html).toContain('>À vérifier : touchez pour corriger<');
+    expect(html).toContain('>À vérifier\u00a0: touchez pour corriger<');
     expect(html.match(/data-verify="true"/g)).toHaveLength(chips.length);
     // Les lecteurs d'écran entendent ce que la couleur dit, et « à vérifier ».
     expect(html).toContain('aria-label="Au calme, ce qui compte pour eux, à vérifier"');
@@ -134,7 +134,7 @@ describe('« Ce que j’ai compris » : les pastilles à toucher', () => {
     expect(html).toContain('data-testid="chip-correction"');
     expect(tag(html, 'chip-input')).toContain('value="M. et Mme Arnaud"');
     expect(tag(html, 'chip-source')).not.toBe('');
-    expect(html).toContain('d’après : « ARNAUD (M. et Mme) »');
+    expect(html).toContain('d’après\u00a0: «\u00a0ARNAUD (M. et Mme)\u00a0»');
     // Proposée par la lecture : « À vérifier ».
     expect(tag(html, 'chip-verify')).not.toBe('');
     // Le nom ne se retire pas : il se corrige.

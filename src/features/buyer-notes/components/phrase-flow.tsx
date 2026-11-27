@@ -58,9 +58,9 @@ type Reading = {
   from: string | null;
 };
 
-const QUIT_TITLE = 'Quitter sans créer la fiche ?';
+const QUIT_TITLE = 'Quitter sans créer la fiche\u202f?';
 const QUIT_TEXT =
-  'La proposition sera perdue : rien n’a été enregistré. Pour la retrouver, il faudra relancer la lecture de vos notes.';
+  'La proposition sera perdue\u00a0: rien n’a été enregistré. Pour la retrouver, il faudra relancer la lecture de vos notes.';
 const NOT_SAVED = 'La fiche n’a pas pu être enregistrée. Réessayez.';
 
 const CHIP: Record<ChipTone, string> = {
@@ -139,7 +139,7 @@ export function PhraseChips({
           className="text-[13px] text-[#5B6380] stage:text-white/60"
           data-testid="phrase-verify"
         >
-          À vérifier : touchez pour corriger
+          À vérifier&nbsp;: touchez pour corriger
         </span>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -331,7 +331,7 @@ function ChipCorrection({
           </div>
           {!editor.starred && !(editor.canStar && starsLeft) ? (
             <p className="text-sm text-[#5B6380] stage:text-white/60">
-              {NOTE_STARS_MAX} indispensables au plus : retirez-en un d’abord.
+              {NOTE_STARS_MAX} indispensables au plus&nbsp;: retirez-en un d’abord.
             </p>
           ) : null}
         </div>
@@ -342,7 +342,7 @@ function ChipCorrection({
           className={`${socleBtnOutline} self-start`}
           onClick={() => apply({ type: 'cash' })}
         >
-          Noter « Financement validé »
+          Noter «&nbsp;Financement validé&nbsp;»
         </button>
       ) : null}
       {chip.source ? (
@@ -350,7 +350,7 @@ function ChipCorrection({
           className="text-[13px] italic text-[#5B6380] stage:text-white/60"
           data-testid="chip-source"
         >
-          d’après : «&nbsp;{chip.source}&nbsp;»
+          d’après&nbsp;: «&nbsp;{chip.source}&nbsp;»
         </p>
       ) : null}
       {removable ? (
@@ -593,7 +593,7 @@ export function PhraseFlow({
           rows={rows}
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="Par exemple : M. et Mme Martin. Une maison de 5 pièces à Vence, avec jardin, au calme, jusqu’à 800 000 €."
+          placeholder="Par exemple&nbsp;: M. et Mme Martin. Une maison de 5 pièces à Vence, avec jardin, au calme, jusqu’à 800 000 €."
           className="w-full resize-none rounded-[20px] border-2 border-brand-deep bg-white p-4 text-lg leading-[1.45] text-brand-darker placeholder:text-[#8A90A6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand stage:border-white/40 stage:bg-white/10 stage:text-white"
           data-testid="phrase-text"
         />
@@ -631,8 +631,8 @@ export function PhraseFlow({
             role="status"
             data-testid="phrase-dictate-hint"
           >
-            Touchez le micro de votre clavier, puis parlez : la dictée est celle de votre appareil.
-            Sur un ordinateur, lancez la dictée de votre système.
+            Touchez le micro de votre clavier, puis parlez&nbsp;: la dictée est celle de votre
+            appareil. Sur un ordinateur, lancez la dictée de votre système.
           </p>
         ) : null}
         <input
@@ -781,8 +781,8 @@ export function PhraseFlow({
             className="rounded-[14px] bg-[#E9ECF5] px-3.5 py-2.5 text-sm text-[#3B4466] stage:bg-white/10 stage:text-white/80"
             data-testid="notes-not-kept"
           >
-            Cette proposition n’est pas gardée : si vous quittez ou rechargez la page, elle sera
-            perdue.
+            Cette proposition n’est pas gardée&nbsp;: si vous quittez ou rechargez la page, elle
+            sera perdue.
           </p>
         </>
       ) : null}
@@ -805,7 +805,7 @@ export function PhraseFlow({
             ) : null}
             {missing.length > 0 ? (
               <p className="text-center text-sm text-[#7A2E08] stage:text-orange-300" role="status">
-                Il manque {missing.join(' et ')} : touchez la pastille orange.
+                Il manque {missing.join(' et ')}&nbsp;: touchez la pastille orange.
               </p>
             ) : null}
             <button

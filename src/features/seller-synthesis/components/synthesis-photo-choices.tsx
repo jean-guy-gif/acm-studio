@@ -51,7 +51,7 @@ export function SynthesisPhotoChoices({
       <legend className="text-sm font-semibold text-zinc-800">Photos des concurrents</legend>
       <p className={hintText}>
         {hint ??
-          'Chaque photo est celle de l’annonce, telle que le vendeur l’a vue pendant le rendez-vous. Elle appartient à son auteur : cochez « Sans photo » pour la retirer du document et du lien.'}
+          'Chaque photo est celle de l’annonce, telle que le vendeur l’a vue pendant le rendez-vous. Elle appartient à son auteur\u00a0: cochez «\u00a0Sans photo\u00a0» pour la retirer du document et du lien.'}
       </p>
       <ul className="flex flex-col gap-1.5">
         {competitors.map((item) => (

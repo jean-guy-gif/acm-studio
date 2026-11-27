@@ -279,8 +279,8 @@ export function seenLine(counts: Record<'sent' | 'visited' | 'refused', number>)
     counts.refused > 0 ? `${counts.refused} refusé${s(counts.refused)}` : null,
   ].filter(Boolean);
   return total > 1
-    ? `${total} biens retirés parce que déjà vus avec lui : ${why.join(', ')}.`
-    : `1 bien retiré parce que déjà vu avec lui : ${why.join(', ')}.`;
+    ? `${total} biens retirés parce que déjà vus avec lui\u00a0: ${why.join(', ')}.`
+    : `1 bien retiré parce que déjà vu avec lui\u00a0: ${why.join(', ')}.`;
 }
 
 // Le compte, par raison, des biens d'une liste que l'acquéreur a déjà vus.
@@ -327,9 +327,9 @@ export function isClosedForBuyer(reason: CurrentSeenReason | undefined): boolean
 
 export function currentSeenLabel(reason: CurrentSeenReason | undefined): string | null {
   if (reason === 'refused')
-    return 'Refusé par lui : il ne sera pas repris dans sa prochaine sélection.';
+    return 'Refusé par lui\u00a0: il ne sera pas repris dans sa prochaine sélection.';
   if (reason === 'dismissed') {
-    return 'Écarté pour lui : il ne sera pas repris dans sa prochaine sélection.';
+    return 'Écarté pour lui\u00a0: il ne sera pas repris dans sa prochaine sélection.';
   }
   return reason === 'visited' ? 'Déjà visité.' : null;
 }

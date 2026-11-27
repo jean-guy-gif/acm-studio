@@ -99,7 +99,7 @@ export function defaultBuyerLetter(
 ): BuyerLetterTexts {
   const features = matchingFeatures(facts, criteria);
   const subject = features
-    ? `J’accompagne une recherche qui correspond aux caractéristiques de votre bien : ${features}.`
+    ? `J’accompagne une recherche qui correspond aux caractéristiques de votre bien\u00a0: ${features}.`
     : 'J’accompagne une recherche qui correspond aux caractéristiques de votre bien.';
   return {
     title: 'Une recherche qui correspond à *votre bien*',
@@ -124,7 +124,7 @@ export function buyerLetterVersion(
 }
 
 export const COLLEAGUE_QUESTION =
-  'Votre mandat est-il ouvert à la collaboration pour une visite de mon acquéreur ?';
+  'Votre mandat est-il ouvert à la collaboration pour une visite de mon acquéreur\u202f?';
 
 // Mission 120 B — le dossier de collaboration au confrère : qui écrit, le projet sans l'acquéreur
 // (le secteur et ce que la fiche demande ET que l'annonce dit), et une seule question. Aucune
@@ -143,7 +143,7 @@ export function defaultBuyerColleagueLetter(
     title: 'Une recherche qui correspond\nà *votre exclusivité.*',
     letter: [
       'Cher confrère,',
-      `${who}J’accompagne une recherche${where} qui correspond aux caractéristiques de votre exclusivité${features ? ` : ${features}` : ''}.`,
+      `${who}J’accompagne une recherche${where} qui correspond aux caractéristiques de votre exclusivité${features ? `\u00a0: ${features}` : ''}.`,
     ].join('\n\n'),
     question: COLLEAGUE_QUESTION,
     contactHook: 'Votre réponse, en un appel',
@@ -231,7 +231,7 @@ export function colleagueAddressee(label: string): { lead: string; nameLines: st
 const PROMISES = [/\bcertaine?s?\b/i, /\boffres?\b/i, /\bprête?s?\b/i];
 
 export const BUYER_LETTER_FORBIDDEN_MESSAGE =
-  'Le courrier ne nomme ni l’acquéreur ni son budget, et ne promet rien (« certain », « offre », « prête ») : retirez ce mot.';
+  'Le courrier ne nomme ni l’acquéreur ni son budget, et ne promet rien («\u00a0certain\u00a0», «\u00a0offre\u00a0», «\u00a0prête\u00a0»)\u00a0: retirez ce mot.';
 
 const words = (value: string): string[] =>
   value

@@ -131,7 +131,9 @@ describe('readAddressView', () => {
         }),
       ),
     ).toEqual({ kind: 'failed' });
-    expect(reported.at(-1)).toBe('Academia : unavailable — HTTP 400 · demande · Demande invalide');
+    expect(reported.at(-1)).toBe(
+      'Academia\u00a0: unavailable — HTTP 400 · demande · Demande invalide',
+    );
     expect(
       await read({}, fakeAcademia({ readView: [{ status: 200, body: { autre: 1 } }] })),
     ).toEqual({

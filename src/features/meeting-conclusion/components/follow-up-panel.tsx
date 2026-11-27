@@ -237,7 +237,7 @@ export function FollowUpPanel({
               {copied === 'yes' ? <span className={okText}>Message copié.</span> : null}
               {copied === 'failed' ? (
                 <span className={errorText}>
-                  La copie a échoué : sélectionnez le texte et copiez-le à la main.
+                  La copie a échoué&nbsp;: sélectionnez le texte et copiez-le à la main.
                 </span>
               ) : null}
             </>
@@ -292,7 +292,7 @@ export function FollowUpPanel({
             />
             <span className="text-xs text-zinc-500 stage:text-white/60">
               {motive === 'thinking_price'
-                ? 'Proposée dans 1 mois : il réfléchit au prix.'
+                ? 'Proposée dans 1 mois\u00a0: il réfléchit au prix.'
                 : 'Proposée dans 7 jours.'}
             </span>
           </label>

@@ -66,7 +66,10 @@ const requestReply = z
     const raw = (reply.statut ?? reply.etat ?? '').trim().toLowerCase();
     const etat = STATES[raw];
     if (!etat) {
-      ctx.addIssue({ code: 'custom', message: `statut inconnu : ${raw.slice(0, 40) || 'absent'}` });
+      ctx.addIssue({
+        code: 'custom',
+        message: `statut inconnu\u00a0: ${raw.slice(0, 40) || 'absent'}`,
+      });
       return z.NEVER;
     }
     return { id: reply.id, etat };
@@ -129,7 +132,7 @@ async function send(
         headers: new Headers(),
         note: controller.signal.aborted
           ? `aucune réponse en ${Math.round(timeoutMs / 1000)} s`
-          : `réseau : ${error instanceof Error ? error.message : 'échec'}${typeof cause === 'string' ? ` (${cause})` : ''}`,
+          : `réseau\u00a0: ${error instanceof Error ? error.message : 'échec'}${typeof cause === 'string' ? ` (${cause})` : ''}`,
       };
     } finally {
       clearTimeout(timer);
@@ -173,7 +176,7 @@ function offContract(raw: NonNullable<Raw>, issue?: string): AcademiaFailure {
   return {
     ok: false,
     reason: 'unavailable',
-    detail: `HTTP ${raw.status} · réponse hors contrat · champs : ${fields || 'aucun'}${issue ? ` · ${issue}` : ''}`,
+    detail: `HTTP ${raw.status} · réponse hors contrat · champs\u00a0: ${fields || 'aucun'}${issue ? ` · ${issue}` : ''}`,
   };
 }
 

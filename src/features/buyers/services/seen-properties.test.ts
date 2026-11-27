@@ -199,13 +199,13 @@ describe('la ligne dite au conseiller', () => {
 
   it('dit le nombre et pourquoi, au singulier comme au pluriel', () => {
     expect(seenLine({ sent: 1, visited: 0, refused: 0 })).toBe(
-      '1 bien retiré parce que déjà vu avec lui : 1 déjà envoyé.',
+      '1 bien retiré parce que déjà vu avec lui\u00a0: 1 déjà envoyé.',
     );
     expect(seenLine({ sent: 2, visited: 1, refused: 1 })).toBe(
-      '4 biens retirés parce que déjà vus avec lui : 2 déjà envoyés, 1 visité, 1 refusé.',
+      '4 biens retirés parce que déjà vus avec lui\u00a0: 2 déjà envoyés, 1 visité, 1 refusé.',
     );
     expect(seenLine(countSeen(['sent', undefined, 'refused', 'dismissed', 'sent']))).toBe(
-      '3 biens retirés parce que déjà vus avec lui : 2 déjà envoyés, 1 refusé.',
+      '3 biens retirés parce que déjà vus avec lui\u00a0: 2 déjà envoyés, 1 refusé.',
     );
   });
 });
@@ -345,7 +345,7 @@ describe('sa sélection retenue, pas encore reçue, sur les biens idéaux', () =
     expect(isClosedForBuyer('visited')).toBe(false);
     expect(isClosedForBuyer(undefined)).toBe(false);
     expect(currentSeenLabel('refused')).toBe(
-      'Refusé par lui : il ne sera pas repris dans sa prochaine sélection.',
+      'Refusé par lui\u00a0: il ne sera pas repris dans sa prochaine sélection.',
     );
     expect(currentSeenLabel('visited')).toBe('Déjà visité.');
     expect(currentSeenLabel(undefined)).toBeNull();

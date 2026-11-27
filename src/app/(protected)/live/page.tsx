@@ -42,8 +42,8 @@ export default async function LivePage() {
         <span className={kickerLabel}>Rendez-vous vendeur</span>
         <h1 className={pageTitle}>Live</h1>
         <p className={pageSubtitle}>
-          Choisissez un dossier : la présentation s&apos;ouvre en plein cadre, prête à animer le
-          rendez-vous (bascule Clair/Sombre et plein écran sur place).
+          Choisissez un dossier&nbsp;: la présentation s&apos;ouvre en plein cadre, prête à animer
+          le rendez-vous (bascule Clair/Sombre et plein écran sur place).
         </p>
       </div>
 
@@ -53,7 +53,7 @@ export default async function LivePage() {
             Aucun dossier prêt pour le moment.
           </p>
           <p>
-            Un dossier apparaît ici dès qu&apos;il est prêt : bien vendeur, au moins trois
+            Un dossier apparaît ici dès qu&apos;il est prêt&nbsp;: bien vendeur, au moins trois
             concurrents exploitables et décision de prix enregistrée. Terminez-en un dans la{' '}
             <Link href="/builder" className={link}>
               Préparation

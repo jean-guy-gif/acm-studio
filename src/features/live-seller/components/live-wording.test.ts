@@ -53,7 +53,7 @@ describe('le Live parle au vendeur, à la 2e personne (mission 89)', () => {
     expect(shown('live-page-price.tsx')).toContain('{t.label}');
     expect(FR.priceReveal.legend).toBe('Selon vous, ce prix est…');
     expect(shown('live-page-price-reveal-pilot.tsx')).toContain('{t.legend}');
-    expect(FR.duration.why).toBe('Selon vous, pourquoi ?');
+    expect(FR.duration.why).toBe('Selon vous, pourquoi\u202f?');
     expect(FR.duration.label).toBe('La durée que vous imaginez');
     expect(shown('live-page-duration.tsx')).toContain('{t.why}');
     expect(shown('live-page-duration.tsx')).toContain('{t.label}');
@@ -205,7 +205,7 @@ describe('le vendeur reformule son prix, puis lit le marché (mission 94)', () =
   it('l’écran du prix reformulé ne révèle rien et ne se corrige plus', () => {
     const screen = shown('live-page-revised.tsx');
     expect(FR.revised.question).toBe(
-      'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente ?',
+      'Après avoir vu ces biens, à quel prix mettriez-vous votre bien en vente\u202f?',
     );
     expect(screen).toContain('{t.question}');
     expect(screen).toContain('LiveLockedAnswer');

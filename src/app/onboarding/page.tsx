@@ -55,7 +55,7 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
               Bienvenue dans ACM Studio
             </h1>
             <p className={pageSubtitle}>
-              Configuration initiale : créez votre agence pour commencer.
+              Configuration initiale&nbsp;: créez votre agence pour commencer.
             </p>
           </div>
           {error ? (

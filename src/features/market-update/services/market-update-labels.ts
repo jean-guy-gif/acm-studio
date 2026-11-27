@@ -23,7 +23,7 @@ export const MARKET_UPDATE_STATE_LABELS: Record<MarketUpdateState, string> = {
   raised: 'Hausse',
   unread: 'Non relu',
   probable_sale: 'Vente probable',
-  withdrawn: 'Retiré sans vente',
+  withdrawn: 'Probablement retiré sans vente',
   gone: 'Retirée',
   newcomer: 'Nouveau venu',
 };
@@ -34,5 +34,5 @@ export function droppedSinceMeetingLabel(summary: MarketUpdateSummary): string |
     (item) => !item.newcomer && item.meetingPrice != null && item.meetingPriceSource !== 'current',
   ).length;
   if (compared === 0) return null;
-  return `Ont baissé depuis le rendez-vous : ${summary.counts.dropped} sur ${compared}`;
+  return `Ont baissé depuis le rendez-vous\u00a0: ${summary.counts.dropped} sur ${compared}`;
 }

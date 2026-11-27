@@ -56,7 +56,7 @@ export default async function AdminPage() {
                 L’équipe
               </span>
               <span className="text-sm text-zinc-500 stage:text-white/55">
-                L’activité de l’agence : où en est chacun, ce qui dort, les mandats signés.
+                L’activité de l’agence&nbsp;: où en est chacun, ce qui dort, les mandats signés.
               </span>
             </span>
           </Link>
@@ -87,10 +87,10 @@ export default async function AdminPage() {
           <span className={kickerLabel}>Lecture par l’IA · ce mois-ci</span>
           <p className="font-title text-lg font-semibold text-zinc-900 stage:text-white">
             {!aiBudget
-              ? 'Le forfait n’a pas pu être lu : rechargez la page.'
+              ? 'Le forfait n’a pas pu être lu\u00a0: rechargez la page.'
               : aiOpen
                 ? forfaitUsageLabel(aiBudgetUsage(aiBudget))
-                : 'Pas encore ouverte pour votre agence : l’équipe ACM Studio l’ouvre à votre demande.'}
+                : 'Pas encore ouverte pour votre agence\u00a0: l’équipe ACM Studio l’ouvre à votre demande.'}
           </p>
         </div>
       ) : null}
@@ -118,8 +118,8 @@ export default async function AdminPage() {
                 </p>
               ) : null}
               <p className="text-sm text-zinc-500 stage:text-white/55">
-                Les recherches « Chercher les concurrents » de l’agence ce mois-ci, sur son forfait.
-                Le compteur repart à zéro le 1er du mois.
+                Les recherches «&nbsp;Chercher les concurrents&nbsp;» de l’agence ce mois-ci, sur
+                son forfait. Le compteur repart à zéro le 1er du mois.
               </p>
             </>
           ) : (

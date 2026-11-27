@@ -3,7 +3,7 @@
 // navigateur peut alors poser la question), et liens de l'application (menu compris).
 
 export const UNSAVED_CHANGES_MESSAGE =
-  'Des modifications ne sont pas enregistrées. Quitter cette page ?';
+  'Des modifications ne sont pas enregistrées. Quitter cette page\u202f?';
 
 // Ce clic va-t-il faire quitter la page ? Pur, pour être testé sans navigateur.
 // Ne quittent pas : un lien ouvert dans un nouvel onglet, un téléchargement, un clic modifié

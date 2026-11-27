@@ -23,7 +23,7 @@ export function pendingImportsTitle(count: number): string {
 }
 
 export const PENDING_IMPORTS_HINT =
-  'Ils sont enregistrés : rien n’est perdu. « Réessayer » relit l’annonce, et crée le concurrent depuis les données de la recherche si la page reste illisible.';
+  'Ils sont enregistrés\u00a0: rien n’est perdu. «\u00a0Réessayer\u00a0» relit l’annonce, et crée le concurrent depuis les données de la recherche si la page reste illisible.';
 
 // « Appartement · 3 pièces · 65 m² · Cagnes-sur-Mer · 336 000 € » — ce que la recherche a dit du
 // bien, sans le titre du portail. Un champ absent est omis.
@@ -45,5 +45,5 @@ export function pendingImportLabel(snapshot: SearchSnapshot | null): string {
 // qu'aucune lecture n'a échoué (onglet fermé avant la lecture).
 export function pendingCauseLabel(cause: string | null): string | null {
   const label = cause ? READ_FAILURE_LABELS[cause as ReadFailureCause | 'no_price'] : undefined;
-  return label ? `Dernier essai : ${label}.` : null;
+  return label ? `Dernier essai\u00a0: ${label}.` : null;
 }

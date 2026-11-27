@@ -196,7 +196,7 @@ describe('l’anneau vide', () => {
     expect(html).not.toContain('border-indigo-200');
     expect(html).not.toContain('la liste ci-dessous');
     expect(html).toContain(
-      `Moins de 5 ventes comparables à moins de 800${NB}m : Academia ne donne pas de liste.`,
+      `Moins de 5 ventes comparables à moins de 800${NB}m\u00a0: Academia ne donne pas de liste.`,
     );
     expect(html).not.toContain('Aucune vente comparable relevée');
     expect(html.indexOf('address-view-rings')).toBeLessThan(html.indexOf('address-view-no-ring'));

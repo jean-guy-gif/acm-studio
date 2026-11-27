@@ -146,8 +146,8 @@ export async function AllBuyers({ q, archive, vue, etat }: AllBuyersQuery) {
           <span className={kickerLabel}>Acquéreurs</span>
           <h1 className={pageTitle}>Les acquéreurs de l’agence</h1>
           <p className={pageSubtitle}>
-            Ce que chacun cherche, noté en découverte ; « Rapprocher » le confronte à vos mandats,
-            vos vendeurs à relancer et vos concurrents à prospecter.
+            Ce que chacun cherche, noté en découverte&#x202f;; «&nbsp;Rapprocher&nbsp;» le confronte
+            à vos mandats, vos vendeurs à relancer et vos concurrents à prospecter.
           </p>
         </div>
         <Link href="/acquereurs/nouveau" className={btnPrimary}>
@@ -157,7 +157,7 @@ export async function AllBuyers({ q, archive, vue, etat }: AllBuyersQuery) {
 
       {archive ? (
         <p role="status" className={alertOk} data-testid="buyer-archived-notice">
-          La fiche de {archive} est archivée : elle n’apparaît plus dans vos listes.
+          La fiche de {archive} est archivée&nbsp;: elle n’apparaît plus dans vos listes.
         </p>
       ) : null}
 
@@ -171,19 +171,19 @@ export async function AllBuyers({ q, archive, vue, etat }: AllBuyersQuery) {
         </p>
       ) : month?.failed ? (
         <p role="alert" className="text-sm font-semibold text-red-700">
-          « Ce mois-ci » n’a pas pu être lu : rechargez la page.
+          «&nbsp;Ce mois-ci&nbsp;» n’a pas pu être lu&nbsp;: rechargez la page.
         </p>
       ) : null}
 
       {/* Mission 145 — les mandats à proposer n'ont pas pu être lus : la liste le dit (M98). */}
       {loopProposals?.failed ? (
         <p role="alert" className={alertError}>
-          Les mandats à proposer à vos acquéreurs n’ont pas pu être lus : rechargez la page.
+          Les mandats à proposer à vos acquéreurs n’ont pas pu être lus&nbsp;: rechargez la page.
         </p>
       ) : null}
       {relaunch?.failed ? (
         <p role="alert" className={alertError}>
-          Les relances de vos acquéreurs n’ont pas pu être lues : rechargez la page.
+          Les relances de vos acquéreurs n’ont pas pu être lues&nbsp;: rechargez la page.
         </p>
       ) : null}
       <BuyerList

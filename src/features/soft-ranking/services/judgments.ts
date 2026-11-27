@@ -207,7 +207,7 @@ function photoNote(judgment: SoftJudgment): string | null {
     // L'annonce dit déjà le contraire : les photos vont dans le même sens.
     return judgment.verdict === 'contrary'
       ? `comme sur ${which}, à vérifier`
-      : `à regarder : ${which} ${one ? 'montre' : 'montrent'} peut-être le contraire`;
+      : `à regarder\u00a0: ${which} ${one ? 'montre' : 'montrent'} peut-être le contraire`;
   }
   const shows = `${which} ${one ? 'le montre' : 'le montrent'}`;
   switch (judgment.verdict) {
@@ -325,8 +325,8 @@ function textRow(judgment: SoftJudgment): WhyRow {
             judgment.quote == null
               ? `l’annonce le dit ${WITHHELD}`
               : judgment.toVerify
-                ? `l’étiquette du portail dit « ${judgment.quote} » · à vérifier`
-                : `« ${judgment.quote} »`,
+                ? `l’étiquette du portail dit «\u00a0${judgment.quote}\u00a0» · à vérifier`
+                : `«\u00a0${judgment.quote}\u00a0»`,
         };
       case 'reserve':
         return {
@@ -335,7 +335,7 @@ function textRow(judgment: SoftJudgment): WhyRow {
           text:
             judgment.quote == null || judgment.counterQuote == null
               ? `avec réserve ${WITHHELD}`
-              : `avec réserve : « ${judgment.quote} » mais « ${judgment.counterQuote} »`,
+              : `avec réserve\u00a0: «\u00a0${judgment.quote}\u00a0» mais «\u00a0${judgment.counterQuote}\u00a0»`,
         };
       case 'contrary':
         return {
@@ -344,7 +344,7 @@ function textRow(judgment: SoftJudgment): WhyRow {
           text:
             judgment.quote == null
               ? `le contraire ${WITHHELD}`
-              : `le contraire : « ${judgment.quote} »`,
+              : `le contraire\u00a0: «\u00a0${judgment.quote}\u00a0»`,
         };
       case 'unread':
         return { mark: '?', label, text: 'l’annonce n’a pas pu être lue' };
@@ -361,7 +361,7 @@ export function saysNothing(judgments: readonly SoftJudgment[]): boolean {
 
 export function mentionsLine(mentions: readonly string[]): string {
   return mentions.length > 0
-    ? `L’annonce mentionne ${mentions.map((word) => `« ${word} »`).join(', ')}`
+    ? `L’annonce mentionne ${mentions.map((word) => `«\u00a0${word}\u00a0»`).join(', ')}`
     : 'L’annonce ne mentionne aucun de leurs mots';
 }
 
@@ -397,10 +397,11 @@ export function reasonsOfRanking(ranking: SoftRanking): Record<string, SoftReaso
 // ✓ Au calme, ? Une vue ».
 export function whySummary(reasons: SoftReasons | undefined): string | null {
   if (reasons == null) return null;
-  if ('noText' in reasons) return 'Ce qui compte pour eux : aucun texte d’annonce à lire';
-  if ('mentions' in reasons) return `Ce qui compte pour eux : ${mentionsLine(reasons.mentions)}`;
+  if ('noText' in reasons) return 'Ce qui compte pour eux\u00a0: aucun texte d’annonce à lire';
+  if ('mentions' in reasons)
+    return `Ce qui compte pour eux\u00a0: ${mentionsLine(reasons.mentions)}`;
   if (reasons.judgments.length === 0) return null;
-  return `Ce qui compte pour eux : ${whyRows(reasons.judgments)
+  return `Ce qui compte pour eux\u00a0: ${whyRows(reasons.judgments)
     .map((row) => `${row.mark} ${row.label}`)
     .join(', ')}`;
 }

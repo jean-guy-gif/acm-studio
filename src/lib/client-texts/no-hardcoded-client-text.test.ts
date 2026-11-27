@@ -120,7 +120,12 @@ function frenchTexts(path: string): string[] {
       ts.isTemplateHead(node) ||
       ts.isTemplateMiddle(node) ||
       ts.isTemplateTail(node)
-        ? node.text.trim()
+        ? // Lot A (27/11) — les espaces insécables comptent pour des espaces ; le texte JSX se lit
+          // comme React l'affiche (entités décodées, lignes réunies), une chaîne garde ses tabulations.
+          (ts.isJsxText(node)
+            ? node.text.replace(/&nbsp;|&#x202f;/gi, ' ').replace(/\s+/g, ' ')
+            : node.text.replace(/[\u00a0\u202f]/g, ' ')
+          ).trim()
         : null;
     if (text && FRENCH.test(text) && !isClassList(text) && !allowed.has(text)) {
       const line = file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1;

@@ -145,7 +145,7 @@ describe('buildLiveSequence', () => {
 
   it('liste les titres des écrans sans aucun montant', () => {
     const sequence = buildLiveSequence(six.slice(0, 1), true);
-    expect(sequence.screenTitles).toContain('Concurrent 1 — À quel prix ?');
+    expect(sequence.screenTitles).toContain('Concurrent 1 — À quel prix\u202f?');
     expect(sequence.screenTitles.join(' ')).not.toMatch(/\d{3}|€/);
   });
 });
@@ -207,7 +207,7 @@ describe('mission 92 — un Live sans écrans inutiles', () => {
   it('prévient au-delà de 6 concurrents, sans rien bloquer', () => {
     const sequence = buildLiveSequence(seven, true);
     expect(tooManyCompetitorsNote(sequence, 7)).toBe(
-      '7 concurrents : environ 55 minutes de Live. Nous conseillons 6 au plus.',
+      '7 concurrents\u00a0: environ 55 minutes de Live. Nous conseillons 6 au plus.',
     );
     expect(tooManyCompetitorsNote(buildLiveSequence(seven.slice(0, 6), true), 6)).toBeNull();
   });
@@ -220,9 +220,11 @@ describe('mission 92 — un Live sans écrans inutiles', () => {
     );
     expect(withOneUnknown.totalScreens).toBe(withAll.totalScreens - 1);
     expect(withOneUnknown.screenTitles).not.toContain(
-      'Concurrent 2 — Pourquoi toujours en vente ?',
+      'Concurrent 2 — Pourquoi toujours en vente\u202f?',
     );
-    expect(withOneUnknown.screenTitles).toContain('Concurrent 1 — Pourquoi toujours en vente ?');
+    expect(withOneUnknown.screenTitles).toContain(
+      'Concurrent 1 — Pourquoi toujours en vente\u202f?',
+    );
   });
 });
 
@@ -270,10 +272,10 @@ describe('mission 95 — le rythme du Live et sa durée estimée', () => {
 
   it('l’avertissement au-delà de 6 concurrents reprend la durée du rythme choisi', () => {
     expect(tooManyCompetitorsNote(screens(7, 'accelerated'), 7)).toBe(
-      '7 concurrents : environ 43 minutes de Live. Nous conseillons 6 au plus.',
+      '7 concurrents\u00a0: environ 43 minutes de Live. Nous conseillons 6 au plus.',
     );
     expect(tooManyCompetitorsNote(screens(7, 'complete'), 7)).toBe(
-      '7 concurrents : environ 55 minutes de Live. Nous conseillons 6 au plus.',
+      '7 concurrents\u00a0: environ 55 minutes de Live. Nous conseillons 6 au plus.',
     );
   });
 
@@ -282,10 +284,10 @@ describe('mission 95 — le rythme du Live et sa durée estimée', () => {
     expect(sequence.parts.find((part) => part.key === 'competitors')?.screenCount).toBe(
       3 * 4 + 2 * 2,
     );
-    expect(sequence.screenTitles).toContain('Concurrent 3 — Pourquoi toujours en vente ?');
+    expect(sequence.screenTitles).toContain('Concurrent 3 — Pourquoi toujours en vente\u202f?');
     expect(sequence.screenTitles).toContain(
-      'Concurrent 4 — Un sérieux concurrent, et à quel prix ?',
+      'Concurrent 4 — Un sérieux concurrent, et à quel prix\u202f?',
     );
-    expect(sequence.screenTitles).not.toContain('Concurrent 4 — Pourquoi toujours en vente ?');
+    expect(sequence.screenTitles).not.toContain('Concurrent 4 — Pourquoi toujours en vente\u202f?');
   });
 });

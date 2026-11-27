@@ -16,11 +16,11 @@ function Distribution({ title, data }: { title: string; data: EnergyDistribution
             key={rating}
             className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-zinc-700 stage:border-white/15 stage:bg-white/5 stage:text-white/80"
           >
-            {rating} : {data.distribution[rating]}
+            {rating}&nbsp;: {data.distribution[rating]}
           </span>
         ))}
         <span className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-zinc-500 stage:border-white/15 stage:bg-white/5 stage:text-white/45">
-          Non renseigné : {data.unknown}
+          Non renseigné&nbsp;: {data.unknown}
         </span>
       </div>
     </section>

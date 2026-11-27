@@ -39,7 +39,7 @@ export function BuyerReadinessActions({
     startTransition(async () => {
       const result = await setBuyerFinancing(buyerId, next).catch(() => ({
         ok: false as const,
-        error: 'Le financement n’a pas pu être enregistré : réessayez.',
+        error: 'Le financement n’a pas pu être enregistré\u00a0: réessayez.',
       }));
       if (!result.ok) {
         setError(result.error);
@@ -55,7 +55,7 @@ export function BuyerReadinessActions({
     startTransition(async () => {
       const result = await markBuyerContacted(buyerId).catch(() => ({
         ok: false as const,
-        error: 'Le contact n’a pas pu être noté : réessayez.',
+        error: 'Le contact n’a pas pu être noté\u00a0: réessayez.',
       }));
       if (!result.ok) {
         setError(result.error);

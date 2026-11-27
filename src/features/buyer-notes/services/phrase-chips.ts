@@ -105,7 +105,7 @@ const shorten = (text: string, max: number): string =>
 
 // « Indispensable : piscine ».
 const starLabel = (star: NoteStar): string =>
-  `Indispensable : ${NOTE_STAR_LABELS[star].charAt(0).toLowerCase()}${NOTE_STAR_LABELS[star].slice(1)}`;
+  `Indispensable\u00a0: ${NOTE_STAR_LABELS[star].charAt(0).toLowerCase()}${NOTE_STAR_LABELS[star].slice(1)}`;
 
 // Les pastilles, dans l'ordre de l'écran : qui, ce qu'il cherche, ce qui compte pour eux, ses
 // communes, ses indispensables, puis le reste. Une pastille orange « Son nom ? », « Sa commune ? »
@@ -136,7 +136,7 @@ export function phraseChips(
       : {
           id: 'name',
           tone: 'missing',
-          label: 'Son nom ?',
+          label: 'Son nom\u202f?',
           title: 'Son nom',
           source: null,
           editor: { kind: 'text', field: 'name', value: '' },
@@ -175,7 +175,12 @@ export function phraseChips(
     numberChip('budgetMax', `Jusqu’à ${formatEuro(values.budgetMax)}`, 'Budget maximum', '€');
   }
   if (values.budgetIdeal != null) {
-    numberChip('budgetIdeal', `Idéal : ${formatEuro(values.budgetIdeal)}`, 'Budget idéal', '€');
+    numberChip(
+      'budgetIdeal',
+      `Idéal\u00a0: ${formatEuro(values.budgetIdeal)}`,
+      'Budget idéal',
+      '€',
+    );
   }
   if (values.roomsMin != null) {
     numberChip(
@@ -217,7 +222,7 @@ export function phraseChips(
   const citiesTouched = draft.touched.includes('cities');
   const unknownHint =
     unknown.length > 0 && !citiesTouched
-      ? `${unknown.map((check) => `« ${check.read} »`).join(', ')} : commune non reconnue. Saisissez-la.`
+      ? `${unknown.map((check) => `«\u00a0${check.read}\u00a0»`).join(', ')}\u00a0: commune non reconnue. Saisissez-la.`
       : undefined;
   // M151 — une commune lue sous un autre nom se dit (« lu : … ») ; une commune que le service des
   // communes n'a pas pu vérifier se dit, et sa pastille reste à regarder (M104, M98).
@@ -228,8 +233,8 @@ export function phraseChips(
     ? []
     : proposal.communes.filter((check) => check.status === 'unverified');
   const citiesHint = [
-    ...corrected.map((check) => `${check.name} : lu « ${check.read} »`),
-    ...unverified.map((check) => `« ${check.read} » : commune non vérifiée`),
+    ...corrected.map((check) => `${check.name}\u00a0: lu «\u00a0${check.read}\u00a0»`),
+    ...unverified.map((check) => `«\u00a0${check.read}\u00a0»\u00a0: commune non vérifiée`),
     unknownHint,
   ].filter((part): part is string => part != null);
   if (values.cities && values.cities.length > 0) {
@@ -238,7 +243,7 @@ export function phraseChips(
       tone: unverified.length > 0 ? 'missing' : 'plain',
       label:
         unverified.length > 0
-          ? `${values.cities.join(', ')} : à vérifier`
+          ? `${values.cities.join(', ')}\u00a0: à vérifier`
           : values.cities.join(', '),
       title: BUYER_CRITERION_LABELS.cities,
       source: sourceOf('cities'),
@@ -249,7 +254,7 @@ export function phraseChips(
       chips.push({
         id: 'cities:unknown',
         tone: 'missing',
-        label: `Commune à préciser : ${unknown.map((check) => check.read).join(', ')}`,
+        label: `Commune à préciser\u00a0: ${unknown.map((check) => check.read).join(', ')}`,
         title: BUYER_CRITERION_LABELS.cities,
         source: sourceOf('cities'),
         editor: { kind: 'text', field: 'cities', value: values.cities.join(', ') },
@@ -260,7 +265,7 @@ export function phraseChips(
     chips.push({
       id: 'cities',
       tone: 'missing',
-      label: 'Sa commune ?',
+      label: 'Sa commune\u202f?',
       title: BUYER_CRITERION_LABELS.cities,
       source: sourceOf('cities'),
       editor: { kind: 'text', field: 'cities', value: '' },
@@ -351,7 +356,7 @@ export function phraseChips(
     chips.push({
       id: 'cash',
       tone: 'missing',
-      label: 'Achat comptant : à vérifier',
+      label: 'Achat comptant\u00a0: à vérifier',
       title: 'Financement',
       source: proposal.financingSource,
       editor: { kind: 'cash' },
@@ -362,7 +367,7 @@ export function phraseChips(
   if (values.language) {
     plainChip(
       'language',
-      `Messages : ${BUYER_LANGUAGE_LABELS[values.language].toLowerCase()}`,
+      `Messages\u00a0: ${BUYER_LANGUAGE_LABELS[values.language].toLowerCase()}`,
       'Langue de ses messages',
     );
   }
@@ -372,7 +377,7 @@ export function phraseChips(
     chips.push({
       id: field,
       tone: 'plain',
-      label: field === 'notes' ? `Note : ${shorten(value, 48)}` : value,
+      label: field === 'notes' ? `Note\u00a0: ${shorten(value, 48)}` : value,
       title: field === 'phone' ? 'Téléphone' : field === 'email' ? 'E-mail' : 'Notes',
       source: sourceOf(field),
       editor: { kind: 'text', field, value },

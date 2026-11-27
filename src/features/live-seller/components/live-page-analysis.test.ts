@@ -39,7 +39,7 @@ describe('la bande des prix', () => {
   it('place le « Prix des concurrents » parmi les biens vus, avec sa légende', () => {
     const html = band(330_000);
     expect(html).toContain('data-band-marker="competitors"');
-    expect(html).toMatch(/Prix des concurrents : 330\s000\s€/);
+    expect(html).toMatch(/Prix des concurrents\s: 330\s000\s€/);
     // 300 000 → 380 000 : 330 000 tombe à 37,5 % de la bande.
     expect(html).toMatch(/data-band-marker="competitors"[^>]*style="left:37.5%"/);
     expect(html).toContain('data-band-marker="start"');
@@ -58,9 +58,9 @@ describe('« Le plus dangereux selon vous » sur la bande', () => {
     const html = band(330_000, 'c2');
     expect(html).toMatch(/data-band-marker="dangerous"[^>]*style="left:25%"/);
     expect(html).toContain('>Le plus dangereux selon vous</span>');
-    expect(html).toMatch(/Le plus dangereux selon vous : 320\s000\s€/);
-    expect(html).toMatch(/Au début : 380\s000\s€/);
-    expect(html).toMatch(/Après le marché : 340\s000\s€/);
+    expect(html).toMatch(/Le plus dangereux selon vous\s: 320\s000\s€/);
+    expect(html).toMatch(/Au début\s: 380\s000\s€/);
+    expect(html).toMatch(/Après le marché\s: 340\s000\s€/);
   });
 
   it('absent sans désignation, et pour un concurrent qui n’est pas sur la bande (un « Non »)', () => {

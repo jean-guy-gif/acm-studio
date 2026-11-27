@@ -7,7 +7,7 @@ describe('academiaQuotaMessage', () => {
   const now = new Date('2026-11-18T10:00:00Z'); // 11 h à Paris
   it('une heure au plus : « dans N minutes », avec « Réessayer »', () => {
     expect(academiaQuotaMessage(45, now)).toEqual({
-      message: 'Academia reçoit beaucoup de demandes en ce moment : réessayez dans 1 minute.',
+      message: 'Academia reçoit beaucoup de demandes en ce moment\u00a0: réessayez dans 1 minute.',
       retry: true,
     });
   });

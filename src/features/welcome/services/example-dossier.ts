@@ -19,7 +19,7 @@ export const EXAMPLE_PROPERTY = {
   general_condition: 'good',
   outdoor_spaces: ['balcony'],
   parking_types: ['garage'],
-  description: 'Bien fictif du dossier d’exemple : il sert à découvrir l’outil.',
+  description: 'Bien fictif du dossier d’exemple\u00a0: il sert à découvrir l’outil.',
   advisor_price_min: 290000,
   advisor_price_max: 330000,
 } as const;

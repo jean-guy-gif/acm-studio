@@ -134,7 +134,7 @@ export function LiveLaunchActions({
           id={`live-document-${projectId}`}
           className="max-w-xs text-xs font-medium text-zinc-600 sm:text-right stage:text-white/70"
         >
-          Document seul : pas de Live.{' '}
+          Document seul&nbsp;: pas de Live.{' '}
           <Link href={`/builder/${projectId}/etude-de-marche`} className={link}>
             Ouvrir l’Étude de marché
           </Link>
@@ -219,7 +219,7 @@ export function LiveLaunchActions({
         // Mission 109 — sans décision de prix : le lien vers « Avant le rendez-vous ».
         notice === NO_DECISION_NOTICE ? (
           <p key={notice} data-testid="no-decision-notice">
-            {notice} :{' '}
+            {notice}&nbsp;:{' '}
             <Link href={`/builder/${projectId}/avant-rendez-vous`} className={link}>
               Avant le rendez-vous
             </Link>
@@ -228,7 +228,7 @@ export function LiveLaunchActions({
         ) : notice === LISTINGS_CHECK_NOTICE ? (
           // Mission 152 — la vérification se fait sur « Avant le rendez-vous » ; rien n'est bloqué.
           <p key={notice} data-testid="launch-listings-check">
-            {notice} :{' '}
+            {notice}&nbsp;:{' '}
             <Link href={`/builder/${projectId}/avant-rendez-vous`} className={link}>
               vérifier les annonces
             </Link>
@@ -237,7 +237,7 @@ export function LiveLaunchActions({
         ) : notice === pendingImportsNotice(pendingImportCount) ? (
           // Mission 112 — avec un lien vers les concurrents, sans bloquer (M52).
           <p key={notice} data-testid="launch-pending-imports">
-            {notice} :{' '}
+            {notice}&nbsp;:{' '}
             <Link href={`/builder/${projectId}/comparables`} className={link}>
               voir les concurrents
             </Link>

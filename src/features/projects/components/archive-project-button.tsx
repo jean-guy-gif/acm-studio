@@ -24,7 +24,7 @@ export function ArchiveProjectDialog({
 }) {
   return (
     <ConfirmDialog
-      title={<>Supprimer le dossier {projectName}&nbsp;?</>}
+      title={<>Supprimer le dossier {projectName}&#x202f;?</>}
       text="Il disparaîtra de vos listes."
       onCancel={onCancel}
     >

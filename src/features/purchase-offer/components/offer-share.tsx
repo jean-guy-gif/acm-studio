@@ -48,8 +48,8 @@ export function OfferShare({
     {
       key: 'seller',
       title: sellerVia
-        ? `Le lien du vendeur, à remettre à ${sellerVia}, qui le transmet au vendeur : il accepte en signant, ou refuse`
-        : 'Le lien du vendeur : il accepte en signant, ou refuse',
+        ? `Le lien du vendeur, à remettre à ${sellerVia}, qui le transmet au vendeur\u00a0: il accepte en signant, ou refuse`
+        : 'Le lien du vendeur\u00a0: il accepte en signant, ou refuse',
       url: `${origin}${sellerLinkPath}`,
       message: offerSellerMessage({
         url: `${origin}${sellerLinkPath}`,
@@ -82,7 +82,7 @@ export function OfferShare({
                   navigator.clipboard
                     ?.writeText(block.message)
                     .then(() => setNote('Message copié, lien compris.'))
-                    .catch(() => setNote('La copie a échoué : sélectionnez le lien.'));
+                    .catch(() => setNote('La copie a échoué\u00a0: sélectionnez le lien.'));
                 }}
               >
                 Copier
@@ -100,7 +100,7 @@ export function OfferShare({
         );
       })}
       <p className={hintText}>
-        {note ?? 'Chaque lien vaut 30 jours ; l’offre reste sur la fiche.'}
+        {note ?? 'Chaque lien vaut 30 jours\u202f; l’offre reste sur la fiche.'}
       </p>
     </div>
   );

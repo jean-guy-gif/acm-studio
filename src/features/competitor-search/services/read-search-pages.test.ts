@@ -72,6 +72,9 @@ describe('describeReadCounts — le récapitulatif par portail', () => {
         ],
         ranked,
       ),
-    ).toEqual(['SeLoger : 30 annonces lues, 2 retenues', 'Bien’ici : 1 annonce lue, 0 retenue']);
+    ).toEqual([
+      'SeLoger\u00a0: 30 annonces lues, 2 retenues',
+      'Bien’ici\u00a0: 1 annonce lue, 0 retenue',
+    ]);
   });
 });

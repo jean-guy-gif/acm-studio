@@ -195,7 +195,7 @@ export function ProspectingCard({
           Recherche acquéreur&nbsp;:{' '}
           {buyerOrigins.map((origin, index) => (
             <span key={origin.originId}>
-              {index > 0 ? ' ; ' : ''}
+              {index > 0 ? '\u202f; ' : ''}
               <Link
                 href={`/acquereurs/${origin.buyerId}`}
                 className="font-semibold text-brand-deep hover:underline stage:text-brand"
@@ -222,7 +222,7 @@ export function ProspectingCard({
           Dossier vendeur&nbsp;:{' '}
           {sellers.map((item, index) => (
             <span key={item.projectId}>
-              {index > 0 ? ' ; ' : ''}
+              {index > 0 ? '\u202f; ' : ''}
               <Link
                 href={`/builder/${item.projectId}`}
                 className="font-semibold text-brand-deep hover:underline stage:text-brand"

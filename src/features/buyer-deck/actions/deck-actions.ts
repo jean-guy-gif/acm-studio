@@ -36,7 +36,7 @@ export type PlainResult = { ok: true } | { ok: false; error: string };
 export type AnswerResult = { ok: true; response: ItemResponse } | { ok: false; error: string };
 
 const NOT_CONNECTED = 'Vous devez être connecté.';
-const PRESENTED = 'La présentation est terminée : elle se relit sans se modifier.';
+const PRESENTED = 'La présentation est terminée\u00a0: elle se relit sans se modifier.';
 const ARCHIVED = 'Cet acquéreur est archivé.';
 const FAILED = 'L’enregistrement a échoué. Réessayez.';
 
@@ -371,7 +371,7 @@ export async function applySuggestion(buyerId: unknown, kind: unknown): Promise<
     await recordAppError({
       source: 'server',
       page: '/acquereurs/[buyerId]',
-      error: `Ajustement de recherche non daté (${kind}) : ${eventError.message}`,
+      error: `Ajustement de recherche non daté (${kind})\u00a0: ${eventError.message}`,
       scope: '[applySuggestion]',
       agencyId: profile.agency_id,
       userId: profile.id,

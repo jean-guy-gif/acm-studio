@@ -760,11 +760,11 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       );
       expect(recordedText).toMatch(/[1-9] baisses?/);
       expect(recordedText).toContain('1 vente probable');
-      expect(recordedText).toContain('1 retiré sans vente');
+      expect(recordedText).toContain('1 probablement retiré sans vente');
       expect(recordedText).toMatch(/négociation estimée de 5 à 10 %/);
       await expect(row.getByTestId('market-updates')).toContainText(/Point du \d{2}\/\d{2}\/\d{4}/);
       await expect(row.getByTestId('dropped-since-meeting')).toContainText(
-        /Ont baissé depuis le rendez-vous : 1 sur 5/,
+        /Ont baissé depuis le rendez-vous\s: 1 sur 5/,
       );
       // Mission 127 B — (c) « Chercher les nouveaux venus » : simulé en démo, aucun appel ; deux
       // biens vus sur le marché après le rendez-vous ; un retenu. Mission 129 — de −5 % du prix
@@ -824,7 +824,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(
         document.getByText('Vente probable, négociation estimée de 5 à 10 %'),
       ).toBeVisible();
-      await expect(document.getByText('Retiré du marché sans vente').first()).toBeVisible();
+      await expect(document.getByText('Probablement retiré sans vente').first()).toBeVisible();
       // Mission 129 — le classement : verdict, trois étapes, une ligne par bien encore en vente
       // (3 concurrents, le nouveau venu, votre bien), la légende ; plus de couleur M116.
       const ranking = document.getByTestId('price-ranking');
@@ -1148,7 +1148,7 @@ async function walkLive(
       name: 'Pourquoi est-il toujours sur le marché ?',
     });
     const dangerous = page.getByRole('heading', {
-      name: /Quel concurrent vous paraît le plus dangereux|Le DPE face au marché|Est-il un sérieux concurrent|Un sérieux concurrent \? Et à quel prix/,
+      name: /Quel concurrent vous paraît le plus dangereux|Le DPE face au marché|Est-il un sérieux concurrent|Un sérieux concurrent\s\? Et à quel prix/,
     });
     await expect(duration.or(dangerous).first()).toBeVisible();
     if (await duration.isVisible()) {

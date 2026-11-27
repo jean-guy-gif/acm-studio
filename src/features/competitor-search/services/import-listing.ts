@@ -48,9 +48,9 @@ export const READ_FAILURE_LABELS: Record<ReadFailureCause | 'no_price', string> 
   timeout: 'la page de l’annonce n’a pas répondu en 30 secondes',
   too_large: 'la page de l’annonce est trop lourde pour être lue',
   withdrawn: 'l’annonce n’est plus en ligne',
-  empty: 'page sans données (captcha ?)',
+  empty: 'page sans données (captcha\u202f?)',
   no_extension:
-    'extension absente ou désactivée : installez ou activez l’extension ACM, puis réessayez',
+    'extension absente ou désactivée\u00a0: installez ou activez l’extension ACM, puis réessayez',
   server: 'l’import a échoué côté serveur',
   no_price: 'la recherche ne donne pas le prix de ce bien',
 };

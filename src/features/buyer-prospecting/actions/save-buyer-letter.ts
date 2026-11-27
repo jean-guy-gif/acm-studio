@@ -109,7 +109,7 @@ export async function saveBuyerLetter(
       path: copied.ok ? copied.path : null,
     };
     if (!copied.ok) {
-      warning = `La photo de l’annonce n’a pas pu être copiée (${copied.error}) : si elle ne s’affiche pas à l’impression, choisissez-en une autre.`;
+      warning = `La photo de l’annonce n’a pas pu être copiée (${copied.error})\u00a0: si elle ne s’affiche pas à l’impression, choisissez-en une autre.`;
     }
   }
 

@@ -132,7 +132,7 @@ describe('les demandes de visite', () => {
     });
     expect(await cancelVisitRequest('r1')).toEqual({
       ok: false,
-      error: 'La présentation est terminée : elle se relit sans se modifier.',
+      error: 'La présentation est terminée\u00a0: elle se relit sans se modifier.',
     });
     expect(service.writes()).toEqual([]);
   });
@@ -263,7 +263,7 @@ describe('les demandes de visite', () => {
       state.respond = respondWith({ ...doneRow, visited_at: null });
       expect(await changeVisitNextStep('r1', 'offer')).toEqual({
         ok: false,
-        error: 'Cette visite n’est pas encore faite : notez d’abord son compte rendu.',
+        error: 'Cette visite n’est pas encore faite\u00a0: notez d’abord son compte rendu.',
       });
       state.respond = respondWith({ ...doneRow, cancelled_at: '2026-11-11T10:00:00Z' });
       expect((await changeVisitNextStep('r1', 'offer')).ok).toBe(false);
@@ -278,7 +278,8 @@ describe('les demandes de visite', () => {
       state.respond = respondWith({ ...doneRow, opinion: 'not_for_me', outcome: 'declined' });
       expect(await changeVisitNextStep('r1', 'offer')).toEqual({
         ok: false,
-        error: 'Son avis était « Pas pour moi » : « Offre envisagée » le contredit.',
+        error:
+          'Son avis était «\u00a0Pas pour moi\u00a0»\u00a0: «\u00a0Offre envisagée\u00a0» le contredit.',
       });
       expect(service.writes()).toEqual([]);
     });
@@ -288,7 +289,7 @@ describe('les demandes de visite', () => {
       state.respond = respondWith(offerRow, [{ document_id: 'd1' }]);
       expect(await changeVisitNextStep('r1', 'keep_searching')).toEqual({
         ok: false,
-        error: 'Une offre d’achat est signée sur cette visite : sa suite ne change plus.',
+        error: 'Une offre d’achat est signée sur cette visite\u00a0: sa suite ne change plus.',
       });
       state.respond = respondWith(offerRow, null);
       expect((await changeVisitNextStep('r1', 'keep_searching')).ok).toBe(false);

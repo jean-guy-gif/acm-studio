@@ -12,7 +12,11 @@ import {
 // propriétaire comme confrère (décision de Jean-Guy du 23/10, en connaissance du risque ; remplace
 // M105, « retirée pendant la bêta ») : les photos de l'annonce, celles que montre le Live (M58),
 // au choix du conseiller, « Sans photo » par défaut comme avant.
-const read = (...parts: string[]) => readFileSync(join(process.cwd(), 'src', ...parts), 'utf8');
+// Lot A (27/11) — le texte des pages, entités et lignes réunies (le JSX coupe ses phrases).
+const read = (...parts: string[]) =>
+  readFileSync(join(process.cwd(), 'src', ...parts), 'utf8')
+    .replace(/&nbsp;|&#x202f;/g, ' ')
+    .replace(/\s+/g, ' ');
 
 describe('« Photo de son bien », de retour dans l’éditeur de courrier', () => {
   it('l’éditeur propose les photos de l’annonce, sans porte', () => {

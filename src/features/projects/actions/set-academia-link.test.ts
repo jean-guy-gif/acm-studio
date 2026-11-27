@@ -66,7 +66,7 @@ describe('setAcademiaLivingHereLink', () => {
       expect(await setAcademiaLivingHereLink('p1', bad)).toEqual({
         ok: false,
         error:
-          'Collez le lien « Vivre ici » donné par Academia : il commence par https://app.myacademia.ai/l/',
+          'Collez le lien «\u00a0Vivre ici\u00a0» donné par Academia\u00a0: il commence par https://app.myacademia.ai/l/',
       });
     }
     expect(db.writes()).toEqual([]);

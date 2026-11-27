@@ -98,7 +98,9 @@ async function renew(input: {
   if (!link.ok) {
     await reportServerError(
       'academia:renew-link',
-      new Error(`Academia : ${link.reason}${link.detail ? ` — ${link.detail}` : ''} (lien gardé)`),
+      new Error(
+        `Academia\u00a0: ${link.reason}${link.detail ? ` — ${link.detail}` : ''} (lien gardé)`,
+      ),
     );
     return 'kept';
   }

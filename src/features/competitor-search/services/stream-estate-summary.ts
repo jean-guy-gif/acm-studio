@@ -55,9 +55,9 @@ export type StreamEstateSearchNote = {
 
 export const RESORTED_NOTE = 'Critères appliqués aux biens déjà trouvés, sans nouvelle recherche.';
 export const RESORTED_LOOSER_NOTE =
-  'Les biens déjà reçus qui y répondent maintenant reviennent ; pour en trouver d’autres, une nouvelle recherche serait nécessaire.';
+  'Les biens déjà reçus qui y répondent maintenant reviennent\u202f; pour en trouver d’autres, une nouvelle recherche serait nécessaire.';
 export const STALE_SETTINGS_NOTE =
-  'Résultat obtenu avec vos réglages précédents : relancez la recherche pour appliquer les nouveaux.';
+  'Résultat obtenu avec vos réglages précédents\u00a0: relancez la recherche pour appliquer les nouveaux.';
 export const PAID_CHANGE_WARNING =
   'Ce changement demande une nouvelle recherche, comptée dans le forfait du mois. Le résultat actuel sera remplacé quand elle aura réussi.';
 
@@ -95,7 +95,7 @@ export function widenedTimes(tiers: readonly StreamEstateTier[]): number {
 function resumePoint(tier: StreamEstateTier, arrondissement: boolean | undefined): string {
   return tier === 1
     ? 'la recherche à l’identique'
-    : `à l’élargissement « ${labelsOf(tier, arrondissement)[0]} »`;
+    : `à l’élargissement «\u00a0${labelsOf(tier, arrondissement)[0]}\u00a0»`;
 }
 
 const plural = (count: number, one: string, many: string): string =>
@@ -180,7 +180,7 @@ export function describeStreamEstateSearch(
     .sort(([a], [b]) => a - b)
     .map(([tier, count]) => `${count} ${tierLabel(tier, count)}`);
   const headline = `${plural(proposed.length, 'concurrent', 'concurrents')}${
-    composition.length > 0 ? ` : ${composition.join(', ')}` : ''
+    composition.length > 0 ? `\u00a0: ${composition.join(', ')}` : ''
   } — ${plural(note.billed, 'annonce comptée', 'annonces comptées')}`;
 
   const details: string[] = [];
@@ -208,15 +208,15 @@ export function describeStreamEstateSearch(
     const lastTier = note.tiers.at(-1)?.tier;
     details.push(
       note.stop === 'cap'
-        ? `Moins de ${STREAM_ESTATE_TARGET} : plafond atteint, la recherche s’arrête là${
+        ? `Moins de ${STREAM_ESTATE_TARGET}\u00a0: plafond atteint, la recherche s’arrête là${
             note.cursor
-              ? ` — « Chercher encore » reprend ${resumePoint(note.cursor.tier, note.arrondissement)}, page suivante.`
+              ? ` — «\u00a0Chercher encore\u00a0» reprend ${resumePoint(note.cursor.tier, note.arrondissement)}, page suivante.`
               : '.'
           }`
         : note.stop === 'error'
-          ? `Moins de ${STREAM_ESTATE_TARGET} : Stream Estate n’a plus répondu en cours de recherche ; voici ce qui a été trouvé avant.`
+          ? `Moins de ${STREAM_ESTATE_TARGET}\u00a0: Stream Estate n’a plus répondu en cours de recherche\u202f; voici ce qui a été trouvé avant.`
           : note.stop === 'exhausted'
-            ? `Moins de ${STREAM_ESTATE_TARGET} : plus aucun bien après le dernier élargissement (${
+            ? `Moins de ${STREAM_ESTATE_TARGET}\u00a0: plus aucun bien après le dernier élargissement (${
                 note.customSettings
                   ? 'dans les limites de vos réglages'
                   : lastTier === 8
@@ -227,7 +227,7 @@ export function describeStreamEstateSearch(
                         ? 'l’arrondissement et ses voisins'
                         : 'toute la commune'
               }).`
-            : `Moins de ${STREAM_ESTATE_TARGET} : ${plural(
+            : `Moins de ${STREAM_ESTATE_TARGET}\u00a0: ${plural(
                 STREAM_ESTATE_TARGET - proposed.length,
                 'bien trouvé n’a pas été retenu',
                 'biens trouvés n’ont pas été retenus',
@@ -237,8 +237,8 @@ export function describeStreamEstateSearch(
   if (!note.located) {
     details.push(
       note.arrondissement
-        ? 'Adresse du bien non localisée avec certitude : pas de quartier. La recherche et ses premiers élargissements portent sur tout l’arrondissement, puis sur ses voisins ; le rayon de 10 km part du centre de l’arrondissement.'
-        : 'Adresse du bien non localisée avec certitude : pas de quartier. La recherche et ses premiers élargissements portent sur toute la commune, les cercles de 2 et 5 km sont sautés, le rayon de 10 km part du centre de la commune.',
+        ? 'Adresse du bien non localisée avec certitude\u00a0: pas de quartier. La recherche et ses premiers élargissements portent sur tout l’arrondissement, puis sur ses voisins\u202f; le rayon de 10 km part du centre de l’arrondissement.'
+        : 'Adresse du bien non localisée avec certitude\u00a0: pas de quartier. La recherche et ses premiers élargissements portent sur toute la commune, les cercles de 2 et 5 km sont sautés, le rayon de 10 km part du centre de la commune.',
     );
   }
   const fallback = [
@@ -246,13 +246,13 @@ export function describeStreamEstateSearch(
   ];
   if (fallback.length > 0) {
     details.push(
-      `Pour ${fallback.map((tier) => `« ${labelsOf(tier, note.arrondissement)[0]} »`).join(', ')} : communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais comptés.`,
+      `Pour ${fallback.map((tier) => `«\u00a0${labelsOf(tier, note.arrondissement)[0]}\u00a0»`).join(', ')}\u00a0: communes voisines non exclues de la recherche (liste indisponible ou refusée par l’API) — les biens hors de ${note.communeName} ont été écartés ici, mais comptés.`,
     );
   }
   const { counts } = note;
   const excluded = [
     counts.otherCommune > 0
-      ? `${plural(counts.otherCommune, 'bien', 'biens')} hors de ${note.communeName} à un élargissement « même ville »`
+      ? `${plural(counts.otherCommune, 'bien', 'biens')} hors de ${note.communeName} à un élargissement «\u00a0même ville\u00a0»`
       : null,
     counts.unverifiedPosition > 0
       ? `${plural(counts.unverifiedPosition, 'bien', 'biens')} sans position fiable aux élargissements de quartier`
@@ -274,11 +274,11 @@ export function describeStreamEstateSearch(
       : null,
   ].filter((part): part is string => part != null);
   if (excluded.length > 0) {
-    details.push(`Écartés, mais comptés : ${excluded.join(' · ')}.`);
+    details.push(`Écartés, mais comptés\u00a0: ${excluded.join(' · ')}.`);
   }
   if (note.newBuild > 0) {
     details.push(
-      `${plural(note.newBuild, 'bien neuf reçu', 'biens neufs reçus')} : proposé${note.newBuild > 1 ? 's' : ''} seulement en complément, sous 3 concurrents dans l’ancien.`,
+      `${plural(note.newBuild, 'bien neuf reçu', 'biens neufs reçus')}\u00a0: proposé${note.newBuild > 1 ? 's' : ''} seulement en complément, sous 3 concurrents dans l’ancien.`,
     );
   }
   return { headline, details };

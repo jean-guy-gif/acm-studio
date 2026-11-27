@@ -2,7 +2,8 @@ import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 // Mission 127 — la règle des annonces disparues (règle ACM, décidée par Jean-Guy le 29/10), d'après
 // les jours de commercialisation au jour où l'annonce a disparu. Pur.
-//   • plus de 300 jours   : « Retiré du marché sans vente » ;
+//   • plus de 300 jours   : « Probablement retiré sans vente » (Jean-Guy, 27/11 : rien ne dit
+//                           qu'il n'est pas vendu) ;
 //   • de 200 à 300 jours  : « Vente probable, négociation estimée de 10 à 15 % » ;
 //   • de 100 à 199 jours  : « Vente probable, négociation estimée de 5 à 10 % » ;
 //   • moins de 100 jours  : « Vente probable, négociation estimée de 0 à 5 % ».

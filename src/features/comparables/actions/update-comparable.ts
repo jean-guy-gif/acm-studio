@@ -18,7 +18,7 @@ import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 
 const DUPLICATE_RETAINED_MESSAGE =
-  'Déjà dans le dossier : cette annonce a déjà sa fiche, retenue. Cette fiche n’a pas été modifiée.';
+  'Déjà dans le dossier\u00a0: cette annonce a déjà sa fiche, retenue. Cette fiche n’a pas été modifiée.';
 const FAILURE = 'La mise à jour du bien concurrent a échoué.';
 
 function collectValues(formData: FormData): Record<string, string> {

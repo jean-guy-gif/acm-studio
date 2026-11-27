@@ -155,21 +155,21 @@ describe('gapLine', () => {
       features: { ...FEATURES, location: SUBJECT },
     });
     expect(gapLine(CRITERIA, wider, place(1600))).toBe(
-      'Même ville, à 1,6 km · Plus grand : 78\u00A0m² (+12\u00A0%) · 5 pièces (+1) · Prix 4\u00A0% au-dessus de votre fourchette',
+      'Même ville, à 1,6 km · Plus grand\u00a0: 78\u00A0m² (+12\u00A0%) · 5 pièces (+1) · Prix 4\u00A0% au-dessus de votre fourchette',
     );
   });
 
   it('commune voisine ; « Même ville — quartier non vérifié » sans position fiable', () => {
     const neighbour = candidate({ city: 'Cagnes-sur-Mer', features: { ...FEATURES } });
     expect(gapLine(CRITERIA, neighbour, place(null, false))).toBe(
-      'Commune voisine : Cagnes-sur-Mer — quartier non vérifié',
+      'Commune voisine\u00a0: Cagnes-sur-Mer — quartier non vérifié',
     );
     const located = candidate({
       city: 'Cagnes-sur-Mer',
       features: { ...FEATURES, location: SUBJECT },
     });
     expect(gapLine(CRITERIA, located, place(6100, false))).toBe(
-      'Commune voisine : Cagnes-sur-Mer, 6,1 km',
+      'Commune voisine\u00a0: Cagnes-sur-Mer, 6,1 km',
     );
     expect(gapLine(CRITERIA, candidate({ price: 385000 }), place(null))).toBe(
       'Même ville — quartier non vérifié · Prix 4\u00A0% en dessous de votre fourchette',
@@ -344,7 +344,7 @@ describe('mission 78 : pièces libres', () => {
       'roomless',
     ]);
     expect(search.ranked.find((entry) => entry.candidate.key === 'huge')?.gapLine).toBe(
-      'Plus grand : 320\u00A0m² (+60\u00A0%) · 7 pièces au lieu de 9',
+      'Plus grand\u00a0: 320\u00A0m² (+60\u00A0%) · 7 pièces au lieu de 9',
     );
     // Les pièces comptent dans le % : 7 au lieu de 9 perd les 15 points des pièces.
     expect(search.ranked.find((entry) => entry.candidate.key === 'freed')?.matchPercent).toBe(81);
@@ -435,11 +435,13 @@ describe('matchDetail — ce qui a pesé dans le %', () => {
       [],
       place(1600),
     );
-    expect(detail.map((line) => `${line.label} : ${plain(line.text)} ${line.verdict}`)).toEqual([
-      'Secteur : à 1,6 km partial',
-      'Surface : 68 m² pour 70 m² full',
-      'Prix : hors fourchette (+3 %) partial',
-      'Pièces : 4 pièces pour 4 pièces full',
+    expect(
+      detail.map((line) => `${line.label}\u00a0: ${plain(line.text)} ${line.verdict}`),
+    ).toEqual([
+      'Secteur\u00a0: à 1,6 km partial',
+      'Surface\u00a0: 68 m² pour 70 m² full',
+      'Prix\u00a0: hors fourchette (+3 %) partial',
+      'Pièces\u00a0: 4 pièces pour 4 pièces full',
     ]);
   });
 
@@ -485,7 +487,7 @@ describe('matchDetail — ce qui a pesé dans le %', () => {
 
   it('la ligne d’explication nomme ce que le % compare', () => {
     expect(MATCH_SUMMARY_LINE).toBe(
-      'Ressemblance avec votre bien : secteur, surface, prix, pièces et équipements',
+      'Ressemblance avec votre bien\u00a0: secteur, surface, prix, pièces et équipements',
     );
   });
 

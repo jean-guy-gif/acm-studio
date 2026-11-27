@@ -89,8 +89,8 @@ export function SellerSequenceCard({
 
       <div id="apercu-vendeur" hidden={!open} className="flex flex-col gap-2">
         <p className={hintText}>
-          Les écrans que le vendeur verra, dans l’ordre. Aucun prix ici : ils se découvrent pendant
-          le Live.
+          Les écrans que le vendeur verra, dans l’ordre. Aucun prix ici&nbsp;: ils se découvrent
+          pendant le Live.
         </p>
         <ol className="grid list-inside list-decimal grid-cols-1 gap-x-6 gap-y-1 text-sm text-zinc-700 @3xl:grid-cols-2 stage:text-white/75">
           {sequence.screenTitles.map((title, index) => (

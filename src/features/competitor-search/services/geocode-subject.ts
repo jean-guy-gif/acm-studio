@@ -88,13 +88,13 @@ export const SECTOR_NEUTRAL_MESSAGES: Record<
   string
 > = {
   no_address:
-    'Secteur non utilisé : la fiche du bien vendeur n’a pas d’adresse. Ajoutez-la pour classer par distance.',
+    'Secteur non utilisé\u00a0: la fiche du bien vendeur n’a pas d’adresse. Ajoutez-la pour classer par distance.',
   imprecise:
-    'Secteur non utilisé : l’adresse du bien vendeur n’a pas été trouvée au numéro ni à la rue. Précisez-la (numéro et rue) pour classer par distance.',
+    'Secteur non utilisé\u00a0: l’adresse du bien vendeur n’a pas été trouvée au numéro ni à la rue. Précisez-la (numéro et rue) pour classer par distance.',
   low_score:
-    'Secteur non utilisé : l’adresse du bien vendeur n’a été reconnue qu’avec un doute (score inférieur à 0,8). Vérifiez son orthographe pour classer par distance.',
+    'Secteur non utilisé\u00a0: l’adresse du bien vendeur n’a été reconnue qu’avec un doute (score inférieur à 0,8). Vérifiez son orthographe pour classer par distance.',
   other_city:
-    'Secteur non utilisé : l’adresse du bien vendeur a été trouvée dans une autre commune que la sienne. Vérifiez l’adresse et la ville.',
+    'Secteur non utilisé\u00a0: l’adresse du bien vendeur a été trouvée dans une autre commune que la sienne. Vérifiez l’adresse et la ville.',
   unavailable:
-    'Secteur non utilisé : le service de géocodage (adresse.data.gouv.fr) n’a pas répondu. Relancez la lecture pour réessayer.',
+    'Secteur non utilisé\u00a0: le service de géocodage (adresse.data.gouv.fr) n’a pas répondu. Relancez la lecture pour réessayer.',
 };

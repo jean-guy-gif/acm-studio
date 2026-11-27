@@ -24,7 +24,7 @@ export type PrepareBuyerLetterResult = { ok: true; href: string } | { ok: false;
 
 const FAILURE = 'Le courrier n’a pas pu être préparé. Réessayez.';
 const NOT_A_LETTER = 'Ce bien ne demande pas ce courrier.';
-const CHOICE_FAILURE = 'Votre choix n’a pas été enregistré : réessayez.';
+const CHOICE_FAILURE = 'Votre choix n’a pas été enregistré\u00a0: réessayez.';
 
 const versionSchema = z.enum(['owner', 'colleague']);
 
@@ -192,7 +192,7 @@ export async function prepareBuyerLetter(
     if (!listingUrl || !listingKey) {
       return {
         ok: false,
-        error: 'Ce bien n’a pas d’annonce reconnue : le courrier ne peut pas se préparer.',
+        error: 'Ce bien n’a pas d’annonce reconnue\u00a0: le courrier ne peut pas se préparer.',
       };
     }
     const facts = competitor

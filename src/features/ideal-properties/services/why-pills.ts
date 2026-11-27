@@ -16,18 +16,21 @@ import { formatEuro } from '@/lib/format';
 export function softWhyPills(reasons: SoftReasons | undefined): WhyPill[] {
   if (reasons == null || 'noText' in reasons) return [];
   if ('mentions' in reasons) {
-    return reasons.mentions.map((word) => ({ tone: 'said', label: `« ${word} » dans l’annonce` }));
+    return reasons.mentions.map((word) => ({
+      tone: 'said',
+      label: `«\u00a0${word}\u00a0» dans l’annonce`,
+    }));
   }
   return reasons.judgments.flatMap((judgment): WhyPill[] => {
     const words = SOFT_SHORT_LABELS[judgment.key];
     if (judgment.verdict === 'clearly' && !judgment.toVerify) {
-      return [{ tone: 'said', label: `« ${words} » dans l’annonce` }];
+      return [{ tone: 'said', label: `«\u00a0${words}\u00a0» dans l’annonce` }];
     }
     const toVerify =
       judgment.verdict === 'clearly' ||
       judgment.verdict === 'reserve' ||
       (judgment.verdict !== 'contrary' && judgment.photos?.verdict === 'shown');
-    return toVerify ? [{ tone: 'said', label: `« ${words} » : à vérifier` }] : [];
+    return toVerify ? [{ tone: 'said', label: `«\u00a0${words}\u00a0»\u00a0: à vérifier` }] : [];
   });
 }
 

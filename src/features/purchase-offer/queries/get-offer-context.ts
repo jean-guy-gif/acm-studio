@@ -35,7 +35,7 @@ import { parisDateLabel } from '@/features/visit-voucher/services/voucher-fields
 // de la dernière offre de la fiche, pour pré-remplir.
 
 export const OFFER_NOT_MANDATE =
-  'Offre d’achat : seulement pour un bien en mandat signé de l’agence, après une visite « Offre envisagée ».';
+  'Offre d’achat\u00a0: seulement pour un bien en mandat signé de l’agence, après une visite «\u00a0Offre envisagée\u00a0».';
 
 export type OfferVisit = {
   visitId: string;
@@ -73,13 +73,13 @@ export type OfferVisit = {
 // autre suite notée (celle qui se change, `switchable`).
 function notOfferYet(line: VisitLine): string {
   if (line.visitedAt == null) {
-    return 'Visite pas encore faite : notez d’abord son compte rendu (Visites).';
+    return 'Visite pas encore faite\u00a0: notez d’abord son compte rendu (Visites).';
   }
   if (!canTurnIntoOffer({ ...line, opinion: line.report?.opinion ?? null })) {
-    return 'Son avis était « Pas pour moi » : pas d’offre d’achat pour ce bien.';
+    return 'Son avis était «\u00a0Pas pour moi\u00a0»\u00a0: pas d’offre d’achat pour ce bien.';
   }
   const next = line.report?.nextStep;
-  return `Suite notée : « ${next ? NEXT_STEP_LABELS[next] : VISIT_OUTCOME_LABELS[line.outcome]} ».`;
+  return `Suite notée\u00a0: «\u00a0${next ? NEXT_STEP_LABELS[next] : VISIT_OUTCOME_LABELS[line.outcome]}\u00a0».`;
 }
 
 function switchableToOffer(line: VisitLine): boolean {
@@ -152,7 +152,10 @@ export async function getOfferContext(
   ]);
   if (!buyer.data) return { ok: false, error: 'Fiche introuvable.' };
   if (!legal.ok || branding.error || visitRead.failed) {
-    return { ok: false, error: 'L’offre d’achat n’a pas pu être préparée : rechargez la page.' };
+    return {
+      ok: false,
+      error: 'L’offre d’achat n’a pas pu être préparée\u00a0: rechargez la page.',
+    };
   }
   const mentions = {
     documentName: branding.data?.document_name ?? null,
@@ -231,7 +234,10 @@ export async function getOfferContext(
     competitors.error ||
     buyerDocuments.error
   ) {
-    return { ok: false, error: 'L’offre d’achat n’a pas pu être préparée : rechargez la page.' };
+    return {
+      ok: false,
+      error: 'L’offre d’achat n’a pas pu être préparée\u00a0: rechargez la page.',
+    };
   }
   const subjectIds = (subjects.data ?? []).map((row) => row.id);
   const condos =
@@ -294,7 +300,7 @@ export async function getOfferContext(
       label: line.itemLabel,
       eligible,
       note: closed
-        ? `${state.label} : pas d’offre d’achat pour ce bien.`
+        ? `${state.label}\u00a0: pas d’offre d’achat pour ce bien.`
         : mandateIn
           ? OFFER_NOT_MANDATE
           : eligible

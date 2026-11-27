@@ -38,7 +38,7 @@ export async function saveAdvisorProfile(formData: FormData): Promise<SaveAdviso
     const bytes = new Uint8Array(await file.arrayBuffer());
     const validation = validatePhotoBytes(bytes);
     if (!validation.ok) {
-      return { ok: false, error: `Photo : ${validation.error}` };
+      return { ok: false, error: `Photo\u00a0: ${validation.error}` };
     }
     uploadedPath = `${advisorPhotoPrefix(profile.agency_id)}${profile.id}-${crypto.randomUUID()}.${IMAGE_EXTENSION[validation.format]}`;
     const { error } = await supabase.storage

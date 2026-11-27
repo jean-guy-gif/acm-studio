@@ -24,7 +24,9 @@ export function PropertyPriceRangeStep({
 }) {
   return (
     <section className={formSection}>
-      <h2 className={formSectionTitle}>À votre avis, ce bien vaut entre combien et combien ?</h2>
+      <h2 className={formSectionTitle}>
+        À votre avis, ce bien vaut entre combien et combien&#x202f;?
+      </h2>
       <p className={hintText}>
         Votre avis de professionnel, même large. Il ne sert qu’à cibler la recherche de concurrents
         et n’est jamais montré au vendeur.

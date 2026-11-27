@@ -45,7 +45,7 @@ export function VoucherShare({
               })
               .catch(() => {
                 setPending(false);
-                setNote('Connexion perdue : réessayez.');
+                setNote('Connexion perdue\u00a0: réessayez.');
               });
           }}
         >
@@ -78,7 +78,7 @@ export function VoucherShare({
             navigator.clipboard
               ?.writeText(message)
               .then(() => setNote('Message copié, lien compris.'))
-              .catch(() => setNote('La copie a échoué : sélectionnez le lien ci-dessus.'));
+              .catch(() => setNote('La copie a échoué\u00a0: sélectionnez le lien ci-dessus.'));
           }}
         >
           Copier
@@ -87,7 +87,9 @@ export function VoucherShare({
           E-mail
         </a>
       </div>
-      <p className={hintText}>{note ?? 'Le lien vaut 30 jours ; le bon reste sur la fiche.'}</p>
+      <p className={hintText}>
+        {note ?? 'Le lien vaut 30 jours\u202f; le bon reste sur la fiche.'}
+      </p>
     </div>
   );
 }

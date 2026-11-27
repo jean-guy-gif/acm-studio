@@ -251,7 +251,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
       {/* Mission 145 — ce qu'il y a à faire aujourd'hui vit dans « Aujourd'hui » (remplace M130 A,
           le bloc « À faire aujourd'hui » du Suivi). */}
       <p className="text-sm text-zinc-600 stage:text-white/70" data-testid="suivi-today-link">
-        Ce que vous avez à faire aujourd’hui :{' '}
+        Ce que vous avez à faire aujourd’hui&nbsp;:{' '}
         <Link href="/aujourdhui" className={`${link} font-semibold`}>
           Aujourd’hui ›
         </Link>
@@ -271,17 +271,17 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
           {/* Une lecture en échec n'est jamais lue comme « rien » (M98). */}
           {visitRead.failed ? (
             <p role="alert" className="text-sm font-semibold text-red-700">
-              Les visites demandées n’ont pas pu être lues : rechargez la page.
+              Les visites demandées n’ont pas pu être lues&nbsp;: rechargez la page.
             </p>
           ) : null}
           {pointRead.failed ? (
             <p role="alert" className="text-sm font-semibold text-red-700">
-              Les Points marché n’ont pas pu être lus : rechargez la page.
+              Les Points marché n’ont pas pu être lus&nbsp;: rechargez la page.
             </p>
           ) : null}
           {mandateRead.failed ? (
             <p role="alert" className="text-sm font-semibold text-red-700">
-              Les acquéreurs n’ont pas pu être lus : rechargez la page.
+              Les acquéreurs n’ont pas pu être lus&nbsp;: rechargez la page.
             </p>
           ) : null}
 

@@ -17,12 +17,13 @@ export const FRENCH: LanguageTemplates = {
     ),
   visit: {
     thanks: (property, day) => `Merci pour la visite ${property} le ${day}.`,
-    liked: (list) => `Ce qui vous a plu : ${list}.`,
-    disliked: (list) => `Ce qui vous a gêné : ${list}.`,
+    liked: (list) => `Ce qui vous a plu\u00a0: ${list}.`,
+    disliked: (list) => `Ce qui vous a gêné\u00a0: ${list}.`,
     next: {
       offer:
-        'Comme convenu, nous préparons ensemble votre offre d’achat : je vous appelle pour en fixer les termes.',
-      second_visit: 'Je vous propose une deuxième visite : je reviens vers vous avec des créneaux.',
+        'Comme convenu, nous préparons ensemble votre offre d’achat\u00a0: je vous appelle pour en fixer les termes.',
+      second_visit:
+        'Je vous propose une deuxième visite\u00a0: je reviens vers vous avec des créneaux.',
       keep_searching:
         'Je continue à chercher pour vous et je vous envoie les prochains biens qui correspondent à votre recherche.',
     },
@@ -41,7 +42,7 @@ export const FRENCH: LanguageTemplates = {
   },
   weekly: {
     intro: 'Voici le point de la semaine sur votre recherche.',
-    lead: 'Cette semaine pour vous : ',
+    lead: 'Cette semaine pour vous\u00a0: ',
     studied: { one: '{n} bien étudié', other: '{n} biens étudiés' },
     dismissed: { one: '{n} écarté', other: '{n} écartés' },
     retained: { one: '{n} retenu', other: '{n} retenus' },
@@ -55,11 +56,11 @@ export const FRENCH: LanguageTemplates = {
       condition: 'pour l’état',
       other: 'pour une autre raison',
     },
-    empty: 'Pas de nouveau bien correspondant cette semaine ; je reste attentif.',
+    empty: 'Pas de nouveau bien correspondant cette semaine\u202f; je reste attentif.',
     closing: 'Je reste à votre disposition.',
   },
   meeting: {
-    body: 'Je vous propose de faire le point ensemble sur votre recherche, à l’agence ou en visio, comme vous préférez. Quel moment vous conviendrait ?',
+    body: 'Je vous propose de faire le point ensemble sur votre recherche, à l’agence ou en visio, comme vous préférez. Quel moment vous conviendrait\u202f?',
   },
   subjects: { visit: 'Notre visite', weekly: 'Le point de la semaine', meeting: 'Faire le point' },
 };

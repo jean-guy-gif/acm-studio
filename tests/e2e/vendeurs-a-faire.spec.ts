@@ -88,7 +88,7 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
     // La relance des Lambert-Duval, avec son argument (un acquéreur prêt, M145 B), et le premier
     // Point marché de M. Lefebvre (un mois après la signature, M130 A).
     await expect(row(page, 'M. et Mme Lambert-Duval').getByTestId('person-task')).toHaveText(
-      /^À relancer : 1 acquéreur prêt correspond à l’appartement$/,
+      /^À relancer\s: 1 acquéreur prêt correspond à l’appartement$/,
     );
     // Un 29, 30 ou 31, le mois précédent est plus court : le point peut être en retard.
     await expect(row(page, 'M. Lefebvre').getByTestId('person-task')).toHaveText(

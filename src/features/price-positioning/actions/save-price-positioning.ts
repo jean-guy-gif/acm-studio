@@ -73,7 +73,7 @@ export async function savePricePositioning(
   if (positioning.status !== 'ready' || positioning.recommendedRange == null || snapshot == null) {
     return {
       ok: false,
-      error: 'La décision de prix ne peut pas être enregistrée : données insuffisantes.',
+      error: 'La décision de prix ne peut pas être enregistrée\u00a0: données insuffisantes.',
     };
   }
 

@@ -872,7 +872,7 @@ export const ENGLISH_TEXTS: ClientTexts = {
       noRanking: 'Without a price agreed together, the ranking cannot be calculated.',
       readingTitle: 'How to read this document',
       reading:
-        'The prices quoted are asking prices, not sale prices. A listing that has disappeared is not a recorded sale: “likely sale” and the “estimated” negotiation are deduced from how long the property was on the market when it was withdrawn, following the agency’s rule; “withdrawn without a sale” means a listing withdrawn after more than 300 days. Nothing here states that a property has sold, nor at what price. Floor areas and features as advertised, to be checked. “On the market since …” is the publication date given by the listing, otherwise the day your adviser added it: never an invented date.',
+        'The prices quoted are asking prices, not sale prices. A listing that has disappeared is not a recorded sale: “likely sale” and the “estimated” negotiation are deduced from how long the property was on the market when it was withdrawn, following the agency’s rule; “probably withdrawn without a sale” means a listing withdrawn after more than 300 days. Nothing here states that a property has sold, nor at what price. Floor areas and features as advertised, to be checked. “On the market since …” is the publication date given by the listing, otherwise the day your adviser added it: never an invented date.',
       dangerousToday: 'The most dangerous today',
       dangerousYours: 'The most dangerous, in your view',
       beforeMeeting: 'On the market before the meeting, not shown then',
@@ -907,13 +907,14 @@ export const ENGLISH_TEXTS: ClientTexts = {
       likelySale: (min, max) => `Estimated sale price: between ${min} and ${max}`,
       likelySaleNote:
         'Deduced from how long it was on the market when withdrawn, following the agency’s rule: nothing says this property has sold, nor at what price.',
-      withdrawnNote: 'More than 300 days on the market when withdrawn: withdrawn without a sale.',
+      withdrawnNote:
+        'More than 300 days on the market when withdrawn: probably withdrawn without a sale.',
       stillListed: 'Still on the market',
       sinceDays: (days) => `for ${days}`,
       perSqmToday: (value) => `${value} today`,
       days: (days, approximate) =>
         `${approximate ? 'about ' : ''}${days} day${days > 1 ? 's' : ''}`,
-      withdrawnLabel: 'Withdrawn without a sale',
+      withdrawnLabel: 'Probably withdrawn without a sale',
       probableSaleLabel: (min, max) => `Likely sale, estimated negotiation of ${min} to ${max}%`,
       ranking: {
         words: { green: 'No problem', orange: 'Careful', red: 'Danger' },

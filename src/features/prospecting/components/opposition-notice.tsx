@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-export const OPPOSITION_RECORDED_MESSAGE = 'Inscrit : plus aucun courrier pour cette adresse';
+export const OPPOSITION_RECORDED_MESSAGE = 'Inscrit\u00a0: plus aucun courrier pour cette adresse';
 
 const EVENT = 'acm:opposition-recorded';
 const VISIBLE_MS = 8_000;

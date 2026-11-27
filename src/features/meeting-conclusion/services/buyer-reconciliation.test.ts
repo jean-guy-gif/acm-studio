@@ -270,7 +270,7 @@ describe('la copropriété', () => {
       buyerCandidates([dossier('inconnu', { outcome: 'signed' })], []),
     );
     expect(result.matchCount).toBe(1);
-    expect(result.matches.mandate[0]?.condominiumNote).toBe('Copropriété : à vérifier');
+    expect(result.matches.mandate[0]?.condominiumNote).toBe('Copropriété\u00a0: à vérifier');
     const open = reconcileBuyer(BUYER, buyerCandidates(signed, [], known));
     expect(open.matches.mandate.map((hit) => hit.condominiumNote)).toEqual([null, null]);
   });

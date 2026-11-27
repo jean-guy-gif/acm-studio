@@ -223,7 +223,7 @@ describe('les trois catégories des biens idéaux', () => {
       ],
     });
     expect(excludedLine(result.excluded)).toBe(
-      '3 écartés : budget dépassé (2), pas d’extérieur (1)',
+      '3 écartés\u00a0: budget dépassé (2), pas d’extérieur (1)',
     );
     expect(excludedLine({ count: 0, reasons: [] })).toBeNull();
     for (const entry of result.byCategory.strong) expect(entry.percent).not.toBeNull();
@@ -240,7 +240,7 @@ describe('la copropriété', () => {
     const verdict = judgeCandidate(starred, candidate({ features: { isCondominium: true } }));
     expect(verdict).toEqual({ kind: 'excluded', reasons: ['En copropriété'] });
     const all = categorizeIdeal(starred, [candidate({ features: { isCondominium: true } })]);
-    expect(excludedLine(all.excluded)).toBe('1 écarté : en copropriété (1)');
+    expect(excludedLine(all.excluded)).toBe('1 écarté\u00a0: en copropriété (1)');
   });
 
   it('★ et copropriété inconnue : À explorer, la carte dit « Copropriété »', () => {
@@ -259,12 +259,12 @@ describe('la copropriété', () => {
     const unknown = judgeCandidate(noCondo, candidate({}));
     expect(unknown).toMatchObject({ category: 'strong', toCheck: [], toVerify: ['Copropriété'] });
     expect(unknown.kind === 'kept' && toVerifyLabels(unknown)).toEqual([
-      'Copropriété : à vérifier',
+      'Copropriété\u00a0: à vérifier',
     ]);
     // Une seule forme, pour une annonce comme pour un bien de l'agence (Jean-Guy, 12/11).
     expect(toVerifyLabels({ toCheck: ['Extérieur', 'Copropriété'], toVerify: [] })).toEqual([
-      'Extérieur : à vérifier',
-      'Copropriété : à vérifier',
+      'Extérieur\u00a0: à vérifier',
+      'Copropriété\u00a0: à vérifier',
     ]);
   });
 

@@ -288,7 +288,7 @@ export function DeckCardView({
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Ouvrir la fiche : ${card.label}${card.criteria ? `, ${card.criteria.label}` : ''}`}
+        aria-label={`Ouvrir la fiche\u00a0: ${card.label}${card.criteria ? `, ${card.criteria.label}` : ''}`}
         className={`relative block w-full flex-none overflow-hidden rounded-[20px] bg-[#E7EAF7] text-left stage:bg-white/10 ${
           photo ? photoHeight : 'h-[120px] md:h-[140px]'
         }`}
@@ -379,13 +379,13 @@ export function DeckCardView({
             </div>
           ) : (
             <p className="text-sm text-[#5B6380] stage:text-white/60">
-              Rien de sa fiche ne le dit encore : à lire sur{' '}
+              Rien de sa fiche ne le dit encore&nbsp;: à lire sur{' '}
               {card.listing ? 'l’annonce' : 'sa fiche'}.
             </p>
           )}
           {card.notes.length > 0 ? (
             <p className="text-sm text-[#7A2E08] stage:text-orange-300" data-testid="deck-notes">
-              À savoir : {card.notes.join(' · ')}
+              À savoir&nbsp;: {card.notes.join(' · ')}
             </p>
           ) : null}
           <SheetLink card={card} onOpen={onOpen} className="flex h-8 text-sm xl:hidden" />
@@ -459,7 +459,7 @@ export function DeckCardView({
             ref={reasons}
           >
             <span className="text-[15px] font-bold text-brand-darker stage:text-white">
-              Pourquoi l’écarter ?
+              Pourquoi l’écarter&#x202f;?
             </span>
             <div className="flex flex-wrap gap-2">
               {DISMISS_REASONS.map((reason) => (
@@ -482,8 +482,8 @@ export function DeckCardView({
         <div className="grid grid-cols-2 gap-3 xl:flex xl:items-center xl:justify-between xl:gap-5">
           <p className="hidden text-sm text-[#5B6380] xl:block stage:text-white/60">
             {choosing
-              ? 'Au clavier : Échap pour garder ce bien.'
-              : 'Au clavier : flèche gauche pour écarter, flèche droite pour proposer.'}
+              ? 'Au clavier\u00a0: Échap pour garder ce bien.'
+              : 'Au clavier\u00a0: flèche gauche pour écarter, flèche droite pour proposer.'}
           </p>
           <div className="contents xl:flex xl:gap-3">
             {choosing ? (

@@ -6,5 +6,5 @@ import { countDpe, dpeCountLabel } from '@/features/dpe/services/dpe';
 export function DpeCountLine({ energyRatings }: { energyRatings: (string | null)[] }) {
   const label = dpeCountLabel(countDpe(energyRatings));
   if (label == null) return null;
-  return <p className={hintText}>DPE de vos concurrents : {label}</p>;
+  return <p className={hintText}>DPE de vos concurrents&nbsp;: {label}</p>;
 }

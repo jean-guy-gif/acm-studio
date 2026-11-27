@@ -28,9 +28,9 @@ describe('missingForSearch', () => {
 
 describe('missingForSearchMessage', () => {
   it('dit ce qui manque', () => {
-    expect(missingForSearchMessage(['property_type'])).toBe('Il manque : type de bien');
+    expect(missingForSearchMessage(['property_type'])).toBe('Il manque\u00a0: type de bien');
     expect(missingForSearchMessage(['property_type', 'city'])).toBe(
-      'Il manque : type de bien, ville',
+      'Il manque\u00a0: type de bien, ville',
     );
   });
 });

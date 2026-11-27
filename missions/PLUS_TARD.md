@@ -14,6 +14,13 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 27/11 · Refonte (Jean-Guy) · Préparation, Live et Suivi filtrés sur « Mes dossiers » : tant
   qu'ils montrent toute l'agence (M59), le lien de Vendeurs dit « Tous les vendeurs de l'agence »
   et compte l'agence.
+- 27/11 · Lot A · Le nom accessible de la pastille du menu dit encore « Aujourd'hui, N lignes à
+  faire », alors qu'elle compte les tâches depuis le lot F ; rien de visible.
+- 27/11 · Lot A (relecture) · L'aperçu « Sur le bon » du formulaire du bon de visite recopie une
+  ligne du texte signé ; il a reçu les espaces insécables, le texte signé non : identiques à l'œil,
+  plus à l'octet. Le faire lire dans le texte signé lui-même.
+- 27/11 · Lot A (relecture) · `price-lines.ts` écrit encore « retirée(s) sans vente » dans
+  `summary.lines`, que plus rien n'affiche ; à retirer avec `summary.lines` (`docs/IDEES.md`).
 - 27/11 · Le gel (vu sur le compte de Jean-Guy) · Préparation, quand aucun dossier n'est en
   préparation : « Créer un dossier », dans la liste vide, est plein à côté de « Nouveau dossier
   vendeur », deux boutons pleins (M146 A n'a pas couvert la liste vide ; ainsi depuis la mission

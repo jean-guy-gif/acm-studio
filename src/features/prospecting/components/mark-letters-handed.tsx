@@ -30,7 +30,7 @@ export function MarkLettersHanded({
         result.ok
           ? {
               ok: true,
-              message: `${result.count} dossier${result.count > 1 ? 's' : ''} marqué${result.count > 1 ? 's' : ''} « remis ».`,
+              message: `${result.count} dossier${result.count > 1 ? 's' : ''} marqué${result.count > 1 ? 's' : ''} «\u00a0remis\u00a0».`,
             }
           : { ok: false, message: result.error },
       );
@@ -45,7 +45,7 @@ export function MarkLettersHanded({
           aria-label="Marquer tous remis"
           className="flex flex-wrap items-center gap-2 text-sm text-zinc-700"
         >
-          <span>Marquer les {letters} comme remis&nbsp;?</span>
+          <span>Marquer les {letters} comme remis&#x202f;?</span>
           <button
             type="button"
             disabled={pending}

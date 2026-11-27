@@ -89,7 +89,7 @@ describe('un seul mot par notion (mission 97)', () => {
     // concurrents. Le reste de la page reste vérifié.
     const legal = (path: string, text: string) =>
       path === join('app', 'confidentialite', 'page.tsx')
-        ? text.replace('Les biens retenus pour un acquéreur :', '')
+        ? text.replace('Les biens retenus pour un acquéreur&nbsp;:', '')
         : text;
     expect(
       SCREENS.filter((path) =>

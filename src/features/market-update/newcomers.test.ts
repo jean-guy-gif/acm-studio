@@ -272,7 +272,7 @@ describe('le message de partage du Point marché', () => {
       'Natacha',
     );
     expect(text).toBe(
-      'Bonjour, voici le Point marché depuis notre rendez-vous du 08/10/2026 : https://acm.test/point-marche/abc\nIl montre ce qui a bougé chez les biens que nous avons regardés ensemble, et où en est votre prix.\nNatacha',
+      'Bonjour, voici le Point marché depuis notre rendez-vous du 08/10/2026\u00a0: https://acm.test/point-marche/abc\nIl montre ce qui a bougé chez les biens que nous avons regardés ensemble, et où en est votre prix.\nNatacha',
     );
     expect(marketUpdateShareMessage('https://acm.test/x', null, null)).not.toContain('\n\n');
     const hrefs = marketUpdateShareHrefs(text, '29/10/2026');

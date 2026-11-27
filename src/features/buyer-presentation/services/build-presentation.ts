@@ -25,23 +25,23 @@ export function criterionLine(criterion: BuyerCriterion, buyer: BuyerInput): str
   switch (criterion) {
     case 'property_types':
       return buyer.propertyTypes.length > 0
-        ? `${label} : ${buyer.propertyTypes.map((type) => PROPERTY_TYPE_LABELS[type]).join(' ou ')}`
+        ? `${label}\u00a0: ${buyer.propertyTypes.map((type) => PROPERTY_TYPE_LABELS[type]).join(' ou ')}`
         : null;
     case 'cities':
-      return buyer.cities.length > 0 ? `${label} : ${buyer.cities.join(', ')}` : null;
+      return buyer.cities.length > 0 ? `${label}\u00a0: ${buyer.cities.join(', ')}` : null;
     case 'budget':
       return buyer.budgetMax != null
-        ? `${label} : jusqu’à ${formatEuro(buyer.budgetMax)}`
+        ? `${label}\u00a0: jusqu’à ${formatEuro(buyer.budgetMax)}`
         : buyer.budgetIdeal != null
-          ? `${label} : autour de ${formatEuro(buyer.budgetIdeal)}`
+          ? `${label}\u00a0: autour de ${formatEuro(buyer.budgetIdeal)}`
           : null;
     case 'rooms':
-      return buyer.roomsMin != null ? `${label} : ${buyer.roomsMin} au moins` : null;
+      return buyer.roomsMin != null ? `${label}\u00a0: ${buyer.roomsMin} au moins` : null;
     case 'bedrooms':
-      return buyer.bedroomsMin != null ? `${label} : ${buyer.bedroomsMin} au moins` : null;
+      return buyer.bedroomsMin != null ? `${label}\u00a0: ${buyer.bedroomsMin} au moins` : null;
     case 'surface':
       return buyer.surfaceMin != null
-        ? `${label} : ${formatSquareMeters(Math.round(buyer.surfaceMin))} au moins`
+        ? `${label}\u00a0: ${formatSquareMeters(Math.round(buyer.surfaceMin))} au moins`
         : null;
     case 'outdoor':
       return buyer.outdoor === true ? 'Un extérieur' : null;
@@ -51,12 +51,14 @@ export function criterionLine(criterion: BuyerCriterion, buyer: BuyerInput): str
       return buyer.pool === true ? 'Une piscine' : null;
     case 'floor':
       return buyer.floorMin != null
-        ? `${label} : ${buyer.floorMin === 0 ? 'rez-de-chaussée accepté' : `${buyer.floorMin}e au moins`}`
+        ? `${label}\u00a0: ${buyer.floorMin === 0 ? 'rez-de-chaussée accepté' : `${buyer.floorMin}e au moins`}`
         : null;
     case 'elevator':
       return buyer.elevator === true ? 'Un ascenseur' : null;
     case 'energy_rating':
-      return buyer.energyRatingMax != null ? `${label} : ${buyer.energyRatingMax} ou mieux` : null;
+      return buyer.energyRatingMax != null
+        ? `${label}\u00a0: ${buyer.energyRatingMax} ou mieux`
+        : null;
     case 'works':
       return buyer.worksAccepted === false ? 'Sans travaux' : null;
   }

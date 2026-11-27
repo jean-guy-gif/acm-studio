@@ -7,7 +7,8 @@ import { btnSecondary } from '@/components/ui/styles';
 import { retainCompetitor } from '@/features/comparables/actions/retain-competitor';
 
 // Mission 108 — une annonce déjà dans le dossier, mais écartée : jamais avalée en silence.
-export const DISMISSED_DUPLICATE_QUESTION = 'Déjà dans le dossier (écartée) : la retenir ?';
+export const DISMISSED_DUPLICATE_QUESTION =
+  'Déjà dans le dossier (écartée)\u00a0: la retenir\u202f?';
 export const RETAIN_LABEL = 'La retenir';
 
 export type DismissedDuplicate = { id: string; label: string };

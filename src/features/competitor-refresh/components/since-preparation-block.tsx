@@ -65,14 +65,14 @@ export function SincePreparationBlock({
       // Rien de lu (extension sans accès, portails muets) : la vérification n'est pas datée, le
       // rappel reste.
       if (outcomes.length > 0 && outcomes.every((outcome) => outcome.status === 'unreadable')) {
-        setMessage('Aucune annonce n’a pu être relue : réessayez dans un instant.');
+        setMessage('Aucune annonce n’a pu être relue\u00a0: réessayez dans un instant.');
         return;
       }
       const done = await finishListingsCheck(projectId);
-      if (!done.ok) setMessage('La vérification n’a pas pu être enregistrée : réessayez.');
+      if (!done.ok) setMessage('La vérification n’a pas pu être enregistrée\u00a0: réessayez.');
       router.refresh();
     } catch {
-      setMessage('La vérification s’est interrompue : réessayez.');
+      setMessage('La vérification s’est interrompue\u00a0: réessayez.');
     } finally {
       setProgress(null);
       setBusy(false);
@@ -84,7 +84,8 @@ export function SincePreparationBlock({
       <section className={`${card} flex flex-col gap-2 p-5`} data-testid="since-preparation">
         <h2 className={sectionTitle}>Depuis la préparation</h2>
         <p role="alert" className="text-sm font-semibold text-red-700">
-          Les annonces des concurrents n’ont pas pu être relues pour l’instant : rechargez la page.
+          Les annonces des concurrents n’ont pas pu être relues pour l’instant&nbsp;: rechargez la
+          page.
         </p>
       </section>
     );

@@ -68,7 +68,7 @@ export function CompetitorLocationLine({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         {action === 'pending' ? (
           <span className="text-zinc-500 stage:text-white/55">
-            Adresse : analyse en cours dans le Localisateur…
+            Adresse&nbsp;: analyse en cours dans le Localisateur…
           </span>
         ) : (
           <span className="text-zinc-700 stage:text-white/80">

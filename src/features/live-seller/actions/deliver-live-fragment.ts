@@ -78,7 +78,7 @@ export async function deliverLiveFragment(
     return {
       ok: false,
       error:
-        'Il manque votre prix, ou votre réponse sur un concurrent : revenez-y avant l’analyse.',
+        'Il manque votre prix, ou votre réponse sur un concurrent\u00a0: revenez-y avant l’analyse.',
     };
   }
   return { ok: true, fragment: { kind: 'advisor-range', advisorRange } };

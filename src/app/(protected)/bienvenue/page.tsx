@@ -92,7 +92,7 @@ export default async function WelcomePage({ searchParams }: WelcomePageProps) {
         <h2 className={sectionTitle}>Essayer sans risque</h2>
         <p className="text-sm text-zinc-500 stage:text-white/60">
           Le dossier d’exemple contient un bien et des concurrents fictifs, prêts pour le Live. Il
-          sert aussi à vous entraîner : il ne compte dans aucun chiffre de l’agence.
+          sert aussi à vous entraîner&nbsp;: il ne compte dans aucun chiffre de l’agence.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <form action={openExampleDossier}>

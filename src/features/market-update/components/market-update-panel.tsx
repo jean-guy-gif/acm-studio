@@ -47,17 +47,18 @@ export function competitorFactLine(item: MarketUpdateCompetitor, madeAt: string)
       : null;
   if (item.conclusion) {
     const when = `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}${d ? ` après ${d}` : ''}`;
-    if (item.conclusion.kind === 'withdrawn') return `${when} : retiré du marché sans vente`;
-    return `${when} : vente probable, négociation estimée de ${item.conclusion.negotiationMinPercent} à ${item.conclusion.negotiationMaxPercent} % (${formatEuro(item.conclusion.estimatedMin as number)} à ${formatEuro(item.conclusion.estimatedMax as number)})`;
+    if (item.conclusion.kind === 'withdrawn')
+      return `${when}\u00a0: probablement retiré sans vente`;
+    return `${when}\u00a0: vente probable, négociation estimée de ${item.conclusion.negotiationMinPercent} à ${item.conclusion.negotiationMaxPercent} % (${formatEuro(item.conclusion.estimatedMin as number)} à ${formatEuro(item.conclusion.estimatedMax as number)})`;
   }
   if (item.newcomer) {
     return `Nouveau venu · ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${item.seenSince ? ` · vu sur le marché depuis le ${shortDay(item.seenSince)}` : ''}`;
   }
   if (item.state === 'gone') {
-    return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}. Durée en vente inconnue : impossible de dire si elle est vendue.`;
+    return `Retirée${item.goneAt ? ` le ${shortDay(item.goneAt)}` : ''}. Durée en vente inconnue\u00a0: impossible de dire si elle est vendue.`;
   }
   if (item.state === 'unread') {
-    return `Prix au rendez-vous non relu ; prix du jour : ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${d ? ` · en vente depuis ${d}` : ''}`;
+    return `Prix au rendez-vous non relu\u202f; prix du jour\u00a0: ${item.currentPrice != null ? formatEuro(item.currentPrice) : '—'}${d ? ` · en vente depuis ${d}` : ''}`;
   }
   const gap =
     item.gapPercent != null && item.gapPercent !== 0
@@ -122,7 +123,7 @@ export function MarketUpdateList({
       <span className={metaLabel}>Points marché</span>
       {unreadable ? (
         <p role="alert" className="text-xs font-semibold text-red-700">
-          Les Points marché n’ont pas pu être lus : rechargez la page.
+          Les Points marché n’ont pas pu être lus&nbsp;: rechargez la page.
         </p>
       ) : updates.length === 0 ? (
         <p className="text-xs text-zinc-500 stage:text-white/60">
@@ -131,9 +132,9 @@ export function MarketUpdateList({
             ? 'Le premier est à faire aujourd’hui'
             : nextOn
               ? `Le premier est prévu le ${nextOn.slice(8, 10)}/${nextOn.slice(5, 7)}`
-              : 'Le premier se fait un mois après la signature'}{' '}
-          : ACM relit les annonces des concurrents (sans compter dans le forfait) et prépare le
-          document pour le vendeur.
+              : 'Le premier se fait un mois après la signature'}
+          &nbsp;: ACM relit les annonces des concurrents (sans compter dans le forfait) et prépare
+          le document pour le vendeur.
         </p>
       ) : (
         <ul className="flex flex-col gap-1">

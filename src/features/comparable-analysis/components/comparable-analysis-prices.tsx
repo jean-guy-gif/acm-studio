@@ -17,25 +17,25 @@ export function ComparableAnalysisPrices({ priceAnalysis }: { priceAnalysis: Pri
     <section className={`${card} flex flex-col gap-3 p-5 sm:p-6`}>
       <h2 className={sectionTitle}>Analyse des prix</h2>
       <p className="text-sm text-zinc-600 stage:text-white/65">
-        Amplitude : {priceAnalysis.priceRange != null ? formatEuro(priceAnalysis.priceRange) : '—'}{' '}
-        · Dispersion prix/m² :{' '}
-        {priceAnalysis.dispersion ? DISPERSION_LABEL[priceAnalysis.dispersion] : '—'}
+        Amplitude&nbsp;:{' '}
+        {priceAnalysis.priceRange != null ? formatEuro(priceAnalysis.priceRange) : '—'} · Dispersion
+        prix/m²&nbsp;: {priceAnalysis.dispersion ? DISPERSION_LABEL[priceAnalysis.dispersion] : '—'}
         {priceAnalysis.pricePerSquareMeterSpreadPercent != null
           ? ` (${formatPercent(priceAnalysis.pricePerSquareMeterSpreadPercent)})`
           : ''}
       </p>
       <ul className="text-sm text-zinc-600 stage:text-white/65">
         <li>
-          Le moins cher :{' '}
+          Le moins cher&nbsp;:{' '}
           {priceAnalysis.cheapest ? describePricedComparable(priceAnalysis.cheapest) : '—'}
         </li>
         <li>
-          Le plus cher :{' '}
+          Le plus cher&nbsp;:{' '}
           {priceAnalysis.mostExpensive
             ? describePricedComparable(priceAnalysis.mostExpensive)
             : '—'}
         </li>
-        <li>Autour de la médiane : {priceAnalysis.aroundMedian.length} bien(s)</li>
+        <li>Autour de la médiane&nbsp;: {priceAnalysis.aroundMedian.length} bien(s)</li>
       </ul>
     </section>
   );

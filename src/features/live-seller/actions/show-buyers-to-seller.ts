@@ -38,7 +38,7 @@ export async function showBuyersToSeller(projectId: string): Promise<ShowBuyersR
   if (result == null) return { ok: false, error: FAILED };
   const count = result.ready.length;
   if (count < LIVE_BUYERS_THRESHOLD) {
-    return { ok: false, error: 'Moins de 5 acquéreurs prêts : rien à montrer.' };
+    return { ok: false, error: 'Moins de 5 acquéreurs prêts\u00a0: rien à montrer.' };
   }
 
   // L'heure posée ici est remplacée par celle de la base.

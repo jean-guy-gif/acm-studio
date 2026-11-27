@@ -87,8 +87,8 @@ export default async function TourneePage({ searchParams }: TourneePageProps) {
   ]);
   const pourLabel = (card: (typeof cards)[number]): string =>
     card.sellers.length > 0
-      ? `Pour : ${sellersLabel(card.sellers)}`
-      : `Recherche acquéreur : ${(buyerOrigins.get(card.row.id) ?? []).map((origin) => origin.buyerName).join(' ; ')}`;
+      ? `Pour\u00a0: ${sellersLabel(card.sellers)}`
+      : `Recherche acquéreur\u00a0: ${(buyerOrigins.get(card.row.id) ?? []).map((origin) => origin.buyerName).join('\u202f; ')}`;
 
   const communes: { name: string; start: number; stops: typeof tour.owners }[] = [];
   tour.owners.forEach((stop, index) => {
@@ -141,7 +141,7 @@ export default async function TourneePage({ searchParams }: TourneePageProps) {
       <header className="flex flex-col gap-1 border-b border-zinc-300 pb-3">
         <h1 className="text-xl font-bold text-black">Ma tournée de prospection</h1>
         <p className="text-sm text-zinc-700">
-          {seller ? `Pour : ${seller.name}` : TOUR_SCOPE_LABELS[scope]} · liste éditée le{' '}
+          {seller ? `Pour\u00a0: ${seller.name}` : TOUR_SCOPE_LABELS[scope]} · liste éditée le{' '}
           {formatDay(new Date(), 'fr', 'numeric')}
         </p>
         <p className="text-xs text-zinc-500">
@@ -152,7 +152,7 @@ export default async function TourneePage({ searchParams }: TourneePageProps) {
       {empty ? (
         <p className="text-sm text-zinc-600">
           Aucune porte où sonner ni confrère à appeler pour ce filtre.
-          {sellerId == null && scope === 'mine' ? ' Voyez aussi « Toute l’agence ».' : ''}
+          {sellerId == null && scope === 'mine' ? ' Voyez aussi «\u00a0Toute l’agence\u00a0».' : ''}
         </p>
       ) : null}
 

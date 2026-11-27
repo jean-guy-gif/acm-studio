@@ -96,8 +96,8 @@ describe('les messages', () => {
     expect(message).toBe(
       [
         'Bonjour Famille Keller,',
-        'Bonne nouvelle : le vendeur a accepté votre offre d’achat pour la maison de Mougins, le 06/11.',
-        'Votre offre, signée par vous et par le vendeur : https://acm.example/offre/abc',
+        'Bonne nouvelle\u00a0: le vendeur a accepté votre offre d’achat pour la maison de Mougins, le 06/11.',
+        'Votre offre, signée par vous et par le vendeur\u00a0: https://acm.example/offre/abc',
         'Je vous appelle pour la suite chez le notaire.',
         'Natacha',
       ].join('\n'),
@@ -135,7 +135,7 @@ describe('les messages', () => {
     });
     expect(message).toContain('Maître,');
     expect(message).toContain(
-      'pour le bien situé 12 chemin des Pins, 06250 Mougins, mandat n° M-2026-041 : https://acm.example/offre/xyz',
+      'pour le bien situé 12 chemin des Pins, 06250 Mougins, mandat n° M-2026-041\u00a0: https://acm.example/offre/xyz',
     );
     expect(message).toContain('Natacha Durand · Agence Horizon Côte d’Azur · 06 39 98 41 27');
     expect(message).not.toMatch(/budget|estimation|disponible|€/i);
@@ -170,7 +170,7 @@ describe('« Sous offre »', () => {
     expect(nextBuyerStatus('under_offer', 'abandon')).toBe('abandoned');
     expect(buyerStatusActions('under_offer').map((action) => action.label)).toEqual([
       'A acheté',
-      'L’offre est tombée : revenir en visite',
+      'L’offre est tombée\u00a0: revenir en visite',
       'Abandonné',
     ]);
     // Le conseiller n'y fait jamais passer à la main : c'est l'acceptation du vendeur.

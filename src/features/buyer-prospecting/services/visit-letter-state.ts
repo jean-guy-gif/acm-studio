@@ -32,7 +32,7 @@ export function visitLetterState(
   if (declined && (card.status === 'to_confirm' || card.status === 'ready')) {
     return {
       kind: card.status === 'ready' ? 'ready' : 'address',
-      label: 'Collaboration refusée : courrier au propriétaire',
+      label: 'Collaboration refusée\u00a0: courrier au propriétaire',
     };
   }
   switch (card.status) {

@@ -130,7 +130,9 @@ function Indicative({ value }: { value: IndicativeValue }) {
           .filter(Boolean)
           .join(' · ')}
       </p>
-      {value.mention ? <p className="text-sm text-zinc-700">« {value.mention} »</p> : null}
+      {value.mention ? (
+        <p className="text-sm text-zinc-700">«&nbsp;{value.mention}&nbsp;»</p>
+      ) : null}
       <p className="text-sm text-zinc-700">
         Calculée par Academia sur des ventes DVF autour du bien.
       </p>
@@ -288,7 +290,7 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
         <>
           {sales.atAddress ? (
             <p className="rounded-lg bg-zinc-100 px-3 py-1.5 text-sm text-zinc-800">
-              À l’adresse même :{' '}
+              À l’adresse même&nbsp;:{' '}
               {[
                 sales.atAddress.type,
                 sales.atAddress.rooms != null ? `${sales.atAddress.rooms} pièces` : null,
@@ -330,7 +332,7 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
               ))}
               {sales.listRadius != null ? (
                 <span className="text-zinc-600">
-                  la liste ci-dessous : celles à moins de {meters(sales.listRadius)}
+                  la liste ci-dessous&nbsp;: celles à moins de {meters(sales.listRadius)}
                 </span>
               ) : null}
             </div>
@@ -381,8 +383,8 @@ function Sales({ sales }: { sales: NonNullable<AcademiaPropertyView['sales']> })
               Moins de 5 ventes comparables à moins de{' '}
               {meters(
                 sales.rings.length ? Math.max(...sales.rings.map((ring) => ring.radius)) : 800,
-              )}{' '}
-              : Academia ne donne pas de liste.
+              )}
+              &nbsp;: Academia ne donne pas de liste.
             </p>
           ) : (
             <p className={hintText}>Aucune vente comparable relevée autour du bien.</p>
@@ -452,7 +454,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
           <p className="text-sm text-zinc-800">
             {permits.build.length === 0
               ? `Aucun permis de construire relevé${permits.radius ? ` à moins de ${meters(permits.radius)}` : ''}.`
-              : `${permits.build.length} permis de construire${permits.radius ? ` à moins de ${meters(permits.radius)}` : ''}${permits.since ? ` depuis ${permits.since}` : ''} : ${permits.build
+              : `${permits.build.length} permis de construire${permits.radius ? ` à moins de ${meters(permits.radius)}` : ''}${permits.since ? ` depuis ${permits.since}` : ''}\u00a0: ${permits.build
                   .map((permit) =>
                     [
                       permit.dwellings != null
@@ -465,7 +467,7 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
                       .filter(Boolean)
                       .join(', '),
                   )
-                  .join(' ; ')}.`}
+                  .join('\u202f; ')}.`}
           </p>
           {permits.demolitionUnchecked ? (
             <p className="text-sm font-medium text-amber-700">Permis de démolir non vérifiés.</p>
@@ -476,12 +478,14 @@ function OtherBlocks({ view, demo }: { view: AcademiaPropertyView; demo: boolean
         <Block title="Risques" info={risks} empty="Aucun risque relevé pour cette adresse.">
           <p className="text-sm text-zinc-800">
             {[
-              risks.clay ? `Argiles (à l’adresse du bien) : ${risks.clay.toLowerCase()}` : null,
-              risks.earthquake
-                ? `Séisme (la commune) : ${earthquakeLabel(risks.earthquake)}`
+              risks.clay
+                ? `Argiles (à l’adresse du bien)\u00a0: ${risks.clay.toLowerCase()}`
                 : null,
-              risks.radon ? `Radon (la commune) : catégorie ${risks.radon}` : null,
-              risks.floodArea ? `Inondation : commune classée, ${risks.floodArea}` : null,
+              risks.earthquake
+                ? `Séisme (la commune)\u00a0: ${earthquakeLabel(risks.earthquake)}`
+                : null,
+              risks.radon ? `Radon (la commune)\u00a0: catégorie ${risks.radon}` : null,
+              risks.floodArea ? `Inondation\u00a0: commune classée, ${risks.floodArea}` : null,
               risks.disasters
                 ? `${risks.disasters.count} catastrophe${risks.disasters.count > 1 ? 's' : ''} naturelle${risks.disasters.count > 1 ? 's' : ''} reconnue${risks.disasters.count > 1 ? 's' : ''}${risks.disasters.latest ? `, la dernière le ${day(risks.disasters.latest)}` : ''} (la commune)`
                 : null,
@@ -574,7 +578,7 @@ export function AddressViewPanel({
       ) : null}
       {state.kind === 'none' ? (
         <p className={hintText} data-testid="address-view-none">
-          Le dossier d’adresse d’Academia arrive avec le lien « Vivre ici ».{' '}
+          Le dossier d’adresse d’Academia arrive avec le lien «&nbsp;Vivre ici&nbsp;».{' '}
           <Link href={`/builder/${projectId}/property`} className={link}>
             Créez le dossier d’adresse depuis Bien vendeur
           </Link>
@@ -583,11 +587,11 @@ export function AddressViewPanel({
       {state.kind === 'waiting' ? (
         <>
           <p className="text-sm text-zinc-800" role="status" data-testid="address-view-waiting">
-            Academia prépare le dossier d’adresse : 20 à 60 secondes. Il s’affiche ici dès qu’il est
-            prêt.
+            Academia prépare le dossier d’adresse&nbsp;: 20 à 60 secondes. Il s’affiche ici dès
+            qu’il est prêt.
           </p>
           <p className={hintText}>
-            Le reste de la page est déjà là ; votre décision de prix ne l’attend pas.
+            Le reste de la page est déjà là&#x202f;; votre décision de prix ne l’attend pas.
           </p>
           <AcademiaAutoRefresh testId="address-view-waiting-long" />
         </>
@@ -596,7 +600,7 @@ export function AddressViewPanel({
         <p className={hintText} data-testid="address-view-request-failed">
           Academia n’a pas pu préparer le dossier d’adresse pour l’instant, ou l’a effacé.{' '}
           <Link href={`/builder/${projectId}/property`} className={link}>
-            Recréez le lien « Vivre ici » depuis Bien vendeur
+            Recréez le lien «&nbsp;Vivre ici&nbsp;» depuis Bien vendeur
           </Link>
         </p>
       ) : null}
@@ -620,7 +624,8 @@ export function AddressViewPanel({
       ) : null}
       {state.kind === 'failed' ? (
         <p className={errorText} role="alert" data-testid="address-view-failed">
-          Le dossier d’adresse d’Academia n’a pas pu être lu : rechargez la page dans un moment.
+          Le dossier d’adresse d’Academia n’a pas pu être lu&nbsp;: rechargez la page dans un
+          moment.
         </p>
       ) : null}
       {view ? (

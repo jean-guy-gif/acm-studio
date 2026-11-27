@@ -45,11 +45,11 @@ describe('saveBarStatus', () => {
   it('dit ce qui manque pour la recherche et mène au premier champ manquant', () => {
     expect(saveBarStatus(state({ saved: true, missing: ['property_type'] }))).toEqual({
       tone: 'error',
-      text: 'Il manque : type de bien',
+      text: 'Il manque\u00a0: type de bien',
       target: 'property_type',
     });
     expect(saveBarStatus(state({ saved: true, missing: ['property_type', 'city'] })).text).toBe(
-      'Il manque : type de bien, ville',
+      'Il manque\u00a0: type de bien, ville',
     );
   });
 

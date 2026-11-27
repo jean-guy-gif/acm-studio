@@ -116,7 +116,7 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
           {/* Mission 156 — le lien du mandat collé il y a 25 jours ou plus : l'âge, en orange. */}
           {prepared.livingHereAge?.tone === 'warn' ? (
             <p className={AGE_WARN_CLASS} data-testid="visit-confirm-living-age">
-              Lien « Vivre ici » {prepared.livingHereAge.text.replace(/^Collé/, 'collé')}
+              Lien «&nbsp;Vivre ici&nbsp;» {prepared.livingHereAge.text.replace(/^Collé/, 'collé')}
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2">
@@ -127,7 +127,9 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
                 navigator.clipboard
                   ?.writeText(prepared.message)
                   .then(() => setNote('Message copié.'))
-                  .catch(() => setError('La copie a échoué : sélectionnez le message ci-dessus.'));
+                  .catch(() =>
+                    setError('La copie a échoué\u00a0: sélectionnez le message ci-dessus.'),
+                  );
               }}
             >
               Copier
@@ -154,8 +156,8 @@ export function VisitConfirmForm({ visitId }: { visitId: string }) {
             ) : null}
           </div>
           <p className={hintText}>
-            Un lien neuf vers sa sélection, valable 30 jours, et le lien « Vivre ici » du bien s’il
-            est collé sur le mandat. L’outil n’envoie rien.
+            Un lien neuf vers sa sélection, valable 30 jours, et le lien «&nbsp;Vivre ici&nbsp;» du
+            bien s’il est collé sur le mandat. L’outil n’envoie rien.
           </p>
         </div>
       ) : null}

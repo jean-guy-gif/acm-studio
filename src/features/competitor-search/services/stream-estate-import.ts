@@ -33,5 +33,5 @@ export function withdrawnReason(facts: StreamEstateFacts): string {
   const seen = formatFrenchDate(facts.lastSeenAt);
   return `annonce retirée depuis le dernier passage de Stream Estate${
     seen ? ` (vue en ligne le ${seen})` : ''
-  } : la page d’origine sur ${facts.originSite} ne la montre plus — non importée`;
+  }\u00a0: la page d’origine sur ${facts.originSite} ne la montre plus — non importée`;
 }

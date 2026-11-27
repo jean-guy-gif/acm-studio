@@ -68,7 +68,7 @@ export function ConclusionDecisionForm({
         initialObjections={initialObjections}
         initialObjectionNote={initialObjectionNote}
         knownPrice={knownPrice}
-        legend={'Comment s’est conclu ce rendez-vous ?'}
+        legend={'Comment s’est conclu ce rendez-vous\u202f?'}
       />
 
       <div className="flex flex-wrap items-center gap-3">

@@ -415,7 +415,7 @@ export function ComparableFormFields({
             conseiller coche lui-même la case correspondante ci-dessus. */}
         {initial?.outdoor_suggestions && initial.outdoor_suggestions.length > 0 ? (
           <p className="mt-1 text-xs text-amber-700 stage:text-amber-300">
-            La description mentionne : {initial.outdoor_suggestions.join(', ')}. — à confirmer
+            La description mentionne&nbsp;: {initial.outdoor_suggestions.join(', ')}. — à confirmer
           </p>
         ) : null}
         {fieldError('outdoor_spaces')}

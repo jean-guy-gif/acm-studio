@@ -20,7 +20,7 @@ import { PROPERTY_TYPE_LABELS } from '@/features/subject-property/constants/prop
 // budget plafond en paliers, deux ★ au plus. Le reste se complète plus tard, sur la fiche. Le
 // serveur revalide tout (même schéma que la fiche complète, plus la règle des deux ★).
 
-const FAILED = 'La fiche n’a pas pu être enregistrée : vérifiez la connexion, puis réessayez.';
+const FAILED = 'La fiche n’a pas pu être enregistrée\u00a0: vérifiez la connexion, puis réessayez.';
 
 const chip = (on: boolean) =>
   `min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-40 ${

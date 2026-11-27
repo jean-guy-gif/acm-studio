@@ -54,7 +54,7 @@ export async function reopenLive(projectId: string, rawReason: unknown): Promise
       return {
         ok: false,
         error:
-          'Ce Live ne se rouvre pas : le dossier est conclu, archivé, ou son Live n’a pas commencé.',
+          'Ce Live ne se rouvre pas\u00a0: le dossier est conclu, archivé, ou son Live n’a pas commencé.',
       };
     }
     await reportServerError('reopenLive', error);

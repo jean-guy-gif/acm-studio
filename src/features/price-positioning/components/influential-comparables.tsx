@@ -63,8 +63,8 @@ export function InfluentialComparablesView({
                   {euro(comparable.pricePerSquareMeter)}/m²
                 </span>
                 <span>
-                  Écart de surface : {formatPercent(comparable.surfaceDeviationPercentage)} · Score
-                  de proximité : {comparable.proximityScore}
+                  Écart de surface&nbsp;: {formatPercent(comparable.surfaceDeviationPercentage)} ·
+                  Score de proximité&nbsp;: {comparable.proximityScore}
                 </span>
               </div>
             </li>

@@ -89,7 +89,7 @@ describe('la carte d’une annonce du marché', () => {
   it('« Pourquoi celui-ci pour eux » : l’indispensable, ce que dit l’annonce, puis le reste', () => {
     expect(card.why).toEqual([
       { tone: 'must', label: 'Piscine' },
-      { tone: 'said', label: '« au calme » dans l’annonce' },
+      { tone: 'said', label: '«\u00a0au calme\u00a0» dans l’annonce' },
       { tone: 'plain', label: 'Mougins' },
     ]);
   });
@@ -152,20 +152,20 @@ describe('la carte d’un bien de l’agence', () => {
     const card = agencyDeckCard({
       key: 'project:p-valbonne',
       label: 'Maison · 6 pièces · 210 m² · Valbonne',
-      hit: hit({ condominiumNote: 'Copropriété : à vérifier' }),
+      hit: hit({ condominiumNote: 'Copropriété\u00a0: à vérifier' }),
       sourceLabel: 'Dans l’agence',
       budgetMax: 1_500_000,
       reasons: { mentions: ['une vue'] },
     });
-    expect(card.origin).toBe('Dans l’agence · Pour : M. et Mme Castel');
+    expect(card.origin).toBe('Dans l’agence · Pour\u00a0: M. et Mme Castel');
     expect(card.photo).toBeNull();
     expect(card.criteria).toBeNull();
     expect(card.listing).toBe(false);
     expect(card.why).toEqual([
-      { tone: 'said', label: '« une vue » dans l’annonce' },
+      { tone: 'said', label: '«\u00a0une vue\u00a0» dans l’annonce' },
       { tone: 'plain', label: 'Valbonne' },
     ]);
-    expect(card.notes).toEqual(['Copropriété : à vérifier']);
+    expect(card.notes).toEqual(['Copropriété\u00a0: à vérifier']);
     expect(card.budget?.tone).toBe('good');
   });
 

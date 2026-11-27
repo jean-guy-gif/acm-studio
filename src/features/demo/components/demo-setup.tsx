@@ -128,8 +128,8 @@ export function DemoSetup({
     <>
       {state.kind === 'done' ? (
         <p className={alertOk} role="status" data-testid="demo-ready">
-          ✓ Votre démo est prête : {counts.dossiers} dossiers et {counts.buyers} acquéreurs, datés
-          d’aujourd’hui.
+          ✓ Votre démo est prête&nbsp;: {counts.dossiers} dossiers et {counts.buyers} acquéreurs,
+          datés d’aujourd’hui.
         </p>
       ) : (
         header
@@ -147,7 +147,7 @@ export function DemoSetup({
           >
             <span>
               Supprimer vos {counts.dossiers} dossiers et vos {counts.buyers} acquéreurs de démo, et
-              les recréer neufs ? Les dossiers de vos collègues ne bougent pas.
+              les recréer neufs&#x202f;? Les dossiers de vos collègues ne bougent pas.
             </span>
             <button type="button" className={btnSecondary} onClick={() => void run('reset')}>
               Remettre à zéro
@@ -241,13 +241,13 @@ function Progress({
         {current.length === 1
           ? line(
               'current',
-              `Dossier ${numberOf(current[0]!)} sur ${dossiers.length} : ${current[0]!.label}…`,
+              `Dossier ${numberOf(current[0]!)} sur ${dossiers.length}\u00a0: ${current[0]!.label}…`,
               'current',
             )
           : current.length > 1
             ? line(
                 'current',
-                `Dossiers ${numberOf(current[0]!)} à ${numberOf(current[current.length - 1]!)} sur ${dossiers.length} : ${current.map((step) => step.label.split(',')[0]).join(', ')}…`,
+                `Dossiers ${numberOf(current[0]!)} à ${numberOf(current[current.length - 1]!)} sur ${dossiers.length}\u00a0: ${current.map((step) => step.label.split(',')[0]).join(', ')}…`,
                 'current',
               )
             : null}

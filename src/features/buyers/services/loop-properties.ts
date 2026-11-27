@@ -259,10 +259,10 @@ export function propertyFigures(input: {
 // § 3 — l'origine dite sur la tâche et sur la page « Proposer ce bien ».
 export const LOOP_ORIGIN_NOTES: Record<LoopOrigin, string> = {
   mandate: 'mandat signé',
-  follow_up: 'vendeur à relancer : à proposer après son accord',
-  competitor: 'bien du marché : à vérifier avant d’envoyer',
-  newcomer: 'nouveau sur le marché depuis le rendez-vous : à vérifier avant d’envoyer',
-  prospect: 'bien du marché démarché : à vérifier avant d’envoyer',
+  follow_up: 'vendeur à relancer\u00a0: à proposer après son accord',
+  competitor: 'bien du marché\u00a0: à vérifier avant d’envoyer',
+  newcomer: 'nouveau sur le marché depuis le rendez-vous\u00a0: à vérifier avant d’envoyer',
+  prospect: 'bien du marché démarché\u00a0: à vérifier avant d’envoyer',
 };
 
 // L'écart au budget, pour le conseiller : « 11 000 € sous le budget », « 9 000 € au-dessus, à

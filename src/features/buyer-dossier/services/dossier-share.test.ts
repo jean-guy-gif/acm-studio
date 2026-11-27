@@ -10,7 +10,7 @@ const URL = 'https://acm.example/dossier/abc';
 describe('envoyer le lien de la sélection', () => {
   it('le message prérempli, signé du prénom du conseiller', () => {
     expect(dossierShareMessage(URL, 'Natacha')).toBe(
-      `Bonjour, voici les biens que j’ai sélectionnés pour vous : ${URL}\nDites-moi lesquels vous voulez visiter.\nNatacha`,
+      `Bonjour, voici les biens que j’ai sélectionnés pour vous\u00a0: ${URL}\nDites-moi lesquels vous voulez visiter.\nNatacha`,
     );
   });
 

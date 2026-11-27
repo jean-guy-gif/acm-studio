@@ -60,14 +60,14 @@ function readPair(
   const max = digits(maxText);
   if (min === '' && max === '') return { ok: true, range: null };
   if (min === '' || max === '') {
-    return { ok: false, error: `${label} : indiquez les deux valeurs, ou aucune.` };
+    return { ok: false, error: `${label}\u00a0: indiquez les deux valeurs, ou aucune.` };
   }
   if (!/^\d+$/.test(min) || !/^\d+$/.test(max)) {
-    return { ok: false, error: `${label} : des nombres entiers.` };
+    return { ok: false, error: `${label}\u00a0: des nombres entiers.` };
   }
   const value = { min: Number(min), max: Number(max) };
   if (value.min > value.max) {
-    return { ok: false, error: `${label} : la première valeur dépasse la seconde.` };
+    return { ok: false, error: `${label}\u00a0: la première valeur dépasse la seconde.` };
   }
   return { ok: true, range: value };
 }
@@ -99,7 +99,7 @@ export function readSearchSettingsInput(input: SearchSettingsInput): ReadSetting
   });
   return parsed.success
     ? { ok: true, settings: parsed.data }
-    : { ok: false, error: 'Réglages non reconnus : vérifiez les valeurs saisies.' };
+    : { ok: false, error: 'Réglages non reconnus\u00a0: vérifiez les valeurs saisies.' };
 }
 
 // Mission 110 — une recherche nommée ne garde ni prix, ni pièces, ni surface (M109).

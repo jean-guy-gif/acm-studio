@@ -44,7 +44,7 @@ export const ADVISOR_DEFAULTS_LABEL = 'vos réglages par défaut';
 export const KEEP_AS_DEFAULTS_LABEL =
   'Garder ce secteur et l’élargissement pour mes prochains dossiers';
 export const SEARCH_DEFAULTS_SAVED =
-  'Secteur et élargissement gardés : ils s’appliqueront à vos prochains dossiers.';
+  'Secteur et élargissement gardés\u00a0: ils s’appliqueront à vos prochains dossiers.';
 // Mission 110 — une recherche nommée ne garde ni prix, ni pièces, ni surface : le libellé le dit.
 export const SAVE_NAMED_SEARCH_LABEL = 'Enregistrer cette recherche';
 export const NAMED_SEARCH_HINT =
@@ -180,7 +180,7 @@ export function SearchSettingsBlock({
       <input
         type="text"
         inputMode="numeric"
-        aria-label={`${name} : de`}
+        aria-label={`${name}\u00a0: de`}
         value={input[minKey]}
         placeholder={placeholders[0]}
         disabled={locked}
@@ -191,7 +191,7 @@ export function SearchSettingsBlock({
       <input
         type="text"
         inputMode="numeric"
-        aria-label={`${name} : à`}
+        aria-label={`${name}\u00a0: à`}
         value={input[maxKey]}
         placeholder={placeholders[1]}
         disabled={locked}
@@ -269,7 +269,7 @@ export function SearchSettingsBlock({
           <p className="text-xs text-zinc-500 stage:text-white/50">
             {defaults.price
               ? 'Par défaut, votre fourchette. La modifier ici ne change pas celle de la fiche.'
-              : 'Pas de fourchette sur la fiche : sans réglage, le prix ne filtre pas.'}
+              : 'Pas de fourchette sur la fiche\u00a0: sans réglage, le prix ne filtre pas.'}
           </p>
         </Row>
         <Row
@@ -371,7 +371,7 @@ export function SearchSettingsBlock({
               onChange={(event) => setFilters({ minFloor: event.target.value })}
               className={`${inputBase} w-20`}
             />
-            <span>e étage ou plus (0 : rez-de-chaussée)</span>
+            <span>e étage ou plus (0&nbsp;: rez-de-chaussée)</span>
           </div>
         </Row>
         <Row
@@ -434,8 +434,8 @@ export function SearchSettingsBlock({
           </label>
         </Row>
         <p className={hintText}>
-          Un critère réglé ne s’élargit plus : la recherche n’élargit que ce que vous laissez
-          automatique. Les réglages valent pour « Chercher les concurrents », pas pour vos
+          Un critère réglé ne s’élargit plus&nbsp;: la recherche n’élargit que ce que vous laissez
+          automatique. Les réglages valent pour «&nbsp;Chercher les concurrents&nbsp;», pas pour vos
           recherches sur les portails.
         </p>
         {error ? (
@@ -466,7 +466,7 @@ export function SearchSettingsBlock({
           ) : null}
           <span className={hintText}>
             {dirty
-              ? 'Réglages non enregistrés — « Chercher les concurrents » les enregistre aussi.'
+              ? 'Réglages non enregistrés — «\u00a0Chercher les concurrents\u00a0» les enregistre aussi.'
               : 'Réglages enregistrés sur ce dossier.'}
           </span>
         </div>

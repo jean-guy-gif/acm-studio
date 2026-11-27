@@ -43,10 +43,10 @@ export async function saveSellerContact(
     return { ok: false, error: 'Indiquez un téléphone ou un e-mail.' };
   }
   if (phone && !phoneSchema.safeParse(phone).success) {
-    return { ok: false, error: 'Téléphone non reconnu : des chiffres, 6 au moins.' };
+    return { ok: false, error: 'Téléphone non reconnu\u00a0: des chiffres, 6 au moins.' };
   }
   if (email && !emailSchema.safeParse(email).success) {
-    return { ok: false, error: 'E-mail non reconnu : vérifiez l’adresse.' };
+    return { ok: false, error: 'E-mail non reconnu\u00a0: vérifiez l’adresse.' };
   }
   const project = await getProject(projectId);
   if (!project || project.status !== 'meeting_completed') {

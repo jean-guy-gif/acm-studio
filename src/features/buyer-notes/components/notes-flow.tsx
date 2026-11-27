@@ -57,9 +57,9 @@ const STAR_OF_FIELD: Partial<Record<NoteField, NoteProposal['mustHave'][number][
   condominiumAccepted: 'condominium',
 };
 
-const QUIT_TITLE = 'Quitter sans créer la fiche ?';
+const QUIT_TITLE = 'Quitter sans créer la fiche\u202f?';
 const QUIT_TEXT =
-  'La proposition sera perdue : rien n’a été enregistré. Pour la retrouver, il faudra relancer la lecture de vos notes.';
+  'La proposition sera perdue\u00a0: rien n’a été enregistré. Pour la retrouver, il faudra relancer la lecture de vos notes.';
 
 function VerifyPill() {
   return (
@@ -226,8 +226,8 @@ export function NotesFlow({
               {existing ? 'Compléter depuis mes notes' : 'Depuis mes notes'}
             </h2>
             <p className={hintText}>
-              Vos notes papier, la fiche de votre logiciel ou un texte : l’outil propose la fiche,
-              vous la vérifiez.
+              Vos notes papier, la fiche de votre logiciel ou un texte&nbsp;: l’outil propose la
+              fiche, vous la vérifiez.
             </p>
           </div>
           {demo ? (
@@ -582,21 +582,23 @@ function NotesProposal({
           </span>
         )}
         {source ? (
-          <span className="text-xs italic text-brand-darker">d’après : «&nbsp;{source}&nbsp;»</span>
+          <span className="text-xs italic text-brand-darker">
+            d’après&nbsp;: «&nbsp;{source}&nbsp;»
+          </span>
         ) : null}
         {corrected.map((check) => (
           <span key={check.read} className="text-xs text-zinc-500">
-            lu : «&nbsp;{check.read}&nbsp;»
+            lu&nbsp;: «&nbsp;{check.read}&nbsp;»
           </span>
         ))}
         {unknown.map((check) => (
           <span key={check.read} className="text-xs text-orange-700">
-            «&nbsp;{check.read}&nbsp;» n’est pas reconnue : saisissez la commune.
+            «&nbsp;{check.read}&nbsp;» n’est pas reconnue&nbsp;: saisissez la commune.
           </span>
         ))}
         {unverified.map((check) => (
           <span key={check.read} className="text-xs text-zinc-500">
-            «&nbsp;{check.read}&nbsp;» : commune non vérifiée
+            «&nbsp;{check.read}&nbsp;»&nbsp;: commune non vérifiée
           </span>
         ))}
         {cardDef.id === 'name' && needsName ? (
@@ -648,7 +650,7 @@ function NotesProposal({
           />
           {existing.financing === 'unknown'
             ? 'Le noter sur la fiche'
-            : `Remplacer « ${BUYER_FINANCING_LABELS[existing.financing]} »`}
+            : `Remplacer «\u00a0${BUYER_FINANCING_LABELS[existing.financing]}\u00a0»`}
         </label>
       ) : null}
       {proposal.cashSuggestion ? (
@@ -662,12 +664,12 @@ function NotesProposal({
               setFinancingKept(event.target.checked);
             }}
           />
-          Le noter « Validé »
+          Le noter «&nbsp;Validé&nbsp;»
         </label>
       ) : null}
       {proposal.financingSource ? (
         <span className="text-xs italic text-brand-darker">
-          d’après : «&nbsp;{proposal.financingSource}&nbsp;»
+          d’après&nbsp;: «&nbsp;{proposal.financingSource}&nbsp;»
         </span>
       ) : null}
     </div>
@@ -694,7 +696,8 @@ function NotesProposal({
         >
           i
         </span>
-        Cette proposition n’est pas gardée : si vous quittez ou rechargez la page, elle sera perdue.
+        Cette proposition n’est pas gardée&nbsp;: si vous quittez ou rechargez la page, elle sera
+        perdue.
       </p>
       <div className="grid gap-5 lg:grid-cols-[22rem_1fr]">
         <aside className="flex flex-col gap-2">
@@ -735,7 +738,7 @@ function NotesProposal({
                   checked={starsKept}
                   onChange={(event) => setStarsKept(event.target.checked)}
                 />
-                Ajouter les indispensables lus :{' '}
+                Ajouter les indispensables lus&nbsp;:{' '}
                 {proposal.mustHave
                   .filter((star) => {
                     // Un ★ sur un équipement (ou la copropriété) que la fiche dit autrement ne
@@ -761,8 +764,8 @@ function NotesProposal({
               Ce qui compte pour eux
             </h3>
             <p className={hintText}>
-              Leurs mots. Ces critères rangent les biens trouvés et disent pourquoi ; ils n’en
-              écartent aucun.
+              Leurs mots. Ces critères rangent les biens trouvés et disent pourquoi&#x202f;; ils
+              n’en écartent aucun.
             </p>
             {proposal.softCriteria.length > 0 ? (
               <>

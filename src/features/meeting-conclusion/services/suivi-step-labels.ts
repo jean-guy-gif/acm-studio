@@ -165,7 +165,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
     case 'follow_up_early': {
       const count = task.readyBuyers ?? 0;
       return {
-        title: `Relancer plus tôt ? ${readyBuyersCount(count)} ${count > 1 ? 'correspondent' : 'correspond'} au bien de ${task.sellerName}`,
+        title: `Relancer plus tôt\u202f? ${readyBuyersCount(count)} ${count > 1 ? 'correspondent' : 'correspond'} au bien de ${task.sellerName}`,
         argue: null,
         detail: [
           task.plannedOn ? `relance prévue le ${dayLabel(task.plannedOn)}` : null,
@@ -183,7 +183,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
       const count = task.count ?? 0;
       const card = task.prospectCard;
       return {
-        title: `Démarcher : ${readyBuyersCount(count)} ${count > 1 ? 'correspondent' : 'correspond'}`,
+        title: `Démarcher\u00a0: ${readyBuyersCount(count)} ${count > 1 ? 'correspondent' : 'correspond'}`,
         argue: null,
         detail: [
           card?.label ?? null,
@@ -294,7 +294,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
       if (task.buyerId) {
         return {
           title: `${count} ${count > 1 ? 'nouveaux biens' : 'nouveau bien'} pour ${buyerInSentence(task.buyerName)}`,
-          detail: `${count > 1 ? 'trouvés' : 'trouvé'} par la veille · bien du marché : à vérifier avant d’envoyer`,
+          detail: `${count > 1 ? 'trouvés' : 'trouvé'} par la veille · bien du marché\u00a0: à vérifier avant d’envoyer`,
           late: null,
           button: 'Voir les biens',
           href,
@@ -304,7 +304,7 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
       const figures = task.figures ? propertyFigures(task.figures) : null;
       return {
         title: `${plural(count, 'acquéreur', 'acquéreurs')} pour ${what}${figures ? ` (${figures})` : ''}`,
-        detail: `trouvé par la veille : ${(task.watchBuyers ?? []).map((buyer) => buyerInSentence(buyer.name)).join(', ')}`,
+        detail: `trouvé par la veille\u00a0: ${(task.watchBuyers ?? []).map((buyer) => buyerInSentence(buyer.name)).join(', ')}`,
         late: null,
         button: 'Voir les biens',
         href,
@@ -415,7 +415,7 @@ export function nothingTodayLabel(next: SuiviTask | null): string {
                             : next.kind === 'propose_buyers'
                               ? `proposer ${next.property ? propertyPhrase(next.property) : 'un bien'} à ses acquéreurs`
                               : `organiser une visite chez ${next.sellerName}`;
-  return `Rien à faire aujourd’hui. Prochaine tâche : ${what} le ${dayLabel(next.dueOn)}.`;
+  return `Rien à faire aujourd’hui. Prochaine tâche\u00a0: ${what} le ${dayLabel(next.dueOn)}.`;
 }
 
 // --- La colonne « Prochaine étape » d'une carte ----------------------------------------------
@@ -484,7 +484,7 @@ export function cardStep(
       title: 'Rien à faire pour l’instant',
       phrase:
         context.competitorCount === 0
-          ? 'Aucun concurrent retenu : rien à démarcher ni à relire. Les visites demandées s’afficheront ici.'
+          ? 'Aucun concurrent retenu\u00a0: rien à démarcher ni à relire. Les visites demandées s’afficheront ici.'
           : 'Rien à faire pour l’instant.',
       button: null,
     };
@@ -493,18 +493,18 @@ export function cardStep(
   // Le bouton est plein seulement si l'étape est due ; jamais pour le dossier d'exemple (M97).
   const primary = !context.isExample && isTaskDue(task, today);
   const examplePhrase = context.isExample
-    ? 'Dossier d’exemple : ses étapes n’entrent pas dans « À faire aujourd’hui ».'
+    ? 'Dossier d’exemple\u00a0: ses étapes n’entrent pas dans «\u00a0À faire aujourd’hui\u00a0».'
     : null;
   switch (task.kind) {
     case 'follow_up': {
       const note = context.lastContactNote;
       const phrase = !isTaskDue(task, today)
         ? note
-          ? `Relancé le ${dayLabel(note.on)}${note.note ? ` · « ${note.note} »` : ''}`
+          ? `Relancé le ${dayLabel(note.on)}${note.note ? ` · «\u00a0${note.note}\u00a0»` : ''}`
           : `Relance prévue le ${dayLabel(task.dueOn)}.`
         : context.datePosed
           ? 'Message prêt avec ses mots · vous notez la relance et la suivante'
-          : 'Aucune date n’avait été posée : relance 8 jours après le dernier contact.';
+          : 'Aucune date n’avait été posée\u00a0: relance 8 jours après le dernier contact.';
       return {
         when,
         whenLate,
@@ -521,7 +521,7 @@ export function cardStep(
           title: 'Prochain Point marché',
           phrase:
             examplePhrase ??
-            `Dernier point le ${dayLabel(context.latestPoint.madeOn)} : ${context.latestPoint.line}.`,
+            `Dernier point le ${dayLabel(context.latestPoint.madeOn)}\u00a0: ${context.latestPoint.line}.`,
           button: {
             label: `Voir le Point du ${dayLabel(context.latestPoint.madeOn)}`,
             action: { kind: 'point_panel' },
@@ -543,7 +543,7 @@ export function cardStep(
       const count = task.count ?? 0;
       const declined =
         context.declinedCount > 0
-          ? ` · ${context.declinedCount} ${context.declinedCount > 1 ? 'ont dit' : 'a dit'} « pas intéressé »`
+          ? ` · ${context.declinedCount} ${context.declinedCount > 1 ? 'ont dit' : 'a dit'} «\u00a0pas intéressé\u00a0»`
           : '';
       return {
         when,

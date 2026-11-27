@@ -217,7 +217,7 @@ export function judgeCriterion(
 // Une copropriété connue le contredit ; une copropriété inconnue n'écarte jamais un bien.
 export const CONDOMINIUM_LABEL = 'Copropriété';
 export const IN_CONDOMINIUM = 'En copropriété';
-export const CONDOMINIUM_TO_VERIFY = `${CONDOMINIUM_LABEL} : à vérifier`;
+export const CONDOMINIUM_TO_VERIFY = `${CONDOMINIUM_LABEL}\u00a0: à vérifier`;
 export const OUT_OF_CONDOMINIUM = 'Hors copropriété';
 
 export function judgeCondominium(
@@ -457,12 +457,12 @@ export function categorizeIdeal(
 export function toVerifyLabels(
   entry: Pick<CategorizedCandidate, 'toCheck' | 'toVerify'>,
 ): string[] {
-  return [...entry.toCheck, ...entry.toVerify].map((label) => `${label} : à vérifier`);
+  return [...entry.toCheck, ...entry.toVerify].map((label) => `${label}\u00a0: à vérifier`);
 }
 
 // « 7 écartés : budget dépassé (4), pas d'extérieur (3) »
 export function excludedLine(excluded: IdealCategorization['excluded']): string | null {
   if (excluded.count === 0) return null;
   const reasons = excluded.reasons.map((reason) => `${reason.label} (${reason.count})`).join(', ');
-  return `${plural(excluded.count, 'écarté', 'écartés')} : ${reasons}`;
+  return `${plural(excluded.count, 'écarté', 'écartés')}\u00a0: ${reasons}`;
 }
