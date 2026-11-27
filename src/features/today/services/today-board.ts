@@ -12,7 +12,8 @@ import {
 // Mission 145 (partie B) — « Aujourd'hui » : les tâches dues de l'agence (M130 A à M139, et les
 // alertes pour rentrer un mandat), en quatre blocs — Urgent, Vendeurs, Acquéreurs, Prospection —,
 // une ligne par sorte de tâche dès qu'il y en a deux (elle s'ouvre sur place), l'Urgent jamais
-// regroupé. La pastille du menu compte les LIGNES. « Mes tâches » : celles des dossiers et des
+// regroupé. La pastille du menu compte les TÂCHES (la refonte, lot F ; M145 B comptait les lignes).
+// « Mes tâches » : celles des dossiers et des
 // acquéreurs du conseiller ; « Toute l'agence », pour un manager seulement. Pur.
 
 export type TodayBlockKey = 'urgent' | 'sellers' | 'buyers' | 'prospecting';

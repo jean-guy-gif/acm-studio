@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { ScopeSwitch } from '@/components/socle/scope-switch';
+import { StatTiles } from '@/components/socle/stat-tiles';
 import { LateNote, PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
 import {
   alertError,
@@ -12,14 +14,16 @@ import {
   socleTitle,
 } from '@/components/ui/styles';
 import { proposedBuyerWords } from '@/features/buyer-deck/services/buyer-deck';
+import { BuyerNextStepCard } from '@/features/buyers/components/buyer-next-step-card';
 import { readBuyers } from '@/features/buyers/queries/get-buyers';
-import { ALL_BUYERS_HREF } from '@/features/buyers/services/buyers-page';
+import { loadBuyerTodaySummary } from '@/features/buyers/queries/load-buyer-today-summary';
+import { AGENCY_BUYERS_HREF, ALL_BUYERS_HREF } from '@/features/buyers/services/buyers-page';
 import {
   buyerOthersNote,
   buyersToday,
   buyersTodayCount,
   buyersTodayDetail,
-  buyersTodayThings,
+  buyersTodayTaskCount,
   buyerTaskKey,
   buyerTodayHref,
   watchDeckHref,
@@ -33,7 +37,13 @@ import { parisDay } from '@/features/meeting-conclusion/services/follow-up-conta
 import { taskLine } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
 import { TodayTaskAction } from '@/features/today/components/today-task';
-import { getToday, type Today, type TodayTaskContext } from '@/features/today/queries/get-today';
+import {
+  getToday,
+  type Today,
+  type TodayScope,
+  type TodayTaskContext,
+} from '@/features/today/queries/get-today';
+import { allPeopleLabel, withScope } from '@/features/today/services/today-scope';
 import { getProfile } from '@/lib/auth/get-profile';
 
 const NO_CONTEXT: TodayTaskContext = {
@@ -71,7 +81,15 @@ function TaskAction({
       task={task}
       // La refonte, lot C — les nouveaux biens de la veille se voient « un bien à la fois » : sur
       // place dans le détail, sur leur page depuis une carte (téléphone).
-      href={(onPlace ? watchDetailHref(task) : watchDeckHref(task)) ?? line.href}
+      href={
+        (onPlace
+          ? (() => {
+              // Remarques de Jean-Guy (26/11) — le détail garde la vue choisie (`?agence=1`).
+              const here = watchDetailHref(task);
+              return here ? withScope(here, today.scope) : null;
+            })()
+          : watchDeckHref(task)) ?? line.href
+      }
       label={line.button}
       primary={primary}
       look="socle"
@@ -89,21 +107,29 @@ function TaskAction({
 // à la liste entière.
 // La refonte, lot C — la personne choisie a de nouveaux biens à voir : son détail les montre un
 // par un (tablette, ordinateur) ; `biens` : l'adresse la tient sur ses biens (`buyersTodayDetail`).
+// Remarques de Jean-Guy (26/11) — un manager choisit sa vue, « Mes fiches » ou « Toute l'agence »
+// (`?agence=1`), comme sur « Aujourd'hui » ; le lien d'en bas compte ce qu'il dit (« Tous mes
+// acquéreurs » ou « Tous les acquéreurs de l'agence ») et ouvre la liste dans la même vue.
 export async function BuyersTodayView({
   personne,
   biens = false,
+  scope: asked = 'mine',
 }: {
   personne?: string;
   biens?: boolean;
+  scope?: TodayScope;
 }) {
-  const [today, profile, read] = await Promise.all([getToday('mine'), getProfile(), readBuyers()]);
+  const [today, profile, read] = await Promise.all([getToday(asked), getProfile(), readBuyers()]);
   if (!today || !profile) notFound();
+  const scope = today.scope;
+  const allHref = scope === 'agency' ? AGENCY_BUYERS_HREF : ALL_BUYERS_HREF;
   const day = parisDay(new Date());
-  const items = buyersToday(
-    today.board.blocks.flatMap((block) => block.lines.flatMap((line) => line.tasks)),
-    day,
+  const boardTasks = today.board.blocks.flatMap((block) =>
+    block.lines.flatMap((line) => line.tasks),
   );
+  const items = buyersToday(boardTasks, day);
   const mine = read.buyers.filter((buyer) => buyer.advisorId === profile.id);
+  const inView = scope === 'agency' ? read.buyers : mine;
   const buyerById = (buyerId: string) => read.buyers.find((buyer) => buyer.id === buyerId) ?? null;
   const detail = buyersTodayDetail(items, { personne, biens }, (id) => buyerById(id) != null);
   const { selected } = detail;
@@ -129,7 +155,7 @@ export async function BuyersTodayView({
             <p className={socleSubtitle} data-testid="buyers-today-count">
               {unread && items.length === 0
                 ? 'Une partie des tâches n’a pas pu être lue'
-                : buyersTodayCount(buyersTodayThings(items))}
+                : buyersTodayCount(buyersTodayTaskCount(boardTasks))}
             </p>
           </div>
           <Link
@@ -152,6 +178,16 @@ export async function BuyersTodayView({
             <span className="hidden xl:inline">Nouveau</span>
           </Link>
         </div>
+
+        {today.manager ? (
+          <ScopeSwitch
+            scope={scope}
+            mineLabel="Mes fiches"
+            mineHref="/acquereurs"
+            agencyHref="/acquereurs?agence=1"
+            testId="buyers-scope"
+          />
+        ) : null}
 
         {today.failed.map((message) => (
           <p key={message} role="alert" className={alertError}>
@@ -196,7 +232,7 @@ export async function BuyersTodayView({
             {items.map((item) => (
               <li key={item.buyerId}>
                 <PersonRow
-                  href={buyerTodayHref(item)}
+                  href={withScope(buyerTodayHref(item), scope)}
                   name={item.name}
                   task={item.what}
                   late={item.late}
@@ -211,9 +247,9 @@ export async function BuyersTodayView({
         ) : null}
 
         <RowLink
-          href={ALL_BUYERS_HREF}
-          label="Tous mes acquéreurs"
-          count={read.failed ? undefined : mine.length}
+          href={allHref}
+          label={allPeopleLabel('acquéreurs', scope)}
+          count={read.failed ? undefined : inView.length}
           testId="buyers-all-link"
         />
       </section>
@@ -257,6 +293,7 @@ export async function BuyersTodayView({
               const buyer = buyerById(selected.buyerId);
               return buyer ? proposedBuyerWords(buyer) : null;
             })()}
+            buyer={buyerById(selected.buyerId)}
             today={today}
             day={day}
             // Des fiches illisibles : ses biens se lisent sur leur page, jamais un lien sans effet.
@@ -270,11 +307,8 @@ export async function BuyersTodayView({
                 ? 'Une partie des tâches n’a pas pu être lue : rechargez la page.'
                 : 'Rien à faire aujourd’hui pour vos acquéreurs.'}
             </p>
-            <Link
-              href={ALL_BUYERS_HREF}
-              className="text-[15px] font-bold text-brand-deep stage:text-brand"
-            >
-              Voir tous mes acquéreurs
+            <Link href={allHref} className="text-[15px] font-bold text-brand-deep stage:text-brand">
+              Voir {allPeopleLabel('acquéreurs', scope).toLowerCase()}
             </Link>
           </div>
         )}
@@ -288,12 +322,14 @@ export async function BuyersTodayView({
 function BuyerTodayDetail({
   item,
   words,
+  buyer,
   today,
   day,
   watchOnPlace,
 }: {
   item: BuyerTodayItem;
   words: string | null;
+  buyer: Buyer | null;
   today: Today;
   day: string;
   watchOnPlace: boolean;
@@ -318,9 +354,42 @@ function BuyerTodayDetail({
         </div>
       </div>
 
+      {/* La refonte, lot F (Jean-Guy, 26/11) — pas de bien à voir : sous sa tâche du jour, sa
+          prochaine étape et ses trois chiffres, ceux de sa fiche repliée. Lus à part : la tâche du
+          jour n'attend pas. */}
+      {buyer ? (
+        <Suspense fallback={null}>
+          <BuyerTodaySummary buyer={buyer} />
+        </Suspense>
+      ) : null}
+
       {item.others.length > 0 ? (
         <OtherTasks tasks={item.others} today={today} day={day} onPlace={watchOnPlace} />
       ) : null}
+    </>
+  );
+}
+
+// Sa prochaine étape, en contour (la tâche du jour garde le seul bouton plein), et ses trois
+// chiffres : visités, envoyés en attente, refusés.
+async function BuyerTodaySummary({ buyer }: { buyer: Buyer }) {
+  const summary = await loadBuyerTodaySummary(buyer);
+  if (!summary) return null;
+  return (
+    <>
+      <BuyerNextStepCard
+        next={summary.next}
+        unread={summary.unread}
+        loopFailed={summary.loopFailed}
+        filled={false}
+      />
+      {summary.tiles ? (
+        <StatTiles testId="buyer-today-tiles" tiles={summary.tiles} />
+      ) : (
+        <p role="alert" className={alertError}>
+          Son suivi n’a pas pu être lu : ouvrez sa fiche.
+        </p>
+      )}
     </>
   );
 }

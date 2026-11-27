@@ -238,6 +238,13 @@ export function buyersTodayThings(items: readonly BuyerTodayItem[]): number {
   return items.reduce((total, item) => total + 1 + item.others.length, 0);
 }
 
+// La refonte, lot F (Jean-Guy, 26/11) — « N choses à faire » sur Acquéreurs : sa part des tâches
+// d'« Aujourd'hui », comptée comme elle — une tâche qui concerne deux acquéreurs (« 2 acquéreurs
+// pour la maison de Mougins ») a deux cartes, mais compte une fois.
+export function buyersTodayTaskCount(tasks: readonly SuiviTask[]): number {
+  return tasks.filter((task) => BUYER_TASK_KINDS.includes(task.kind)).length;
+}
+
 // « 3 choses à faire aujourd'hui ».
 export function buyersTodayCount(count: number): string {
   return count === 0

@@ -156,7 +156,9 @@ export function followUpNextStep(
   return {
     action: {
       key: 'follow_up',
-      label: 'Relancer',
+      // La refonte, lot F (Jean-Guy, 26/11) — un geste, un nom : « Préparer la relance », dans la
+      // liste de Vendeurs comme sur la page du dossier.
+      label: 'Préparer la relance',
       href: `/suivi?relancer=${projectId}#suivi-${projectId}`,
     },
     title: `Relancer ${sellerName}`,

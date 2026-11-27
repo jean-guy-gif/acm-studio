@@ -2,11 +2,10 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { initialsOf } from '@/components/socle/initials';
-import { soclePreviewOpen } from '@/components/socle/preview-open';
 import { StatTiles } from '@/components/socle/stat-tiles';
 import { PersonMark, PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
 import { MARK_TONES, TEXT_TONES } from '@/components/socle/tone';
@@ -32,13 +31,25 @@ import {
 
 // La refonte, lot A — les blocs du socle (maquettes REFONTE-1 à 8).
 describe('le rond aux initiales', () => {
-  it('la première lettre du premier mot et celle du dernier ; rien n’est deviné', () => {
-    expect(initialsOf('M. et Mme Moreau')).toBe('MM');
-    expect(initialsOf('Mme Rossi')).toBe('MR');
-    expect(initialsOf('Famille Keller')).toBe('FK');
-    expect(initialsOf('M. et Mme Lambert-Duval')).toBe('ML');
+  // Lot F (Jean-Guy, 26/11) — les noms de famille, jamais « M. », « Mme » ni « Famille ».
+  it('les initiales des noms de famille ; rien n’est deviné', () => {
+    expect(initialsOf('M. et Mme Lambert-Duval')).toBe('LD');
+    expect(initialsOf('M. Girard et Mme Chevalier')).toBe('GC');
+    expect(initialsOf('Famille Keller')).toBe('K');
+    expect(initialsOf('M. et Mme Rossi')).toBe('R');
+    expect(initialsOf('Mme Rossi')).toBe('R');
+    expect(initialsOf('Keller')).toBe('K');
+    expect(initialsOf('Mr and Mrs Wilson')).toBe('W');
+    expect(initialsOf('Monsieur et Madame Moreau')).toBe('M');
+    expect(initialsOf('M. de Villiers')).toBe('V');
+    expect(initialsOf('Exemple — M. et Mme Démo')).toBe('D');
+    // Un nom tapé avec son prénom : une lettre chacun, deux au plus.
+    expect(initialsOf('Jean Dupont')).toBe('JD');
+    expect(initialsOf('M. Lambert-Duval et Mme Martin')).toBe('LM');
+    // Le rond du compte (prénom et nom) : une lettre chacun, le prénom composé n'en donne qu'une.
     expect(initialsOf('Jean-Guy Ourmières')).toBe('JO');
-    expect(initialsOf('Keller')).toBe('KE');
+    // Rien qu'une civilité : sa première lettre, jamais un rond vide.
+    expect(initialsOf('Famille')).toBe('F');
     expect(initialsOf('  ')).toBe('?');
   });
 
@@ -141,7 +152,7 @@ describe('la carte « à faire »', () => {
       }),
     );
     expect(html).toContain('data-testid="task-card"');
-    expect(html).toContain('>MM<');
+    expect(html).toContain('>M<');
     const order = ['M. et Mme Moreau', '4 nouveaux biens pour eux', 'Voir les biens'];
     const positions = order.map((text) => html.indexOf(text));
     expect(positions.every((position) => position >= 0)).toBe(true);
@@ -273,21 +284,11 @@ describe('les tuiles de chiffres', () => {
   });
 });
 
+// La refonte, lot F — l'aperçu des blocs (`/socle`), ouvert sur l'essai seulement au lot A, est
+// retiré : les écrans de la refonte les montrent.
 describe('l’aperçu du socle', () => {
-  it('ouvert sur l’essai et en local ; un environnement qui ne se dit pas reste fermé', () => {
-    expect(soclePreviewOpen({ VERCEL_ENV: 'preview', NODE_ENV: 'production' })).toBe(true);
-    expect(soclePreviewOpen({ NODE_ENV: 'development' })).toBe(true);
-    expect(soclePreviewOpen({ VERCEL_ENV: 'production', NODE_ENV: 'production' })).toBe(false);
-    expect(soclePreviewOpen({ NODE_ENV: 'production' })).toBe(false);
-    expect(soclePreviewOpen({ VERCEL_ENV: 'development', NODE_ENV: 'production' })).toBe(false);
-    expect(soclePreviewOpen({})).toBe(false);
-  });
-
-  it('la page se garde par cette règle, avant de rendre quoi que ce soit', () => {
-    const page = readFileSync(path.resolve('src/app/(protected)/socle/page.tsx'), 'utf8');
-    const guard = page.indexOf('if (!soclePreviewOpen()) notFound();');
-    expect(guard).toBeGreaterThan(0);
-    expect(guard).toBeLessThan(page.indexOf('return ('));
-    expect(page).not.toContain('process.env');
+  it('est retiré', () => {
+    expect(existsSync(path.resolve('src/app/(protected)/socle/page.tsx'))).toBe(false);
+    expect(existsSync(path.resolve('src/components/socle/preview-open.ts'))).toBe(false);
   });
 });

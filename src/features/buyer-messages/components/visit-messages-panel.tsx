@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { btnSecondary, errorText, hintText, inputBase } from '@/components/ui/styles';
+import { errorText, hintText, inputBase, socleBtnQuiet } from '@/components/ui/styles';
 import {
   prepareVisitMessages,
   type VisitMessage,
@@ -38,7 +38,7 @@ function MessageBox({
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className={btnSecondary}
+          className={socleBtnQuiet}
           onClick={() => {
             navigator.clipboard
               ?.writeText(text)
@@ -49,13 +49,13 @@ function MessageBox({
           Copier
         </button>
         {hrefs.sms ? (
-          <a className={btnSecondary} href={hrefs.sms}>
+          <a className={socleBtnQuiet} href={hrefs.sms}>
             SMS
           </a>
         ) : null}
         {hrefs.whatsapp ? (
           <a
-            className={btnSecondary}
+            className={socleBtnQuiet}
             href={hrefs.whatsapp}
             target="_blank"
             rel="noopener noreferrer"
@@ -63,7 +63,7 @@ function MessageBox({
             WhatsApp
           </a>
         ) : null}
-        <a className={btnSecondary} href={hrefs.email}>
+        <a className={socleBtnQuiet} href={hrefs.email}>
           E-mail
         </a>
       </div>

@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { PersonMark } from '@/components/socle/task-card';
 import {
-  badgeBrand,
-  card,
-  emptyState,
-  kickerLabel,
-  pageSubtitle,
-  pageTitle,
+  alertError,
+  socleCardBordered,
+  socleKicker,
+  socleSubtitle,
+  socleTitle,
 } from '@/components/ui/styles';
 import { VisitRow } from '@/features/buyer-presentation/components/visit-row';
 import {
@@ -43,6 +43,14 @@ function groupByBuyer(
   return [...groups.values()];
 }
 
+// La refonte, lot F — sa ligne : « 2 visites à planifier · 3 faites ».
+function visitsCount(pending: number, done: number): string {
+  const visits = (n: number) => `${n}\u00a0${n > 1 ? 'visites' : 'visite'}`;
+  if (pending === 0) return `${visits(done)} ${done > 1 ? 'faites' : 'faite'}`;
+  const toPlan = `${visits(pending)} à planifier`;
+  return done > 0 ? `${toPlan} · ${done}\u00a0${done > 1 ? 'faites' : 'faite'}` : toPlan;
+}
+
 // Mission 139 — `?messages=<visite>` : juste après « Visite faite », les deux messages de cette
 // visite s'ouvrent aussitôt.
 export default async function VisitsPage({
@@ -73,21 +81,25 @@ export default async function VisitsPage({
   const pending = lines.filter((line) => line.visitedAt == null);
   const done = lines.filter((line) => line.visitedAt != null);
   return (
-    <div className="flex flex-col gap-6 md:gap-8">
-      <div className="flex flex-col gap-1.5">
-        <span className={kickerLabel}>Acquéreurs</span>
-        <h1 className={pageTitle}>Visites</h1>
-        <p className={pageSubtitle}>
-          Les visites demandées par vos acquéreurs, à planifier, puis faites avec leur retour.
-        </p>
+    // La refonte, lot F (Jean-Guy, 26/11) — Visites aligné sur le socle : le titre et sa ligne, les
+    // deux groupes sous leur sur-titre, une personne avec son rond aux initiales, chaque visite dans
+    // la carte du socle, ses gestes avec les boutons du socle. Les mêmes blocs aux trois tailles.
+    <div className="flex max-w-3xl flex-col gap-5 md:gap-6">
+      <div className="flex flex-col gap-0.5">
+        <h1 className={`${socleTitle} md:text-[26px] xl:text-[30px]`}>Visites</h1>
+        {lines.length > 0 ? (
+          <p className={socleSubtitle} data-testid="visits-count">
+            {visitsCount(pending.length, done.length)}
+          </p>
+        ) : null}
       </div>
       {offerAnswers == null ? (
-        <p role="alert" className="text-sm font-semibold text-red-700">
+        <p role="alert" className={alertError}>
           Les réponses aux offres d’achat n’ont pas pu être lues : rechargez la page.
         </p>
       ) : null}
       {lines.length === 0 ? (
-        <div className={emptyState}>
+        <div className={`${socleCardBordered} p-6 text-[15px] text-[#5B6380] stage:text-white/60`}>
           Aucune demande de visite pour l’instant : elles naissent pendant une présentation ou
           depuis le dossier.
         </div>
@@ -97,23 +109,22 @@ export default async function VisitsPage({
         { title: 'Visites faites', items: done, testId: 'visits-done' },
       ].map((section) =>
         section.items.length > 0 ? (
-          <section
-            key={section.title}
-            className={`${card} flex flex-col gap-4 p-5`}
-            data-testid={section.testId}
-          >
-            <h2 className="font-title text-lg font-semibold text-brand-deep stage:text-white">
-              {section.title} <span className={badgeBrand}>{section.items.length}</span>
+          <section key={section.title} className="flex flex-col gap-3" data-testid={section.testId}>
+            <h2 className={socleKicker}>
+              {section.title} · {section.items.length}
             </h2>
             {groupByBuyer(section.items).map((group) => (
-              <div key={group.buyerId} className="flex flex-col gap-2">
+              <div key={group.buyerId} className="flex flex-col gap-2.5">
                 <Link
                   href={`/acquereurs/${group.buyerId}`}
-                  className="self-start font-semibold text-zinc-800 hover:underline stage:text-white"
+                  className="flex items-center gap-3 self-start rounded-2xl pr-2 hover:bg-white/60 stage:hover:bg-white/5"
                 >
-                  {group.buyerName}
+                  <PersonMark name={group.buyerName} />
+                  <span className="text-[17px] font-bold text-brand-darker stage:text-white">
+                    {group.buyerName}
+                  </span>
                 </Link>
-                <ul className="flex flex-col gap-2">
+                <ul className="flex flex-col gap-2.5">
                   {group.lines.map((line) => (
                     <VisitRow
                       key={line.id}

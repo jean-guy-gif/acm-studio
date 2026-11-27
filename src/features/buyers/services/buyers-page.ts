@@ -3,6 +3,9 @@
 // (`?vue=agence`), un filtre (`?etat=`), une recherche (`?q=`) ou l'avis d'une fiche archivée
 // (`?archive=`) ouvre la liste, comme avant : un lien envoyé mène toujours au même endroit. Pur.
 export const ALL_BUYERS_HREF = '/acquereurs?tous=1';
+// Remarques de Jean-Guy (26/11) — « Tous les acquéreurs de l'agence » : la liste dans la vue
+// « Toute l'agence » (M146 B).
+export const AGENCY_BUYERS_HREF = '/acquereurs?vue=agence';
 
 const LIST_PARAMS = ['q', 'archive', 'vue', 'etat', 'tous'] as const;
 

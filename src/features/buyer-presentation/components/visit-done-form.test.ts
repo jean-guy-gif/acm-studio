@@ -42,7 +42,9 @@ describe('« Visite faite », au pouce', () => {
   });
 
   it('de grands boutons ; au premier rendu, rien n’est choisi et « Enregistrer » est désactivé', () => {
-    expect(html.match(/min-h-12/g)?.length).toBeGreaterThanOrEqual(8);
+    // La refonte, lot F — « Enregistrer » prend le bouton du socle (`h-12`, 48 px) : les grands
+    // boutons se comptent sur leurs deux écritures.
+    expect(html.match(/\b(?:min-)?h-12\b/g)?.length).toBeGreaterThanOrEqual(8);
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*data-testid="visit-done-save"/);
     expect(html).not.toContain('aria-pressed="true"');
   });

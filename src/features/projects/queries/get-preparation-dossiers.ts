@@ -28,6 +28,11 @@ export type PreparationReadiness = {
 
 export type PreparationDossier = {
   project: Project;
+  // La refonte, lot F (relecture) — la dernière fois que le dossier a été travaillé : la plus
+  // récente des dates du dossier, de son bien, de ses concurrents, de sa décision de prix et de
+  // ses imports en attente. `projects.updated_at` seul ne bouge pas quand on saisit le bien ou
+  // retient un concurrent (d'autres tables).
+  lastActivityAt: string;
   property: PreparationProperty | null;
   // Fourchette du conseiller (bornes) — jamais montrée au vendeur, à sa place ici.
   fourchette: { low: number; high: number } | null;
@@ -37,15 +42,23 @@ export type PreparationDossier = {
 // `ready = false` : la liste PAR DÉFAUT (dossiers en cours, status 'draft').
 // `ready = true`  : le filtre « Prêts » (status 'ready_for_meeting').
 export async function getPreparationDossiers(ready: boolean): Promise<PreparationDossier[]> {
+  return (await readPreparationDossiers(ready)).dossiers;
+}
+
+// La refonte, lot F (relecture) — la même lecture, qui dit son échec (M98) : Vendeurs ne fait pas
+// disparaître les dossiers en préparation sans le dire.
+export async function readPreparationDossiers(
+  ready: boolean,
+): Promise<{ dossiers: PreparationDossier[]; failed: boolean }> {
   const profile = await getProfile();
   if (!profile) {
-    return [];
+    return { dossiers: [], failed: false };
   }
 
   const supabase = await createClient();
   const agencyId = profile.agency_id;
 
-  const { data: projects } = await supabase
+  const { data: projects, error: projectsError } = await supabase
     .from('projects')
     .select(
       'id, seller_name, seller_email, seller_phone, status, created_at, updated_at, advisor_id, agency_id, live_rhythm, live_started_at, live_ended_at, is_example, demo_stage, live_presentation_mode, language',
@@ -55,8 +68,11 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
     .order('created_at', { ascending: false });
 
   const list = projects ?? [];
+  if (projectsError) {
+    return { dossiers: [], failed: true };
+  }
   if (list.length === 0) {
-    return [];
+    return { dossiers: [], failed: false };
   }
 
   const ids = list.map((p) => p.id);
@@ -66,26 +82,44 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
     supabase
       .from('subject_properties')
       .select(
-        'project_id, property_type, rooms_count, surface_area, city, postal_code, advisor_price_min, advisor_price_max',
+        'project_id, property_type, rooms_count, surface_area, city, postal_code, advisor_price_min, advisor_price_max, updated_at',
       )
       .eq('agency_id', agencyId)
       .in('project_id', ids),
     supabase
       .from('comparables')
-      .select('project_id, price, surface_area, is_selected')
+      .select('project_id, price, surface_area, is_selected, created_at, updated_at')
       .eq('agency_id', agencyId)
       .in('project_id', ids),
     supabase
       .from('project_price_positionings')
-      .select('project_id')
+      .select('project_id, updated_at')
       .eq('agency_id', agencyId)
       .in('project_id', ids),
     supabase
       .from('pending_competitor_imports')
-      .select('project_id')
+      .select('project_id, updated_at')
       .eq('agency_id', agencyId)
       .in('project_id', ids),
   ]);
+  const failed = [properties, comparables, positionings, pendingImports].some(
+    (result) => result.error != null,
+  );
+  // La dernière activité de chaque dossier (voir `lastActivityAt`).
+  const lastActivity = new Map<string, string>();
+  const touch = (projectId: string, at: string | null | undefined) => {
+    if (!at) return;
+    const known = lastActivity.get(projectId);
+    if (!known || Date.parse(at) > Date.parse(known)) lastActivity.set(projectId, at);
+  };
+  for (const project of list) touch(project.id, project.updated_at);
+  for (const row of properties.data ?? []) touch(row.project_id, row.updated_at);
+  for (const row of comparables.data ?? []) {
+    touch(row.project_id, row.created_at);
+    touch(row.project_id, row.updated_at);
+  }
+  for (const row of positionings.data ?? []) touch(row.project_id, row.updated_at);
+  for (const row of pendingImports.data ?? []) touch(row.project_id, row.updated_at);
   const pendingCountByProject = new Map<string, number>();
   for (const row of pendingImports.data ?? []) {
     pendingCountByProject.set(row.project_id, (pendingCountByProject.get(row.project_id) ?? 0) + 1);
@@ -111,7 +145,7 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
     }
   }
 
-  return list.map((project) => {
+  const dossiers = list.map((project) => {
     const propertyRow = propertyByProject.get(project.id) ?? null;
     const positioningRow = positioningByProject.get(project.id) ?? null;
     const exploitableCount = exploitableCountByProject.get(project.id) ?? 0;
@@ -121,6 +155,7 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
 
     return {
       project,
+      lastActivityAt: lastActivity.get(project.id) ?? project.updated_at,
       property: propertyRow
         ? {
             propertyType: propertyRow.property_type,
@@ -150,4 +185,5 @@ export async function getPreparationDossiers(ready: boolean): Promise<Preparatio
       },
     };
   });
+  return { dossiers, failed };
 }

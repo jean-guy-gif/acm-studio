@@ -392,3 +392,28 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
   - la tuile « Prix ou surface à vérifier » (M104) n'est pas le « Prix à revérifier » de la
     maquette, qui parlerait des annonces à relire avant le rendez-vous (M152 A) : à trancher par
     Jean-Guy.
+- 27/11 · Refonte, remarques de Jean-Guy (26/11) · Notés, sans les faire :
+  - un critère « jardin », distinct d'« extérieur » : M. et Mme Arnaud disent « jardin
+    indispensable » et la lecture retient « Extérieur » indispensable, qu'une terrasse remplit ;
+  - la date du rendez-vous en base (une migration) : la carte « Rendez-vous demain » de la maquette
+    REFONTE-7, et les dossiers prêts pour le rendez-vous du jour dans « à faire aujourd'hui ». En
+    attendant, Vendeurs montre les dossiers en préparation modifiés dans les 14 derniers jours.
+- 27/11 · Refonte, lot F (relecture) · Notés, sans les corriger :
+  - « Tous mes vendeurs · N » compte les dossiers du conseiller (remarque 3), mais le lien ouvre
+    Préparation, Live et Suivi, qui montrent les dossiers de toute l'agence (M59) : dans une agence
+    à plusieurs conseillers, la liste ouverte est plus longue que le chiffre. Filtrer ces listes
+    serait une fonction nouvelle : à trancher par Jean-Guy. Côté acquéreurs, le lien ouvre bien
+    « Mes fiches » ;
+  - « Reprendre la préparation » suit l'étape à faire du dossier : un dossier en préparation dont
+    le Live a commencé (cas rare) y mène à « Reprendre le Live » ;
+  - Vendeurs et le détail d'Acquéreurs relisent ce qu'« Aujourd'hui » a déjà lu (les dossiers en
+    préparation et leurs concurrents ; les visites et les mandats à proposer de toute l'agence, à
+    chaque personne choisie) : à mesurer si les pages deviennent lentes ;
+  - le même choix de vue s'écrit « Mes tâches » (`?vue=agence`) sur « Aujourd'hui », « Mes
+    dossiers » et « Mes fiches » (`?agence=1`) sur Vendeurs et Acquéreurs ; « Aujourd'hui » garde
+    son interrupteur écrit à la main ;
+  - « Aujourd'hui » dit encore « Relancer » pour le geste que Vendeurs et le dossier nomment
+    « Préparer la relance » ;
+  - sur Visites, « À planifier » (et sa ligne) compte aussi les visites déjà confirmées, comme le
+    groupe d'avant ; un long libellé (« Préparer le dossier de collaboration au confrère ») tient
+    dans un bouton de 48 px à 390 px, à regarder sur un vrai téléphone.

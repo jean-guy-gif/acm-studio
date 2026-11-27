@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { badgeBrand, badgeNeutral } from '@/components/ui/styles';
+import { pillGreen, pillNeutral, socleCardBordered } from '@/components/ui/styles';
 import type { VisitVoucher } from '@/features/visit-voucher/queries/get-visit-vouchers';
 import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-answer-badge';
 import {
@@ -73,18 +73,18 @@ export function VisitRow({
       id={`visite-${line.id}`}
       data-testid="visit-line"
       data-state={done ? 'done' : 'pending'}
-      className="flex flex-col gap-2 rounded-xl border border-zinc-200 px-4 py-3 stage:border-white/10"
+      className={`${socleCardBordered} flex flex-col gap-2.5 p-4`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-title text-base font-bold text-zinc-900 stage:text-white">
+        <span className="text-[17px] font-bold text-brand-darker stage:text-white">
           {line.itemLabel}
         </span>
         {line.itemPrice != null ? (
-          <span className="text-sm text-zinc-600 stage:text-white/70">
+          <span className="text-[15px] text-[#5B6380] stage:text-white/70">
             {formatEuro(line.itemPrice)}
           </span>
         ) : null}
-        <span className={letter?.action.kind === 'propose_visit' ? badgeBrand : badgeNeutral}>
+        <span className={letter?.action.kind === 'propose_visit' ? pillGreen : pillNeutral}>
           {letter?.action.kind === 'propose_visit'
             ? 'Mandat signé'
             : SELECTION_SOURCE_LABELS[line.itemSource]}
@@ -92,7 +92,7 @@ export function VisitRow({
         {/* Mission 143 (B1) — un seul badge, le plus avancé : l'offre acceptée remplace
             « Offre envisagée ». */}
         {done && offerAnswer?.decision !== 'accepted' ? (
-          <span className={badgeBrand} data-testid="visit-done-outcome">
+          <span className={pillNeutral} data-testid="visit-done-outcome">
             {VISIT_OUTCOME_LABELS[line.outcome]}
           </span>
         ) : null}
@@ -100,7 +100,7 @@ export function VisitRow({
           <OfferAnswerBadge decision={offerAnswer.decision} decidedAt={offerAnswer.decidedAt} />
         ) : null}
       </div>
-      <p className="text-xs text-zinc-500 stage:text-white/60">
+      <p className="text-sm text-[#5B6380] stage:text-white/60">
         Demandée le {buyerDateLabel(line.requestedAt)}{' '}
         {VISIT_REQUEST_DURING_LABELS[line.requestedDuring]}
         {done ? ` · visitée le ${buyerDateLabel(line.visitedAt!)}` : ''}
