@@ -76,11 +76,14 @@ base d'essai.
 | 27/11 | Après la livraison, la fiche des trois chantiers (A, B, C), leurs durées et leurs questions ; lot A1 — la ville une fois au Live, « probablement retiré sans vente » ; captures du Live avant / après ; les deux specs concernées (une tranche bloquée par l'essai de 16 h 30 à 16 h 52, verte au second passage) ; de 15 h 05 à 16 h 10, puis de 18 h 13 à 18 h 30 | Moyen | 1 h 25 | 0 | 55 min |
 | 27/11 | Lot A2-A3 — les espaces insécables : la règle, son test, environ 890 textes convertis par un script, le guide et le modèle d'e-mail, les tests repris ; de 18 h 30 à 19 h 43 | Moyen | 1 h 15 | 0 | 15 min |
 | 27/11 | Lot A4 — le relecteur (un bloquant levé : le CSS @page :first), la suite complète sur l'essai (42 sur 42, une spec corrigée), le banc de l'Étude, la démo rejouée, les preuves avant / après ; de 19 h 43 à 20 h 55 | Moyen | 1 h 10 | 0 | 55 min |
+| 27/11 | La livraison : le dernier contrôle de la production depuis le gel (vert) ; le lot A en production, vérifié sur le compte de Jean-Guy (la version, « Aujourd'hui », une synthèse et sa règle @page :first) et dans les journaux ; de 22 h à 22 h 40 | Moyen | 40 min | 0 | 0 |
 
-Le 27/11, de 7 h 05 à 20 h 55 : 8 h 15 de travail — les remarques, le lot F, les mises en
-production, les corrections avant le gel, le gel (4 h 25 jusqu'à 14 h 15), puis le lot A d'après la
-livraison (3 h 50, environ 5 h prévues). De 10 h 05 à 12 h 57, les deux lots attendaient le « oui »
-de Jean-Guy ; de 16 h 52 à 18 h 13, la session était à l'arrêt. Reste son mot « livraison ».
+Le 27/11, de 7 h 05 à 22 h 40 : 8 h 55 de travail — les remarques, le lot F, les mises en
+production, les corrections avant le gel, le gel (4 h 25 jusqu'à 14 h 15), le lot A d'après la
+livraison (3 h 50, environ 5 h prévues), puis le dernier contrôle et la mise en production du lot A
+(40 min). De 10 h 05 à 12 h 57, les deux lots attendaient le « oui » de Jean-Guy ; de 16 h 52 à
+18 h 13, la session était à l'arrêt ; de 20 h 55 à 22 h, le lot A attendait son « oui ». Livré le
+27/11 au soir.
 
 Le 26/11, de 0 h à 19 h 05 : 10 h 25 de travail pour les lots A (sa fin), B, C, D et E, hors la
 session coupée de 5 h 26 à 6 h 40, le poste sans réseau de 7 h 27 à 8 h 56 et la session arrêtée

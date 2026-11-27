@@ -14,6 +14,9 @@ balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `
 - 27/11 · Refonte (Jean-Guy) · Préparation, Live et Suivi filtrés sur « Mes dossiers » : tant
   qu'ils montrent toute l'agence (M59), le lien de Vendeurs dit « Tous les vendeurs de l'agence »
   et compte l'agence.
+- 27/11 · Lot A (vérifié en production) · Les textes tapés par le conseiller (la justification de
+  sa décision de prix, « Le point à retenir » de la synthèse) gardent ses espaces : la règle ne
+  réécrit pas ce qu'il écrit ; les mettre en forme à l'affichage serait une décision de Jean-Guy.
 - 27/11 · Lot A (Jean-Guy) · Sur téléphone, les noms de commune à trait d'union se coupent en fin
   de ligne (« Juan-les- » puis « Pins », synthèse, concurrent 1) : un trait d'union insécable
   (U+2011) suffira.
