@@ -977,7 +977,7 @@ de la fenêtre`), pas seulement qu'ils existent : sur ordinateur, « Écarter »
   le tableau de `LANCEMENT.md` à chaque lot (l'état « en production » d'un côté, la section du lot
   de l'autre). Un `git merge … && git commit` enchaîné enregistre alors les marqueurs de conflit :
   arrivé au lot B (réparé tout de suite, le code n'était pas touché). Lire `git diff --name-only
-  --diff-filter=U` après chaque fusion, et résoudre avant d'enregistrer.
+--diff-filter=U` après chaque fusion, et résoudre avant d'enregistrer.
 - 27/11 · Refonte · Le Mac s'est endormi pendant la suite de la nuit malgré `caffeinate -dimsu` :
   le parcours en cours a perdu le réseau (`ERR_NETWORK_IO_SUSPENDED`), vert au rejeu le matin.
 
