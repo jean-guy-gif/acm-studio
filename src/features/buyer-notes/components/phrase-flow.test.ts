@@ -55,6 +55,11 @@ describe('« Que cherche-t-il ? », avant la lecture', () => {
   it('l’avertissement validé de la lecture par l’IA est là, mot pour mot', () => {
     expect(html).toContain(`>${NOTES_AI_WARNING}<`);
     expect(NOTES_AI_WARNING).toContain('l’outil ne la relève pas, mais elle serait envoyée.');
+    // Remarques de Jean-Guy (26/11) : la phrase écrite ou dictée part aussi à la lecture.
+    expect(NOTES_AI_WARNING).toContain(
+      'N’écrivez, ne dictez ni ne photographiez d’information sur la santé, la religion ou la vie privée de vos clients',
+    );
+    expect(NOTES_AI_WARNING).not.toContain('Ne photographiez pas');
   });
 
   it('la saisie rapide reste derrière « Saisir à la main », jamais sous la phrase', () => {

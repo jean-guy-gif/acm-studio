@@ -2,17 +2,19 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { ScopeSwitch } from '@/components/socle/scope-switch';
 import { StatTiles } from '@/components/socle/stat-tiles';
 import { LateNote, PersonRow, RowLink, TaskCard } from '@/components/socle/task-card';
 import {
   alertError,
+  taskButtonClass,
   socleBtnQuiet,
   socleCardBordered,
   socleKicker,
   socleSubtitle,
   socleTitle,
 } from '@/components/ui/styles';
-import { buyerOthersNote, buyersTodayCount } from '@/features/buyers/services/buyers-today';
+import { buyerOthersNote } from '@/features/buyers/services/buyers-today';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { taskLine } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
@@ -23,17 +25,29 @@ import {
 } from '@/features/projects/components/project-summary';
 import { OverviewSteps } from '@/features/projects/components/overview-steps';
 import { countSellerProjects } from '@/features/projects/queries/count-seller-projects';
+import { getPreparationDossiers } from '@/features/projects/queries/get-preparation-dossiers';
 import { loadProjectSummary } from '@/features/projects/queries/load-project-summary';
+import { nextDossierAction } from '@/features/projects/services/dossier-steps';
 import {
+  PREPARATION_BUTTON,
+  preparationItems,
   selectedSeller,
   sellersToday,
+  sellersTodayCount,
   sellerTaskButton,
   sellerTaskKey,
   sellerTodayHref,
   type SellerTodayItem,
 } from '@/features/projects/services/sellers-today';
 import { TodayTaskAction } from '@/features/today/components/today-task';
-import { getToday, type Today, type TodayTaskContext } from '@/features/today/queries/get-today';
+import {
+  getToday,
+  type Today,
+  type TodayScope,
+  type TodayTaskContext,
+} from '@/features/today/queries/get-today';
+import { allPeopleLabel, withScope } from '@/features/today/services/today-scope';
+import { getProfile } from '@/lib/auth/get-profile';
 
 const NO_CONTEXT: TodayTaskContext = {
   motiveLabel: null,
@@ -67,21 +81,84 @@ function TaskAction({
   );
 }
 
+// Le geste d'une carte : celui de sa tâche du jour, ou, pour un dossier en préparation, « Reprendre
+// la préparation », qui mène à son étape à faire.
+function SellerAction({
+  item,
+  today,
+  day,
+  primary,
+}: {
+  item: SellerTodayItem;
+  today: Today;
+  day: string;
+  primary: boolean;
+}) {
+  if (item.task) return <TaskAction task={item.task} today={today} day={day} primary={primary} />;
+  return (
+    <Link
+      href={item.href ?? `/builder/${item.projectId}`}
+      className={taskButtonClass(primary, 'socle')}
+    >
+      {PREPARATION_BUTTON}
+    </Link>
+  );
+}
+
 // La refonte, lot E (maquettes REFONTE-7 et 8) — Vendeurs s'ouvre sur « à faire aujourd'hui » : une
 // carte par vendeur, avec ce qu'il y a à faire et son bouton ; un seul bouton plein. Sur téléphone,
 // une colonne de cartes ; sur tablette et ordinateur, la liste à gauche et, à droite, son dossier —
 // sa prochaine étape, trois chiffres, « Son dossier », « Tout le dossier » —, sans changer de page
 // (`?vendeur=`). Ce sont les tâches du bloc « Vendeurs » d'« Aujourd'hui » (« Mes tâches ») : mêmes
 // règles, mêmes gestes. « Tous mes vendeurs » mène aux listes de Préparation, du Live et du Suivi.
-export async function SellersTodayView({ selectedId }: { selectedId?: string }) {
-  const [today, all] = await Promise.all([getToday('mine'), countSellerProjects()]);
-  if (!today) notFound();
-  const day = parisDay(new Date());
-  const items = sellersToday(today.board, (projectId) => today.context.get(projectId), day);
+// Remarques de Jean-Guy (26/11) — un dossier en préparation, modifié dans les 14 derniers jours, a
+// sa carte : « Préparation en cours », « Reprendre la préparation » ; un manager choisit sa vue,
+// « Mes dossiers » ou « Toute l'agence » (`?agence=1`), comme sur « Aujourd'hui », et le lien d'en
+// bas compte ce qu'il dit (« Tous mes vendeurs » ou « Tous les vendeurs de l'agence »).
+export async function SellersTodayView({
+  selectedId,
+  scope: asked = 'mine',
+}: {
+  selectedId?: string;
+  scope?: TodayScope;
+}) {
+  const [today, counts, drafts, profile] = await Promise.all([
+    getToday(asked),
+    countSellerProjects(),
+    getPreparationDossiers(false),
+    getProfile(),
+  ]);
+  if (!today || !profile) notFound();
+  const now = new Date();
+  const day = parisDay(now);
+  const scope = today.scope;
+  const tasks = sellersToday(today.board, (projectId) => today.context.get(projectId), day);
+  const preparations = preparationItems(
+    drafts.map(({ project, readiness }) => ({
+      projectId: project.id,
+      name: project.seller_name,
+      status: project.status,
+      updatedAt: project.updated_at,
+      advisorId: project.advisor_id,
+      isExample: project.is_example,
+      href: nextDossierAction(project.id, {
+        status: project.status,
+        hasProperty: readiness.hasProperty,
+        exploitableCount: readiness.exploitableCount,
+        hasDecision: readiness.hasPositioning,
+        liveStarted: project.live_started_at != null,
+        liveEnded: project.live_ended_at != null,
+        documentOnly: project.live_presentation_mode === 'document',
+      }).href,
+    })),
+    { scope, advisorId: profile.id, now, skip: tasks.map((item) => item.projectId) },
+  );
+  const items = [...tasks, ...preparations];
   const selected = selectedSeller(items, selectedId);
   // Une lecture en échec n'est jamais lue comme « rien à faire » (M98).
   const unread = today.failed.length > 0;
-  const things = items.reduce((total, item) => total + 1 + item.others.length, 0);
+  const things = tasks.reduce((total, item) => total + 1 + item.others.length, 0);
+  const scoped = (href: string) => withScope(href, scope);
 
   return (
     <div
@@ -97,9 +174,9 @@ export async function SellersTodayView({ selectedId }: { selectedId?: string }) 
           <div className="flex min-w-0 flex-col gap-0.5">
             <h1 className={`${socleTitle} md:text-[26px] xl:text-[30px]`}>Vendeurs</h1>
             <p className={socleSubtitle} data-testid="sellers-today-count">
-              {unread && items.length === 0
+              {unread && tasks.length === 0
                 ? 'Une partie des tâches n’a pas pu être lue'
-                : buyersTodayCount(things)}
+                : sellersTodayCount(things, preparations.length)}
             </p>
           </div>
           <Link
@@ -123,6 +200,16 @@ export async function SellersTodayView({ selectedId }: { selectedId?: string }) 
           </Link>
         </div>
 
+        {today.manager ? (
+          <ScopeSwitch
+            scope={scope}
+            mineLabel="Mes dossiers"
+            mineHref="/vendeurs"
+            agencyHref="/vendeurs?agence=1"
+            testId="sellers-scope"
+          />
+        ) : null}
+
         {today.failed.map((message) => (
           <p key={message} role="alert" className={alertError}>
             {message}
@@ -142,7 +229,7 @@ export async function SellersTodayView({ selectedId }: { selectedId?: string }) 
                   tone={item.tone}
                   href={`/builder/${item.projectId}`}
                   action={
-                    <TaskAction task={item.task} today={today} day={day} primary={index === 0} />
+                    <SellerAction item={item} today={today} day={day} primary={index === 0} />
                   }
                   more={
                     item.others.length > 0 ? (
@@ -161,7 +248,7 @@ export async function SellersTodayView({ selectedId }: { selectedId?: string }) 
             {items.map((item) => (
               <li key={item.projectId}>
                 <PersonRow
-                  href={sellerTodayHref(item)}
+                  href={scoped(sellerTodayHref(item))}
                   name={item.name}
                   task={item.what}
                   late={item.late}
@@ -183,8 +270,8 @@ export async function SellersTodayView({ selectedId }: { selectedId?: string }) 
 
         <RowLink
           href="/builder"
-          label="Tous mes vendeurs"
-          count={all ?? undefined}
+          label={allPeopleLabel('vendeurs', scope)}
+          count={counts?.[scope]}
           testId="sellers-all-link"
         />
       </section>
@@ -228,7 +315,7 @@ export async function SellersTodayView({ selectedId }: { selectedId?: string }) 
               href="/builder"
               className="text-[15px] font-bold text-brand-deep stage:text-brand"
             >
-              Voir tous mes vendeurs
+              Voir {allPeopleLabel('vendeurs', scope).toLowerCase()}
             </Link>
           </div>
         )}
@@ -247,7 +334,7 @@ function NextTask({ item, today, day }: { item: SellerTodayItem; today: Today; d
       kicker="À faire aujourd’hui"
       title={item.what}
       late={item.late}
-      action={<TaskAction task={item.task} today={today} day={day} primary />}
+      action={<SellerAction item={item} today={today} day={day} primary />}
     />
   );
 }

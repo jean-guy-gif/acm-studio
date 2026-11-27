@@ -171,6 +171,35 @@ test('Acquéreurs : à faire aujourd’hui, une carte par personne, aux trois ta
     await expect(page).toHaveURL(/\/acquereurs$/);
   });
 
+  await test.step('La vue : « Mes fiches » ou « Toute l’agence », et ce que compte le lien', async () => {
+    // Remarques de Jean-Guy (26/11) — le compte de démonstration est manager : il choisit sa vue,
+    // comme sur « Aujourd'hui » ; le lien d'en bas dit ce qu'il compte et ouvre la liste dans la
+    // même vue.
+    const scope = page.getByTestId('buyers-scope');
+    const all = page.getByTestId('buyers-all-link');
+    await expect(scope.getByRole('link', { name: 'Mes fiches' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(all).toContainText(/^Tous mes acquéreurs\s*\d+/);
+    const mine = Number((await all.innerText()).replace(/\D/g, ''));
+    await scope.getByRole('link', { name: 'Toute l’agence' }).click();
+    await expect(page).toHaveURL(/\/acquereurs\?agence=1$/);
+    await expect(page.getByTestId('buyers-today')).toBeVisible();
+    await expect(all).toContainText(/^Tous les acquéreurs de l’agence\s*\d+/);
+    expect(Number((await all.innerText()).replace(/\D/g, ''))).toBeGreaterThanOrEqual(mine);
+    await expect(page.getByTestId('person-row').first()).toHaveAttribute('href', /agence=1/);
+    await expectOneFilled(page, 'Acquéreurs, toute l’agence');
+    await all.click();
+    await expect(page).toHaveURL(/\/acquereurs\?vue=agence$/);
+    await expect(page.getByTestId('buyer-view-agency')).toHaveAttribute('aria-pressed', 'true');
+    await page.goto('/acquereurs');
+    await expect(scope.getByRole('link', { name: 'Mes fiches' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+  });
+
   await test.step('« Tous mes acquéreurs » : la liste entière, et son retour', async () => {
     const all = page.getByTestId('buyers-all-link');
     await expect(all).toContainText('Tous mes acquéreurs');

@@ -21,8 +21,10 @@ export type SellerTaskContext = { motiveLabel: string | null; signedOn: string |
 export type SellerTodayItem = {
   projectId: string;
   name: string;
-  // Sa tâche du jour : le geste est celui d'« Aujourd'hui ».
-  task: SuiviTask;
+  // Sa tâche du jour : le geste est celui d'« Aujourd'hui ». `null` : un dossier en préparation,
+  // dont le bouton mène à l'étape à faire (`href`).
+  task: SuiviTask | null;
+  href: string | null;
   // Ce qu'il y a à faire, sans redire son nom ; le retard se dit à part, en orange.
   what: string;
   late: string | null;
@@ -111,12 +113,77 @@ export function sellersToday(
     items.set(task.projectId, {
       projectId: task.projectId,
       name: task.sellerName.trim() || 'Vendeur',
+      href: null,
       ...entry,
       tone: sellerTaskTone(task, lateDays),
       others: [],
     });
   }
   return [...items.values()];
+}
+
+// La refonte, remarques de Jean-Guy (26/11) — un dossier en préparation a sa carte dans « à faire
+// aujourd'hui » : « Préparation en cours », et « Reprendre la préparation », qui mène à l'étape à
+// faire (M97, M110). Sans la date du rendez-vous (elle n'est pas en base), seulement les dossiers
+// en préparation modifiés dans les 14 derniers jours, ceux de la vue (« Mes dossiers » : le
+// conseiller en est le titulaire, M145 B), jamais un dossier d'exemple (M97) ; le plus récemment
+// modifié d'abord, après les tâches du jour. Ce ne sont pas des tâches d'« Aujourd'hui » : le
+// sous-titre les compte à part.
+export const PREPARATION_RECENT_DAYS = 14;
+export const PREPARATION_WHAT = 'Préparation en cours';
+export const PREPARATION_BUTTON = 'Reprendre la préparation';
+
+export type PreparationDraft = {
+  projectId: string;
+  name: string;
+  status: string;
+  updatedAt: string;
+  advisorId: string | null;
+  isExample: boolean;
+  // L'étape à faire du dossier (`nextDossierAction`).
+  href: string;
+};
+
+export function preparationItems(
+  drafts: readonly PreparationDraft[],
+  options: { scope: 'mine' | 'agency'; advisorId: string; now: Date; skip?: readonly string[] },
+): SellerTodayItem[] {
+  const since = options.now.getTime() - PREPARATION_RECENT_DAYS * 24 * 60 * 60 * 1000;
+  return drafts
+    .filter(
+      (draft) =>
+        draft.status === 'draft' &&
+        !draft.isExample &&
+        (options.scope === 'agency' || draft.advisorId === options.advisorId) &&
+        Date.parse(draft.updatedAt) >= since &&
+        !(options.skip ?? []).includes(draft.projectId),
+    )
+    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
+    .map((draft) => ({
+      projectId: draft.projectId,
+      name: draft.name.trim() || 'Vendeur',
+      task: null,
+      href: draft.href,
+      what: PREPARATION_WHAT,
+      late: null,
+      tone: 'plain' as const,
+      others: [],
+    }));
+}
+
+// « 2 choses à faire aujourd'hui · 1 préparation en cours » : les choses à faire sont les tâches
+// d'« Aujourd'hui » ; les préparations se comptent à part.
+export function sellersTodayCount(things: number, preparations: number): string {
+  const prepared =
+    preparations > 0
+      ? `${preparations} ${preparations > 1 ? 'préparations' : 'préparation'} en cours`
+      : null;
+  if (things === 0 && prepared) return prepared;
+  const due =
+    things === 0
+      ? 'Rien à faire aujourd’hui'
+      : `${things} ${things > 1 ? 'choses' : 'chose'} à faire aujourd’hui`;
+  return prepared ? `${due} · ${prepared}` : due;
 }
 
 // L'adresse d'un vendeur dans la liste (tablette, ordinateur) : son détail à droite.
