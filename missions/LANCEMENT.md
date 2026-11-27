@@ -139,7 +139,7 @@ Les lots, un à la fois (durée prévue par le chef le 25/11, hors attente de Je
 | C   | Un bien à la fois                                                                                  | REFONTE-3, 5, 6 | 2 h 30       | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
 | D   | Nouvel acquéreur par une phrase                                                                    | REFONTE-2       | 2 h          | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
 | E   | Vendeurs : « à faire aujourd'hui », et le dossier avec sa prochaine étape et ses cinq étapes       | REFONTE-7, 8    | 3 h          | en production le 26/11 au soir, sur le « oui » de Jean-Guy |
-| F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | sur l'essai depuis le 27/11 à 9 h 15, relu et corrigé à 10 h : attend le « oui » |
+| F   | Les pages Visites et le compte rendu de visite, alignés sur le socle                               | —               | 1 h 30       | en production le 27/11 à 13 h, sur le « oui » de Jean-Guy |
 
 Pour chaque lot : sur l'essai, ses specs vertes, trois captures (téléphone, tablette, ordinateur)
 dans `missions/maquettes/`, puis l'adresse à ouvrir sur l'essai. Rien ne va sur `main` sans le
@@ -701,7 +701,7 @@ lots D et E) : `vendeurs-a-faire`, `live-tablette` (trois), `parcours`, `present
 route : la démo cherchait l'exclusivité hors du pli ; le parcours, sur téléphone, attendait
 encore « Vendeurs » → Préparation.
 
-### Remarques de Jean-Guy du 26/11 sur les lots D et E (sur l'essai, attend le « oui »)
+### Remarques de Jean-Guy du 26/11 sur les lots D et E (en production le 27/11)
 
 Son « oui » pour les lots A à E (26/11 au soir) venait avec cinq réponses : 2 et 4, « oui » (la
 tuile « Prix ou surface à vérifier », « À faire aujourd'hui » dans le détail de Vendeurs) ; 1, 3
@@ -757,7 +757,7 @@ Les tests : barrières vertes (4 568 tests unitaires). Sur l'essai : `vendeurs-a
 `acquereurs-a-faire`, `depuis-mes-notes` (deux) et `parcours`, 5 parcours, verts au premier
 passage.
 
-### Lot F — Visites sur le socle, et les ajouts du 26/11 (sur l'essai, attend le « oui »)
+### Lot F — Visites sur le socle, et les ajouts du 26/11 (en production le 27/11)
 
 À ouvrir sur l'essai, avec le compte de démonstration des tests :
 `https://acm-studio-essai.vercel.app/visites`, puis `/aujourdhui`, `/acquereurs` (la famille Keller
