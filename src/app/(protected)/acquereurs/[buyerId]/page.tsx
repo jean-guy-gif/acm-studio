@@ -443,6 +443,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           Financement validé, un échange il y a moins de 30 jours et un budget renseigné.
         </p>
         <BuyerReadinessActions
+          // Lot B4 — le mode lu dans les notes et sa pastille suivent la fiche relue : « Tout est
+          // juste » la retire sans recharger la page.
+          key={`${buyer.financingMode}-${buyer.fieldsToVerify.includes('financing_mode')}`}
           buyerId={buyer.id}
           financing={buyer.financing}
           financingChangedAt={buyer.financingChangedAt}
