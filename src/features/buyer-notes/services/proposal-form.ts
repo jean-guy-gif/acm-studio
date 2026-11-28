@@ -39,6 +39,7 @@ const NOTE_FIELDS = Object.keys(NOTE_FORM_FIELDS) as NoteField[];
 export type ExistingBuyer = Pick<
   Buyer,
   | 'id'
+  | 'financingMode'
   | 'name'
   | 'phone'
   | 'email'
@@ -119,8 +120,10 @@ export type ProposalChoices = {
   kept: Set<NoteField>;
   starsKept: boolean;
   softKept: boolean;
-  // « Comptant, à vérifier » transformé en « Validé » par le conseiller.
+  // « Comptant » lu : le conseiller note aussi le financement « Validé » (réponse 9 du lot B).
   cashValidated: boolean;
+  // Lot B — comment il finance, retenu (en création : toujours ; sur une fiche existante : sa coche).
+  modeKept?: boolean;
   // Le financement lu, retenu (en création : toujours ; sur une fiche existante : sa coche, A.8).
   financingKept?: boolean;
   // Saisis par le conseiller quand la lecture ne les a pas trouvés (obligatoires, M117).
@@ -202,10 +205,16 @@ export function proposalForm(
     toVerify.push('soft_criteria');
   }
   const financing =
-    proposal.financing ?? (proposal.cashSuggestion && choices.cashValidated ? 'validated' : null);
+    proposal.financing ??
+    (proposal.financingMode === 'cash' && choices.cashValidated ? 'validated' : null);
   if (financing && (!existing || choices.financingKept === true)) {
     fields.financing = financing;
     toVerify.push('financing');
+  }
+  // Lot B — comment il finance : « À vérifier » jusqu'au toucher du conseiller (réponse 10).
+  if (proposal.financingMode && (!existing || choices.modeKept === true)) {
+    fields.financing_mode = proposal.financingMode;
+    toVerify.push('financing_mode');
   }
   return { fields, toVerify };
 }

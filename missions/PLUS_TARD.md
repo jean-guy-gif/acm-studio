@@ -4,6 +4,11 @@ Ce qui se découvre pendant une mission et n'en fait pas partie (règle de Jean-
 CLAUDE.md) : une ligne datée par point, avec la mission où il a été vu. Un cas imaginé par un
 balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `docs/IDEES.md`.
 
+- 28/11 · Lot B4 (mesure) · La garde du mode « Avec prêt » accepte une ligne qui nomme la banque
+  sans parler d'un prêt (« se méfie des banques », C5 de la mission 151) ; le modèle ne l'a jamais
+  proposé (2 lectures sur 2, `missions/LB4-mesure.md`) : noté, pas corrigé. La ligne montrée pour
+  le mode garde parfois l'origine des fonds (« cash (vente Stockholm), pas de prêt ») : montrée
+  seulement, jamais gardée, tolérée comme en M151.
 - 28/11 · Lot B (architecte), pour le lot C · `proposable.ts` et `buyer-journey.ts` attendent le
   statut `'purchased'`, alors que la base et `buyers/types.ts` écrivent `'bought'` (« A acheté ») :
   un acquéreur « A acheté » ne tient plus le mandat de son offre acceptée (M145 A), qui redevient

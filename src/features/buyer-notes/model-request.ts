@@ -18,7 +18,9 @@ const nullable = (schema: Record<string, unknown>) => ({ anyOf: [schema, { type:
 const choice = (values: readonly (string | boolean)[]) => ({ enum: [...values, null] });
 const yesNo = choice([true, false]);
 
-export const NOTE_FINANCINGS = ['validated', 'cash_to_verify', 'in_progress', 'unknown'] as const;
+export const NOTE_FINANCINGS = ['validated', 'in_progress', 'unknown'] as const;
+// Lot B (Jean-Guy, 27/11) — comment l'acquéreur finance son achat, à part de l'état du financement.
+export const NOTE_FINANCING_MODES = ['cash', 'loan', 'not_said'] as const;
 
 export const NOTE_OUTPUT_SCHEMA: Record<string, unknown> = {
   type: 'object',
@@ -47,6 +49,7 @@ export const NOTE_OUTPUT_SCHEMA: Record<string, unknown> = {
     condominium_accepted: yesNo,
     must_have: { type: 'array', items: { type: 'string', enum: [...NOTE_STAR_CRITERIA] } },
     financing: { type: 'string', enum: [...NOTE_FINANCINGS] },
+    financing_mode: { type: 'string', enum: [...NOTE_FINANCING_MODES] },
     soft_criteria: {
       type: 'array',
       items: {
@@ -96,6 +99,7 @@ export const NOTE_OUTPUT_SCHEMA: Record<string, unknown> = {
     'condominium_accepted',
     'must_have',
     'financing',
+    'financing_mode',
     'soft_criteria',
     'unclassified_wishes',
     'notes',
@@ -122,7 +126,8 @@ export const NOTE_READING_INSTRUCTIONS = `Tu lis ce qu'un conseiller immobilier 
 - works_accepted : false seulement si les notes refusent tous travaux sans nuance, en toutes lettres, avec sa source ; si elles acceptent un rafraîchissement ou une petite remise en état, laisse null.
 - condominium_accepted : false si la copropriété est refusée en toutes lettres, avec sa source ; true si elle est acceptée explicitement ; sinon null.
 - must_have : ${NOTE_STARS_MAX} au plus, et seulement parmi : ${NOTE_STAR_CRITERIA.join(', ')} (cities = les communes ; condominium = pas de copropriété, seulement si condominium_accepted vaut false). Seuls les critères dits indispensables (« indispensable », « obligatoire », « impératif », écrit en MAJUSCULES, « !! ») ; s'ils sont plus de ${NOTE_STARS_MAX}, garde les ${NOTE_STARS_MAX} premiers cités, les autres restent des souhaits. Le type de bien n'est jamais indispensable. Le budget n'est indispensable que si l'acquéreur le dit ferme (« budget ferme », « pas un euro de plus ») ; un budget lu dans une colonne ou un champ d'export de logiciel ne l'est pas. Un souhait (« si possible », « idéalement », « un plus », « souhaité ») n'est pas indispensable.
-- financing : "validated" seulement si un accord de la banque est dit clairement ; "cash_to_verify" (comptant, à vérifier) si l'achat est dit comptant ou sans prêt, sans jamais l'origine des fonds ; "in_progress" si un prêt est à l'étude ou si l'achat dépend d'une vente ; sinon "unknown". Jamais de montant d'apport ni de patrimoine.
+- financing : l'état du financement. "validated" seulement si un accord de la banque est dit clairement ; "in_progress" si un prêt est à l'étude ou si l'achat dépend d'une vente ; sinon "unknown". Un achat comptant ne dit rien de cet état : "unknown". Jamais de montant d'apport ni de patrimoine.
+- financing_mode : comment l'acquéreur finance son achat. "cash" si l'achat est dit comptant ou sans prêt ; "loan" si un prêt, un crédit, un emprunt ou un accord de la banque est dit ; sinon "not_said". Jamais l'apport, le montant du prêt ni l'origine des fonds : ils ne viennent que du conseiller. La ligne qui le dit va dans sources, avec field = "financing_mode" ; sans elle, il sera refusé.
 - purpose : "primary" (résidence principale), "secondary", "investment" (investissement locatif), "other". timeline : "now", "three_months", "six_months", "later".
 - language : la langue que le client parle, si les notes la disent (« parlent anglais », « parlent angl. » = "en" ; "it", "de", "ru" de même) ; jamais sa nationalité, qui ne s'écrit nulle part.
 
