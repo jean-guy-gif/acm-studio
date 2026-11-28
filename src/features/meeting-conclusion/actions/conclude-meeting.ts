@@ -5,6 +5,11 @@ import { revalidatePath } from 'next/cache';
 
 import { loadLivePresentation } from '@/features/live-seller/services/load-live-presentation';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
+import {
+  isOutcomeLockError,
+  OUTCOME_LOCKED,
+  outcomeChangeRefusal,
+} from '@/features/mandate-life/services/outcome-lock';
 import { readDecisionForm } from '@/features/meeting-conclusion/schemas/conclusion-input';
 import { canConcludeProject } from '@/features/meeting-conclusion/services/can-conclude-project';
 import {
@@ -75,6 +80,11 @@ export async function concludeMeeting(
   if (!decision.ok) {
     return { ok: false, error: decision.error };
   }
+  // Lot C — sous compromis ou vendu, l'issue reste « mandat signé » : le compromis tombe d'abord.
+  const locked = outcomeChangeRefusal(known?.life, decision.value.outcome);
+  if (locked) {
+    return { ok: false, error: locked };
+  }
   // Mission 108 — « à relancer » : la date de première relance, proposée par l'écran et relue ici.
   const firstFollowUp = readFirstFollowUpOn(
     formData.get('next_follow_up_on'),
@@ -125,7 +135,12 @@ export async function concludeMeeting(
   };
   const { data: enteredFollowUp, error } = await serviceClient.rpc('conclude_meeting', args);
   if (error) {
-    return { ok: false, error: 'La conclusion a échoué. Réessayez.' };
+    return {
+      ok: false,
+      error: isOutcomeLockError(error)
+        ? OUTCOME_LOCKED.compromise
+        : 'La conclusion a échoué. Réessayez.',
+    };
   }
   // La fonction retourne true quand le dossier vient d'entrer dans le Suivi. Un dossier qui
   // n'y était pas déjà et n'y est pas entré serait « conclu hors du Suivi » : on le dit au

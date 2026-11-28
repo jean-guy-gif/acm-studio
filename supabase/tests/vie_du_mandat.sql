@@ -312,6 +312,38 @@ begin
   exception when check_violation then
     if sqlerrm not like '%l''issue reste%' then raise; end if;
   end;
+  -- Vider la seule vente en quittant « signé » : le compromis reste noté, refusé.
+  begin
+    update public.project_meeting_conclusions
+      set deed_signed_on = null, sale_price = null, outcome = 'follow_up'
+      where project_id = '318ccccc-0000-0000-0000-000000000001';
+    raise exception 'FAIL 5: l''issue a quitté « mandat signé » avec un compromis encore noté';
+  exception when check_violation then
+    if sqlerrm not like '%l''issue reste%' then raise; end if;
+  end;
+  -- Une issue vidée n'est pas « mandat signé » non plus.
+  begin
+    update public.project_meeting_conclusions set outcome = null
+      where project_id = '318ccccc-0000-0000-0000-000000000001';
+    raise exception 'FAIL 5: l''issue vidée malgré la vente';
+  exception when check_violation then
+    if sqlerrm not like '%l''issue reste%' then raise; end if;
+  end;
+  -- Ce qui reste permis sous vente : « Compléter » le type du mandat (M90), et une seconde
+  -- conclusion signée ; le compromis et la vente restent.
+  perform public.change_meeting_outcome(
+    p_project_id => '318ccccc-0000-0000-0000-000000000001',
+    p_agency_id => '318aaaaa-0000-0000-0000-000000000000',
+    p_outcome => 'signed', p_reason => null, p_mandate_type => 'simple', p_price => 1690000);
+  perform public.conclude_meeting(
+    '318ccccc-0000-0000-0000-000000000001', '318aaaaa-0000-0000-0000-000000000000',
+    'signed', null, 1600000, 1700000, 1690000, 1690000, p_mandate_type => 'exclusive');
+  if (select count(*) from public.project_meeting_conclusions
+      where project_id = '318ccccc-0000-0000-0000-000000000001' and outcome = 'signed'
+        and mandate_type = 'exclusive' and compromise_signed_on is not null
+        and deed_signed_on = date '2027-01-15' and sale_price = 1560000) <> 1 then
+    raise exception 'FAIL 5: « Compléter » ou une seconde conclusion signée a perdu le compromis ou la vente';
+  end if;
   -- Le compromis tombe : tout se vide ensemble (la vente d'abord, puis le compromis).
   update public.project_meeting_conclusions
     set deed_signed_on = null, sale_price = null

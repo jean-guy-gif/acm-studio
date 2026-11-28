@@ -16,17 +16,20 @@
 --      le prix de vente, ensemble, après un compromis ; la fin sans vente, jamais avec un compromis
 --      ni une vente. Un déclencheur refuse un de ces faits posé hors d'un mandat signé, et une fiche
 --      acquéreur d'une autre agence ; vider un fait reste permis (« Le compromis est tombé »,
---      `on delete set null` d'une fiche supprimée). Aucune contrainte ne lie ces colonnes à l'issue :
---      « Changer l'issue » (`change_meeting_outcome`) ne les touche pas, et c'est le serveur qui le
---      refuse tant qu'un compromis ou une vente est noté.
+--      `on delete set null` d'une fiche supprimée). Sous compromis ou vendu, l'issue ne quitte plus
+--      « mandat signé », ni par « Changer l'issue » (`change_meeting_outcome`) ni par une seconde
+--      conclusion (`conclude_meeting`) : le même déclencheur le refuse, le compromis tombe d'abord.
+--      Ces deux fonctions ne touchent pas les faits : « Compléter » le type d'un mandat signé, ou
+--      le conclure une seconde fois « signé », les garde.
 --   2. `mandate_price_amendments`, une table neuve : un avenant de baisse par ligne (sa date, le
 --      nouveau prix), jamais modifié (seul l'auteur se vide à la suppression de son compte), retiré
 --      par le serveur seul ; parti avec son dossier. Le prix du mandat est celui du dernier avenant,
 --      sinon le prix à la signature, qui n'est jamais réécrit (la synthèse le lit, M111).
 --
 -- Compatible avec le code de `main` : `main` ne lit ni n'écrit ces colonnes ni cette table ;
--- `conclude_meeting` et `change_meeting_outcome` ne les touchent pas ; aucune ligne existante n'est
--- modifiée (les neuf colonnes prennent leur défaut).
+-- `conclude_meeting` et `change_meeting_outcome` ne les touchent pas, et sans compromis ni vente
+-- la garde de l'issue ne refuse rien ; aucune ligne existante n'est modifiée (les neuf colonnes
+-- prennent leur défaut).
 --
 -- Les droits sont redits en toutes lettres à la fin, avec une garde qui annule la migration s'ils
 -- ne sont plus ceux-là : anon aucun ; le navigateur la seule lecture (la politique de chaque table
