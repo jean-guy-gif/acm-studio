@@ -79,7 +79,7 @@ Une mission tient en une heure et demie (CLAUDE.md) : chaque lot se découpe en 
 | A4      | Relecteur, suite complète sur l'essai, banc de l'Étude, captures avant / après                                                           | 1 h                 | en production le 27/11 au soir |
 | B1      | La migration du mode de financement, ses droits en toutes lettres, jouée sur la base d'essai, relue par le gardien-sql                   | 1 h 30              | appliquée en production le 28/11 par Jean-Guy |
 | B2      | La fiche : « Comment finance-t-il ? », le prêt, la démo                                                                                   | 1 h 30              | sur l'essai le 28/11, attend le « oui » |
-| B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | à faire                 |
+| B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | sur l'essai le 28/11, attend le « oui » |
 | B4      | La lecture des notes, et sa mesure sur le vrai modèle                                                                                     | 1 h 30              | à faire                 |
 | B5      | Relecteur, specs, captures                                                                                                                | 1 h                 | à faire                 |
 | C0      | La maquette : la fiche du dossier, le Suivi, une tâche d'« Aujourd'hui », aux trois tailles                                              | 1 h 30              | à faire                 |
@@ -226,6 +226,23 @@ chacun, B5 en 1 h : 7 h au lieu de 6 h 30.
   corrigé et gardé, « Comptant » qui demande d'abord, les Rossi en « Pas encore dit ») et ses
   captures de la vraie fiche (`LB2-apres-*-avec-pret.png`), puis `suivi-de-l-acquereur`,
   `acquereur-sans-offre`, `depuis-mes-notes`, `parcours` et `demo` : 7 sur 7, sans aléa.
+
+- B2, retouche de Jean-Guy (28/11) · Planche et fiche validées, les trois choix restent visibles.
+  Avec un prêt dont l'accord de principe est « Oui » et un financement pas encore « Validé », une
+  ligne sous le prêt : « Accord de principe obtenu : passer le financement en « Validé » ? », un
+  bouton en contour « Passer en Validé » ; aucun changement automatique, rien dans l'autre sens.
+- B3 (28/11) · L'offre d'achat selon comment il finance, tant que la clause avec prêt n'est pas
+  validée : « Comptant », l'offre d'aujourd'hui ; « Pas encore dit », ou lu dans ses notes et encore
+  « À vérifier », l'écran demande d'abord le mode, avant tout champ (« Comment finance-t-il ? »,
+  Comptant ou Avec prêt, le choix s'écrit sur sa fiche) ; « Avec prêt », l'offre est bloquée avec
+  le message de Jean-Guy, mot pour mot. Une seule règle, pure (`offer-gate.ts`) : la page l'applique
+  en tête, la signature de nouveau, sur la fiche relue en base, l'offre hors mandat comprise. Le
+  texte de l'offre ne change pas d'un mot (son instantané n'a pas bougé). Le message dit
+  « disponible » sans exception au test de vocabulaire : il vit avec l'offre d'achat, hors de ce que
+  le test relit (réponse 12). Tests : 4 633 ; sur l'essai, `mode-de-financement` (la question des
+  Rossi, le blocage de M. Fontaine, l'offre des Keller) et ses captures aux trois tailles
+  (`LB3-*-question.png`, `LB3-*-bloquee.png`), puis `hors-mandat`, `acquereur-sans-offre`,
+  `presentation-directe` : 11 sur 11, sans aléa.
 
 ### Les questions du lot B (architecte, 28/11), chacune avec sa réponse par défaut
 
