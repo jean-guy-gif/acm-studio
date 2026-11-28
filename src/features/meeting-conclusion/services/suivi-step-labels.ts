@@ -1,5 +1,6 @@
 import {
   addDays,
+  daysBetween,
   isTaskDue,
   taskLateDays,
   type SuiviTask,
@@ -35,6 +36,26 @@ export function lateLabel(days: number): string {
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+
+// Lot C — un jour à venir, en mots : « aujourd’hui », « demain », « dans 14 jours ».
+function inDays(days: number): string {
+  if (days <= 0) return 'aujourd’hui';
+  return days === 1 ? 'demain' : `dans ${days} jours`;
+}
+
+// Lot C — la fin du mandat, dite de la même façon sur la ligne d'« Aujourd'hui » et sur la carte.
+function mandateEndPhrase(task: SuiviTask, today: string): string {
+  const ends = task.endsOn ?? task.dueOn;
+  const days = daysBetween(today, ends);
+  if (task.tacit) {
+    return days >= 0
+      ? `reconduction tacite le ${dayLabel(ends)} · ${inDays(days)}`
+      : `reconduction tacite le ${dayLabel(ends)}`;
+  }
+  return days >= 0
+    ? `le mandat se termine le ${dayLabel(ends)} · ${inDays(days)}`
+    : `le mandat s’est terminé le ${dayLabel(ends)}`;
+}
 
 // « Famille Keller » se dit « la famille Keller » au milieu d'une phrase ; « M. et Mme Rossi » tel
 // quel.
@@ -110,6 +131,14 @@ export function taskHref(task: SuiviTask): string {
     }
     case 'market_update':
       return `/suivi?point=${task.projectId}#suivi-${task.projectId}`;
+    // Lot C — la vie du mandat : le dossier, sur « Son mandat », la saisie ouverte quand il y en a
+    // une à faire (la vente, la fin du mandat).
+    case 'deed_prepare':
+      return `/builder/${task.projectId}#son-mandat`;
+    case 'sale_record':
+      return `/builder/${task.projectId}?mandat=vente#son-mandat`;
+    case 'mandate_renewal':
+      return `/builder/${task.projectId}?mandat=fin#son-mandat`;
     case 'prospect':
       return `/prospection?bien=${task.projectId}`;
     case 'visit':
@@ -197,6 +226,35 @@ export function taskLine(task: SuiviTask, context: TaskContext, today: string): 
         href,
       };
     }
+    // Lot C — la vie du mandat.
+    case 'deed_prepare': {
+      const planned = task.deedPlannedOn ?? task.dueOn;
+      return {
+        title: `Préparer l’acte de ${task.sellerName}`,
+        detail: `acte prévu le ${dayLabel(planned)} chez le notaire · ${inDays(daysBetween(today, planned))}`,
+        late: null,
+        button: 'Préparer l’acte',
+        href,
+      };
+    }
+    case 'sale_record':
+      return {
+        title: `Noter la vente de ${task.sellerName}`,
+        detail: `l’acte était prévu le ${dayLabel(task.deedPlannedOn ?? task.dueOn)}\u00a0: notez sa date et le prix de vente`,
+        late,
+        button: 'Noter la vente',
+        href,
+      };
+    case 'mandate_renewal':
+      return {
+        title: task.tacit
+          ? `Faire le point avant la reconduction du mandat de ${task.sellerName}`
+          : `Préparer le renouvellement du mandat de ${task.sellerName}`,
+        detail: mandateEndPhrase(task, today),
+        late,
+        button: task.tacit ? 'Faire le point' : 'Préparer le renouvellement',
+        href,
+      };
     case 'market_update': {
       const since = task.lastPointOn
         ? `Dernier point le ${dayLabel(task.lastPointOn)}`
@@ -537,6 +595,51 @@ export function cardStep(
           examplePhrase ??
           'ACM relit les annonces des concurrents (sans compter dans le forfait), puis vous envoyez le document au vendeur.',
         button: { label: 'Faire le point marché', action: { kind: 'market_update' }, primary },
+      };
+    }
+    // Lot C — la vie du mandat.
+    case 'deed_prepare': {
+      const planned = task.deedPlannedOn ?? task.dueOn;
+      return {
+        when,
+        whenLate,
+        title: 'Préparer l’acte',
+        phrase:
+          examplePhrase ??
+          `Acte prévu le ${dayLabel(planned)}, ${inDays(daysBetween(today, planned))}.`,
+        button: {
+          label: 'Préparer l’acte',
+          action: { kind: 'link', href: taskHref(task) },
+          primary,
+        },
+      };
+    }
+    case 'sale_record':
+      return {
+        when,
+        whenLate,
+        title: 'Noter la vente',
+        phrase:
+          examplePhrase ??
+          `L’acte était prévu le ${dayLabel(task.deedPlannedOn ?? task.dueOn)}\u00a0: notez sa date et le prix de vente.`,
+        button: {
+          label: 'Noter la vente',
+          action: { kind: 'link', href: taskHref(task) },
+          primary,
+        },
+      };
+    case 'mandate_renewal': {
+      const phrase = mandateEndPhrase(task, today);
+      return {
+        when,
+        whenLate,
+        title: task.tacit ? 'Faire le point avant la reconduction' : 'Préparer le renouvellement',
+        phrase: examplePhrase ?? `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}.`,
+        button: {
+          label: task.tacit ? 'Faire le point' : 'Préparer le renouvellement',
+          action: { kind: 'link', href: taskHref(task) },
+          primary,
+        },
       };
     }
     case 'prospect': {

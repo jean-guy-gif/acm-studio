@@ -10,6 +10,7 @@ import {
   taskLateDays,
   type SuiviTaskInput,
 } from '@/features/meeting-conclusion/services/suivi-tasks';
+import { NO_MANDATE_LIFE } from '@/features/mandate-life/types';
 
 // Mission 130 — les tâches du jour : relance due, Point marché à un mois de la signature puis du
 // dernier point, concurrents prêts, visite demandée ; la plus ancienne d'abord.
@@ -238,5 +239,125 @@ describe('« À faire aujourd’hui »', () => {
 
   it('rien à faire, rien à venir', () => {
     expect(buildSuiviTaskList([], NOW)).toEqual({ dues: [], next: null });
+  });
+});
+
+// Lot C (Jean-Guy, 28/11) — la vie du mandat dans les tâches : le Point marché s'arrête dès l'offre
+// acceptée (retouche 3) ; « Préparer le renouvellement » 30 jours avant la fin du mandat, « Faire le
+// point avant la reconduction » quand elle est tacite (retouche 4) ; « Préparer l'acte » 15 jours
+// avant l'acte prévu, puis « Noter la vente » le jour de l'acte ; « en retard » seulement une fois
+// la date passée.
+describe('la vie du mandat', () => {
+  const kinds = (over: Partial<SuiviTaskInput>) =>
+    dossierTasks(input(over)).map((task) => task.kind);
+  const life = (over: Partial<NonNullable<SuiviTaskInput['life']>>) => ({
+    ...NO_MANDATE_LIFE,
+    ...over,
+  });
+
+  it('retouche 3 : le Point marché au stade « Mandat signé » seulement', () => {
+    expect(kinds({ stage: 'signed' })).toContain('market_update');
+    for (const stage of [
+      'offer_accepted',
+      'under_compromise',
+      'sold',
+      'ended',
+      'unknown',
+    ] as const) {
+      expect(kinds({ stage }), stage).not.toContain('market_update');
+    }
+  });
+
+  it('la fin du mandat : 30 jours avant, le renouvellement ou le point avant la reconduction', () => {
+    const renewal = dossierTasks(
+      input({ stage: 'signed', life: life({ endsOn: '2027-01-28' }) }),
+    ).find((task) => task.kind === 'mandate_renewal');
+    expect(renewal).toMatchObject({ dueOn: '2026-12-29', endsOn: '2027-01-28', tacit: false });
+    const tacit = dossierTasks(
+      input({ stage: 'offer_accepted', life: life({ endsOn: '2027-01-28', tacitRenewal: true }) }),
+    ).find((task) => task.kind === 'mandate_renewal');
+    expect(tacit).toMatchObject({ tacit: true });
+    // Question 19 : aucune tâche de renouvellement sous compromis, vendu ou terminé.
+    for (const stage of ['under_compromise', 'sold', 'ended'] as const) {
+      expect(kinds({ stage, life: life({ endsOn: '2027-01-28' }) })).not.toContain(
+        'mandate_renewal',
+      );
+    }
+  });
+
+  it('l’acte : préparé 15 jours avant, puis la vente à noter le jour de l’acte', () => {
+    const under = (today: string) =>
+      dossierTasks(
+        input({
+          stage: 'under_compromise',
+          today,
+          life: life({ compromiseSignedOn: '2026-12-05', deedPlannedOn: '2027-01-15' }),
+        }),
+      ).filter((task) => task.kind === 'deed_prepare' || task.kind === 'sale_record');
+    expect(under('2026-12-20')).toMatchObject([
+      { kind: 'deed_prepare', dueOn: '2026-12-31', deedPlannedOn: '2027-01-15' },
+    ]);
+    expect(under('2027-01-15')).toMatchObject([{ kind: 'sale_record', dueOn: '2027-01-15' }]);
+    expect(under('2027-01-20')).toMatchObject([{ kind: 'sale_record', dueOn: '2027-01-15' }]);
+  });
+
+  it('« en retard » seulement une fois la date passée', () => {
+    const [renewal] = dossierTasks(
+      input({ stage: 'signed', competitorCount: 0, life: life({ endsOn: '2027-01-28' }) }),
+    );
+    expect(taskLateDays(renewal, '2027-01-10')).toBe(0);
+    expect(taskLateDays(renewal, '2027-01-28')).toBe(0);
+    expect(taskLateDays(renewal, '2027-01-31')).toBe(3);
+    const [prepare] = dossierTasks(
+      input({
+        stage: 'under_compromise',
+        competitorCount: 0,
+        today: '2027-01-10',
+        life: life({ compromiseSignedOn: '2026-12-05', deedPlannedOn: '2027-01-15' }),
+      }),
+    );
+    expect(taskLateDays(prepare, '2027-01-14')).toBe(0);
+    const [record] = dossierTasks(
+      input({
+        stage: 'under_compromise',
+        competitorCount: 0,
+        today: '2027-01-17',
+        life: life({ compromiseSignedOn: '2026-12-05', deedPlannedOn: '2027-01-15' }),
+      }),
+    );
+    expect(taskLateDays(record, '2027-01-15')).toBe(0);
+    expect(taskLateDays(record, '2027-01-17')).toBe(2);
+  });
+
+  it('l’ordre : l’acte, puis le renouvellement, puis la relance d’un vendeur', () => {
+    const list = buildSuiviTaskList(
+      [
+        input({
+          projectId: 'relance',
+          outcome: 'follow_up',
+          competitorCount: 0,
+          firstFollowUpOn: '2026-11-01',
+        }),
+        input({
+          projectId: 'fin',
+          stage: 'signed',
+          competitorCount: 0,
+          life: life({ endsOn: '2026-11-20' }),
+        }),
+        input({
+          projectId: 'acte',
+          stage: 'under_compromise',
+          competitorCount: 0,
+          today: '2026-11-05',
+          life: life({ compromiseSignedOn: '2026-10-20', deedPlannedOn: '2026-11-15' }),
+        }),
+      ],
+      NOW,
+    );
+    expect(list.dues.map((task) => task.kind)).toEqual([
+      'deed_prepare',
+      'mandate_renewal',
+      'follow_up',
+    ]);
   });
 });
