@@ -39,9 +39,8 @@ const empty: NoteProposal = {
   sources: {},
   mustHave: [],
   financing: null,
+  cashSuggestion: false,
   financingSource: null,
-  financingMode: null,
-  financingModeSource: null,
   softCriteria: [],
   communes: [],
   personalMentionsSkipped: 0,
@@ -67,8 +66,6 @@ describe('ce que j’ai compris : les pastilles', () => {
       'Vence, Saint-Paul-de-Vence, Tourrettes-sur-Loup',
       'Indispensable : extérieur',
       'Financement validé',
-      // Lot B — « accord banque OK » : comment ils financent.
-      'Avec prêt',
       '06 39 98 27 14',
       'Note : Visites possibles le samedi.',
     ]);
@@ -133,30 +130,18 @@ describe('ce que j’ai compris : les pastilles', () => {
     expect(fixed.values.cities).toEqual(['Vence', 'Tourrettes-sur-Loup']);
   });
 
-  it('« Achat comptant » : le mode, et le geste « Financement validé » tant qu’il n’est pas dit', () => {
-    const proposal: NoteProposal = {
-      ...empty,
-      financingMode: 'cash',
-      financingModeSource: 'cash',
-    };
+  it('« Achat comptant » reste une question tant que le conseiller ne l’a pas tranchée', () => {
+    const proposal: NoteProposal = { ...empty, cashSuggestion: true, financingSource: 'cash' };
     const draftCash = draftFromProposal(proposal);
-    const cash = chip(phraseChips(draftCash, proposal), 'mode');
-    expect(cash.label).toBe('Achat comptant');
-    expect(cash.source).toBe('cash');
+    const cash = chip(phraseChips(draftCash, proposal), 'cash');
+    expect(cash.label).toBe('Achat comptant\u00a0: à vérifier');
     expect(cash.editor.kind).toBe('cash');
     const validated = editDraft(draftCash, { type: 'cash' });
     expect(validated.financing).toBe('validated');
-    expect(validated.mode).toBe('cash');
     expect(labels(phraseChips(validated, proposal))).toContain('Financement validé');
-    // Le mode part « À vérifier » ; l'état du financement, seulement par son geste.
+    // Sans son geste, aucun financement ne part.
     expect(draftForm(draftCash).fields.financing).toBeUndefined();
-    expect(draftForm(draftCash).fields.financing_mode).toBe('cash');
-    expect(draftForm(draftCash).toVerify).toContain('financing_mode');
     expect(draftForm(validated).fields.financing).toBe('validated');
-    // Retiré, il ne part pas.
-    expect(
-      draftForm(editDraft(draftCash, { type: 'remove', id: 'mode' })).fields.financing_mode,
-    ).toBeUndefined();
   });
 });
 

@@ -26,8 +26,8 @@ export type PhraseDraft = {
   // « Ce qui compte pour eux », avec leurs mots.
   soft: { key: BuyerSoftCriterionKey; words: string }[];
   financing: 'validated' | 'in_progress' | null;
-  // Lot B — comment il finance, lu dans la phrase (« À vérifier », comme le reste).
-  mode: 'cash' | 'loan' | null;
+  // « Achat comptant : à vérifier » — proposé, pas encore tranché par le conseiller.
+  cash: boolean;
   // Les champs du formulaire que le conseiller a corrigés lui-même : ils ne portent plus
   // « À vérifier » (M97).
   touched: string[];
@@ -40,7 +40,7 @@ const isWish = (key: string): key is WishField => (WISHES as readonly string[]).
 export function draftFromProposal(
   proposal: Pick<
     NoteProposal,
-    'values' | 'mustHave' | 'softCriteria' | 'financing' | 'financingMode'
+    'values' | 'mustHave' | 'softCriteria' | 'financing' | 'cashSuggestion'
   >,
 ): PhraseDraft {
   return {
@@ -48,7 +48,7 @@ export function draftFromProposal(
     stars: proposal.mustHave.map((star) => star.key).slice(0, NOTE_STARS_MAX),
     soft: proposal.softCriteria.map((soft) => ({ key: soft.key, words: soft.words })),
     financing: proposal.financing,
-    mode: proposal.financingMode,
+    cash: proposal.cashSuggestion && proposal.financing == null,
     touched: [],
   };
 }
@@ -114,7 +114,6 @@ export function phraseChips(
   draft: PhraseDraft,
   proposal: Pick<NoteProposal, 'sources' | 'mustHave' | 'softCriteria' | 'communes'> & {
     financingSource: string | null;
-    financingModeSource?: string | null;
   },
 ): PhraseChip[] {
   const { values } = draft;
@@ -353,17 +352,14 @@ export function phraseChips(
       source: proposal.financingSource,
       editor: { kind: 'plain' },
     });
-  }
-  // Lot B — comment il finance : « Achat comptant » garde le geste « Financement validé » tant que
-  // l'état n'est pas dit (réponse 9).
-  if (draft.mode) {
+  } else if (draft.cash) {
     chips.push({
-      id: 'mode',
-      tone: 'plain',
-      label: draft.mode === 'cash' ? 'Achat comptant' : 'Avec prêt',
-      title: 'Comment il finance',
-      source: proposal.financingModeSource ?? null,
-      editor: draft.mode === 'cash' && !draft.financing ? { kind: 'cash' } : { kind: 'plain' },
+      id: 'cash',
+      tone: 'missing',
+      label: 'Achat comptant\u00a0: à vérifier',
+      title: 'Financement',
+      source: proposal.financingSource,
+      editor: { kind: 'cash' },
     });
   }
   if (values.purpose) plainChip('purpose', BUYER_PURPOSE_LABELS[values.purpose], 'Projet');
@@ -402,7 +398,7 @@ function chipFormField(item: PhraseChip): string {
   if (item.id.startsWith('star:')) return 'must_have';
   if (item.id === 'cities:unknown') return 'cities';
   if (item.id === 'types') return NOTE_FORM_FIELDS.propertyTypes;
-  if (item.id === 'mode') return 'financing_mode';
+  if (item.id === 'cash') return 'financing';
   return item.id in NOTE_FORM_FIELDS ? NOTE_FORM_FIELDS[item.id as NoteField] : item.id;
 }
 
@@ -509,7 +505,7 @@ export function editDraft(draft: PhraseDraft, edit: PhraseEdit): PhraseDraft {
       };
     }
     case 'cash':
-      return { ...draft, financing: 'validated', touched: touch(draft, 'financing') };
+      return { ...draft, financing: 'validated', cash: false, touched: touch(draft, 'financing') };
     case 'remove': {
       // Retirer n'est pas vérifier ce qui reste : ce que la lecture a proposé garde « À vérifier ».
       if (edit.id.startsWith('soft:')) {
@@ -520,8 +516,9 @@ export function editDraft(draft: PhraseDraft, edit: PhraseEdit): PhraseDraft {
         const star = edit.id.slice('star:'.length);
         return { ...draft, stars: draft.stars.filter((item) => item !== star) };
       }
-      if (edit.id === 'financing') return { ...draft, financing: null };
-      if (edit.id === 'mode') return { ...draft, mode: null };
+      if (edit.id === 'financing' || edit.id === 'cash') {
+        return { ...draft, financing: null, cash: false };
+      }
       // « Commune à préciser » ne se retire pas : elle se saisit.
       if (!(edit.id in NOTE_FORM_FIELDS)) return draft;
       const field = edit.id as NoteField;
@@ -560,9 +557,8 @@ export function draftForm(draft: PhraseDraft): {
       sources: {},
       mustHave: draft.stars.map((key) => ({ key, source: '' })),
       financing: draft.financing,
+      cashSuggestion: false,
       financingSource: null,
-      financingMode: draft.mode,
-      financingModeSource: null,
       softCriteria: draft.soft.map((soft) => ({ ...soft, source: null })),
       personalMentionsSkipped: 0,
     },

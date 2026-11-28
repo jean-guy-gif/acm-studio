@@ -11,16 +11,10 @@ import {
   offerInputSchema,
   type StoredOfferFields,
 } from '@/features/purchase-offer/services/offer-input';
-import {
-  offerGate,
-  signingRefusal,
-  type RefusedGate,
-} from '@/features/purchase-offer/services/offer-gate';
 import { offerPath } from '@/features/purchase-offer/services/offer-link';
 import {
   OFFER_OUTSIDE_TEMPLATE_VERSION,
   OFFER_TEMPLATE_VERSION,
-  OFFRE_AVEC_PRET_VALIDEE,
   renderOffer,
 } from '@/features/purchase-offer/services/offer-text';
 import { OUTSIDE_TITLE_MISSING } from '@/features/visit-voucher/services/outside-mandate';
@@ -35,8 +29,7 @@ import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export type SignOfferResult =
   | { ok: true; documentId: string; buyerLinkPath: string; sellerLinkPath: string }
-  // Lot B5 — la porte dit à l'écran la question à poser, à la place de la signature.
-  | { ok: false; error: string; gate?: RefusedGate };
+  | { ok: false; error: string };
 
 const FAILED = 'L’offre d’achat n’a pas pu être enregistrée. Réessayez.';
 
@@ -75,17 +68,6 @@ export async function signPurchaseOffer(raw: unknown): Promise<SignOfferResult> 
   const read = await getOfferContext(input.buyerId);
   if (!read.ok) return { ok: false, error: read.error };
   const { context } = read;
-  // Lot B (Jean-Guy, 27/11) — comment il finance, relu en base : pas encore dit ou encore « À
-  // vérifier », avec prêt (tant que la clause n'est pas validée), rien ne se signe, l'offre hors
-  // mandat comprise. Une offre comptant renonce à recourir à un prêt.
-  const refusal = signingRefusal(
-    offerGate({
-      mode: context.buyer.financingMode,
-      toVerify: context.buyer.modeToVerify,
-      loanClauseValidated: OFFRE_AVEC_PRET_VALIDEE,
-    }),
-  );
-  if (refusal) return { ok: false, ...refusal };
   if (!context.agency) {
     return {
       ok: false,

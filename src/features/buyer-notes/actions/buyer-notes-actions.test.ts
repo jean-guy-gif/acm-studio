@@ -194,7 +194,6 @@ describe('saveBuyerFromNotes', () => {
     form.set('outdoor', 'yes');
     form.append('must_have', 'outdoor');
     form.set('financing', 'validated');
-    form.set('financing_mode', 'loan');
     form.set(
       'soft_criteria',
       JSON.stringify([
@@ -227,11 +226,6 @@ describe('saveBuyerFromNotes', () => {
       budget_max: 750000,
       must_have: ['outdoor'],
       financing: 'validated',
-      // Lot B — le mode lu, jamais un montant.
-      financing_mode: 'loan',
-      loan_contribution: null,
-      loan_amount: null,
-      loan_agreement: null,
       soft_criteria: [{ key: 'calme', words: 'AU CALME — pas de route' }],
       fields_to_verify: ['name', 'cities', 'budget_max'],
       agency_id: 'agency-a',

@@ -1,7 +1,6 @@
 import { buyerLanguage } from '@/features/buyer-messages/languages';
 import {
   BUYER_CRITERIA,
-  BUYER_FINANCING_MODES,
   BUYER_FINANCINGS,
   BUYER_PROPERTY_TYPES,
   BUYER_PURPOSES,
@@ -10,7 +9,6 @@ import {
   BUYER_SOFT_CRITERIA,
   BUYER_SOFT_WORDS_MAX,
   ENERGY_RATINGS,
-  LOAN_AMOUNT_MAX,
   type Buyer,
   type BuyerSoftCriterion,
   type BuyerCriterion,
@@ -48,17 +46,8 @@ export function sanitizeSoftCriteria(raw: unknown): BuyerSoftCriterion[] {
   return kept.slice(0, BUYER_SOFT_CRITERIA.length);
 }
 
-// Lot B — un montant du prêt, relu dans les bornes de la base : sinon, absent.
-const loanEuros = (value: number | null, min: number): number | null =>
-  value != null && Number.isInteger(value) && value >= min && value <= LOAN_AMOUNT_MAX
-    ? value
-    : null;
-
 // La ligne de la base, relue par liste d'autorisation : une valeur hors liste est absente.
 export function toBuyer(row: BuyerRow): Buyer {
-  // Lot B — le mode, et les détails du prêt seulement avec un prêt.
-  const financingMode = oneOf(BUYER_FINANCING_MODES, row.financing_mode) ?? 'not_said';
-  const loan = financingMode === 'loan';
   return {
     id: row.id,
     agencyId: row.agency_id,
@@ -73,10 +62,6 @@ export function toBuyer(row: BuyerRow): Buyer {
     financing: oneOf(BUYER_FINANCINGS, row.financing) ?? 'unknown',
     financingChangedAt: row.financing_changed_at,
     contactedAt: row.contacted_at,
-    financingMode,
-    loanContribution: loan ? loanEuros(row.loan_contribution, 0) : null,
-    loanAmount: loan ? loanEuros(row.loan_amount, 1) : null,
-    loanAgreement: loan && typeof row.loan_agreement === 'boolean' ? row.loan_agreement : null,
     language: buyerLanguage(row.language),
     name: row.name,
     phone: row.phone,

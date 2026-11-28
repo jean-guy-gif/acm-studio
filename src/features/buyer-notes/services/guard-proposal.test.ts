@@ -38,7 +38,6 @@ const empty = {
   condominium_accepted: null,
   must_have: [],
   financing: 'unknown',
-  financing_mode: 'not_said',
   soft_criteria: [],
   unclassified_wishes: [],
   notes: null,
@@ -63,9 +62,6 @@ describe('guardProposal', () => {
     expect(proposal.values.purpose).toBeUndefined();
     expect(proposal.mustHave).toEqual([{ key: 'outdoor', source: 'Jardin +++' }]);
     expect(proposal.financing).toBe('validated');
-    // Lot B — « accord banque OK » : un prêt, avec sa ligne d'origine.
-    expect(proposal.financingMode).toBe('loan');
-    expect(proposal.financingModeSource).toBe('accord banque OK');
     expect(proposal.softCriteria.map((soft) => soft.key)).toEqual([
       'calme',
       'sans_vis_a_vis',
@@ -125,58 +121,16 @@ describe('guardProposal', () => {
     expect(sourced.values.language).toBe('en');
   });
 
-  it('« comptant » : le mode « Comptant », jamais « Validé »', () => {
+  it('« comptant » n’est qu’une suggestion, jamais « Validé »', () => {
     const proposal = guardProposal({
       ...empty,
-      financing_mode: 'cash',
-      sources: [{ field: 'financing_mode', quote: 'cash (vente Stockholm), pas de prêt' }],
+      financing: 'cash_to_verify',
+      sources: [{ field: 'financing', quote: 'cash (vente Stockholm), pas de prêt' }],
     });
     expect(proposal.financing).toBeNull();
-    expect(proposal.financingMode).toBe('cash');
+    expect(proposal.cashSuggestion).toBe(true);
     // La source, seulement montrée à la validation, est tolérée (règle des deux comptes).
-    expect(proposal.financingModeSource).toBe('cash (vente Stockholm), pas de prêt');
-  });
-
-  // Lot B (Jean-Guy, 27/11) — comment il finance n'est gardé qu'avec la ligne qui le dit, comme une
-  // ★ : sans elle, ou quand elle dit autre chose, il tombe ; « pas de prêt » n'est jamais un prêt.
-  it('comment il finance : gardé seulement avec sa ligne, qui le dit', () => {
-    const mode = (financing_mode: string, quote?: string) =>
-      guardProposal({
-        ...empty,
-        financing_mode,
-        sources: quote ? [{ field: 'financing_mode', quote }] : [],
-      }).financingMode;
-    expect(mode('loan')).toBeNull();
-    expect(mode('loan', 'pas de prêt, tout comptant')).toBeNull();
-    expect(mode('cash', 'visites le samedi')).toBeNull();
-    expect(mode('loan', 'accord banque OK')).toBe('loan');
-    expect(mode('loan', 'Rendez-vous à la banque dans quinze jours')).toBe('loan');
-    expect(mode('loan', 'crédit en cours chez le courtier')).toBe('loan');
-    expect(mode('cash', 'achat COMPTANT')).toBe('cash');
-    expect(mode('cash', 'sans emprunt')).toBe('cash');
-    // Mesure du lot B4 (28/11) : « pas de banque » se lit « Comptant », jamais « Avec prêt ».
-    for (const line of [
-      'pas de banque',
-      'sans banque',
-      'pas d’emprunt',
-      "pas besoin d'un crédit",
-    ]) {
-      expect(mode('cash', line)).toBe('cash');
-      expect(mode('loan', line)).toBeNull();
-    }
-    // … mais « a besoin d'un prêt » reste un prêt.
-    expect(mode('loan', "a besoin d'un prêt")).toBe('loan');
-    expect(mode('cash', "a besoin d'un prêt")).toBeNull();
-    expect(mode('not_said', 'accord banque OK')).toBeNull();
-    expect(mode('leasing', 'accord banque OK')).toBeNull();
-    // Le mode ne pose jamais l'état du financement.
-    expect(
-      guardProposal({
-        ...empty,
-        financing_mode: 'loan',
-        sources: [{ field: 'financing_mode', quote: 'accord banque OK' }],
-      }).financing,
-    ).toBeNull();
+    expect(proposal.financingSource).toBe('cash (vente Stockholm), pas de prêt');
   });
 
   it('ce qui s’enregistre ne garde aucune mention refusée, et la compte', () => {
@@ -226,9 +180,7 @@ describe('guardProposal', () => {
     expect(names).toContain('budgetMax');
     expect(names).toContain('must_have:outdoor');
     expect(names).toContain('soft:calme');
-    // Lot B — le nom du champ du mode, jamais sa valeur.
-    expect(names).toContain('financing_mode');
-    expect(names.join(' ')).not.toMatch(/Arnaud|750|samedi|loan|banque/);
+    expect(names.join(' ')).not.toMatch(/Arnaud|750|samedi/);
   });
 
   // Mission 151 — une seule liste d'indispensables pour la lecture : la consigne, le schéma de la

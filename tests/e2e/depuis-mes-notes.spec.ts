@@ -7,7 +7,6 @@ import {
   login,
   openFold,
   readNotesTraces,
-  reveal,
 } from './support';
 
 // Mission 151 (partie A) — « Depuis mes notes » (planches 1 et 2, validées par Jean-Guy les 10 et
@@ -128,14 +127,6 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(chip('outdoor')).toHaveText('Indispensable : extérieur');
     await expect(chip('outdoor')).toHaveAttribute('data-tone', 'must');
     await expect(chip('financing')).toHaveText('Financement validé');
-    // Lot B4 — comment il finance, lu dans les notes, « À vérifier » avec la ligne qui le dit.
-    await expect(chip('mode')).toHaveText('Avec prêt');
-    await chip('mode').click();
-    await expect(correction.getByTestId('chip-verify')).toHaveText('À vérifier');
-    await expect(correction.getByTestId('chip-source')).toHaveText(
-      /^d’après\s: «\s*accord banque OK\s*»$/,
-    );
-    await correction.getByRole('button', { name: 'Fermer' }).click();
     await expect(chip('soft:calme')).toHaveText('Au calme');
     await expect(chip('soft:calme')).toHaveAttribute('data-tone', 'soft');
     await expect(page.getByTestId('proposal-skipped')).toHaveText(
@@ -238,14 +229,6 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(page.getByTestId('buyer-soft-criteria')).not.toContainText('Du cachet');
     await openFold(page, 'buyer-timeline');
     await expect(page.getByTestId('buyer-timeline')).toContainText('Fiche créée');
-    // Lot B4 — « Comment finance-t-il ? » : « Avec prêt », lu dans les notes, « À vérifier ».
-    const mode = page.getByTestId('buyer-financing-mode');
-    await reveal(mode);
-    await expect(mode.getByRole('button', { name: 'Avec prêt', exact: true })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
-    await expect(mode).toContainText('À vérifier · lu dans vos notes');
   });
 
   await test.step('Aucune ligne des notes n’est gardée en base (lecture seule)', async () => {
@@ -262,9 +245,6 @@ test('depuis mes notes : la lecture, la fiche proposée, la confirmation, la fic
     await expect(page.getByTestId('buyer-to-verify')).toBeHidden();
     // Plus rien à vérifier : ses critères se replient.
     await expect(page.getByTestId('buyer-search-fold')).not.toHaveAttribute('open', '');
-    // … le mode lu dans les notes aussi : il reste « Avec prêt », sans « À vérifier ».
-    await reveal(page.getByTestId('buyer-financing-mode'));
-    await expect(page.getByTestId('buyer-financing-mode')).not.toContainText('À vérifier');
     // La fiche est marquée démo : la remise à zéro la retirerait ; on l'archive ici, par l'écran
     // (« Archiver » est dans « Tout le dossier »).
     await openFold(page, 'buyer-all');

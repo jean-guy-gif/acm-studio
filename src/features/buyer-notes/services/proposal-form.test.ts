@@ -21,7 +21,6 @@ const allKept = new Set(Object.keys(proposal.values) as NoteField[]);
 
 const existing: ExistingBuyer = {
   id: 'b-1',
-  financingMode: 'not_said',
   name: 'M. et Mme Arnaud',
   phone: null,
   email: 'arnaud@example.com',
@@ -206,15 +205,11 @@ describe('la fiche proposée (planche 2)', () => {
     ).toBe('yes');
   });
 
-  it('« Comptant » ne devient « Validé » que par le geste du conseiller', () => {
+  it('« Comptant, à vérifier » ne devient « Validé » que par le geste du conseiller', () => {
     const cash = guardProposal({
       ...DEMO_NOTES_OUTPUT,
-      financing: 'unknown',
-      financing_mode: 'cash',
-      sources: [
-        ...DEMO_NOTES_OUTPUT.sources.filter((source) => !source.field.startsWith('financing')),
-        { field: 'financing_mode', quote: 'achat comptant' },
-      ],
+      financing: 'cash_to_verify',
+      sources: [...DEMO_NOTES_OUTPUT.sources],
     });
     const choices = { kept: allKept, starsKept: true, softKept: true };
     expect(
@@ -223,20 +218,6 @@ describe('la fiche proposée (planche 2)', () => {
     expect(proposalForm(cash, null, { ...choices, cashValidated: true }).fields.financing).toBe(
       'validated',
     );
-  });
-
-  // Lot B — comment il finance, « À vérifier » jusqu'au toucher du conseiller (réponse 10) ; sur une
-  // fiche qui le dit déjà autrement, rien sans sa coche (A.8).
-  it('comment il finance : écrit et « À vérifier » ; sur une fiche existante, sa coche', () => {
-    const choices = { kept: allKept, starsKept: true, softKept: true, cashValidated: false };
-    const created = proposalForm(proposal, null, choices);
-    expect(created.fields.financing_mode).toBe('loan');
-    expect(created.toVerify).toContain('financing_mode');
-    const borrower = { ...existing, financingMode: 'cash' as const };
-    expect(proposalForm(proposal, borrower, choices).fields.financing_mode).toBeUndefined();
-    expect(
-      proposalForm(proposal, borrower, { ...choices, modeKept: true }).fields.financing_mode,
-    ).toBe('loan');
   });
 
   it('le nom et les communes non lus se saisissent', () => {

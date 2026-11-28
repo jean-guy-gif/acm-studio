@@ -37,11 +37,7 @@ import {
 import { proposalForm, type ExistingBuyer } from '@/features/buyer-notes/services/proposal-form';
 import type { NoteField, NoteProposal, NoteValues } from '@/features/buyer-notes/types';
 import { NOTE_STAR_LABELS } from '@/features/buyer-notes/note-stars';
-import {
-  BUYER_FINANCING_LABELS,
-  BUYER_FINANCING_MODE_LABELS,
-  BUYER_SOFT_CRITERION_LABELS,
-} from '@/features/buyers/types';
+import { BUYER_FINANCING_LABELS, BUYER_SOFT_CRITERION_LABELS } from '@/features/buyers/types';
 
 // Mission 151 — « Depuis mes notes » (planches 1 et 2, validées par Jean-Guy le 10/11 et le 12/11) :
 // apporter ses notes, la lecture, puis la fiche proposée à vérifier. La proposition vit dans cet
@@ -483,8 +479,6 @@ function NotesProposal({
   const [softKept, setSoftKept] = useState(!existing || existing.softCriteria.length === 0);
   const [cashValidated, setCashValidated] = useState(false);
   const [financingKept, setFinancingKept] = useState(!existing || existing.financing === 'unknown');
-  // Lot B — comment il finance : sur une fiche existante, coché seulement si elle ne le dit pas.
-  const [modeKept, setModeKept] = useState(!existing || existing.financingMode === 'not_said');
   const [typedName, setTypedName] = useState('');
   const [typedCities, setTypedCities] = useState('');
 
@@ -498,8 +492,7 @@ function NotesProposal({
       (field) => proposal.values[field] !== undefined,
     ).length +
     proposal.softCriteria.length +
-    (proposal.financing ? 1 : 0) +
-    (proposal.financingMode ? 1 : 0);
+    (proposal.financing || proposal.cashSuggestion ? 1 : 0);
 
   const citiesUnchecked = citiesCardUnchecked(
     proposal.values,
@@ -517,7 +510,6 @@ function NotesProposal({
       softKept,
       cashValidated,
       financingKept,
-      modeKept,
       typedName,
       // Sur une fiche existante, une carte « Communes » qui porte une case décochée n'écrit rien,
       // pas même la commune tapée dans la carte (A.8, rien sans coche).
@@ -630,31 +622,23 @@ function NotesProposal({
     );
   };
 
-  // Lot B — l'état du financement et comment il finance, lus ensemble ; le mode déjà noté sur la
-  // fiche, identique, ne se propose pas.
-  const financingRead = proposal.financing != null || proposal.financingMode != null;
-  const modeOffered =
-    proposal.financingMode != null && existing?.financingMode !== proposal.financingMode;
   const financingCard = (
     <div
-      className={`flex flex-col gap-1 rounded-xl border p-3 ${financingRead ? 'border-amber-200 bg-amber-50/60' : 'border-zinc-200 bg-white'}`}
+      className={`flex flex-col gap-1 rounded-xl border p-3 ${proposal.financing || proposal.cashSuggestion ? 'border-amber-200 bg-amber-50/60' : 'border-zinc-200 bg-white'}`}
       data-testid="proposal-financing"
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold text-zinc-600">Financement</span>
-        {financingRead ? <VerifyPill /> : null}
+        {proposal.financing || proposal.cashSuggestion ? <VerifyPill /> : null}
       </div>
       <span className="text-[15px] font-semibold text-zinc-900">
-        {[
-          proposal.financing === 'validated'
-            ? 'Validé'
-            : proposal.financing === 'in_progress'
-              ? 'En cours'
-              : null,
-          proposal.financingMode ? BUYER_FINANCING_MODE_LABELS[proposal.financingMode] : null,
-        ]
-          .filter((part) => part != null)
-          .join(' · ') || '—'}
+        {proposal.financing === 'validated'
+          ? 'Validé'
+          : proposal.financing === 'in_progress'
+            ? 'En cours'
+            : proposal.cashSuggestion
+              ? 'Comptant, à vérifier'
+              : '—'}
       </span>
       {existing && proposal.financing ? (
         <label className="flex items-center gap-2 text-sm">
@@ -669,21 +653,7 @@ function NotesProposal({
             : `Remplacer «\u00a0${BUYER_FINANCING_LABELS[existing.financing]}\u00a0»`}
         </label>
       ) : null}
-      {existing && modeOffered && proposal.financingMode ? (
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="accent-brand"
-            checked={modeKept}
-            onChange={(event) => setModeKept(event.target.checked)}
-            data-testid="proposal-financing-mode-kept"
-          />
-          {existing.financingMode === 'not_said'
-            ? 'Noter comment il finance sur la fiche'
-            : `Remplacer «\u00a0${BUYER_FINANCING_MODE_LABELS[existing.financingMode]}\u00a0»`}
-        </label>
-      ) : null}
-      {proposal.financingMode === 'cash' && proposal.financing == null ? (
+      {proposal.cashSuggestion ? (
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -700,11 +670,6 @@ function NotesProposal({
       {proposal.financingSource ? (
         <span className="text-xs italic text-brand-darker">
           d’après&nbsp;: «&nbsp;{proposal.financingSource}&nbsp;»
-        </span>
-      ) : null}
-      {proposal.financingModeSource && proposal.financingModeSource !== proposal.financingSource ? (
-        <span className="text-xs italic text-brand-darker">
-          d’après&nbsp;: «&nbsp;{proposal.financingModeSource}&nbsp;»
         </span>
       ) : null}
     </div>

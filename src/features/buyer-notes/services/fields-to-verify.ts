@@ -3,13 +3,7 @@ import { BUYER_FORM_FIELDS } from '@/features/buyers/schemas/buyer-input';
 // Mission 151 — les champs « À vérifier » d'une fiche née d'une lecture (M97), relus par liste
 // d'autorisation : des noms de champs de la fiche, jamais une valeur ; un nom hors liste n'est ni
 // écrit ni compté.
-const ALLOWED = new Set<string>([
-  ...BUYER_FORM_FIELDS,
-  'financing',
-  'soft_criteria',
-  // Lot B — comment il finance, lu dans les notes.
-  'financing_mode',
-]);
+const ALLOWED = new Set<string>([...BUYER_FORM_FIELDS, 'financing', 'soft_criteria']);
 
 export function sanitizeBuyerFieldsToVerify(names: readonly unknown[]): string[] {
   return [

@@ -8,10 +8,6 @@ import {
   readBuyerFormData,
 } from '@/features/buyers/schemas/buyer-input';
 import { buyerColumns, toBuyer } from '@/features/buyers/services/buyer-row';
-import {
-  financingModeColumns,
-  parseFinancingMode,
-} from '@/features/buyers/services/financing-mode';
 import { fieldsStillToVerify } from '@/features/buyer-notes/services/fields-to-verify';
 import { isBuyerStatusMove, nextBuyerStatus } from '@/features/buyers/services/buyer-status';
 import { BUYER_FINANCINGS, type Buyer, type BuyerFinancing } from '@/features/buyers/types';
@@ -199,42 +195,6 @@ export async function setBuyerFinancing(
     .select('*')
     .single();
   if (error || !data) return { ok: false, error: 'Le financement n’a pas pu être enregistré.' };
-  revalidateBuyers(buyerId);
-  return { ok: true, buyer: toBuyer(data) };
-}
-
-// Lot B (Jean-Guy, 27/11) — « Comment finance-t-il ? » : comptant, avec prêt, ou pas encore dit ;
-// avec un prêt, l'apport, le montant du prêt et l'accord de principe, tous facultatifs. Un geste à
-// part, comme l'état du financement (M132), qui n'est pas touché ; ce n'est pas un échange (M135).
-// Relu au serveur ; hors prêt, les détails sont effacés dans la même écriture. Posé par le
-// conseiller, le mode n'est plus « À vérifier » (M97, réponse 10).
-export async function setBuyerFinancingMode(
-  buyerId: string,
-  input: unknown,
-): Promise<BuyerActionResult> {
-  const profile = await activeProfile();
-  if (!profile) return { ok: false, error: NOT_CONNECTED };
-  const parsed = parseFinancingMode(input);
-  if (!parsed.ok) return { ok: false, error: parsed.error };
-  const client = createServiceRoleClient();
-  const existing = await ownBuyer(client, buyerId, profile.agency_id);
-  if (!existing) return { ok: false, error: NOT_FOUND };
-  const { data, error } = await client
-    .from('buyers')
-    .update({
-      ...financingModeColumns(parsed.value),
-      fields_to_verify: (existing.fields_to_verify ?? []).filter(
-        (name) => name !== 'financing_mode',
-      ),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', buyerId)
-    .eq('agency_id', profile.agency_id)
-    .select('*')
-    .single();
-  if (error || !data) {
-    return { ok: false, error: 'Le mode de financement n’a pas pu être enregistré.' };
-  }
   revalidateBuyers(buyerId);
   return { ok: true, buyer: toBuyer(data) };
 }

@@ -11,7 +11,6 @@ import {
   removeBuyerLetterPhotos,
 } from '@/features/buyer-prospecting/services/remove-buyer-letter-photos';
 import { buyerColumns, sanitizeSoftCriteria } from '@/features/buyers/services/buyer-row';
-import { financingModeColumns } from '@/features/buyers/services/financing-mode';
 import { importedToComparableInput } from '@/features/comparables/utils/imported-to-comparable-input';
 import { parseLocatorProperty } from '@/features/competitor-locator/schemas/locator-property';
 import { importedMandateColumns } from '@/features/competitor-mandate/services/mandate-columns';
@@ -738,14 +737,6 @@ async function insertDemoBuyers(
           financing: buyer.financing ?? 'unknown',
           financing_changed_at: buyer.financing ? contactedAt : null,
           contacted_at: contactedAt,
-          // Lot B — le mode de financement et le prêt sur chaque ligne : la colonne du mode
-          // n'admet pas NULL (la même raison que les deux dates).
-          ...financingModeColumns({
-            mode: buyer.financingMode ?? 'not_said',
-            contribution: buyer.loan?.contribution ?? null,
-            amount: buyer.loan?.amount ?? null,
-            agreement: buyer.loan?.agreement ?? null,
-          }),
         };
       }),
     )

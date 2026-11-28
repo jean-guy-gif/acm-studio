@@ -98,14 +98,7 @@ const agency = {
 };
 
 const context = (over: Partial<OfferContext> = {}): OfferContext => ({
-  buyer: {
-    id: BUYER,
-    name: 'Famille Test',
-    email: 'test@example.com',
-    // Lot B — comptant, confirmé : l'offre d'aujourd'hui.
-    financingMode: 'cash',
-    modeToVerify: false,
-  },
+  buyer: { id: BUYER, name: 'Famille Test', email: 'test@example.com' },
   visits: [
     {
       visitId: VISIT,
@@ -281,63 +274,6 @@ describe('signer l’offre d’achat', () => {
     expect((await signPurchaseOffer(input())).ok).toBe(false);
     expect(state.writes).toEqual([]);
     expect(state.uploads).toEqual([]);
-  });
-});
-
-// Lot B (Jean-Guy, 27/11) — rien ne se signe tant que l'acquéreur n'a pas dit, confirmé, qu'il
-// achète comptant : la fiche relue en base à la signature, l'offre hors mandat comprise. Une offre
-// comptant renonce à recourir à un prêt : elle ne se signe jamais pour un acquéreur qui emprunte.
-describe('l’offre selon comment il finance', () => {
-  const buyerWith = (financingMode: 'cash' | 'loan' | 'not_said', modeToVerify = false) =>
-    context({ buyer: { ...context().buyer, financingMode, modeToVerify } });
-
-  it('pas encore dit : refusé, rien n’est écrit', async () => {
-    state.context = buyerWith('not_said');
-    expect(await signPurchaseOffer(input())).toEqual({
-      ok: false,
-      error:
-        'Comment finance-t-il\u202f? Pour répondre, ouvrez son offre d’achat dans un nouvel onglet\u00a0: elle vous le demande. Puis revenez ici et touchez de nouveau «\u00a0Signer l’offre d’achat\u00a0»\u00a0: ce que vous avez saisi reste à l’écran.',
-      gate: { kind: 'ask', mode: 'not_said', toVerify: false },
-    });
-    expect(state.writes).toEqual([]);
-    expect(state.uploads).toEqual([]);
-  });
-
-  it('lu dans les notes, encore « À vérifier » : refusé tant que le conseiller ne l’a pas confirmé', async () => {
-    state.context = buyerWith('cash', true);
-    expect(await signPurchaseOffer(input())).toMatchObject({
-      ok: false,
-      gate: { kind: 'ask', mode: 'cash', toVerify: true },
-    });
-    expect(state.writes).toEqual([]);
-  });
-
-  it('avec prêt : refusé avec le message de Jean-Guy, sous mandat comme hors mandat', async () => {
-    const blocked = {
-      ok: false,
-      error:
-        'Cet acquéreur finance avec un prêt\u00a0: l’offre avec prêt n’est pas encore disponible dans ACM. Utilisez le modèle de votre agence.',
-      gate: { kind: 'blocked' },
-    };
-    state.context = buyerWith('loan');
-    expect(await signPurchaseOffer(input())).toEqual(blocked);
-    expect(
-      await signPurchaseOffer(
-        input({
-          visitId: OUTSIDE,
-          mandateNumber: '',
-          propertyAddress: '8 allée des Cistes Blancs, 06250 Mougins',
-          title: { kind: 'search', number: 'R-1', signedOn: '2026-11-04' },
-        }),
-      ),
-    ).toEqual(blocked);
-    expect(state.writes).toEqual([]);
-    expect(state.uploads).toEqual([]);
-  });
-
-  it('comptant, confirmé : l’offre d’aujourd’hui', async () => {
-    state.context = buyerWith('cash');
-    expect((await signPurchaseOffer(input())).ok).toBe(true);
   });
 });
 

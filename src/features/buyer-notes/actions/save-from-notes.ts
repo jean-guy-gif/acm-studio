@@ -9,7 +9,6 @@ import {
   type BuyerFormErrors,
 } from '@/features/buyers/schemas/buyer-input';
 import { buyerColumns, sanitizeSoftCriteria, toBuyer } from '@/features/buyers/services/buyer-row';
-import { financingModeColumns } from '@/features/buyers/services/financing-mode';
 import {
   buyerFormValues,
   submittedFields,
@@ -36,13 +35,6 @@ const NOT_SAVED = 'La fiche n’a pas pu être enregistrée. Réessayez.';
 const financingOf = (value: FormDataEntryValue | null): 'validated' | 'in_progress' | null =>
   value === 'validated' || value === 'in_progress' ? value : null;
 
-// Lot B — comment il finance, lu dans les notes : le mode seul, jamais un montant ; hors prêt comme
-// avec un prêt, les détails du prêt restent ceux que le conseiller notera.
-const modeColumns = (value: FormDataEntryValue | null) =>
-  value === 'cash' || value === 'loan'
-    ? financingModeColumns({ mode: value, contribution: null, amount: null, agreement: null })
-    : {};
-
 function softCriteriaOf(value: FormDataEntryValue | null) {
   if (typeof value !== 'string' || value === '') return [];
   try {
@@ -63,7 +55,6 @@ export async function saveBuyerFromNotes(formData: FormData): Promise<SaveFromNo
   const softSent = formData.has('soft_criteria');
   const sentSoft = softCriteriaOf(formData.get('soft_criteria'));
   const financing = financingOf(formData.get('financing'));
-  const mode = modeColumns(formData.get('financing_mode'));
   const toVerify = sanitizeBuyerFieldsToVerify(formData.getAll('fields_to_verify'));
   // La refonte, lot D — un champ que le conseiller a corrigé ne porte plus « À vérifier », mais il
   // reste gardé : la trace dit les champs envoyés (`fields_kept`, des noms, relus par la même liste
@@ -127,7 +118,6 @@ export async function saveBuyerFromNotes(formData: FormData): Promise<SaveFromNo
       .update({
         ...columns,
         ...(financing ? { financing, financing_changed_at: now } : {}),
-        ...mode,
         fields_to_verify: sanitizeBuyerFieldsToVerify([...current.fieldsToVerify, ...toVerify]),
         updated_at: now,
       })
@@ -143,7 +133,6 @@ export async function saveBuyerFromNotes(formData: FormData): Promise<SaveFromNo
       .insert({
         ...buyerColumns({ ...parsed.input, softCriteria: sentSoft }),
         ...(financing ? { financing, financing_changed_at: now } : {}),
-        ...mode,
         fields_to_verify: toVerify,
         agency_id: profile.agency_id,
         advisor_id: profile.id,

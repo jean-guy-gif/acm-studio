@@ -62,13 +62,10 @@ export type NoteProposal = {
   // La ligne des notes d'où vient chaque champ : montrée à la validation, jamais gardée.
   sources: Partial<Record<NoteField, string>>;
   mustHave: { key: NoteStar; source: string }[];
-  // L'état du financement lu (validé, en cours) : jamais « Validé » pour un achat comptant.
+  // « Comptant, à vérifier » : une suggestion que le conseiller transforme ou non en « Validé ».
   financing: 'validated' | 'in_progress' | null;
+  cashSuggestion: boolean;
   financingSource: string | null;
-  // Lot B (Jean-Guy, 27/11) — comment il finance, gardé seulement avec la ligne des notes qui le dit ;
-  // « Comptant » laisse au conseiller le geste « Financement validé » (réponse 9).
-  financingMode: 'cash' | 'loan' | null;
-  financingModeSource: string | null;
   softCriteria: { key: BuyerSoftCriterionKey; words: string; source: string | null }[];
   communes: CommuneCheck[];
   // Ce qui n'a pas été relevé : un nombre, jamais le contenu.
