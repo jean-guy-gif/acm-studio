@@ -80,7 +80,7 @@ Une mission tient en une heure et demie (CLAUDE.md) : chaque lot se découpe en 
 | B1      | La migration du mode de financement, ses droits en toutes lettres, jouée sur la base d'essai, relue par le gardien-sql                   | 1 h 30              | appliquée en production le 28/11 par Jean-Guy |
 | B2      | La fiche : « Comment finance-t-il ? », le prêt, la démo                                                                                   | 1 h 30              | sur l'essai le 28/11, attend le « oui » |
 | B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | sur l'essai le 28/11, attend le « oui » |
-| B4      | La lecture des notes, et sa mesure sur le vrai modèle                                                                                     | 1 h 30              | à faire                 |
+| B4      | La lecture des notes, et sa mesure sur le vrai modèle                                                                                     | 1 h 30              | sur l'essai le 28/11, attend le « oui » |
 | B5      | Relecteur, specs, captures                                                                                                                | 1 h                 | à faire                 |
 | C0      | La maquette : la fiche du dossier, le Suivi, une tâche d'« Aujourd'hui », aux trois tailles                                              | 1 h 30              | à faire                 |
 | C1 à C7 | La base ; les étapes et la fiche ; les saisies ; le lien avec l'offre et le compromis ; le Suivi et le Point marché ; « Aujourd'hui » et le tableau du manager ; la démo, relecteur, specs, captures | 1 h 30 chacun | à faire |
@@ -243,6 +243,18 @@ chacun, B5 en 1 h : 7 h au lieu de 6 h 30.
   Rossi, le blocage de M. Fontaine, l'offre des Keller) et ses captures aux trois tailles
   (`LB3-*-question.png`, `LB3-*-bloquee.png`), puis `hors-mandat`, `acquereur-sans-offre`,
   `presentation-directe` : 11 sur 11, sans aléa.
+- B4 (28/11) · La lecture des notes propose comment il finance, quand les notes le disent :
+  « Comptant » ou « Avec prêt », « À vérifier », avec la ligne d'où il vient (« d'après : … ») ;
+  la garde du serveur ne le garde que si cette ligne le dit, et « sans prêt », « pas de banque »
+  ne sont jamais un prêt. L'état du financement (validé, en cours) reste à part ; « Comptant, à
+  vérifier » de la M151 devient le mode « Comptant », le geste « Le noter « Validé » » à côté
+  (réponse 9). La fiche créée porte le mode, « À vérifier · lu dans vos notes » ; un toucher sur
+  le bon choix, ou « Tout est juste », le confirme (l'e2e a trouvé que « Tout est juste » ne
+  retirait pas la pastille du mode sans recharger : corrigé). La démo des Arnaud lit « accord
+  banque OK » : « Avec prêt ». Mesure sur le vrai modèle (`missions/LB4-mesure.md`) : neuf notes
+  inventées, deux passes, 18 lectures justes sur 18, aucun mode inventé, 0,39 €. Tests : 4 635 ;
+  sur l'essai, `depuis-mes-notes` (le mode lu, sa ligne, la fiche, « Tout est juste ») et
+  `mode-de-financement` : 3 sur 3.
 
 ### Les questions du lot B (architecte, 28/11), chacune avec sa réponse par défaut
 
