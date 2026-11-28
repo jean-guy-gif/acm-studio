@@ -35,6 +35,7 @@ function fakeStorage(
 ) {
   const files: Record<string, number> = {};
   const downloads: Record<string, number> = {};
+  const discarded: string[] = [];
   const steps: Step[] = [];
   const covered = (step: Step) =>
     objects.filter((object) =>
@@ -47,11 +48,18 @@ function fakeStorage(
   return {
     files,
     downloads,
+    discarded,
     steps,
     sizeOf: (name: string) => (name in files ? files[name] : null),
+    discard: (name: string) => {
+      discarded.push(name);
+      delete files[name];
+    },
     copy: (step: Step) => {
       steps.push(step);
       for (const object of covered(step)) {
+        // Comme la CLI : elle refuse d'écrire par-dessus un fichier déjà là (vu le 28/11).
+        if (object.name in files) throw new Error('EEXIST: file already exists');
         downloads[object.name] = (downloads[object.name] ?? 0) + 1;
         if ((failures[object.name] ?? 0) > 0) {
           failures[object.name] -= 1;
@@ -129,7 +137,12 @@ describe('copyPlan', () => {
 describe('copyBucket', () => {
   it('sans erreur : une seule copie, celle du bucket entier', () => {
     const storage = fakeStorage();
-    const result = copyBucket({ objects, copy: storage.copy, sizeOf: storage.sizeOf });
+    const result = copyBucket({
+      objects,
+      copy: storage.copy,
+      sizeOf: storage.sizeOf,
+      discard: storage.discard,
+    });
     expect(result).toEqual({ missing: [], passes: 1 });
     expect(storage.steps).toEqual([{ kind: 'bucket', path: '' }]);
   });
@@ -141,6 +154,7 @@ describe('copyBucket', () => {
       objects,
       copy: storage.copy,
       sizeOf: storage.sizeOf,
+      discard: storage.discard,
       onRetry: (pass: number, missing: StorageObject[]) => retries.push([pass, missing.length]),
     });
     expect(result).toEqual({ missing: [], passes: 2 });
@@ -156,17 +170,43 @@ describe('copyBucket', () => {
     expect(storage.downloads['agence/p1/b.jpg']).toBe(1);
   });
 
-  it('un fichier coupé, à la mauvaise taille, est retéléchargé', () => {
+  it('un fichier coupé est d’abord retiré, puis retéléchargé : la CLI refuse d’écrire par-dessus', () => {
     const storage = fakeStorage({}, { 'autre/p3/e.jpg': 1 });
-    const result = copyBucket({ objects, copy: storage.copy, sizeOf: storage.sizeOf });
+    const result = copyBucket({
+      objects,
+      copy: storage.copy,
+      sizeOf: storage.sizeOf,
+      discard: storage.discard,
+    });
     expect(result).toEqual({ missing: [], passes: 2 });
     expect(storage.steps.at(-1)).toEqual({ kind: 'dir', path: 'autre' });
     expect(storage.files['autre/p3/e.jpg']).toBe(50);
+    expect(storage.discarded).toEqual(['autre/p3/e.jpg']);
+  });
+
+  it('ne retire jamais un fichier copié à sa taille', () => {
+    const storage = fakeStorage({ 'agence/p2/c.jpg': 1 }, { 'racine.jpg': 1 });
+    const result = copyBucket({
+      objects,
+      copy: storage.copy,
+      sizeOf: storage.sizeOf,
+      discard: storage.discard,
+    });
+    // La racine, copiée pour la première fois à la première reprise, arrive coupée : la deuxième
+    // la retire, et elle seule ; a et b, copiés à leur taille dès le début, restent.
+    expect(result).toEqual({ missing: [], passes: 3 });
+    expect(storage.discarded).toEqual(['racine.jpg']);
+    expect(storage.downloads['agence/p1/a.jpg']).toBe(1);
   });
 
   it('une erreur ne retient pas les autres copies de la même reprise', () => {
     const storage = fakeStorage({ 'agence/p2/c.jpg': 2 });
-    const result = copyBucket({ objects, copy: storage.copy, sizeOf: storage.sizeOf });
+    const result = copyBucket({
+      objects,
+      copy: storage.copy,
+      sizeOf: storage.sizeOf,
+      discard: storage.discard,
+    });
     expect(result).toEqual({ missing: [], passes: 3 });
     // À la première reprise, le dossier p2 échoue encore, mais « autre » et la racine passent.
     expect(storage.downloads['autre/p3/e.jpg']).toBe(1);
@@ -181,6 +221,7 @@ describe('copyBucket', () => {
       objects,
       copy: storage.copy,
       sizeOf: storage.sizeOf,
+      discard: storage.discard,
       onRetry: (pass: number) => retries.push(pass),
     });
     expect(retries).toEqual([1, 2, 3]);

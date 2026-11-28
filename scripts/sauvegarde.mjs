@@ -4,7 +4,15 @@
 //
 // Prérequis : la CLI Supabase reliée au projet (`supabase link`) et Docker lancé (la CLI s'en
 // sert pour `pg_dump`). Rien n'est affiché du contenu : seulement où c'est, et combien.
-import { chmodSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import {
@@ -139,6 +147,8 @@ try {
       objects: listed[bucket] ?? [],
       copy: (step) => copyStep(bucket, step, storageDir),
       sizeOf: (name) => fileSize(join(storageDir, bucket, name)),
+      // Une copie coupée, dans le dossier de CETTE sauvegarde, et elle seule.
+      discard: (name) => unlinkSync(join(storageDir, bucket, name)),
       onRetry: (retry, lost) => {
         console.log(
           `    ${bucket} : ${filesLabel(lost.length)} à reprendre, reprise ${retry} sur ${STORAGE_RETRIES}…`,

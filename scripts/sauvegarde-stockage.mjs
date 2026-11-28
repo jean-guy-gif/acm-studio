@@ -81,15 +81,31 @@ export function copyPlan(objects, missing) {
   return plan;
 }
 
+// Les objets manquants que reprend une copie.
+/**
+ * @param {CopyStep} step
+ * @param {StorageObject[]} missing
+ * @returns {StorageObject[]}
+ */
+function coveredBy(step, missing) {
+  if (step.kind === 'bucket') return missing;
+  if (step.kind === 'dir')
+    return missing.filter((object) => object.name.startsWith(`${step.path}/`));
+  return missing.filter((object) => object.name === step.path);
+}
+
 // Copie un bucket : d'abord en entier, puis, s'il manque des fichiers, jusqu'à `retries` reprises
-// des seuls manquants. Une copie qui échoue ne retient pas les suivantes : la reprise d'après
-// reprend ce qui manque encore. `onRetry(reprise, manquants)` est appelé avant chaque reprise.
-// Rend les objets encore manquants et le nombre de passages.
+// des seuls manquants. La CLI refuse d'écrire par-dessus un fichier (« EEXIST », vu le 28/11) : la
+// copie coupée d'un fichier repris est d'abord retirée (`discard`), jamais un fichier copié à sa
+// taille. Une copie qui échoue ne retient pas les suivantes : la reprise d'après reprend ce qui
+// manque encore. `onRetry(reprise, manquants)` est appelé avant chaque reprise. Rend les objets
+// encore manquants et le nombre de passages.
 /**
  * @param {{
  *   objects: StorageObject[],
  *   copy: (step: CopyStep) => void,
  *   sizeOf: (name: string) => number | null,
+ *   discard: (name: string) => void,
  *   retries?: number,
  *   onRetry?: (retry: number, missing: StorageObject[]) => void,
  * }} options
@@ -99,6 +115,7 @@ export function copyBucket({
   objects,
   copy,
   sizeOf,
+  discard,
   retries = STORAGE_RETRIES,
   onRetry = () => {},
 }) {
@@ -108,6 +125,9 @@ export function copyBucket({
     if (passes > 0) onRetry(passes, missing);
     for (const step of copyPlan(objects, missing)) {
       try {
+        for (const object of coveredBy(step, missing)) {
+          if (sizeOf(object.name) !== null) discard(object.name);
+        }
         copy(step);
       } catch {
         // La reprise suivante dira ce qui manque encore.
