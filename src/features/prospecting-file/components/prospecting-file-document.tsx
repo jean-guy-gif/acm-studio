@@ -25,6 +25,7 @@ import type {
   ProspectingSender,
 } from '@/features/prospecting-file/types';
 import { displayPhotoUrl } from '@/lib/photo-url';
+import { withFrenchSpacing } from '@/lib/typography/french-spacing';
 
 // Mission 84 — le dossier de prospection tel qu'il s'imprime (A4). Composant d'affichage : tous
 // ses textes viennent de `buildProspectingFile` et des textes du conseiller. Il sort de
@@ -410,12 +411,27 @@ export type ProspectingFileDocumentProps = {
   qr: QrCode;
 };
 
+// Jean-Guy (28/11) — les textes que réécrit le conseiller suivent la règle des espaces
+// insécables, à l'affichage seulement : ce qui est enregistré ne change pas.
+const spacedTexts = (texts: ProspectingFileTexts): ProspectingFileTexts => ({
+  title: withFrenchSpacing(texts.title),
+  letter: withFrenchSpacing(texts.letter),
+  keyMessage: withFrenchSpacing(texts.keyMessage),
+  proposals: [
+    withFrenchSpacing(texts.proposals[0]),
+    withFrenchSpacing(texts.proposals[1]),
+    withFrenchSpacing(texts.proposals[2]),
+  ],
+  contactHook: withFrenchSpacing(texts.contactHook),
+});
+
 export function ProspectingFileDocument(props: ProspectingFileDocumentProps) {
+  const shown = { ...props, texts: spacedTexts(props.texts) };
   return (
     <div className="pf-doc">
       {/* Feuille constante du dépôt, sans aucune donnée : rien d'extérieur n'y entre. */}
       <style dangerouslySetInnerHTML={{ __html: DOCUMENT_CSS }} />
-      {props.file.version === 'owner' ? <OwnerPages {...props} /> : <ColleaguePage {...props} />}
+      {shown.file.version === 'owner' ? <OwnerPages {...shown} /> : <ColleaguePage {...shown} />}
     </div>
   );
 }

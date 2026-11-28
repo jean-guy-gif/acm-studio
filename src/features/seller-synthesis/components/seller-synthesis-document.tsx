@@ -23,6 +23,7 @@ import {
   formatSquareMeters,
 } from '@/lib/format';
 import { displayPhotoUrl } from '@/lib/photo-url';
+import { withFrenchSpacing } from '@/lib/typography/french-spacing';
 
 // Mission 110, refondue par la mission 113 — la synthèse laissée au vendeur : le rendez-vous,
 // raconté dans l'ordre du Live, à la forme du dossier « Villa Biot » (couverture en pleine photo,
@@ -740,7 +741,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                 </div>
                 <ul className="grid list-disc grid-cols-1 gap-x-6 gap-y-1 pl-5 text-sm sm:grid-cols-2">
                   {property.strengths.map((strength) => (
-                    <li key={strength}>{strength}</li>
+                    <li key={strength}>{withFrenchSpacing(strength)}</li>
                   ))}
                 </ul>
               </div>
@@ -912,7 +913,7 @@ export function SellerSynthesisDocument({ synthesis }: { synthesis: SellerSynthe
                 <div className="border-l-4 border-brand-deep bg-brand-soft px-5 py-4">
                   <div className={`${kicker} text-brand-deep`}>{t.keyPoint}</div>
                   <p className="mt-1.5 text-[0.95rem] leading-relaxed whitespace-pre-line">
-                    {decision.justification}
+                    {withFrenchSpacing(decision.justification)}
                   </p>
                 </div>
               ) : null}

@@ -4,7 +4,12 @@ import { join, relative } from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import { frenchSpacingFaults, NARROW_NBSP, NBSP } from '@/lib/typography/french-spacing';
+import {
+  frenchSpacingFaults,
+  NARROW_NBSP,
+  NBSP,
+  withFrenchSpacing,
+} from '@/lib/typography/french-spacing';
 
 // Lot A (Jean-Guy, 27/11) — aucun texte ne peut couper une ligne avant « : ; ? ! », ni à
 // l'intérieur de « » : une seule règle pour tous les textes visibles et tous les documents
@@ -222,6 +227,21 @@ describe('la règle des espaces insécables', () => {
       { start: 4, end: 5, mark: '?', expected: NARROW_NBSP },
     ]);
     expect(frenchSpacingFaults(`Prix${NARROW_NBSP}: 3`)).toHaveLength(1);
+  });
+
+  it('à l’affichage d’un texte tapé : la bonne espace, sans en ajouter là où il n’y en a pas', () => {
+    expect(withFrenchSpacing('Prix : bon ? « Oui » ; vu !')).toBe(
+      `Prix${NBSP}: bon${NARROW_NBSP}? «${NBSP}Oui${NBSP}»${NARROW_NBSP}; vu${NARROW_NBSP}!`,
+    );
+    // Plusieurs espaces de suite n'en font qu'une ; une espace insécable de la mauvaise sorte est
+    // remplacée ; sans espace, rien n'est ajouté ; une adresse ne bouge pas.
+    expect(withFrenchSpacing(`Prix  : 3 · Prêt${NBSP}?`)).toBe(
+      `Prix${NBSP}: 3 · Prêt${NARROW_NBSP}?`,
+    );
+    expect(withFrenchSpacing('Prix: 3 · https://exemple.fr/?a=1')).toBe(
+      'Prix: 3 · https://exemple.fr/?a=1',
+    );
+    expect(withFrenchSpacing('')).toBe('');
   });
 
   it('le lecteur lit le JSX comme React l’affiche, et laisse la forme et le CSS', () => {
