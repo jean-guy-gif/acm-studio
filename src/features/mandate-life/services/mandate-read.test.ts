@@ -73,7 +73,13 @@ describe('l’offre qui tient le mandat', () => {
       buyerId: 'b-keller',
       buyerName: 'Famille Keller',
       price: 1_560_000,
+      documentId: null,
     });
+    // L'offre signée, pour « Voir l'offre ».
+    expect(
+      (mandateOfferOf([answer({ documentId: 'doc-1' })], 'p-mougins') as { documentId: string })
+        .documentId,
+    ).toBe('doc-1');
     // « A acheté » tient encore l'offre (la valeur de la base, `bought`).
     expect(mandateOfferOf([answer({ buyerStatus: 'bought' })], 'p-mougins')).not.toBeNull();
   });

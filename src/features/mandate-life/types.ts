@@ -56,4 +56,6 @@ export type MandateOffer = {
   buyerId: string | null;
   buyerName: string | null;
   price: number | null;
+  // L'offre signée, pour « Voir l'offre » (`/acquereurs/<fiche>/offre/<document>`).
+  documentId?: string | null;
 };
