@@ -64,7 +64,7 @@ const dossierSteps = `
 <div class="dsteps">
   ${stepCard('ok', 'Le bien', 'fiche saisie · 6 photos')}
   ${stepCard('ok', 'Les concurrents', '5 retenus')}
-  ${stepCard('ok', 'Le prix', '1 690 000 €')}
+  ${stepCard('ok', 'Prix proposé au rendez-vous', '1 690 000 €')}
   ${stepCard('ok', 'Le rendez-vous', 'fait le 28/10')}
   ${stepCard('ok', 'Conclure', 'mandat signé le 28/10')}
 </div>
@@ -79,6 +79,7 @@ const MANDATE_ACCEPTED = [
     '1 639 500 € à la signature, le 28/10',
   ],
   ['Offre acceptée', '1 560 000 € · famille Keller · le 28/11', 'Voir l’offre'],
+  ['Point marché', 'arrêté à l’offre acceptée, le 28/11 · il reprend si l’offre tombe', ''],
 ];
 
 // La fiche du dossier, état « Offre acceptée ».
@@ -119,7 +120,7 @@ const states = `
         ['Fin du mandat', 'le 28/01/2027', 'Modifier'],
         ['Prix du mandat', '1 590 000 €', 'Ajouter un avenant de baisse'],
         ['Compromis', 'signé le 05/12 · acte prévu le 15/01 · famille Keller', 'Modifier'],
-        ['Point marché', 'arrêté au compromis, le 05/12', ''],
+        ['Point marché', 'arrêté à l’offre acceptée, le 28/11', ''],
       ], false)}
     </div></div>
   <div class="col"><div class="ftitle">« Vendu par l’agence » · après « Noter la vente »</div>
@@ -170,6 +171,7 @@ const forms = `
   <div class="card form"><h4>Fin du mandat</h4>
     ${field('Durée', '3 mois', 'ou une date')}
     ${field('Fin le', '28/01/2027', 'calculée depuis la signature, le 28/10')}
+    <label class="checkrow"><span class="box"></span><span>Reconduction tacite<span class="hint">Cochée : 30 jours avant, « Faire le point avant la reconduction » au lieu de « Préparer le renouvellement ».</span></span></label>
     <div class="hrow"><span class="bfill sm">Enregistrer</span><span class="bline sm">Annuler</span></div></div>
   <div class="card form"><h4>Noter la vente</h4>
     ${field('Date de l’acte', '15/01/2027')}
@@ -217,10 +219,10 @@ const suivi = (w) => `
     segs: [seg('done', 'Mandat signé ✓'), seg('done', 'Offre acceptée ✓'), seg('due', 'Compromis · à noter'), seg('', 'Vente')],
     when: 'Prochaine étape · aujourd’hui',
     step: 'Noter le compromis',
-    sentence: 'Offre de la famille Keller acceptée le 28/11',
+    sentence: 'Offre de la famille Keller acceptée le 28/11 · Point marché arrêté à l’offre acceptée',
     button: 'Noter le compromis',
     filled: true,
-    links: '<span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span>',
+    links: '<span class="l">Points marché passés</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span>',
   })}
   ${suiviCard({
     bar: 'green',
@@ -232,7 +234,7 @@ const suivi = (w) => `
     segs: [seg('done', 'Mandat signé ✓'), seg('done', 'Offre acceptée ✓'), seg('done', 'Compromis le 25/10 ✓'), seg('due', 'Acte le 12/12')],
     when: 'Prochaine étape · aujourd’hui',
     step: 'Préparer l’acte',
-    sentence: 'Acte prévu le 12/12, dans 14 jours · Point marché arrêté au compromis',
+    sentence: 'Acte prévu le 12/12, dans 14 jours',
     button: 'Préparer l’acte',
     filled: false,
     links: '<span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span>',
@@ -284,7 +286,7 @@ const today = (w) => `
     ${task('!', 'orange', 'Préparer l’acte de M. et Mme Castel', 'acte prévu le 12/12 chez le notaire · dans 14 jours', 'Préparer l’acte')}
     ${task('!', 'orange', 'Préparer le renouvellement du mandat de Mme Navarro', 'le mandat se termine le 22/12 · dans 24 jours', 'Préparer le renouvellement')}
     ${task('!', 'orange', 'Relancer M. et Mme Lambert-Duval', 'Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui', 'Préparer la relance')}
-    ${task('!', 'orange', 'Point marché de M. Lefebvre', 'Mandat signé le 28/10 · offre acceptée : le point continue jusqu’au compromis', 'Faire le point')}
+    ${task('!', 'orange', 'Faire le point avant la reconduction du mandat de M. et Mme Delmas', 'reconduction tacite le 08/12 · dans 10 jours', 'Faire le point')}
   </div>
 </div>`;
 
@@ -334,6 +336,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 .statesgrid{display:flex;gap:18px;align-items:flex-start}.statesgrid .page.desk{width:640px}.statesgrid .life{grid-template-columns:repeat(2,1fr)}
 .formsgrid{display:grid;grid-template-columns:repeat(4,330px);gap:14px}
 .form{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.checkrow{display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:600;color:#3f3f46}.checkrow .hint{display:block;font-weight:400;margin-top:2px}.box{width:18px;height:18px;border:1.5px solid #a1a1aa;border-radius:5px;flex:none;margin-top:1px}
 .field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:#3f3f46}.input{border:1px solid #d4d4d8;border-radius:10px;padding:9px 11px;font-weight:500;color:#18181b;background:#fff}.hint{font-size:11.5px;font-weight:400;color:#71717a}
 .tabs{display:flex;gap:6px;background:#fff;border-radius:12px;padding:4px;align-self:flex-start;border:1px solid #e4e4e7}.tabs span{font-size:13.5px;font-weight:600;color:#52525b;padding:6px 14px;border-radius:9px}.tabs .on{background:#e0f2fe;color:#075985}
 .filters{display:flex;flex-wrap:wrap;gap:8px}.fp{font-size:13px;font-weight:600;border:1px solid #e4e4e7;background:#fff;border-radius:999px;padding:6px 12px;white-space:nowrap}.fp.on{background:#e0f2fe;color:#075985;border-color:#bae6fd}
@@ -353,12 +356,12 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 .phone .life,.phone .dsteps{grid-template-columns:1fr}.phone .tiles{gap:8px}.phone .tile b{font-size:22px}
 .phone .mrow{grid-template-columns:1fr;gap:4px}.phone .exits{flex-direction:column;gap:8px}
 .phone .scard{grid-template-columns:1fr}.phone .sright{border-left:none;border-top:1px solid #f4f4f5}
-.phone .segs{grid-template-columns:repeat(2,1fr)}.phone .task{flex-wrap:wrap}.phone .task .bline{margin-left:42px}
+.phone .segs{grid-template-columns:repeat(2,1fr)}.phone .task{flex-wrap:wrap}.phone .task .what{flex-basis:calc(100% - 42px)}.phone .task .bline{margin-left:42px}
 .phone .hrow.small{flex-direction:column;align-items:flex-start;gap:6px}
 `;
 
 const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>${css}</style></head><body>
-<h1>Lot C — La vie du mandat côté vendeur : la maquette (C0)</h1>
+<h1>Lot C — La vie du mandat côté vendeur : la maquette (C0), validée le 28/11 avec quatre retouches</h1>
 <p class="sub">Aujourd’hui, le dossier vendeur s’arrête à « Mandat signé ». Après : Mandat signé → Offre acceptée → Sous compromis → Vendu par l’agence, et la sortie « Mandat terminé sans vente ». Trois écrans, aux trois tailles, dans le socle de la refonte : la fiche du dossier (M. Lefebvre, de la démo : le mandat de Mougins, offre acceptée de la famille Keller), le Suivi, une tâche d’« Aujourd’hui ». L’« avant » est la capture réelle de l’essai ce 28/11 ; dans l’« après », dates et prix sont inventés, pour montrer chaque état.</p>
 
 <div class="part">1 · La fiche du dossier, état « Offre acceptée »</div>
@@ -366,6 +369,7 @@ const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
   <div class="col"><div class="ftitle">Avant · ordinateur (capture de l’essai)</div><img class="shot" src="${img('C0-avant-dossier-ordinateur.png')}" width="640"></div>
   <div class="col"><div class="ftitle">Après · ordinateur</div>${dossier('desk')}</div>
   <div class="notes">
+    ${note('<b>Retouches de Jean-Guy (28/11)</b> : « Le prix » de « Son dossier » s’appelle « Prix proposé au rendez-vous » — c’est le prix décidé avant le rendez-vous (1 690 000 €), pas celui du mandat (1 639 500 € à la signature) ; le Point marché s’arrête à l’offre acceptée ; la reconduction tacite ; sur téléphone, le bouton d’une tâche sous son texte.')}
     ${note('<b>« Son mandat »</b>, nouveau, avant « Son dossier » : c’est ce qui vit maintenant. Quatre étapes, dans les cartes de « Son dossier » : vert fait, bleu maintenant, gris à venir. Dessous, « Le mandat » : sa fin, son prix et ses avenants, l’offre acceptée. « Son dossier » garde la préparation et le rendez-vous.')}
     ${note('<b>La prochaine étape suit le mandat</b> : « Noter le compromis » quand une offre est acceptée (aujourd’hui : « Voir le Suivi »). Un seul bouton plein, le sien.')}
     ${note('<b>Le badge</b> dit l’étape du mandat (« Offre acceptée », « Sous compromis », « Vendu par l’agence », « Mandat terminé ») ; le type et la fin du mandat passent sur la ligne dessous.')}
@@ -397,7 +401,7 @@ ${states}
   <div class="notes">
     ${note('<b>Deux onglets</b> : « Sous offre · compromis » et « Vendus par l’agence ». « Mandats signés » ne garde que les mandats sans offre acceptée.')}
     ${note('<b>La sortie « Mandat terminé sans vente »</b> rejoint « Vendus ailleurs · retirés », qui devient « Vendus ailleurs · retirés · terminés » : pour le conseiller, le même geste, plus rien à faire (question 5 du 27/11). « Vendu ailleurs » et « Retiré de la vente » ne bougent pas.')}
-    ${note('<b>La frise de la carte</b> : tant qu’aucune offre n’est acceptée, celle d’aujourd’hui (concurrents, Point marché, visites : le travail pour vendre) ; dès l’offre acceptée, celle de la vente : Mandat signé → Offre acceptée → Compromis → Vente. <b>Le Point marché</b> continue pendant l’offre acceptée et s’arrête au compromis : la carte le dit.')}
+    ${note('<b>La frise de la carte</b> : tant qu’aucune offre n’est acceptée, celle d’aujourd’hui (concurrents, Point marché, visites : le travail pour vendre) ; dès l’offre acceptée, celle de la vente : Mandat signé → Offre acceptée → Compromis → Vente. <b>Le Point marché</b> s’arrête dès l’offre acceptée et reprend si l’offre tombe (retouche 3 de Jean-Guy) ; les points passés restent lisibles.')}
     ${note('<b>Vendu</b> : le prix de vente en vert, l’écart au prix du mandat et le délai du mandat au compromis ; plus de bouton.')}
   </div>
   <div class="col"><div class="ftitle">Après · téléphone</div>${suivi('phone')}</div>
@@ -413,7 +417,7 @@ ${states}
   <div class="col"><div class="ftitle">Après · tablette</div>${today('tab')}</div>
   <div class="col"><div class="ftitle">Après · téléphone</div>${today('phone')}</div>
   <div class="notes">
-    ${note('<b>« Préparer l’acte »</b> arrive 15 jours avant la date prévue de l’acte ; <b>« Préparer le renouvellement »</b>, 30 jours avant la fin du mandat. Dans le bloc Vendeurs, avec son bouton en contour, comme les autres tâches ; « en retard » seulement une fois la date passée.')}
+    ${note('<b>« Préparer l’acte »</b> arrive 15 jours avant la date prévue de l’acte ; <b>« Préparer le renouvellement »</b>, 30 jours avant la fin du mandat — <b>« Faire le point avant la reconduction »</b> quand la reconduction tacite est cochée (retouche 4). Dans le bloc Vendeurs, avec son bouton en contour ; sur téléphone, le bouton sous le texte (retouche 2) ; « en retard » seulement une fois la date passée. Le Point marché de M. Lefebvre n’y est plus : son offre est acceptée.')}
     ${note('<b>Quand elles s’en vont</b> : « Préparer le renouvellement », quand la fin du mandat est repoussée ou le mandat terminé ; « Préparer l’acte », quand la vente est notée. Le jour de l’acte passé sans vente notée, elle devient « Noter la vente ».')}
     ${note('Les boutons ouvrent le dossier sur « Son mandat », la saisie déjà ouverte (« Fin du mandat », « Noter la vente »).')}
   </div>

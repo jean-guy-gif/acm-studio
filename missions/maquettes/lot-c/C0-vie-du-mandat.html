@@ -40,6 +40,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 .statesgrid{display:flex;gap:18px;align-items:flex-start}.statesgrid .page.desk{width:640px}.statesgrid .life{grid-template-columns:repeat(2,1fr)}
 .formsgrid{display:grid;grid-template-columns:repeat(4,330px);gap:14px}
 .form{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.checkrow{display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:600;color:#3f3f46}.checkrow .hint{display:block;font-weight:400;margin-top:2px}.box{width:18px;height:18px;border:1.5px solid #a1a1aa;border-radius:5px;flex:none;margin-top:1px}
 .field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:#3f3f46}.input{border:1px solid #d4d4d8;border-radius:10px;padding:9px 11px;font-weight:500;color:#18181b;background:#fff}.hint{font-size:11.5px;font-weight:400;color:#71717a}
 .tabs{display:flex;gap:6px;background:#fff;border-radius:12px;padding:4px;align-self:flex-start;border:1px solid #e4e4e7}.tabs span{font-size:13.5px;font-weight:600;color:#52525b;padding:6px 14px;border-radius:9px}.tabs .on{background:#e0f2fe;color:#075985}
 .filters{display:flex;flex-wrap:wrap;gap:8px}.fp{font-size:13px;font-weight:600;border:1px solid #e4e4e7;background:#fff;border-radius:999px;padding:6px 12px;white-space:nowrap}.fp.on{background:#e0f2fe;color:#075985;border-color:#bae6fd}
@@ -59,10 +60,10 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 .phone .life,.phone .dsteps{grid-template-columns:1fr}.phone .tiles{gap:8px}.phone .tile b{font-size:22px}
 .phone .mrow{grid-template-columns:1fr;gap:4px}.phone .exits{flex-direction:column;gap:8px}
 .phone .scard{grid-template-columns:1fr}.phone .sright{border-left:none;border-top:1px solid #f4f4f5}
-.phone .segs{grid-template-columns:repeat(2,1fr)}.phone .task{flex-wrap:wrap}.phone .task .bline{margin-left:42px}
+.phone .segs{grid-template-columns:repeat(2,1fr)}.phone .task{flex-wrap:wrap}.phone .task .what{flex-basis:calc(100% - 42px)}.phone .task .bline{margin-left:42px}
 .phone .hrow.small{flex-direction:column;align-items:flex-start;gap:6px}
 </style></head><body>
-<h1>Lot C — La vie du mandat côté vendeur : la maquette (C0)</h1>
+<h1>Lot C — La vie du mandat côté vendeur : la maquette (C0), validée le 28/11 avec quatre retouches</h1>
 <p class="sub">Aujourd’hui, le dossier vendeur s’arrête à « Mandat signé ». Après : Mandat signé → Offre acceptée → Sous compromis → Vendu par l’agence, et la sortie « Mandat terminé sans vente ». Trois écrans, aux trois tailles, dans le socle de la refonte : la fiche du dossier (M. Lefebvre, de la démo : le mandat de Mougins, offre acceptée de la famille Keller), le Suivi, une tâche d’« Aujourd’hui ». L’« avant » est la capture réelle de l’essai ce 28/11 ; dans l’« après », dates et prix sont inventés, pour montrer chaque état.</p>
 
 <div class="part">1 · La fiche du dossier, état « Offre acceptée »</div>
@@ -91,7 +92,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 <div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc now"><span class="dot now"></span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Sous compromis</b><span>à noter</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>l’acte et son prix</span></div></div></div>
   
 <div class="card mandate">
-  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div>
+  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div><div class="mrow"><span class="mlabel">Point marché</span><span class="mvalue">arrêté à l’offre acceptée, le 28/11 · il reprend si l’offre tombe</span><span></span></div>
   <div class="exits"><span class="l">Vendu à un acquéreur venu d’ailleurs</span><span class="l">Mandat terminé sans vente</span></div>
 </div>
   
@@ -99,13 +100,14 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 <div class="dsteps">
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le bien</b><span>fiche saisie · 6 photos</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Les concurrents</b><span>5 retenus</span></div></div>
-  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le prix</b><span>1 690 000 €</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Prix proposé au rendez-vous</b><span>1 690 000 €</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le rendez-vous</b><span>fait le 28/10</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Conclure</b><span>mandat signé le 28/10</span></div></div>
 </div>
 <div class="card fold">Tout le dossier <span>›</span></div>
 </div></div>
   <div class="notes">
+    <div class="note"><b>Retouches de Jean-Guy (28/11)</b> : « Le prix » de « Son dossier » s’appelle « Prix proposé au rendez-vous » — c’est le prix décidé avant le rendez-vous (1 690 000 €), pas celui du mandat (1 639 500 € à la signature) ; le Point marché s’arrête à l’offre acceptée ; la reconduction tacite ; sur téléphone, le bouton d’une tâche sous son texte.</div>
     <div class="note"><b>« Son mandat »</b>, nouveau, avant « Son dossier » : c’est ce qui vit maintenant. Quatre étapes, dans les cartes de « Son dossier » : vert fait, bleu maintenant, gris à venir. Dessous, « Le mandat » : sa fin, son prix et ses avenants, l’offre acceptée. « Son dossier » garde la préparation et le rendez-vous.</div>
     <div class="note"><b>La prochaine étape suit le mandat</b> : « Noter le compromis » quand une offre est acceptée (aujourd’hui : « Voir le Suivi »). Un seul bouton plein, le sien.</div>
     <div class="note"><b>Le badge</b> dit l’étape du mandat (« Offre acceptée », « Sous compromis », « Vendu par l’agence », « Mandat terminé ») ; le type et la fin du mandat passent sur la ligne dessous.</div>
@@ -137,7 +139,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 <div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc now"><span class="dot now"></span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Sous compromis</b><span>à noter</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>l’acte et son prix</span></div></div></div>
   
 <div class="card mandate">
-  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div>
+  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div><div class="mrow"><span class="mlabel">Point marché</span><span class="mvalue">arrêté à l’offre acceptée, le 28/11 · il reprend si l’offre tombe</span><span></span></div>
   <div class="exits"><span class="l">Vendu à un acquéreur venu d’ailleurs</span><span class="l">Mandat terminé sans vente</span></div>
 </div>
   
@@ -145,7 +147,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 <div class="dsteps">
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le bien</b><span>fiche saisie · 6 photos</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Les concurrents</b><span>5 retenus</span></div></div>
-  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le prix</b><span>1 690 000 €</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Prix proposé au rendez-vous</b><span>1 690 000 €</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le rendez-vous</b><span>fait le 28/10</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Conclure</b><span>mandat signé le 28/10</span></div></div>
 </div>
@@ -174,7 +176,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 <div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc now"><span class="dot now"></span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Sous compromis</b><span>à noter</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>l’acte et son prix</span></div></div></div>
   
 <div class="card mandate">
-  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div>
+  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div><div class="mrow"><span class="mlabel">Point marché</span><span class="mvalue">arrêté à l’offre acceptée, le 28/11 · il reprend si l’offre tombe</span><span></span></div>
   <div class="exits"><span class="l">Vendu à un acquéreur venu d’ailleurs</span><span class="l">Mandat terminé sans vente</span></div>
 </div>
   
@@ -182,7 +184,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 <div class="dsteps">
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le bien</b><span>fiche saisie · 6 photos</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Les concurrents</b><span>5 retenus</span></div></div>
-  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le prix</b><span>1 690 000 €</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Prix proposé au rendez-vous</b><span>1 690 000 €</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le rendez-vous</b><span>fait le 28/10</span></div></div>
   <div class="stepc ok"><span class="dot ok">✓</span><div><b>Conclure</b><span>mandat signé le 28/10</span></div></div>
 </div>
@@ -206,7 +208,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
 <div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc ok"><span class="dot ok">✓</span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc now"><span class="dot now"></span><div><b>Sous compromis</b><span>le 05/12 · acte prévu le 15/01</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>l’acte et son prix</span></div></div></div>
       
 <div class="card mandate">
-  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 €</span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Compromis</span><span class="mvalue">signé le 05/12 · acte prévu le 15/01 · famille Keller</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Point marché</span><span class="mvalue">arrêté au compromis, le 05/12</span><span></span></div>
+  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 €</span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Compromis</span><span class="mvalue">signé le 05/12 · acte prévu le 15/01 · famille Keller</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Point marché</span><span class="mvalue">arrêté à l’offre acceptée, le 28/11</span><span></span></div>
   
 </div>
     </div></div>
@@ -256,6 +258,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
   <div class="card form"><h4>Fin du mandat</h4>
     <label class="field"><span>Durée</span><span class="input">3 mois</span><span class="hint">ou une date</span></label>
     <label class="field"><span>Fin le</span><span class="input">28/01/2027</span><span class="hint">calculée depuis la signature, le 28/10</span></label>
+    <label class="checkrow"><span class="box"></span><span>Reconduction tacite<span class="hint">Cochée : 30 jours avant, « Faire le point avant la reconduction » au lieu de « Préparer le renouvellement ».</span></span></label>
     <div class="hrow"><span class="bfill sm">Enregistrer</span><span class="bline sm">Annuler</span></div></div>
   <div class="card form"><h4>Noter la vente</h4>
     <label class="field"><span>Date de l’acte</span><span class="input">15/01/2027</span></label>
@@ -290,9 +293,9 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
   <div class="sright">
     <span class="kicker">Prochaine étape · aujourd’hui</span>
     <b>Noter le compromis</b>
-    <span class="muted">Offre de la famille Keller acceptée le 28/11</span>
+    <span class="muted">Offre de la famille Keller acceptée le 28/11 · Point marché arrêté à l’offre acceptée</span>
     <span class="bfill sm wide">Noter le compromis</span>
-    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+    <div class="links"><span class="l">Points marché passés</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
   </div>
 </div>
   
@@ -306,7 +309,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
   <div class="sright">
     <span class="kicker">Prochaine étape · aujourd’hui</span>
     <b>Préparer l’acte</b>
-    <span class="muted">Acte prévu le 12/12, dans 14 jours · Point marché arrêté au compromis</span>
+    <span class="muted">Acte prévu le 12/12, dans 14 jours</span>
     <span class="bline sm wide">Préparer l’acte</span>
     <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
   </div>
@@ -349,7 +352,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
   <div class="notes">
     <div class="note"><b>Deux onglets</b> : « Sous offre · compromis » et « Vendus par l’agence ». « Mandats signés » ne garde que les mandats sans offre acceptée.</div>
     <div class="note"><b>La sortie « Mandat terminé sans vente »</b> rejoint « Vendus ailleurs · retirés », qui devient « Vendus ailleurs · retirés · terminés » : pour le conseiller, le même geste, plus rien à faire (question 5 du 27/11). « Vendu ailleurs » et « Retiré de la vente » ne bougent pas.</div>
-    <div class="note"><b>La frise de la carte</b> : tant qu’aucune offre n’est acceptée, celle d’aujourd’hui (concurrents, Point marché, visites : le travail pour vendre) ; dès l’offre acceptée, celle de la vente : Mandat signé → Offre acceptée → Compromis → Vente. <b>Le Point marché</b> continue pendant l’offre acceptée et s’arrête au compromis : la carte le dit.</div>
+    <div class="note"><b>La frise de la carte</b> : tant qu’aucune offre n’est acceptée, celle d’aujourd’hui (concurrents, Point marché, visites : le travail pour vendre) ; dès l’offre acceptée, celle de la vente : Mandat signé → Offre acceptée → Compromis → Vente. <b>Le Point marché</b> s’arrête dès l’offre acceptée et reprend si l’offre tombe (retouche 3 de Jean-Guy) ; les points passés restent lisibles.</div>
     <div class="note"><b>Vendu</b> : le prix de vente en vert, l’écart au prix du mandat et le délai du mandat au compromis ; plus de bouton.</div>
   </div>
   <div class="col"><div class="ftitle">Après · téléphone</div>
@@ -371,9 +374,9 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
   <div class="sright">
     <span class="kicker">Prochaine étape · aujourd’hui</span>
     <b>Noter le compromis</b>
-    <span class="muted">Offre de la famille Keller acceptée le 28/11</span>
+    <span class="muted">Offre de la famille Keller acceptée le 28/11 · Point marché arrêté à l’offre acceptée</span>
     <span class="bfill sm wide">Noter le compromis</span>
-    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+    <div class="links"><span class="l">Points marché passés</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
   </div>
 </div>
   
@@ -387,7 +390,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
   <div class="sright">
     <span class="kicker">Prochaine étape · aujourd’hui</span>
     <b>Préparer l’acte</b>
-    <span class="muted">Acte prévu le 12/12, dans 14 jours · Point marché arrêté au compromis</span>
+    <span class="muted">Acte prévu le 12/12, dans 14 jours</span>
     <span class="bline sm wide">Préparer l’acte</span>
     <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
   </div>
@@ -448,9 +451,9 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
   <div class="sright">
     <span class="kicker">Prochaine étape · aujourd’hui</span>
     <b>Noter le compromis</b>
-    <span class="muted">Offre de la famille Keller acceptée le 28/11</span>
+    <span class="muted">Offre de la famille Keller acceptée le 28/11 · Point marché arrêté à l’offre acceptée</span>
     <span class="bfill sm wide">Noter le compromis</span>
-    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+    <div class="links"><span class="l">Points marché passés</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
   </div>
 </div>
   
@@ -464,7 +467,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
   <div class="sright">
     <span class="kicker">Prochaine étape · aujourd’hui</span>
     <b>Préparer l’acte</b>
-    <span class="muted">Acte prévu le 12/12, dans 14 jours · Point marché arrêté au compromis</span>
+    <span class="muted">Acte prévu le 12/12, dans 14 jours</span>
     <span class="bline sm wide">Préparer l’acte</span>
     <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
   </div>
@@ -518,7 +521,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
     <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer l’acte de M. et Mme Castel</b><span class="muted">acte prévu le 12/12 chez le notaire · dans 14 jours</span></div><span class="bline sm">Préparer l’acte</span></div>
     <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer le renouvellement du mandat de Mme Navarro</b><span class="muted">le mandat se termine le 22/12 · dans 24 jours</span></div><span class="bline sm">Préparer le renouvellement</span></div>
     <div class="task"><span class="round orange">!</span><div class="what"><b>Relancer M. et Mme Lambert-Duval</b><span class="muted">Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui</span></div><span class="bline sm">Préparer la relance</span></div>
-    <div class="task"><span class="round orange">!</span><div class="what"><b>Point marché de M. Lefebvre</b><span class="muted">Mandat signé le 28/10 · offre acceptée : le point continue jusqu’au compromis</span></div><span class="bline sm">Faire le point</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Faire le point avant la reconduction du mandat de M. et Mme Delmas</b><span class="muted">reconduction tacite le 08/12 · dans 10 jours</span></div><span class="bline sm">Faire le point</span></div>
   </div>
 </div></div>
   <div class="col"><div class="ftitle">Après · tablette</div>
@@ -530,7 +533,7 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
     <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer l’acte de M. et Mme Castel</b><span class="muted">acte prévu le 12/12 chez le notaire · dans 14 jours</span></div><span class="bline sm">Préparer l’acte</span></div>
     <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer le renouvellement du mandat de Mme Navarro</b><span class="muted">le mandat se termine le 22/12 · dans 24 jours</span></div><span class="bline sm">Préparer le renouvellement</span></div>
     <div class="task"><span class="round orange">!</span><div class="what"><b>Relancer M. et Mme Lambert-Duval</b><span class="muted">Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui</span></div><span class="bline sm">Préparer la relance</span></div>
-    <div class="task"><span class="round orange">!</span><div class="what"><b>Point marché de M. Lefebvre</b><span class="muted">Mandat signé le 28/10 · offre acceptée : le point continue jusqu’au compromis</span></div><span class="bline sm">Faire le point</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Faire le point avant la reconduction du mandat de M. et Mme Delmas</b><span class="muted">reconduction tacite le 08/12 · dans 10 jours</span></div><span class="bline sm">Faire le point</span></div>
   </div>
 </div></div>
   <div class="col"><div class="ftitle">Après · téléphone</div>
@@ -542,11 +545,11 @@ h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-fam
     <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer l’acte de M. et Mme Castel</b><span class="muted">acte prévu le 12/12 chez le notaire · dans 14 jours</span></div><span class="bline sm">Préparer l’acte</span></div>
     <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer le renouvellement du mandat de Mme Navarro</b><span class="muted">le mandat se termine le 22/12 · dans 24 jours</span></div><span class="bline sm">Préparer le renouvellement</span></div>
     <div class="task"><span class="round orange">!</span><div class="what"><b>Relancer M. et Mme Lambert-Duval</b><span class="muted">Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui</span></div><span class="bline sm">Préparer la relance</span></div>
-    <div class="task"><span class="round orange">!</span><div class="what"><b>Point marché de M. Lefebvre</b><span class="muted">Mandat signé le 28/10 · offre acceptée : le point continue jusqu’au compromis</span></div><span class="bline sm">Faire le point</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Faire le point avant la reconduction du mandat de M. et Mme Delmas</b><span class="muted">reconduction tacite le 08/12 · dans 10 jours</span></div><span class="bline sm">Faire le point</span></div>
   </div>
 </div></div>
   <div class="notes">
-    <div class="note"><b>« Préparer l’acte »</b> arrive 15 jours avant la date prévue de l’acte ; <b>« Préparer le renouvellement »</b>, 30 jours avant la fin du mandat. Dans le bloc Vendeurs, avec son bouton en contour, comme les autres tâches ; « en retard » seulement une fois la date passée.</div>
+    <div class="note"><b>« Préparer l’acte »</b> arrive 15 jours avant la date prévue de l’acte ; <b>« Préparer le renouvellement »</b>, 30 jours avant la fin du mandat — <b>« Faire le point avant la reconduction »</b> quand la reconduction tacite est cochée (retouche 4). Dans le bloc Vendeurs, avec son bouton en contour ; sur téléphone, le bouton sous le texte (retouche 2) ; « en retard » seulement une fois la date passée. Le Point marché de M. Lefebvre n’y est plus : son offre est acceptée.</div>
     <div class="note"><b>Quand elles s’en vont</b> : « Préparer le renouvellement », quand la fin du mandat est repoussée ou le mandat terminé ; « Préparer l’acte », quand la vente est notée. Le jour de l’acte passé sans vente notée, elle devient « Noter la vente ».</div>
     <div class="note">Les boutons ouvrent le dossier sur « Son mandat », la saisie déjà ouverte (« Fin du mandat », « Noter la vente »).</div>
   </div>
