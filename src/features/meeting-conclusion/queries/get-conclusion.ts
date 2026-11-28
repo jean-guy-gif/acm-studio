@@ -1,6 +1,7 @@
 import { parseObjections } from '@/features/meeting-conclusion/services/objections';
 import 'server-only';
 
+import { toMandateLife } from '@/features/mandate-life/services/mandate-row';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 import {
@@ -20,7 +21,7 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
   const { data } = await supabase
     .from('project_meeting_conclusions')
     .select(
-      'commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, follow_up_motive, follow_up_motive_detail, next_follow_up_on, objections, objection_note, mandate_type, signed_at, concluded_at, outcome_changed_at',
+      'commercialization_price, frozen_market_computed, frozen_advisor_analysis, frozen_advisor_price, frozen_seller_perceived_price, frozen_launch_readiness_first, frozen_launch_readiness_last, frozen_launch_readiness_missing, outcome, follow_up_reason, follow_up_motive, follow_up_motive_detail, next_follow_up_on, objections, objection_note, mandate_type, signed_at, concluded_at, outcome_changed_at, mandate_ends_on, mandate_tacit_renewal, compromise_signed_on, deed_planned_on, sale_buyer_origin, compromise_buyer_id, deed_signed_on, sale_price, mandate_ended_on',
     )
     .eq('project_id', projectId)
     .eq('agency_id', profile.agency_id)
@@ -57,5 +58,7 @@ export async function getConclusion(projectId: string): Promise<MeetingConclusio
     signedAt: data.signed_at,
     concludedAt: data.concluded_at,
     outcomeChangedAt: data.outcome_changed_at,
+    // Lot C — la vie du mandat, relue par liste d'autorisation.
+    life: toMandateLife(data),
   };
 }

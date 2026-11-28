@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache';
 
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
+import {
+  isOutcomeLockError,
+  OUTCOME_LOCKED,
+  outcomeChangeRefusal,
+} from '@/features/mandate-life/services/outcome-lock';
 import { readDecisionForm } from '@/features/meeting-conclusion/schemas/conclusion-input';
 import {
   OUTCOME_REQUIRED_MESSAGE,
@@ -66,6 +71,11 @@ export async function changeMeetingOutcome(
   if (!decision.ok) {
     return { ok: false, error: decision.error };
   }
+  // Lot C — sous compromis ou vendu, l'issue reste « mandat signé » : le compromis tombe d'abord.
+  const locked = outcomeChangeRefusal(known?.life, decision.value.outcome);
+  if (locked) {
+    return { ok: false, error: locked };
+  }
   // Mission 108 — « à relancer » : la date de première relance, proposée par l'écran et relue ici.
   const firstFollowUp = readFirstFollowUpOn(
     formData.get('next_follow_up_on'),
@@ -100,7 +110,12 @@ export async function changeMeetingOutcome(
   };
   const { error } = await serviceClient.rpc('change_meeting_outcome', args);
   if (error) {
-    return { ok: false, error: 'Le changement d’issue a échoué. Réessayez.' };
+    return {
+      ok: false,
+      error: isOutcomeLockError(error)
+        ? OUTCOME_LOCKED.compromise
+        : 'Le changement d’issue a échoué. Réessayez.',
+    };
   }
 
   // Mission 120 — passé « mandat signé », ses concurrents retenus arrivent en Prospection.

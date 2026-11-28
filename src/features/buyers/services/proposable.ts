@@ -6,8 +6,9 @@
 // « L'offre est tombée » (M138) rend le mandat proposable ; une offre acceptée ensuite sur un autre
 // bien, ou un achat ailleurs, libère le premier. Pur.
 
-// Les statuts d'un acquéreur qui tiennent une offre acceptée.
-const HOLDING_STATUSES: ReadonlySet<string> = new Set(['under_offer', 'purchased']);
+// Les statuts d'un acquéreur qui tiennent une offre acceptée. Lot C — « A acheté » s'écrit `bought`
+// en base (`buyers/types.ts`) : `purchased`, écrit ici jusqu'au 28/11, n'y existait pas.
+const HOLDING_STATUSES: ReadonlySet<string> = new Set(['under_offer', 'bought']);
 
 export type OfferHold = {
   projectId: string;

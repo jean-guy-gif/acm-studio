@@ -194,7 +194,7 @@ describe('le catalogue de la boucle', () => {
   it('une offre refusée ne tient pas le mandat ; « A acheté » le tient', async () => {
     answers.buyer_documents = [offer('p-mougins', 'refused', 'visiting')];
     expect((await loadLoopCatalog('agency-a', now)).items).toHaveLength(2);
-    answers.buyer_documents = [offer('p-mougins', 'accepted', 'purchased')];
+    answers.buyer_documents = [offer('p-mougins', 'accepted', 'bought')];
     expect((await loadLoopCatalog('agency-a', now)).items.map((item) => item.key)).toEqual([
       'project:p-lopez',
     ]);

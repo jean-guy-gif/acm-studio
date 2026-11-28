@@ -68,7 +68,9 @@ export function overviewSteps(
     {
       key: 'decision',
       number: 3,
-      title: 'Le prix',
+      // Lot C, retouche 1 (Jean-Guy, 28/11) — le rendez-vous conclu, c'est le prix qui y a été
+      // proposé : il ne contredit plus le prix du mandat à la signature, dit dans « Son mandat ».
+      title: concluded ? 'Prix proposé au rendez-vous' : 'Le prix',
       fact:
         input.hasDecision && input.decisionPrice != null
           ? formatEuro(input.decisionPrice)

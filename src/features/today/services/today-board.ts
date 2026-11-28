@@ -33,6 +33,10 @@ export const TODAY_BLOCK_NOTES: Partial<Record<TodayBlockKey, string>> = {
 const BLOCK_OF: Record<SuiviTaskKind, TodayBlockKey> = {
   offer_answer: 'urgent',
   offer_expiry: 'urgent',
+  // Lot C — la vie du mandat, dans le bloc Vendeurs.
+  deed_prepare: 'sellers',
+  sale_record: 'sellers',
+  mandate_renewal: 'sellers',
   follow_up: 'sellers',
   follow_up_early: 'sellers',
   market_update: 'sellers',
@@ -172,6 +176,12 @@ export function seriesTitle(
       return `Relancer plus tôt\u202f? ${plural(n, 'vendeur a', 'vendeurs ont')} des acquéreurs prêts`;
     case 'market_update':
       return `Faire ${plural(n, 'Point marché', 'Points marché')}`;
+    case 'deed_prepare':
+      return `Préparer ${plural(n, 'acte', 'actes')}`;
+    case 'sale_record':
+      return `Noter ${plural(n, 'vente', 'ventes')}`;
+    case 'mandate_renewal':
+      return `Préparer ${plural(n, 'fin de mandat', 'fins de mandat')}`;
     case 'visit':
       return `Organiser des visites chez ${plural(n, 'vendeur', 'vendeurs')}`;
     case 'visit_report':

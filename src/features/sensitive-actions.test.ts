@@ -177,6 +177,45 @@ describe('changer l’issue', () => {
       p_outcome: 'withdrawn',
     });
   });
+
+  it('lot C — sous compromis, l’issue reste « mandat signé » : dit avant d’écrire', async () => {
+    const { changeMeetingOutcome } =
+      await import('@/features/meeting-conclusion/actions/change-meeting-outcome');
+    const { OUTCOME_LOCKED } = await import('@/features/mandate-life/services/outcome-lock');
+    const { NO_MANDATE_LIFE } = await import('@/features/mandate-life/types');
+    state.project = { id: PROJECT, status: 'meeting_completed' };
+    state.conclusion = {
+      outcome: 'signed',
+      mandateType: 'exclusive',
+      commercializationPrice: 1_639_500,
+      life: {
+        ...NO_MANDATE_LIFE,
+        compromiseSignedOn: '2026-11-25',
+        deedPlannedOn: '2027-01-15',
+        buyerOrigin: 'outside',
+      },
+    };
+    expect(await changeMeetingOutcome(PROJECT, form({ outcome: 'withdrawn' }))).toEqual({
+      ok: false,
+      error: OUTCOME_LOCKED.compromise,
+    });
+    noWrite();
+    // Le refus de la base, s'il arrive quand même, se dit de même.
+    state.conclusion = null;
+    state.respond = (table) =>
+      table === 'change_meeting_outcome'
+        ? {
+            error: {
+              code: '23514',
+              message: 'un compromis ou une vente est noté, l’issue reste « mandat signé »',
+            },
+          }
+        : {};
+    expect(await changeMeetingOutcome(PROJECT, form({ outcome: 'withdrawn' }))).toEqual({
+      ok: false,
+      error: OUTCOME_LOCKED.compromise,
+    });
+  });
 });
 
 describe('archiver un dossier', () => {

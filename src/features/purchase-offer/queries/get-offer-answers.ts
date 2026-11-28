@@ -18,6 +18,8 @@ export type OfferAnswer = {
   // Mission 145 — le statut de l'acquéreur aujourd'hui : une offre acceptée ne tient que tant
   // qu'il est « Sous offre » ou « A acheté » (« L'offre est tombée », M138).
   buyerStatus: string | null;
+  // Lot C — le montant offert (`fields.price` de l'offre signée), quand la lecture le porte.
+  price?: number | null;
 };
 
 type Row = {
@@ -104,10 +106,15 @@ async function readOfferAnswers(
   const { data, error } = await (projectIds ? query.in('fields->>projectId', projectIds) : query);
   if (error) return null;
   return (data ?? [])
-    .map((row) => {
+    .map((row): (OfferAnswer & { projectId: string }) | null => {
       const answer = answerOf(row as unknown as Row);
-      const projectId = (row.fields as { projectId?: unknown } | null)?.projectId;
-      return answer && typeof projectId === 'string' ? { ...answer, projectId } : null;
+      const fields = row.fields as { projectId?: unknown; price?: unknown } | null;
+      const projectId = fields?.projectId;
+      const price =
+        typeof fields?.price === 'number' && Number.isFinite(fields.price) && fields.price > 0
+          ? fields.price
+          : null;
+      return answer && typeof projectId === 'string' ? { ...answer, projectId, price } : null;
     })
     .filter((answer): answer is OfferAnswer & { projectId: string } => answer != null)
     .sort((a, b) => b.decidedAt.localeCompare(a.decidedAt));

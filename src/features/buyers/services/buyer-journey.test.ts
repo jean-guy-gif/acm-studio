@@ -191,7 +191,7 @@ describe('ses cinq étapes (mission 143)', () => {
   });
 
   it('« A acheté » coche le compromis', () => {
-    const steps = buyerJourney(facts({ offer: accepted }), 'purchased');
+    const steps = buyerJourney(facts({ offer: accepted }), 'bought');
     expect(steps.every((step) => step.status === 'done')).toBe(true);
     expect(steps[4].state).toBe('signé');
   });
@@ -239,7 +239,7 @@ describe('la prochaine étape suit l’offre (mission 143)', () => {
   });
 
   it('« A acheté » n’est plus une vente en cours', () => {
-    expect(saleInProgress(facts({ offer: accepted }), 'purchased')).toBe(false);
+    expect(saleInProgress(facts({ offer: accepted }), 'bought')).toBe(false);
     expect(saleInProgress(facts({ offer: accepted }), 'under_offer')).toBe(true);
   });
 

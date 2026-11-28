@@ -15,6 +15,25 @@ describe('l’état du dossier, en une pastille', () => {
     );
   });
 
+  it('lot C — un mandat signé dit son étape ; « Mandat signé » tant qu’elle n’a pas bougé', () => {
+    const signed = { status: 'meeting_completed', outcome: 'signed' as const, mandateType: null };
+    expect(projectBadge({ ...signed, stage: 'offer_accepted' })).toEqual({
+      label: 'Offre acceptée',
+      tone: 'good',
+    });
+    expect(projectBadge({ ...signed, stage: 'under_compromise' }).label).toBe('Sous compromis');
+    expect(projectBadge({ ...signed, stage: 'sold' }).label).toBe('Vendu par l’agence');
+    expect(projectBadge({ ...signed, stage: 'ended' })).toEqual({
+      label: 'Mandat terminé sans vente',
+      tone: 'plain',
+    });
+    for (const stage of ['signed', 'unknown', null, undefined] as const) {
+      expect(projectBadge({ ...signed, mandateType: 'exclusive', stage }).label).toBe(
+        'Mandat signé · exclusif',
+      );
+    }
+  });
+
   it('conclu : son issue, et le type d’un mandat signé', () => {
     expect(
       projectBadge({ status: 'meeting_completed', outcome: 'signed', mandateType: 'exclusive' }),

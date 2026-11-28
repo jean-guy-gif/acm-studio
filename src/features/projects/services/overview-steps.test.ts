@@ -103,6 +103,18 @@ describe('les cinq étapes de la Vue d’ensemble (mission 143)', () => {
     });
   });
 
+  // Lot C, retouche 1 de Jean-Guy (28/11) — une fois le rendez-vous conclu, « Le prix » est le prix
+  // proposé au rendez-vous, et le dit : il ne contredit plus le prix du mandat à la signature.
+  it('conclu : « Le prix » devient « Prix proposé au rendez-vous », avec le même montant', () => {
+    const before = overviewSteps('p1', READY, NOW).find((step) => step.key === 'decision')!;
+    const after = overviewSteps('p1', { ...READY, status: 'meeting_completed' }, NOW).find(
+      (step) => step.key === 'decision',
+    )!;
+    expect(before.title).toBe('Le prix');
+    expect(after.title).toBe('Prix proposé au rendez-vous');
+    expect(after.fact).toBe(before.fact);
+  });
+
   it('un dossier conclu sans Live (M81) le dit, sans « à faire »', () => {
     const steps = overviewSteps('p1', { ...READY, status: 'meeting_completed' }, NOW);
     expect(steps[3]).toMatchObject({ status: 'done', fact: 'conclu sans Live' });

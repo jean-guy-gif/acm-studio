@@ -5,6 +5,12 @@ import {
   type FollowUpContact,
 } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import type { ConclusionOutcome } from '@/features/meeting-conclusion/types';
+import {
+  DEED_NOTICE_DAYS,
+  RENEWAL_NOTICE_DAYS,
+} from '@/features/mandate-life/services/mandate-dates';
+import { marketUpdateRuns } from '@/features/mandate-life/services/mandate-stage';
+import type { MandateLife, MandateStage } from '@/features/mandate-life/types';
 
 // Mission 130 — « Une seule prochaine étape » : ce que le Suivi demande au conseiller, daté. Une
 // tâche est DUE le jour de son échéance et après (en retard) ; la liste « À faire aujourd'hui »
@@ -57,7 +63,13 @@ export type SuiviTaskKind =
   // relancer pas encore due ; « Démarcher » : un concurrent ou un bien démarché en mandat simple ou
   // chez un particulier.
   | 'follow_up_early'
-  | 'prospect_buyers';
+  | 'prospect_buyers'
+  // Lot C (Jean-Guy, 28/11) — la vie du mandat : « Préparer l'acte », 15 jours avant l'acte prévu,
+  // puis « Noter la vente » le jour de l'acte ; « Préparer le renouvellement » (ou « Faire le point
+  // avant la reconduction »), 30 jours avant la fin du mandat.
+  | 'deed_prepare'
+  | 'sale_record'
+  | 'mandate_renewal';
 
 // L'ordre des tâches dues : par valeur, puis par ancienneté (décision de Jean-Guy, 05/11) —
 // relancer un vendeur, organiser une visite, proposer un mandat à ses acquéreurs (M133), faire le
@@ -65,6 +77,10 @@ export type SuiviTaskKind =
 const KIND_ORDER: Record<SuiviTaskKind, number> = {
   // Mission 138 — la réponse du vendeur à une offre, en tête de tout (décision du 06/11).
   offer_answer: -2,
+  // Lot C — une vente qui se conclut, puis un mandat qui arrive à son terme, avant les relances.
+  sale_record: -0.6,
+  deed_prepare: -0.5,
+  mandate_renewal: -0.3,
   // Mission 137 B — une offre qui expire passe ensuite avant tout (décision du 06/11).
   offer_expiry: -1,
   follow_up: 0,
@@ -135,6 +151,10 @@ export type SuiviTask = {
   // bien (l'argument), et le jour de la relance prévue (« Relancer plus tôt ? »).
   readyBuyers?: number;
   plannedOn?: string;
+  // Lot C — la fin du mandat (AAAA-MM-JJ) et sa reconduction tacite ; la date prévue de l'acte.
+  endsOn?: string;
+  tacit?: boolean;
+  deedPlannedOn?: string;
   // Mission 145 — démarcher un bien que veulent des acquéreurs prêts : la carte de Prospection
   // (concurrent ou bien démarché), son libellé, son adresse à confirmer, et ses acquéreurs d'origine.
   prospectCard?: {
@@ -170,6 +190,12 @@ export type SuiviTaskInput = {
   readySince?: string | null;
   // Les demandes de visite vivantes (ni annulées ni faites, acquéreur non archivé) sur ce mandat.
   visits: { requestedAt: string; buyerName: string | null; buyerId?: string }[];
+  // Lot C — l'étape du mandat (`mandateStage`) et ses faits ; sans étape (un appelant d'avant le
+  // lot C), le Point marché suit la règle d'avant. Aujourd'hui (AAAA-MM-JJ, à Paris) : le jour de
+  // l'acte, « Préparer l'acte » devient « Noter la vente ».
+  stage?: MandateStage | 'unknown' | null;
+  life?: MandateLife;
+  today?: string;
 };
 
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -240,7 +266,9 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
   }
   if (input.outcome === 'signed') {
     const signedDay = dayOf(input.signedAt) ?? dayOf(input.concludedAt);
-    if (input.competitorCount > 0 && !input.pointsUnknown) {
+    // Retouche 3 (Jean-Guy, 28/11) — le Point marché s'arrête dès l'offre acceptée.
+    const marketRuns = input.stage === undefined || marketUpdateRuns(input.stage);
+    if (input.competitorCount > 0 && !input.pointsUnknown && marketRuns) {
       const next = nextMarketUpdateOn(input.signedAt, input.concludedAt, input.lastPointAt);
       if (next) {
         tasks.push({
@@ -262,6 +290,7 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
         readyOn,
       });
     }
+    tasks.push(...mandateLifeTasks(input, base));
     const visits = [...input.visits].sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
     const first = visits[0];
     const firstDay = dayOf(first?.requestedAt);
@@ -279,6 +308,40 @@ export function dossierTasks(input: SuiviTaskInput): SuiviTask[] {
     }
   }
   return sortTasks(tasks);
+}
+
+// Lot C — les tâches de la vie du mandat. Le renouvellement, tant que le mandat n'est ni sous
+// compromis, ni vendu, ni terminé (question 19) ; l'acte, sous compromis, jusqu'à la vente notée.
+function mandateLifeTasks(
+  input: SuiviTaskInput,
+  base: Pick<SuiviTask, 'projectId' | 'sellerName'>,
+): SuiviTask[] {
+  const { stage, life } = input;
+  if (!life) return [];
+  const tasks: SuiviTask[] = [];
+  if ((stage === 'signed' || stage === 'offer_accepted') && life.endsOn) {
+    tasks.push({
+      ...base,
+      kind: 'mandate_renewal',
+      dueOn: addDays(life.endsOn, -RENEWAL_NOTICE_DAYS),
+      endsOn: life.endsOn,
+      tacit: life.tacitRenewal,
+    });
+  }
+  if (stage === 'under_compromise' && life.deedPlannedOn) {
+    const planned = life.deedPlannedOn;
+    tasks.push(
+      input.today != null && input.today >= planned
+        ? { ...base, kind: 'sale_record', dueOn: planned, deedPlannedOn: planned }
+        : {
+            ...base,
+            kind: 'deed_prepare',
+            dueOn: addDays(planned, -DEED_NOTICE_DAYS),
+            deedPlannedOn: planned,
+          },
+    );
+  }
+  return tasks;
 }
 
 // Par date d'échéance (la plus proche d'abord) : pour les tâches à venir.
@@ -302,7 +365,13 @@ export function isTaskDue(task: SuiviTask, today: string): boolean {
 // Le retard en jours (0 : aujourd'hui) ; un démarchage ou une visite n'a pas de date prévue : dus
 // dès qu'ils existent, jamais en retard.
 export function taskLateDays(task: SuiviTask, today: string): number {
-  return task.kind === 'visit' ||
+  // Lot C — le renouvellement n'est en retard qu'une fois la fin du mandat passée ; l'acte à
+  // préparer ne l'est jamais (le jour de l'acte, il devient « Noter la vente »).
+  if (task.kind === 'mandate_renewal') {
+    return Math.max(0, daysBetween(task.endsOn ?? task.dueOn, today));
+  }
+  return task.kind === 'deed_prepare' ||
+    task.kind === 'visit' ||
     task.kind === 'prospect' ||
     task.kind === 'propose_buyers' ||
     task.kind === 'buyer_watch' ||

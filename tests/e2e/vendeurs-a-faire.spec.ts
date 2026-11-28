@@ -113,10 +113,11 @@ test('Vendeurs : à faire aujourd’hui et le dossier, aux trois tailles', async
       /^\d+Concurrents? retenus?$/,
     );
     await expect(detail.getByTestId('overview-step')).toHaveCount(5);
+    // Lot C, retouche 1 : un dossier conclu dit « Prix proposé au rendez-vous ».
     await expect(detail.getByTestId('overview-step')).toContainText([
       'Le bien',
       'Les concurrents',
-      'Le prix',
+      /Le prix|Prix proposé au rendez-vous/,
       'Le rendez-vous',
       'Conclure',
     ]);

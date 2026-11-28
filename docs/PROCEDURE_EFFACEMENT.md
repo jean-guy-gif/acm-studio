@@ -74,6 +74,9 @@ select
   (select count(*) from project_academia_requests where project_id = ':dossier') as dossier_academia,
   -- Mission 159 : les blocs du quartier figés pour le vendeur ; ils partent avec le dossier (cascade).
   (select count(*) from project_neighbourhood_snapshots where project_id = ':dossier') as quartier_vendeur,
+  -- Lot C : les avenants de baisse du mandat ; ils partent avec le dossier (cascade). La vie du mandat
+  -- (fin, compromis, vente, acquéreur relié) vit sur la conclusion, qui part avec lui.
+  (select count(*) from mandate_price_amendments where project_id = ':dossier') as avenants,
   (select count(*) from project_price_positionings where project_id = ':dossier') as decision_prix,
   (select count(*) from project_meeting_conclusions where project_id = ':dossier') as conclusion,
   (select count(*) from projects) as dossiers_total;

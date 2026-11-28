@@ -51,7 +51,7 @@ export function saleInProgress(facts: BuyerProgressFacts, status?: string): bool
 export function currentOffer(facts: BuyerProgressFacts, status?: string) {
   if (
     saleInProgress(facts, status) ||
-    (status === 'purchased' && facts.offer?.decision === 'accepted')
+    (status === 'bought' && facts.offer?.decision === 'accepted')
   )
     return facts.offer ?? null;
   return facts.latestOffer ?? facts.offer ?? null;
@@ -60,7 +60,7 @@ export function currentOffer(facts: BuyerProgressFacts, status?: string) {
 export function buyerJourney(facts: BuyerProgressFacts, status?: string): JourneyStep[] {
   const done = facts.visitsDone ?? 0;
   const offer = currentOffer(facts, status);
-  const purchased = status === 'purchased';
+  const purchased = status === 'bought';
   const sold = saleInProgress(facts, status) || purchased;
   const visited = done > 0 || offer != null || purchased;
   const shown = answered(facts) || visited;
@@ -205,7 +205,7 @@ export function buyerNextAction(
   const id = buyer.id;
   const offer = currentOffer(facts, buyer.status);
   // Mission 143 (B1) — la prochaine étape suit l'état le plus avancé : l'offre d'abord.
-  if (offer && buyer.status !== 'purchased') {
+  if (offer && buyer.status !== 'bought') {
     if (saleInProgress(facts, buyer.status)) {
       const who = buyerInSentence(buyer.name);
       return {
@@ -231,7 +231,7 @@ export function buyerNextAction(
   }
   // Lancement, mission 2 — l'offre n'est la prochaine étape que s'il l'a formulée (une visite
   // « Offre envisagée », sans offre signée encore) ; sinon la recherche continue, ci-dessous.
-  if (!offer && facts.offerConsidered && buyer.status !== 'purchased') {
+  if (!offer && facts.offerConsidered && buyer.status !== 'bought') {
     return {
       title: 'Préparer son offre d’achat',
       phrase: `Il envisage une offre après sa visite${facts.lastVisitDoneAt ? ` du ${dayMonth(facts.lastVisitDoneAt)}` : ''}\u00a0: préparez-la avec lui.`,

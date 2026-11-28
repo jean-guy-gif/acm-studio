@@ -2546,6 +2546,59 @@ export type Database = {
           },
         ];
       };
+      mandate_price_amendments: {
+        Row: {
+          agency_id: string;
+          amended_on: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          price: number;
+          project_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agency_id: string;
+          amended_on: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          price: number;
+          project_id: string;
+        };
+        Update: {
+          agency_id?: string;
+          amended_on?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          price?: number;
+          project_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mandate_price_amendments_agency_id_fkey';
+            columns: ['agency_id'];
+            isOneToOne: false;
+            referencedRelation: 'agencies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mandate_price_amendments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mandate_price_amendments_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       market_study_links: {
         Row: {
           agency_id: string;
@@ -2960,8 +3013,12 @@ export type Database = {
         Row: {
           agency_id: string;
           commercialization_price: number | null;
+          compromise_buyer_id: string | null;
+          compromise_signed_on: string | null;
           concluded_at: string | null;
           created_at: string;
+          deed_planned_on: string | null;
+          deed_signed_on: string | null;
           early_follow_up_kept_at: string | null;
           early_follow_up_kept_ready: number | null;
           fees_amount: number | null;
@@ -2982,7 +3039,10 @@ export type Database = {
           frozen_seller_perceived_price: number | null;
           frozen_seller_wanted_price: number | null;
           id: string;
+          mandate_ended_on: string | null;
+          mandate_ends_on: string | null;
           mandate_number: string | null;
+          mandate_tacit_renewal: boolean;
           mandate_type: string | null;
           next_follow_up_on: string | null;
           objection_note: string | null;
@@ -2990,6 +3050,8 @@ export type Database = {
           outcome: string | null;
           outcome_changed_at: string;
           project_id: string;
+          sale_buyer_origin: string | null;
+          sale_price: number | null;
           signed_at: string | null;
           updated_at: string;
           went_through_follow_up: boolean;
@@ -2998,8 +3060,12 @@ export type Database = {
         Insert: {
           agency_id: string;
           commercialization_price?: number | null;
+          compromise_buyer_id?: string | null;
+          compromise_signed_on?: string | null;
           concluded_at?: string | null;
           created_at?: string;
+          deed_planned_on?: string | null;
+          deed_signed_on?: string | null;
           early_follow_up_kept_at?: string | null;
           early_follow_up_kept_ready?: number | null;
           fees_amount?: number | null;
@@ -3020,7 +3086,10 @@ export type Database = {
           frozen_seller_perceived_price?: number | null;
           frozen_seller_wanted_price?: number | null;
           id?: string;
+          mandate_ended_on?: string | null;
+          mandate_ends_on?: string | null;
           mandate_number?: string | null;
+          mandate_tacit_renewal?: boolean;
           mandate_type?: string | null;
           next_follow_up_on?: string | null;
           objection_note?: string | null;
@@ -3028,6 +3097,8 @@ export type Database = {
           outcome?: string | null;
           outcome_changed_at?: string;
           project_id: string;
+          sale_buyer_origin?: string | null;
+          sale_price?: number | null;
           signed_at?: string | null;
           updated_at?: string;
           went_through_follow_up?: boolean;
@@ -3035,8 +3106,12 @@ export type Database = {
         Update: {
           agency_id?: string;
           commercialization_price?: number | null;
+          compromise_buyer_id?: string | null;
+          compromise_signed_on?: string | null;
           concluded_at?: string | null;
           created_at?: string;
+          deed_planned_on?: string | null;
+          deed_signed_on?: string | null;
           early_follow_up_kept_at?: string | null;
           early_follow_up_kept_ready?: number | null;
           fees_amount?: number | null;
@@ -3057,7 +3132,10 @@ export type Database = {
           frozen_seller_perceived_price?: number | null;
           frozen_seller_wanted_price?: number | null;
           id?: string;
+          mandate_ended_on?: string | null;
+          mandate_ends_on?: string | null;
           mandate_number?: string | null;
+          mandate_tacit_renewal?: boolean;
           mandate_type?: string | null;
           next_follow_up_on?: string | null;
           objection_note?: string | null;
@@ -3065,6 +3143,8 @@ export type Database = {
           outcome?: string | null;
           outcome_changed_at?: string;
           project_id?: string;
+          sale_buyer_origin?: string | null;
+          sale_price?: number | null;
           signed_at?: string | null;
           updated_at?: string;
           went_through_follow_up?: boolean;
@@ -3075,6 +3155,13 @@ export type Database = {
             columns: ['agency_id'];
             isOneToOne: false;
             referencedRelation: 'agencies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'project_meeting_conclusions_compromise_buyer_fk';
+            columns: ['compromise_buyer_id'];
+            isOneToOne: false;
+            referencedRelation: 'buyers';
             referencedColumns: ['id'];
           },
           {

@@ -1,3 +1,5 @@
+import type { MandateLife } from '@/features/mandate-life/types';
+
 // Mission 53/54 — l'issue d'un rendez-vous et ses montants figés.
 
 // Mission 54 — quatre issues. « Vendu ailleurs » (parti définitivement) et « retiré de la
@@ -129,6 +131,9 @@ export type MeetingConclusion = ConclusionAmounts & {
   // signés avant la mission : aucun type n'est inventé). Et la date de signature, écrite une fois.
   mandateType: MandateType | null;
   signedAt: string | null;
+  // Lot C — la vie du mandat (la fin, le compromis, la vente, la fin sans vente) ; absente d'une
+  // conclusion construite ailleurs que par `getConclusion`.
+  life?: MandateLife;
   concludedAt: string | null; // la date du rendez-vous
   outcomeChangedAt: string | null; // la date du dernier changement d'issue
 };

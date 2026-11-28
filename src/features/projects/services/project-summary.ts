@@ -1,5 +1,6 @@
 import type { StatTile } from '@/components/socle/stat-tiles';
 import type { Tone } from '@/components/socle/tone';
+import { MANDATE_STAGE_LABELS, type MandateStage } from '@/features/mandate-life/types';
 import {
   MANDATE_TYPE_LABELS,
   OUTCOME_LABELS,
@@ -18,8 +19,21 @@ export function projectBadge(input: {
   status: string;
   outcome: ConclusionOutcome | null;
   mandateType: MandateType | null;
+  // Lot C — l'étape du mandat, quand elle est lue : « Offre acceptée », « Sous compromis »…
+  stage?: MandateStage | 'unknown' | null;
 }): { label: string; tone: Tone } {
   if (input.status === 'meeting_completed' && input.outcome) {
+    if (input.outcome === 'signed' && input.stage === 'ended') {
+      return { label: 'Mandat terminé sans vente', tone: 'plain' };
+    }
+    if (
+      input.outcome === 'signed' &&
+      (input.stage === 'offer_accepted' ||
+        input.stage === 'under_compromise' ||
+        input.stage === 'sold')
+    ) {
+      return { label: MANDATE_STAGE_LABELS[input.stage], tone: 'good' };
+    }
     if (input.outcome === 'signed') {
       return {
         label: input.mandateType

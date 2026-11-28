@@ -2,7 +2,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { StatTiles } from '@/components/socle/stat-tiles';
-import { backLink, link, socleBigStep, socleBtnFilledBig } from '@/components/ui/styles';
+import {
+  backLink,
+  link,
+  socleBigStep,
+  socleBtnFilledBig,
+  socleBtnQuietBig,
+} from '@/components/ui/styles';
 import { displayCommune } from '@/features/competitor-search/utils/arrondissements';
 import { MarketGlanceCard } from '@/features/before-meeting/components/market-glance-card';
 import {
@@ -54,12 +60,15 @@ import { LiveLaunchActions } from '@/features/live-seller/components/live-launch
 import { getLiveLaunchInfo } from '@/features/live-seller/queries/get-live-launch-info';
 import { getConclusion } from '@/features/meeting-conclusion/queries/get-conclusion';
 import { getProject } from '@/features/projects/queries/get-project';
+import { MandateSection } from '@/features/mandate-life/components/mandate-section';
+import { loadMandateView } from '@/features/mandate-life/queries/load-mandate-view';
+import { mandateFormOf } from '@/features/mandate-life/services/mandate-sheet';
 import { getProfile } from '@/lib/auth/get-profile';
 import { formatRelativeDay } from '@/lib/format';
 
 type ProjectPageProps = {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ tout?: string }>;
+  searchParams: Promise<{ tout?: string; mandat?: string }>;
 };
 
 // La refonte, lot E (maquette REFONTE-8) — le dossier d'un vendeur, comme la fiche d'un acquéreur :
@@ -68,7 +77,7 @@ type ProjectPageProps = {
 // étapes y est (le marché en un coup d'œil, les autres actions, les acquéreurs de l'agence, la
 // prospection, la réouverture du Live). `?tout=1` l'ouvre.
 export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
-  const [{ projectId }, { tout }] = await Promise.all([params, searchParams]);
+  const [{ projectId }, { tout, mandat }] = await Promise.all([params, searchParams]);
   const project = await getProject(projectId);
 
   if (!project) {
@@ -123,6 +132,22 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     getComparables(projectId),
     getSavedPricePositioning(projectId),
   ]);
+  // Lot C — un mandat signé suit sa vie : l'étape, « Son mandat », la prochaine étape qu'il donne.
+  const mandateView =
+    profile && conclusion?.outcome === 'signed'
+      ? await createClient().then((supabase) =>
+          loadMandateView({
+            supabase,
+            agencyId: profile.agency_id,
+            projectId,
+            conclusion,
+            agencyOffers,
+            now: new Date(),
+          }),
+        )
+      : null;
+  const openForm = mandateView?.readable ? mandateFormOf(mandat, mandateView.sheet) : null;
+  const mandateNext = mandateView?.readable ? mandateView.sheet.next : null;
   const generatedAt = new Date().toISOString();
   const retained = comparables.filter((comparable) => comparable.is_selected);
   const glance =
@@ -194,6 +219,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
             status: project.status,
             outcome: conclusion?.outcome ?? null,
             mandateType: conclusion?.mandateType ?? null,
+            stage: mandateView?.readable ? mandateView.stage : null,
           })}
         />
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -201,6 +227,14 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
           {offerAnswers == null ? (
             <span role="alert" className="text-xs font-semibold text-red-700">
               Les réponses aux offres n’ont pas pu être lues&nbsp;: rechargez la page.
+            </span>
+          ) : null}
+          {mandateView?.readable ? (
+            <span
+              className="inline-flex h-7 items-center rounded-full bg-[#E3F4EC] px-3 text-sm font-semibold text-[#0B6B4A] stage:bg-emerald-400/15 stage:text-emerald-300"
+              data-testid="mandate-line"
+            >
+              {mandateView.sheet.line}
             </span>
           ) : null}
           {(offerAnswers ?? []).map((answer) => (
@@ -219,8 +253,31 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         </div>
       </div>
 
+      {/* Lot C — la prochaine étape d'un mandat qui vit : celle qu'il donne (noter le compromis,
+          préparer l'acte, noter la vente, le renouvellement), le même bouton que la tâche
+          d'« Aujourd'hui ». Une saisie ouverte porte le seul bouton plein (M146). */}
+      {mandateNext ? (
+        <NextStepCard
+          testId="overview-next-step"
+          title={mandateNext.title}
+          late={mandateNext.late}
+          phrase={mandateNext.phrase}
+          action={
+            mandateNext.action ? (
+              <Link
+                href={mandateNext.action.href}
+                className={`${mandateNext.action.filled && !openForm ? socleBtnFilledBig : socleBtnQuietBig} ${socleBigStep}`}
+                data-testid="mandate-next-action"
+              >
+                {mandateNext.action.label}
+              </Link>
+            ) : null
+          }
+        />
+      ) : null}
+
       {/* Mission 143 (B4) — UNE prochaine étape, avec un seul bouton plein. */}
-      {nextAction ? (
+      {!mandateNext && nextAction ? (
         <NextStepCard
           testId="overview-next-step"
           title={relance?.title ?? nextStepTitle(nextAction, project.seller_name)}
@@ -242,7 +299,10 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
                 presentationMode={launch.presentationMode}
               />
             ) : (
-              <Link href={nextAction.href} className={`${socleBtnFilledBig} ${socleBigStep}`}>
+              <Link
+                href={nextAction.href}
+                className={`${openForm ? socleBtnQuietBig : socleBtnFilledBig} ${socleBigStep}`}
+              >
                 {nextAction.label}
               </Link>
             )
@@ -273,6 +333,11 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
             buyers === undefined ? undefined : buyers == null ? null : buyers.ready.length,
         })}
       />
+
+      {/* Lot C — « Son mandat », avant « Son dossier » (maquette C0, choix 1). */}
+      {mandateView ? (
+        <MandateSection projectId={projectId} view={mandateView} openForm={openForm} />
+      ) : null}
 
       {/* Mission 143 (B4) — cinq étapes qui disent vrai. */}
       <OverviewSteps steps={steps} />

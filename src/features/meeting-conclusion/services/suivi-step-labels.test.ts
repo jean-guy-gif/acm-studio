@@ -269,3 +269,75 @@ describe('la prochaine étape d’une carte', () => {
     expect(step.button).toBeNull();
   });
 });
+
+// Lot C (maquette C0, retouche 4) — les tâches de la vie du mandat, avec les mots de la maquette.
+describe('la vie du mandat, dans « Aujourd’hui » et sur la carte', () => {
+  it('« Préparer l’acte » : la date prévue, le délai, jamais en retard ; le dossier sur « Son mandat »', () => {
+    const line = taskLine(
+      task({ kind: 'deed_prepare', dueOn: '2026-11-01', deedPlannedOn: '2026-11-19' }),
+      lineContext,
+      TODAY,
+    );
+    expect(line).toMatchObject({
+      title: 'Préparer l’acte de M. et Mme Martin',
+      detail: 'acte prévu le 19/11 chez le notaire · dans 14 jours',
+      late: null,
+      button: 'Préparer l’acte',
+      href: '/builder/p1#son-mandat',
+    });
+  });
+
+  it('« Noter la vente » : le jour de l’acte passé, la saisie ouverte', () => {
+    const line = taskLine(
+      task({ kind: 'sale_record', dueOn: '2026-11-03', deedPlannedOn: '2026-11-03' }),
+      lineContext,
+      TODAY,
+    );
+    expect(line.title).toBe('Noter la vente de M. et Mme Martin');
+    expect(line.detail).toMatch(
+      /^l’acte était prévu le 03\/11\s: notez sa date et le prix de vente$/,
+    );
+    expect(line.late).toBe('en retard de 2 jours');
+    expect(line.href).toBe('/builder/p1?mandat=vente#son-mandat');
+  });
+
+  it('la fin du mandat : le renouvellement, ou le point avant la reconduction tacite', () => {
+    const renewal = task({
+      kind: 'mandate_renewal',
+      dueOn: '2026-10-29',
+      endsOn: '2026-11-28',
+      tacit: false,
+    });
+    expect(taskLine(renewal, lineContext, TODAY)).toMatchObject({
+      title: 'Préparer le renouvellement du mandat de M. et Mme Martin',
+      detail: 'le mandat se termine le 28/11 · dans 23 jours',
+      late: null,
+      button: 'Préparer le renouvellement',
+      href: '/builder/p1?mandat=fin#son-mandat',
+    });
+    const tacit = taskLine({ ...renewal, tacit: true }, lineContext, TODAY);
+    expect(tacit.title).toBe('Faire le point avant la reconduction du mandat de M. et Mme Martin');
+    expect(tacit.detail).toBe('reconduction tacite le 28/11 · dans 23 jours');
+    expect(tacit.button).toBe('Faire le point');
+    // La date passée : en retard, depuis la fin du mandat.
+    const late = taskLine({ ...renewal, endsOn: '2026-11-02' }, lineContext, TODAY);
+    expect(late.detail).toBe('le mandat s’est terminé le 02/11');
+    expect(late.late).toBe('en retard de 3 jours');
+  });
+
+  it('la carte du Suivi dit la même chose, avec son bouton', () => {
+    const step = cardStep(
+      task({ kind: 'mandate_renewal', dueOn: '2026-10-29', endsOn: '2026-11-28', tacit: true }),
+      { ...context, outcome: 'signed' },
+      TODAY,
+    );
+    expect(step).toMatchObject({
+      title: 'Faire le point avant la reconduction',
+      phrase: 'Reconduction tacite le 28/11 · dans 23 jours.',
+      button: {
+        label: 'Faire le point',
+        action: { kind: 'link', href: '/builder/p1?mandat=fin#son-mandat' },
+      },
+    });
+  });
+});
