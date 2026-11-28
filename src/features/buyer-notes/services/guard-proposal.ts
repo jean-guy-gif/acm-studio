@@ -22,7 +22,8 @@ import type { NoteField, NoteProposal, NoteStar, NoteValues } from '@/features/b
 //   2. un « non » (extérieur, parking, piscine, ascenseur, travaux, copropriété) n'est gardé que si
 //      sa ligne d'origine le dit en toutes lettres ; sinon il devient « inconnu » ;
 //   3. le motif, le délai et la langue sans ligne d'origine tombent : aucune valeur par défaut ;
-//   4. « comptant » devient une suggestion, jamais « Validé » ;
+//   4. un achat comptant n'est jamais « Validé » ; comment il finance (lot B) n'est gardé qu'avec
+//      sa ligne d'origine, qui le dit — comptant, ou un prêt —, comme une ★ ;
 //   5. ce qui s'enregistre (les Notes, leurs mots) ne contient aucune mention refusée : le texte
 //      tombe et la mention est comptée ; les sources, seulement montrées, ne sont pas filtrées
 //      (règle des deux comptes, Jean-Guy, 12/11).
@@ -76,6 +77,18 @@ const FIRM =
 const ACRONYMS = /\b(RDC|DPE|GES|FAI|ASL|CRM|SDB|OK|T\d|F\d)\b/g;
 export function saysFirm(line: string): boolean {
   return FIRM.test(fold(line)) || /\b[A-ZÀ-Ý]{3,}\b/.test(line.replace(ACRONYMS, ''));
+}
+
+// Lot B (Jean-Guy, 27/11) — comment il finance : la ligne d'origine doit le dire. « Sans prêt »,
+// « pas de banque » sont un achat comptant, jamais un prêt.
+const SAYS_CASH =
+  /comptant|cash|fonds propres|(sans|pas|pas besoin) (de |d'|d’|d'un |d’un )?(banque|pret|credit|emprunt)/;
+const SAYS_LOAN = /pret|credit|emprunt|banque|bancaire|courtier|accord de principe/;
+export function saysMode(mode: 'cash' | 'loan', line: string): boolean {
+  const folded = fold(line);
+  return mode === 'cash'
+    ? SAYS_CASH.test(folded)
+    : SAYS_LOAN.test(folded) && !SAYS_CASH.test(folded);
 }
 
 const fold = (value: string): string => value.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -238,11 +251,14 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     mustHave.push({ key: star, source: line });
   }
 
-  // 4. Le financement : « comptant » n'est qu'une suggestion.
+  // 4. Le financement : l'état (validé, en cours) ; un achat comptant n'est jamais « Validé ».
   const financingRead = typeof out.financing === 'string' ? out.financing : null;
   const financing =
     financingRead === 'validated' || financingRead === 'in_progress' ? financingRead : null;
-  const cashSuggestion = financingRead === 'cash_to_verify';
+  // Lot B — comment il finance : gardé seulement si sa ligne d'origine le dit.
+  const modeRead = oneOf(['cash', 'loan'] as const, out.financing_mode);
+  const modeLine = sourceOf.get('financing_mode') ?? null;
+  const financingMode = modeRead && modeLine && saysMode(modeRead, modeLine) ? modeRead : null;
 
   // Les sources de chaque champ gardé, et d'eux seuls.
   const sources: NoteProposal['sources'] = {};
@@ -273,15 +289,16 @@ export function guardProposal(raw: unknown): Omit<NoteProposal, 'communes'> {
     }
   }
   const financingLine = sourceOf.get('financing');
-  const financingSource = (financing || cashSuggestion) && financingLine ? financingLine : null;
+  const financingSource = financing && financingLine ? financingLine : null;
 
   return {
     values,
     sources,
     mustHave,
     financing,
-    cashSuggestion,
     financingSource,
+    financingMode,
+    financingModeSource: financingMode ? modeLine : null,
     softCriteria,
     personalMentionsSkipped: skipped,
   };
@@ -292,7 +309,8 @@ const STAR_EQUIPMENTS = ['outdoor', 'parking', 'pool', 'elevator'] as const;
 // Les noms des champs proposés, pour la trace : jamais une valeur.
 export function proposedFieldNames(proposal: Omit<NoteProposal, 'communes'>): string[] {
   const names: string[] = Object.keys(proposal.values);
-  if (proposal.financing || proposal.cashSuggestion) names.push('financing');
+  if (proposal.financing) names.push('financing');
+  if (proposal.financingMode) names.push('financing_mode');
   for (const star of proposal.mustHave) names.push(`must_have:${star.key}`);
   for (const soft of proposal.softCriteria) names.push(`soft:${soft.key}`);
   return names.slice(0, 60);

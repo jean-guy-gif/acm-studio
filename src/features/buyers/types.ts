@@ -36,6 +36,21 @@ export const BUYER_FINANCING_LABELS: Record<BuyerFinancing, string> = {
 };
 export const BUYER_FINANCING_HINT = 'Validé\u00a0: accord de principe ou apport suffisant.';
 
+// Lot B (Jean-Guy, 27/11) — comment l'acquéreur finance son achat, à côté de l'état du financement
+// (M132), qui ne change pas : comptant, avec prêt, ou pas encore dit, le défaut des fiches d'avant.
+// Avec un prêt seulement : l'apport, le montant du prêt et l'accord de principe de sa banque, tous
+// facultatifs. Écrit par un geste à part, jamais par le formulaire de la fiche ; jamais montré au
+// vendeur.
+export const BUYER_FINANCING_MODES = ['cash', 'loan', 'not_said'] as const;
+export type BuyerFinancingMode = (typeof BUYER_FINANCING_MODES)[number];
+export const BUYER_FINANCING_MODE_LABELS: Record<BuyerFinancingMode, string> = {
+  cash: 'Comptant',
+  loan: 'Avec prêt',
+  not_said: 'Pas encore dit',
+};
+// Les bornes de la base (`buyers_loan_contribution_check`, `buyers_loan_amount_check`).
+export const LOAN_AMOUNT_MAX = 99_999_999;
+
 export const BUYER_PURPOSES = ['primary', 'secondary', 'investment', 'other'] as const;
 export type BuyerPurpose = (typeof BUYER_PURPOSES)[number];
 export const BUYER_PURPOSE_LABELS: Record<BuyerPurpose, string> = {
@@ -181,6 +196,11 @@ export type Buyer = BuyerInput & {
   financing: BuyerFinancing;
   financingChangedAt: string | null;
   contactedAt: string | null;
+  // Lot B — comment il finance ; l'apport, le prêt et l'accord, seulement avec un prêt.
+  financingMode: BuyerFinancingMode;
+  loanContribution: number | null;
+  loanAmount: number | null;
+  loanAgreement: boolean | null;
   // Mission 151 — lus en base : toujours une valeur.
   condominiumAccepted: boolean | null;
   condominiumMustHave: boolean;

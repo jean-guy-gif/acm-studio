@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Lot B — Comment finance-t-il ?</title>
+<style>
+@font-face{font-family:'Nunito Sans';src:url('file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/nunito-sans/nunito-sans-latin.woff2') format('woff2');font-weight:200 1000}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito Sans',Arial,sans-serif;background:#d4d4d8;color:#18181b;padding:28px;width:max-content;display:flex;flex-direction:column;gap:20px}
+h1{font-size:26px;font-weight:800}
+.lead{font-size:16px;color:#3f3f46;max-width:1640px;line-height:1.45}
+.heads,.row{display:grid;grid-template-columns:170px 360px 520px 640px;gap:18px;align-items:start}
+.heads div{font-size:15px;font-weight:800;color:#1e2f7a}
+.rowtitle{font-size:15px;font-weight:800;color:#3f3f46;padding-top:6px}
+.cell img{display:block;border:1px solid #a1a1aa;border-radius:10px;background:#fff}
+.wide{display:grid;grid-template-columns:1fr 640px;gap:18px;align-items:start;max-width:1760px}
+.wide img{display:block;border:1px solid #a1a1aa;border-radius:10px;width:100%}
+.cap{font-size:14px;font-weight:700;color:#3f3f46;margin-bottom:6px}
+.notes{background:#fff;border-radius:12px;padding:18px 22px;max-width:1760px;font-size:15.5px;line-height:1.5;display:grid;grid-template-columns:1fr 1fr;gap:4px 36px}
+.notes h4{font-size:16px;font-weight:800;color:#1e2f7a;grid-column:1/-1;margin-top:6px}
+.notes p{padding-left:14px;text-indent:-14px}
+.notes .q{grid-column:1/-1}
+</style></head><body>
+<h1>Lot B — « Comment finance-t-il ? » sur la fiche acquéreur</h1>
+<p class="lead">La fiche de M. Fontaine (démo, financement en cours) sur l’essai, le pli « Prêt à visiter ? » ouvert, comme à l’arrivée d’un acquéreur pas encore prêt. « Avant » est la fiche d’aujourd’hui ; les lignes « après » y insèrent la question avec les classes mêmes de l’application.</p>
+<div class="heads"><div></div><div>Téléphone · 390 px</div><div>Tablette · 820 px</div><div>Ordinateur · 1 512 px</div></div>
+
+    <div class="row"><div class="rowtitle">Avant</div>
+      <div class="cell"><img src="LB2-telephone-avant.png" style="width:360px" alt=""></div><div class="cell"><img src="LB2-tablette-avant.png" style="width:520px" alt=""></div><div class="cell"><img src="LB2-ordinateur-avant.png" style="width:640px" alt=""></div>
+    </div>
+
+    <div class="row"><div class="rowtitle">Après · Pas encore dit (toutes les fiches d’aujourd’hui)</div>
+      <div class="cell"><img src="LB2-telephone-pas-encore-dit.png" style="width:360px" alt=""></div><div class="cell"><img src="LB2-tablette-pas-encore-dit.png" style="width:520px" alt=""></div><div class="cell"><img src="LB2-ordinateur-pas-encore-dit.png" style="width:640px" alt=""></div>
+    </div>
+
+    <div class="row"><div class="rowtitle">Après · Avec prêt, noté</div>
+      <div class="cell"><img src="LB2-telephone-avec-pret.png" style="width:360px" alt=""></div><div class="cell"><img src="LB2-tablette-avec-pret.png" style="width:520px" alt=""></div><div class="cell"><img src="LB2-ordinateur-avec-pret.png" style="width:640px" alt=""></div>
+    </div>
+<div class="wide">
+  <div><p class="cap">Ordinateur, la fiche à l’ouverture (1 512 × 771), avec le prêt noté</p><img src="LB2-ordinateur-a-l-ouverture.png" style="width:1100px" alt=""></div>
+  <div><p class="cap">Lu dans ses notes (B4) : « À vérifier », un toucher le confirme</p><img src="LB2-ordinateur-lu-dans-les-notes.png" style="width:640px" alt=""></div>
+</div>
+<section class="notes">
+  <h4>Avant</h4>
+  <p>– « Prêt à visiter ? » ne dit que l’état du financement (Validé · En cours · Inconnu), jamais comment il finance.</p>
+  <p>– L’offre d’achat ne sait pas s’il emprunte : elle se signe comptant, « sans recours à un prêt ».</p>
+  <h4>Après</h4>
+  <p>– Sous l’état du financement, « Comment finance-t-il ? » : Comptant · Avec prêt · Pas encore dit. Le même geste que l’état : un toucher l’enregistre.</p>
+  <p>– Toutes les fiches d’aujourd’hui sont en « Pas encore dit » (la migration du 28/11) : rien n’est reconstitué.</p>
+  <p>– Avec prêt : l’apport, le montant du prêt et l’accord de principe de sa banque (Oui / Non), tous facultatifs. Les montants s’écrivent avec l’espace des milliers, comme « Votre fourchette » ; « Enregistrer le prêt », en contour.</p>
+  <p>– Repasser en « Comptant » ou « Pas encore dit » efface l’apport, le prêt et l’accord : s’il y en a, l’écran le demande d’abord.</p>
+  <p>– L’état du financement et « Prêt à visiter » ne changent pas : ils ne lisent pas le mode (réponse 8).</p>
+  <p>– Lu dans ses notes (B4) : « À vérifier » à côté de la question ; un toucher sur le bon choix le confirme, et l’offre d’achat attend cette confirmation (réponse 10).</p>
+  <p>– Jamais montré au vendeur, ni dans un document, ni par un lien.</p>
+  <p>– Trois choix de plus dans ce pli, et le prêt : le pli n’est ouvert d’office que pour un acquéreur pas encore prêt ; prêt, il reste rangé dans « Tout le dossier ».</p>
+  <p class="q">Question, avec sa réponse par défaut : si vous préférez moins de boutons, une seule ligne « Comment finance-t-il ? Pas encore dit · Le dire » qui ouvre les trois choix. Par défaut : les trois choix, visibles.</p>
+</section>
+</body></html>

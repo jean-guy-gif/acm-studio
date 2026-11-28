@@ -48,6 +48,8 @@ export const DEMO_NOTES_OUTPUT = {
   condominium_accepted: null,
   must_have: ['outdoor'],
   financing: 'validated',
+  // Lot B — « accord banque OK » : un prêt, avec l'accord de la banque.
+  financing_mode: 'loan',
   soft_criteria: [
     { key: 'calme', words: 'AU CALME — pas de route' },
     { key: 'sans_vis_a_vis', words: 'pas de vis-à-vis' },
@@ -69,6 +71,7 @@ export const DEMO_NOTES_OUTPUT = {
     { field: 'outdoor', quote: 'Jardin +++' },
     { field: 'must_have:outdoor', quote: 'Jardin +++' },
     { field: 'financing', quote: 'accord banque OK' },
+    { field: 'financing_mode', quote: 'accord banque OK' },
     { field: 'soft_criteria', quote: 'AU CALME — pas de route, pas de vis-à-vis' },
     { field: 'notes', quote: 'visites le samedi' },
   ],
@@ -106,6 +109,7 @@ export const DEMO_PHRASE_OUTPUT = {
   condominium_accepted: null,
   must_have: ['outdoor'],
   financing: null,
+  financing_mode: 'not_said',
   soft_criteria: [
     { key: 'calme', words: 'au calme' },
     { key: 'sans_vis_a_vis', words: 'sans vis-à-vis' },

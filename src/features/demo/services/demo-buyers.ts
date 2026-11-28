@@ -1,4 +1,4 @@
-import type { BuyerFinancing, BuyerInput } from '@/features/buyers/types';
+import type { BuyerFinancing, BuyerFinancingMode, BuyerInput } from '@/features/buyers/types';
 
 // Mission 132 — un acquéreur de démo porte aussi son financement et son dernier contact (en jours
 // avant « Préparer ma démo »), posés par la clé service comme les gestes de la fiche.
@@ -8,6 +8,9 @@ export type DemoBuyer = BuyerInput & {
   // Mission 133 — depuis combien de jours sa fiche existe (« cherche depuis 3 semaines », au Live) ;
   // étalé de 1 à 7 semaines pour que ce soit crédible (essai de Jean-Guy, 06/11).
   createdDaysAgo?: number;
+  // Lot B — comment il finance, et son prêt (« Pas encore dit » sans rien).
+  financingMode?: BuyerFinancingMode;
+  loan?: { contribution: number | null; amount: number | null; agreement: boolean | null };
 };
 
 // Une maison de 4 ou 5 pièces autour de Vence, entre 700 000 et 800 000 € : ce que cherchent les
@@ -75,6 +78,8 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   },
   {
     name: 'Famille Keller',
+    // Lot B — comptant : leur offre signée l'est.
+    financingMode: 'cash',
     phone: '06 39 98 52 10',
     email: 'famille.keller@example.com',
     purpose: 'secondary',
@@ -108,6 +113,9 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   // pas (décision de Jean-Guy, 05/11).
   venceHouse({
     name: 'M. et Mme Lambert',
+    // Lot B — avec prêt et l'accord de principe de leur banque, comme le disent leurs notes.
+    financingMode: 'loan',
+    loan: { contribution: 250_000, amount: 540_000, agreement: true },
     createdDaysAgo: 8,
     phone: '06 39 98 21 46',
     email: 'lambert.vence@example.com',
@@ -180,6 +188,9 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   }),
   venceHouse({
     name: 'M. Fontaine',
+    // Lot B — avec prêt, sans accord encore : le rendez-vous à la banque est dans quinze jours.
+    financingMode: 'loan',
+    loan: { contribution: 120_000, amount: 650_000, agreement: false },
     // Mission 155 — à recontacter : aucun échange depuis plus de 30 jours (M132).
     createdDaysAgo: 40,
     phone: '06 39 98 72 18',
@@ -194,6 +205,8 @@ export const DEMO_BUYERS: DemoBuyer[] = [
   // Antibes, financement en cours (il ne compte pas parmi les prêts à visiter).
   {
     name: 'Mr and Mrs Wilson',
+    // Lot B — comptant : leur offre hors mandat se signe comptant.
+    financingMode: 'cash',
     language: 'en',
     createdDaysAgo: 10,
     phone: '06 39 98 57 92',
