@@ -38,6 +38,7 @@ import { DOSSIER_ALREADY_ANSWERED, DOSSIER_PRESENTED } from '@/features/buyer-do
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
 import type { DossierAcademiaLink } from '@/features/buyer-dossier/types';
+import { withFrenchSpacing } from '@/lib/typography/french-spacing';
 
 // Mission 140 — dans la langue de l'acquéreur, celle de son déroulé (le français par défaut).
 const screensOf = (deck: BuyerDeck) => clientTexts(deck.language ?? 'fr').buyer.screens;
@@ -561,7 +562,7 @@ export function DossierPhoneDeck({
                 {t.wordsTitle}
               </p>
               <p className="font-title text-lg leading-snug font-semibold text-zinc-800">
-                «&nbsp;{deck.words}&nbsp;»
+                «&nbsp;{withFrenchSpacing(deck.words)}&nbsp;»
               </p>
               <p className="text-sm text-zinc-600">{t.propertiesForYou(itemCount)}</p>
             </div>

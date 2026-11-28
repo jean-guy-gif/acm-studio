@@ -21,6 +21,7 @@ import type {
 import { sellerFacingCompetitorPrice } from '@/features/live-seller/services/competitor-price';
 import { neutralComparableLabel } from '@/features/live-seller/utils/neutral-comparable-label';
 import { formatEuro } from '@/lib/format';
+import { withFrenchSpacing } from '@/lib/typography/french-spacing';
 
 function Figure({ label, value }: { label: string; value: string }) {
   return (
@@ -131,7 +132,7 @@ export function LivePageConclusion({
           <div className={`${panelSoft} flex flex-col gap-0.5`}>
             <div className={statLabel}>{t.justification}</div>
             <p className="text-sm whitespace-pre-wrap text-zinc-700 stage:text-white/80">
-              {decision.justification}
+              {withFrenchSpacing(decision.justification)}
             </p>
           </div>
         ) : null}

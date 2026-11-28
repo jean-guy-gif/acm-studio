@@ -20,6 +20,7 @@ import {
 } from '@/features/seller-synthesis/services/synthesis-token';
 import { formatEuro } from '@/lib/format';
 import { isPublicPath } from '@/lib/supabase/public-paths';
+import { NBSP } from '@/lib/typography/french-spacing';
 
 // Mission 110 — la synthèse laissée au vendeur ne contient JAMAIS d'adresse, de titre, de lien
 // d'annonce ni de « Vendu par » : même quand la base les rend (titre piège de la M107).
@@ -204,7 +205,7 @@ function databaseWithTraps(language = 'fr') {
           data: {
             advisor_price: 999_000,
             advisor_comparative_market_price: 998_000,
-            justification: 'Trois biens proches, le vôtre a un balcon.',
+            justification: 'Trois biens proches : le vôtre a un balcon.',
             range_central: 997_000,
             calculation_snapshot: { usedCount: 4, excludedOutlierCount: 0 },
           },
@@ -300,7 +301,7 @@ describe('la synthèse dans la langue du vendeur', () => {
         'M. Vendeur',
         '1 place du Marché, 06600 Antibes',
         'Antibes',
-        'Trois biens proches, le vôtre a un balcon.',
+        `Trois biens proches${NBSP}: le vôtre a un balcon.`,
       ]),
     ).toEqual([]);
   });
@@ -418,8 +419,11 @@ describe('la synthèse au vendeur', () => {
       basisLabel:
         'Calculé par votre conseiller sur les 4 concurrents qu’il a retenus, dont 3 vus ensemble',
       advisorAnalysis: 330_000,
-      justification: 'Trois biens proches, le vôtre a un balcon.',
+      justification: 'Trois biens proches : le vôtre a un balcon.',
     });
+    // Jean-Guy (28/11) — « Le point à retenir », tapé par le conseiller, suit la règle des espaces à
+    // l'affichage : le texte enregistré ne change pas.
+    expect(html).toContain(`Trois biens proches${NBSP}: le vôtre a un balcon.`);
     expect(synthesis.commercializationPrice).toBe(319_000);
     // Mission 148 B — face aux concurrents dont il a vu le prix (c1 et c3 ; c2 a eu « Non »).
     expect(synthesis.positionSentence).toBe(

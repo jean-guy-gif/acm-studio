@@ -29,6 +29,7 @@ import {
 } from '@/features/subject-property/constants/property-options';
 import type { SellerPresentationProperty } from '@/features/seller-presentation/types/seller-presentation';
 import { formatSquareMeters } from '@/lib/format';
+import { withFrenchSpacing } from '@/lib/typography/french-spacing';
 
 // Act 1 — "Votre bien". The seller RECOGNISES the property before any competitor
 // is shown. Never a price, never the advisor range, never an estimate: the whole
@@ -143,7 +144,8 @@ export function LivePageProperty({
           <LiveGallery photos={property.photoUrls} alt={alt} fill />
           {property.features.length > 0 ? (
             <p className="shrink-0 text-sm text-zinc-700 stage:text-white/80">
-              <span className={statLabel}>{t.highlights}</span> {property.features.join(' · ')}
+              <span className={statLabel}>{t.highlights}</span>{' '}
+              {withFrenchSpacing(property.features.join(' · '))}
             </p>
           ) : null}
         </div>
