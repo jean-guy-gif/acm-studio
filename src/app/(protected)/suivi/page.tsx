@@ -25,6 +25,7 @@ import { parisDay, sortContacts } from '@/features/meeting-conclusion/services/f
 import {
   SUIVI_GROUPS,
   SUIVI_GROUP_LABELS,
+  dossierStages,
   filterSuiviByGroup,
   filterSuiviByMotive,
   followUpMotiveCounts,
@@ -61,6 +62,10 @@ import {
 import { heldOffers } from '@/features/buyers/services/proposable';
 import { buyerInSentence } from '@/features/meeting-conclusion/services/suivi-step-labels';
 import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { getMandateAmendments } from '@/features/mandate-life/queries/get-mandate-amendments';
+import { mandateOfferOf } from '@/features/mandate-life/services/mandate-offer';
+import { suiviSale } from '@/features/mandate-life/services/suivi-sale';
+import { NO_MANDATE_LIFE, type MandateOffer } from '@/features/mandate-life/types';
 import { projectReadyBuyers } from '@/features/today/services/mandate-alerts';
 import { getAgencyBranding } from '@/features/branding/queries/get-agency-branding';
 import { documentAgencyName } from '@/features/prospecting-file/services/document-name';
@@ -123,29 +128,49 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const followUpIds = withoutExamples(allDossiers)
     .filter((dossier) => dossier.conclusion?.outcome === 'follow_up')
     .map((dossier) => dossier.project.id);
-  const [{ cards }, insights, agency, pointRead, mandateRead, agencyBuyers, loop, offers] =
-    await Promise.all([
-      getAgencyProspecting(counted),
-      getSellerInsights(projectIds),
-      profile ? getAgency(profile.agency_id) : null,
-      // Mission 127 — les points marché de chaque dossier.
-      profile
-        ? createClient().then((supabase) =>
-            readMarketUpdates(supabase, profile.agency_id, projectIds),
-          )
-        : { byProject: new Map<string, MarketUpdateEntry[]>(), failed: false },
-      // Mission 134 — les acquéreurs prêts de chaque mandat (« Acquéreurs · N »).
-      profile
-        ? getLoopTasks(profile.agency_id, new Date())
-        : { tasks: [], readyByProject: new Map<string, number>(), failed: false },
-      // Mission 145 — les acquéreurs prêts d'un vendeur à relancer (l'argument pour rentrer le
-      // mandat), et l'offre acceptée d'un mandat (« Offre acceptée · famille Keller »).
-      profile ? loadAgencyBuyers(profile.agency_id) : null,
-      profile ? loadLoopProperties(profile.agency_id, followUpIds) : null,
-      profile
-        ? createClient().then((supabase) => getAgencyOfferAnswers(supabase, profile.agency_id))
-        : null,
-    ]);
+  const signedIds = allDossiers
+    .filter((dossier) => dossier.conclusion?.outcome === 'signed')
+    .map((dossier) => dossier.project.id);
+  const [
+    { cards },
+    insights,
+    agency,
+    pointRead,
+    mandateRead,
+    agencyBuyers,
+    loop,
+    offers,
+    amendmentRead,
+  ] = await Promise.all([
+    getAgencyProspecting(counted),
+    getSellerInsights(projectIds),
+    profile ? getAgency(profile.agency_id) : null,
+    // Mission 127 — les points marché de chaque dossier.
+    profile
+      ? createClient().then((supabase) =>
+          readMarketUpdates(supabase, profile.agency_id, projectIds),
+        )
+      : { byProject: new Map<string, MarketUpdateEntry[]>(), failed: false },
+    // Mission 134 — les acquéreurs prêts de chaque mandat (« Acquéreurs · N »).
+    profile
+      ? getLoopTasks(profile.agency_id, new Date())
+      : { tasks: [], readyByProject: new Map<string, number>(), failed: false },
+    // Mission 145 — les acquéreurs prêts d'un vendeur à relancer (l'argument pour rentrer le
+    // mandat), et l'offre acceptée d'un mandat (« Offre acceptée · famille Keller »).
+    profile ? loadAgencyBuyers(profile.agency_id) : null,
+    profile ? loadLoopProperties(profile.agency_id, followUpIds) : null,
+    profile
+      ? createClient().then((supabase) => getAgencyOfferAnswers(supabase, profile.agency_id))
+      : null,
+    // Lot C — les avenants des mandats signés, pour le chemin du prix de la carte.
+    profile && signedIds.length > 0
+      ? createClient().then((supabase) =>
+          getMandateAmendments(supabase, profile.agency_id, signedIds),
+        )
+      : null,
+  ]);
+  // Lot C — l'étape de chaque mandat signé : le groupe de la carte, sa frise, ses tâches.
+  const stages = dossierStages(allDossiers, offers);
   const dismissals = profile
     ? await createClient().then((supabase) => readRuledOut(supabase, profile.agency_id))
     : null;
@@ -227,6 +252,7 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
     visits,
     pointsUnknown: pointRead.failed,
     now,
+    offers,
   });
   const prospecting = prospectingCounts(cards);
   const competitors = competitorCounts(cards);
@@ -236,10 +262,10 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
   const motiveCounts = followUpMotiveCounts(counted);
   // Les « à relancer » du plus ancien contact au plus récent.
   const dossiers = sortSuivi(
-    filterSuiviByMotive(filterSuiviByGroup(allDossiers, group), motive),
+    filterSuiviByMotive(filterSuiviByGroup(allDossiers, group, stages), motive),
     lastContacts,
   );
-  const counts = suiviCounts(counted);
+  const counts = suiviCounts(counted, stages);
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <SellerTabs current="/suivi" />
@@ -405,7 +431,36 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
                   },
                   today,
                 );
-                return { id, outcome, entries, followUp, step, frieze, dossier };
+                // Lot C — après une offre acceptée, la carte suit la vente (choix 2 de la
+                // maquette C0) : sa pastille, son chemin du prix, sa frise, et « Noter le
+                // compromis » à l'offre acceptée.
+                const sale = suiviSale({
+                  projectId: id,
+                  stage: stages.get(id),
+                  life: dossier.conclusion?.life ?? NO_MANDATE_LIFE,
+                  offer: offers ? (mandateOfferOf(offers, id) as MandateOffer | null) : null,
+                  signedPrice: dossier.conclusion?.commercializationPrice ?? null,
+                  sellerPrice: dossier.conclusion?.sellerPerceivedPrice ?? null,
+                  amendments: amendmentRead?.get(id) ?? [],
+                  signedOn:
+                    (dossier.conclusion?.signedAt ?? dossier.conclusion?.concludedAt)
+                      ? parisDay(
+                          new Date(
+                            (dossier.conclusion?.signedAt ?? dossier.conclusion?.concludedAt)!,
+                          ),
+                        )
+                      : null,
+                });
+                return {
+                  id,
+                  outcome,
+                  entries,
+                  followUp,
+                  step: sale?.step ?? step,
+                  frieze: sale ? null : frieze,
+                  sale,
+                  dossier,
+                };
               });
               const dueIds = cards
                 .filter((card) => card.step.button?.primary)
@@ -413,22 +468,27 @@ export default async function SuiviPage({ searchParams }: SuiviPageProps) {
               return (
                 <SuiviLeadProvider dueIds={dueIds}>
                   <ul className="flex flex-col gap-3">
-                    {cards.map(({ id, outcome, entries, followUp, step, frieze, dossier }) => (
-                      <SuiviRow
-                        key={id}
-                        dossier={dossier}
-                        followUp={followUp}
-                        marketUpdates={entries}
-                        step={step}
-                        frieze={frieze}
-                        initialPanel={relancer === id ? 'relance' : point === id ? 'point' : null}
-                        readyBuyers={mandateRead.readyByProject.get(id) ?? null}
-                        followUpReadyBuyers={
-                          outcome === 'follow_up' ? (followUpReady.get(id) ?? null) : null
-                        }
-                        acceptedOfferBuyer={outcome === 'signed' ? (heldBy.get(id) ?? null) : null}
-                      />
-                    ))}
+                    {cards.map(
+                      ({ id, outcome, entries, followUp, step, frieze, sale, dossier }) => (
+                        <SuiviRow
+                          key={id}
+                          dossier={dossier}
+                          followUp={followUp}
+                          marketUpdates={entries}
+                          step={step}
+                          frieze={frieze}
+                          sale={sale}
+                          initialPanel={relancer === id ? 'relance' : point === id ? 'point' : null}
+                          readyBuyers={mandateRead.readyByProject.get(id) ?? null}
+                          followUpReadyBuyers={
+                            outcome === 'follow_up' ? (followUpReady.get(id) ?? null) : null
+                          }
+                          acceptedOfferBuyer={
+                            outcome === 'signed' ? (heldBy.get(id) ?? null) : null
+                          }
+                        />
+                      ),
+                    )}
                   </ul>
                 </SuiviLeadProvider>
               );

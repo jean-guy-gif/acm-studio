@@ -171,7 +171,13 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await page.goto('/live');
       await expect(page.locator('li').filter({ hasText: 'Mme Garcia' })).toBeVisible();
       await page.goto('/suivi');
-      const signed = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
+      // Lot C — Mougins a l'offre acceptée des Keller : sa carte dit l'étape ; Valbonne reste
+      // « Mandat signé ».
+      const accepted = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
+      await expect(accepted.getByTestId('outcome-badge')).toHaveText(
+        'Offre acceptée · famille Keller',
+      );
+      const signed = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Castel' });
       await expect(signed.getByTestId('outcome-badge')).toHaveText('Mandat signé · exclusif');
       const followUp = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Lambert-Duval' });
       await expect(followUp.getByTestId('outcome-badge')).toHaveText('À relancer');
@@ -183,7 +189,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(page.getByTestId('suivi-today-link')).toBeVisible();
       await expect(page.getByTestId('suivi-task')).toHaveCount(0);
       // « Aujourd'hui » : la relance des Lambert-Duval, due, sur sa propre ligne en tête des
-      // Vendeurs, avec l'argument ; le premier Point marché de M. Lefebvre ; la pastille du menu.
+      // Vendeurs, avec l'argument ; le premier Point marché de M. et Mme Castel ; la pastille du menu.
       await expectTodayAlerts(page);
       // Mission 125 — « Ma démo » est au menu de la carte, dans l'agence de démo ; pas « Erreurs »,
       // réservé aux opérateurs ; le menu a ses six entrées sur ordinateur (la refonte, lot A).
@@ -714,11 +720,13 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       }
     });
 
-    await test.step('Le Point marché (mission 127) : sur le mandat signé de Mougins, une baisse, une vente probable, un retrait', async () => {
+    await test.step('Le Point marché (mission 127) : sur le mandat signé de Valbonne, une baisse, une vente probable, un retrait', async () => {
       // Le dossier « Conclu, mandat signé » de « Préparer ma démo » : cinq concurrents, dont une
       // annonce qui baisse, une qui disparaît à 150 jours, une à 320 jours.
       await page.goto('/suivi');
-      const row = page.getByTestId('suivi-row').filter({ hasText: 'M. Lefebvre' });
+      // Lot C (question 14) — le Point marché de Mougins s'est arrêté à l'offre acceptée des
+      // Keller ; celui de Valbonne, sur le même marché, est dû.
+      const row = page.getByTestId('suivi-row').filter({ hasText: 'M. et Mme Castel' });
       await expect(row).toBeVisible();
       // Mission 146 — un seul bouton plein sur le Suivi : la première carte due ; le panneau du
       // Point marché ouvert (et dû) devient le seul plein, la première carte due passe en contour.
@@ -735,7 +743,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await openToday(page);
       const pointTask = page
         .getByTestId('today-task')
-        .filter({ hasText: 'Point marché de M. Lefebvre' });
+        .filter({ hasText: 'Point marché de M. et Mme Castel' });
       const fromToday = (await pointTask.count()) > 0;
       if (fromToday) {
         await pointTask.getByRole('link', { name: 'Faire le point' }).click();
@@ -755,7 +763,7 @@ test('la démo des closers : du bien importé à la prospection, sans rien d’e
       await expect(recorded).toBeVisible({ timeout: 60_000 });
       const recordedText = await recorded.innerText();
       console.log(
-        'Point marché (démo, Mougins) :',
+        'Point marché (démo, Valbonne) :',
         recordedText.split('\n').slice(0, 2).join(' · '),
       );
       expect(recordedText).toMatch(/[1-9] baisses?/);
@@ -1312,7 +1320,8 @@ async function expectTodayAlerts(page: Page): Promise<void> {
     'Relancer M. et Mme Lambert-Duval',
   );
   await expect(
-    page.getByTestId('today-task').filter({ hasText: 'Point marché de M. Lefebvre' }),
+    // Lot C (question 14) — le Point marché dû est celui de Valbonne : Mougins a son offre acceptée.
+    page.getByTestId('today-task').filter({ hasText: 'Point marché de M. et Mme Castel' }),
   ).toContainText(
     // Un 29, 30 ou 31, le mois précédent est plus court : le point peut être en retard.
     /premier Point marché dû \(tous les mois\)|en retard/,

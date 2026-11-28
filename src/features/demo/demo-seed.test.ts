@@ -335,10 +335,13 @@ describe('le portefeuille de la démo', () => {
     expect(new Set(sets).size).toBe(subjects.length);
   });
 
-  it('signés de 3 jours à un mois : un seul Point marché dû, celui de Mougins', () => {
+  it('signés de 3 jours à un mois : Mougins et Valbonne il y a un mois calendaire', () => {
+    // Lot C (question 14) — Mougins a l'offre acceptée des Keller : son Point marché s'arrête ;
+    // celui de Valbonne, sur le même marché, est dû.
     for (const plan of plans) {
-      if (plan.key === 'signed') expect(plan.signedDaysAgo).toBeNull();
-      else expect(plan.signedDaysAgo).toBeLessThan(28);
+      if (plan.key === 'signed' || plan.key === 'signed_valbonne') {
+        expect(plan.signedDaysAgo).toBeNull();
+      } else expect(plan.signedDaysAgo).toBeLessThan(28);
     }
     expect(
       plans.filter(

@@ -1,5 +1,14 @@
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
-import type { FollowUpContact } from '@/features/meeting-conclusion/services/follow-up-contacts';
+import {
+  parisDay,
+  type FollowUpContact,
+} from '@/features/meeting-conclusion/services/follow-up-contacts';
+import {
+  mandateOfferOf,
+  type MandateOfferAnswer,
+} from '@/features/mandate-life/services/mandate-offer';
+import { mandateStage } from '@/features/mandate-life/services/mandate-stage';
+import { NO_MANDATE_LIFE } from '@/features/mandate-life/types';
 import type { SuiviTaskInput } from '@/features/meeting-conclusion/services/suivi-tasks';
 import type { ProspectingStatus } from '@/features/prospecting/services/prospecting-status';
 
@@ -127,13 +136,30 @@ export function suiviTaskInputs(input: {
   alerted?: ReadonlySet<TaskCard['row']>;
   // Lancement, mission 7 — l'instant : une visite confirmée déjà passée n'est plus à organiser.
   now?: Date;
+  // Lot C — les offres de l'agence : l'étape de chaque mandat signé (le Point marché s'arrête à
+  // l'offre acceptée, les tâches du mandat) ; null, illisibles ; absentes, comme avant.
+  offers?: readonly MandateOfferAnswer[] | null;
 }): SuiviTaskInput[] {
   const prospecting = prospectingCounts(
     input.alerted ? input.cards.filter((card) => !input.alerted!.has(card.row)) : input.cards,
   );
   const competitors = competitorCounts(input.cards);
   const visits = pendingVisitsByProject(input.visits, input.now);
+  const today = parisDay(input.now ?? new Date());
+  const mandate = (projectId: string, conclusion: SuiviDossier['conclusion']) =>
+    input.offers !== undefined && conclusion?.outcome === 'signed'
+      ? {
+          stage: mandateStage({
+            outcome: 'signed',
+            life: conclusion.life ?? NO_MANDATE_LIFE,
+            offer: mandateOfferOf(input.offers, projectId),
+          }),
+          life: conclusion.life ?? NO_MANDATE_LIFE,
+          today,
+        }
+      : {};
   return input.dossiers.map(({ project, conclusion }) => ({
+    ...mandate(project.id, conclusion),
     projectId: project.id,
     sellerName: project.seller_name ?? 'Dossier vendeur',
     outcome: conclusion?.outcome ?? null,

@@ -223,7 +223,13 @@ describe('le dossier d’exemple est exclu de tous les compteurs', () => {
   });
 
   it('tuiles, exclusifs, écart moyen et motifs ne comptent que les vrais dossiers', () => {
-    expect(suiviCounts(counted)).toEqual({ signed: 1, follow_up: 1, lost: 0 });
+    expect(suiviCounts(counted)).toEqual({
+      signed: 1,
+      under_offer: 0,
+      sold: 0,
+      follow_up: 1,
+      lost: 0,
+    });
     expect(exclusiveSignedCount(counted)).toBe(1);
     // L'écart du seul vrai mandat signé : 330 000 → 300 000, soit −9,09 %.
     expect(averageJourneyGap(counted)).toBeCloseTo(-9.09, 1);
@@ -234,7 +240,7 @@ describe('le dossier d’exemple est exclu de tous les compteurs', () => {
     const page = read('app', '(protected)', 'suivi', 'page.tsx');
     expect(page).toContain('const counted = withoutExamples(allDossiers);');
     for (const counter of [
-      'suiviCounts(counted)',
+      'suiviCounts(counted, stages)',
       'followUpMotiveCounts(counted)',
       'getAgencyProspecting(counted)',
     ]) {
@@ -254,7 +260,7 @@ describe('le dossier d’exemple est exclu de tous les compteurs', () => {
       'dossiers={counted}',
     );
     // La liste, elle, part de tous les dossiers : l'exemple s'y voit, avec son badge.
-    expect(page).toContain('filterSuiviByGroup(allDossiers, group)');
+    expect(page).toContain('filterSuiviByGroup(allDossiers, group, stages)');
     expect(read('features', 'meeting-conclusion', 'components', 'suivi-row.tsx')).toContain(
       '{project.is_example ? <ExampleBadge /> : null}',
     );

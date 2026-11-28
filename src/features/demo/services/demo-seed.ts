@@ -130,15 +130,18 @@ export const DEMO_SEED_SUBJECTS: Partial<Record<DemoSeedKey, DemoSubject>> = {
 // Les vendeurs des nouveaux mandats, leur date de signature (jours avant « Préparer ma démo ») et
 // leur type de mandat : signés de 6 à 27 jours avant la remise à zéro, aucun Point marché n'est dû
 // avant le mois (M130 A) ; deux mandats simples.
+// Lot C (question 14) — le Point marché s'arrête à l'offre acceptée : celui de Mougins (l'offre
+// des Keller) ne l'est plus ; le Point marché dû passe sur Valbonne, signé il y a un mois
+// calendaire (null), sur le même marché.
 export const DEMO_MANDATES: Partial<
-  Record<DemoSeedKey, { seller: string; daysAgo: number; type: 'exclusive' | 'simple' }>
+  Record<DemoSeedKey, { seller: string; daysAgo: number | null; type: 'exclusive' | 'simple' }>
 > = {
   signed_antibes: { seller: 'Mme Ferrand', daysAgo: 12, type: 'exclusive' },
   signed_juan: { seller: 'M. et Mme Delmas', daysAgo: 20, type: 'simple' },
   signed_villeneuve: { seller: 'Mme Perrin', daysAgo: 27, type: 'simple' },
   signed_la_colle: { seller: 'M. et Mme Garnier', daysAgo: 6, type: 'exclusive' },
   signed_saint_paul: { seller: 'Mme Navarro', daysAgo: 16, type: 'exclusive' },
-  signed_valbonne: { seller: 'M. et Mme Castel', daysAgo: 9, type: 'exclusive' },
+  signed_valbonne: { seller: 'M. et Mme Castel', daysAgo: null, type: 'exclusive' },
 };
 
 // Mission 145 — le mandat signé de Vence : un autre foyer que Mme Garcia et les Bernard, signé
