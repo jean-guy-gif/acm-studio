@@ -1,3 +1,9 @@
+import {
+  mandateOfferOf,
+  type MandateOfferAnswer,
+} from '@/features/mandate-life/services/mandate-offer';
+import { mandateStage } from '@/features/mandate-life/services/mandate-stage';
+import { NO_MANDATE_LIFE, type MandateStage } from '@/features/mandate-life/types';
 import type { SuiviDossier } from '@/features/meeting-conclusion/queries/get-suivi-dossiers';
 import {
   isFollowUpMotive,
@@ -5,21 +11,40 @@ import {
   type FollowUpMotive,
 } from '@/features/meeting-conclusion/types';
 
-// Mission 86 — le Suivi se lit en TROIS groupes : mandats signés, à relancer, et « vendus
-// ailleurs · retirés » réunis (pour le conseiller, c'est le même geste : plus rien à faire
-// aujourd'hui). L'issue elle-même reste distincte en base et sur le badge (M54).
-export type SuiviGroup = 'signed' | 'follow_up' | 'lost';
+// Mission 86 — le Suivi se lit en groupes : mandats signés, à relancer, et « vendus ailleurs ·
+// retirés » réunis (pour le conseiller, c'est le même geste : plus rien à faire aujourd'hui).
+// L'issue elle-même reste distincte en base et sur le badge (M54).
+// Lot C (maquette C0, validée le 28/11) — un mandat signé suit sa vie : « Sous offre · compromis »
+// (offre acceptée ou compromis), « Vendus par l'agence », et le mandat terminé sans vente rejoint
+// « Vendus ailleurs · retirés · terminés » ; « Mandats signés » ne garde que les mandats sans offre
+// acceptée. L'étape vient des faits du mandat et des offres (`dossierStages`) ; inconnue, le
+// mandat reste sous « Mandats signés ».
+export type SuiviGroup = 'signed' | 'under_offer' | 'sold' | 'follow_up' | 'lost';
 
-export const SUIVI_GROUPS: SuiviGroup[] = ['signed', 'follow_up', 'lost'];
+export const SUIVI_GROUPS: SuiviGroup[] = ['signed', 'under_offer', 'sold', 'follow_up', 'lost'];
 
 export const SUIVI_GROUP_LABELS: Record<SuiviGroup, string> = {
   signed: 'Mandats signés',
+  under_offer: 'Sous offre · compromis',
+  sold: 'Vendus par l’agence',
   follow_up: 'À relancer',
-  lost: 'Vendus ailleurs · retirés',
+  lost: 'Vendus ailleurs · retirés · terminés',
 };
 
-export function suiviGroup(outcome: ConclusionOutcome | null | undefined): SuiviGroup | null {
-  if (outcome === 'signed' || outcome === 'follow_up') {
+export type SuiviStage = MandateStage | 'unknown' | null | undefined;
+export type SuiviStages = ReadonlyMap<string, SuiviStage>;
+
+export function suiviGroup(
+  outcome: ConclusionOutcome | null | undefined,
+  stage?: SuiviStage,
+): SuiviGroup | null {
+  if (outcome === 'signed') {
+    if (stage === 'offer_accepted' || stage === 'under_compromise') return 'under_offer';
+    if (stage === 'sold') return 'sold';
+    if (stage === 'ended') return 'lost';
+    return 'signed';
+  }
+  if (outcome === 'follow_up') {
     return outcome;
   }
   if (outcome === 'sold_elsewhere' || outcome === 'withdrawn') {
@@ -36,27 +61,61 @@ export function parseSuiviGroup(raw: string | undefined): SuiviGroup | null {
   return raw === 'sold_elsewhere' || raw === 'withdrawn' ? 'lost' : null;
 }
 
+const groupOf = (dossier: SuiviDossier, stages?: SuiviStages) =>
+  suiviGroup(dossier.conclusion?.outcome, stages?.get(dossier.project.id));
+
 // Mission 54 §2 — le filtre, PUR. `null` = « Tous » (aucun dossier masqué) : aucun dossier
 // n'est caché sans que le filtre le dise.
 export function filterSuiviByGroup(
   dossiers: SuiviDossier[],
   group: SuiviGroup | null,
+  stages?: SuiviStages,
 ): SuiviDossier[] {
   if (group == null) {
     return dossiers;
   }
-  return dossiers.filter((dossier) => suiviGroup(dossier.conclusion?.outcome) === group);
+  return dossiers.filter((dossier) => groupOf(dossier, stages) === group);
 }
 
-export function suiviCounts(dossiers: SuiviDossier[]): Record<SuiviGroup, number> {
-  const counts: Record<SuiviGroup, number> = { signed: 0, follow_up: 0, lost: 0 };
+export function suiviCounts(
+  dossiers: SuiviDossier[],
+  stages?: SuiviStages,
+): Record<SuiviGroup, number> {
+  const counts: Record<SuiviGroup, number> = {
+    signed: 0,
+    under_offer: 0,
+    sold: 0,
+    follow_up: 0,
+    lost: 0,
+  };
   for (const dossier of dossiers) {
-    const group = suiviGroup(dossier.conclusion?.outcome);
+    const group = groupOf(dossier, stages);
     if (group != null) {
       counts[group] += 1;
     }
   }
   return counts;
+}
+
+// Lot C — l'étape de chaque mandat signé, lue dans ses faits et dans les offres de l'agence
+// (illisibles : « unknown », jamais « Mandat signé » de travers, M98).
+export function dossierStages(
+  dossiers: SuiviDossier[],
+  offers: readonly MandateOfferAnswer[] | null,
+): Map<string, SuiviStage> {
+  const stages = new Map<string, SuiviStage>();
+  for (const dossier of dossiers) {
+    if (dossier.conclusion?.outcome !== 'signed') continue;
+    stages.set(
+      dossier.project.id,
+      mandateStage({
+        outcome: 'signed',
+        life: dossier.conclusion.life ?? NO_MANDATE_LIFE,
+        offer: mandateOfferOf(offers, dossier.project.id),
+      }),
+    );
+  }
+  return stages;
 }
 
 // « Écart moyen : prix du vendeur → prix de commercialisation », en %, sur les MANDATS SIGNÉS

@@ -51,6 +51,8 @@ import {
 import { getProfile } from '@/lib/auth/get-profile';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
+import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
+import { mandateOfferOf } from '@/features/mandate-life/services/mandate-offer';
 
 export type SearchNewcomersResult =
   | {
@@ -75,6 +77,10 @@ export type SearchNewcomersResult =
   | { ok: false; error: string };
 
 const GENERIC_ERROR = 'La recherche des nouveaux venus a échoué. Réessayez.';
+const MARKET_STOPPED =
+  'Le Point marché s’est arrêté à l’offre acceptée\u00a0: il reprend si l’offre ou le compromis tombe.';
+const OFFERS_UNREADABLE =
+  'Les offres de ce bien n’ont pas pu être lues\u00a0: rechargez la page, puis réessayez.';
 const NOT_SIGNED =
   'La recherche des nouveaux venus se fait sur un mandat signé, avec un prix de commercialisation.';
 
@@ -106,7 +112,9 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
   }
   const { data: conclusion } = await supabase
     .from('project_meeting_conclusions')
-    .select('outcome, commercialization_price, concluded_at')
+    .select(
+      'outcome, commercialization_price, concluded_at, compromise_signed_on, deed_signed_on, mandate_ended_on',
+    )
     .eq('project_id', projectId)
     .eq('agency_id', agencyId)
     .maybeSingle();
@@ -119,6 +127,14 @@ export async function searchNewcomers(projectId: string): Promise<SearchNewcomer
   ) {
     return { ok: false, error: NOT_SIGNED };
   }
+  // Lot C (retouche 3 du 28/11) — le Point marché s'arrête dès l'offre acceptée (et au compromis,
+  // à la vente, à la fin du mandat) : plus de recherche payante ; il reprend si l'offre tombe.
+  if (conclusion.compromise_signed_on || conclusion.deed_signed_on || conclusion.mandate_ended_on) {
+    return { ok: false, error: MARKET_STOPPED };
+  }
+  const offers = await getAgencyOfferAnswers(supabase, agencyId);
+  if (offers == null) return { ok: false, error: OFFERS_UNREADABLE };
+  if (mandateOfferOf(offers, projectId)) return { ok: false, error: MARKET_STOPPED };
   const priceCeiling = Math.round(conclusion.commercialization_price);
   // Mission 129 — de −5 % du prix à ce prix, puis −10 % s'il y a moins de 3 biens.
   const ranges = newcomerPriceRanges(priceCeiling);

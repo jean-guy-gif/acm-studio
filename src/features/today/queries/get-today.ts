@@ -55,6 +55,7 @@ import { withoutExamples } from '@/features/welcome/services/example-exclusion';
 import { getProfile } from '@/lib/auth/get-profile';
 import { parisMidnightOf } from '@/lib/paris-time';
 import { createClient } from '@/lib/supabase/server';
+import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 
 // Mission 145 (partie B) — « Aujourd'hui » : une seule lecture pour la page et pour la pastille du
 // menu (elles comptent pareil). Les tâches du Suivi (M130 A à M139), les alertes pour rentrer un
@@ -123,6 +124,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
     eventsRes,
     followUpsRes,
     proposalsRes,
+    agencyOffers,
   ] = await Promise.all([
     getAgencyProspecting(dossiers),
     getBuyerProspecting(supabase, agencyId).catch(() => null),
@@ -169,6 +171,9 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
       .select('buyer_id, label, sent_at, sent_by')
       .eq('agency_id', agencyId)
       .gte('sent_at', since),
+    // Lot C — l'étape de chaque mandat signé : le Point marché s'arrête à l'offre acceptée, les
+    // tâches de la fin du mandat et de l'acte.
+    getAgencyOfferAnswers(supabase, agencyId),
   ]);
 
   const failed: string[] = [];
@@ -233,6 +238,7 @@ export const getToday = cache(async (scopeAsked: TodayScope = 'mine'): Promise<T
     pointsUnknown: pointsRes.error != null,
     alerted,
     now,
+    offers: agencyOffers,
   });
 
   // Les vendeurs à relancer que veulent des acquéreurs prêts.

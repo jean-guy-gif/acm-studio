@@ -1944,6 +1944,54 @@ describe('Mission 127 B — chercher les nouveaux venus', () => {
     noWrite();
   });
 
+  it('lot C — sous offre acceptée, sous compromis, vendu ou terminé : le Point marché s’est arrêté, rien de payé', async () => {
+    const { searchNewcomers } = await import('@/features/market-update/actions/search-newcomers');
+    const signed = {
+      outcome: 'signed',
+      commercialization_price: 300000,
+      concluded_at: '2026-10-08T10:00:00Z',
+    };
+    const stopped =
+      'Le Point marché s’est arrêté à l’offre acceptée\u00a0: il reprend si l’offre ou le compromis tombe.';
+    for (const fact of [
+      { compromise_signed_on: '2026-11-25' },
+      { deed_signed_on: '2026-11-25' },
+      { mandate_ended_on: '2026-11-25' },
+    ]) {
+      state.respond = (table) =>
+        table === 'projects'
+          ? { data: { id: PROJECT, status: 'meeting_completed', is_example: false } }
+          : table === 'project_meeting_conclusions'
+            ? { data: { ...signed, ...fact } }
+            : { data: null };
+      expect(await searchNewcomers(PROJECT)).toEqual({ ok: false, error: stopped });
+      noWrite();
+    }
+    // L'offre acceptée qui tient le mandat.
+    state.respond = (table) =>
+      table === 'projects'
+        ? { data: { id: PROJECT, status: 'meeting_completed', is_example: false } }
+        : table === 'project_meeting_conclusions'
+          ? { data: signed }
+          : table === 'buyer_documents'
+            ? {
+                data: [
+                  {
+                    id: 'o-1',
+                    buyer_id: 'b-keller',
+                    fields: { projectId: PROJECT },
+                    buyers: { name: 'Famille Keller', status: 'under_offer' },
+                    buyer_document_acceptances: [
+                      { decision: 'accepted', decided_at: '2026-11-20T10:00:00Z' },
+                    ],
+                  },
+                ],
+              }
+            : { data: null };
+    expect(await searchNewcomers(PROJECT)).toEqual({ ok: false, error: stopped });
+    noWrite();
+  });
+
   it('une recherche par point : refusée si le point du jour en porte déjà une, sans rien écrire', async () => {
     const { searchNewcomers } = await import('@/features/market-update/actions/search-newcomers');
     state.respond = (table) =>

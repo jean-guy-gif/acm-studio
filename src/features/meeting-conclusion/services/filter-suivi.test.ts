@@ -64,6 +64,13 @@ describe('le Suivi en trois groupes (mission 86)', () => {
     expect(suiviGroup('sold_elsewhere')).toBe('lost');
     expect(suiviGroup('withdrawn')).toBe('lost');
     expect(suiviGroup(null)).toBeNull();
+    // Lot C — un mandat signé suit sa vie ; l'étape inconnue le laisse sous « Mandats signés ».
+    expect(suiviGroup('signed', 'offer_accepted')).toBe('under_offer');
+    expect(suiviGroup('signed', 'under_compromise')).toBe('under_offer');
+    expect(suiviGroup('signed', 'sold')).toBe('sold');
+    expect(suiviGroup('signed', 'ended')).toBe('lost');
+    expect(suiviGroup('signed', 'unknown')).toBe('signed');
+    expect(suiviGroup('signed', 'signed')).toBe('signed');
   });
 
   it('rend exactement les dossiers du groupe filtré', () => {
@@ -77,8 +84,8 @@ describe('le Suivi en trois groupes (mission 86)', () => {
   });
 
   it('compte chaque groupe sur tout le Suivi', () => {
-    expect(suiviCounts(all)).toEqual({ signed: 2, follow_up: 1, lost: 2 });
-    expect(suiviCounts([])).toEqual({ signed: 0, follow_up: 0, lost: 0 });
+    expect(suiviCounts(all)).toEqual({ signed: 2, under_offer: 0, sold: 0, follow_up: 1, lost: 2 });
+    expect(suiviCounts([])).toEqual({ signed: 0, under_offer: 0, sold: 0, follow_up: 0, lost: 0 });
   });
 
   it('lit le filtre de l’adresse, anciens liens par issue compris', () => {

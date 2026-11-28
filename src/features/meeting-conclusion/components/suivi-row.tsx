@@ -37,6 +37,7 @@ import {
   whatHoldsBack,
   type SuiviGroup,
 } from '@/features/meeting-conclusion/services/filter-suivi';
+import type { SuiviSale } from '@/features/mandate-life/services/suivi-sale';
 import type { ProspectingCount } from '@/features/meeting-conclusion/services/suivi-task-inputs';
 import {
   dayLabel,
@@ -63,6 +64,8 @@ import { formatDay, formatEuro, formatPercent, formatRelativeDay } from '@/lib/f
 // gris vendu ailleurs ou retiré. Le bleu dit désormais l'action et l'étape du jour.
 const GROUP_BAR: Record<SuiviGroup, string> = {
   signed: 'bg-emerald-600',
+  under_offer: 'bg-emerald-600',
+  sold: 'bg-emerald-600',
   follow_up: 'bg-orange-500',
   lost: 'bg-zinc-300',
 };
@@ -257,6 +260,37 @@ function Frieze({
   );
 }
 
+// Lot C (maquette C0, choix 2) — après une offre acceptée, la frise suit la vente : Mandat signé →
+// Offre acceptée → Compromis → Vente.
+function SaleFrieze({ segments }: { segments: SuiviSale['segments'] }) {
+  return (
+    <div data-testid="suivi-sale-frieze" className="flex flex-col gap-1.5">
+      <div className="grid grid-cols-4 gap-1">
+        {segments.map((segment) => (
+          <span
+            key={segment.label}
+            className={`h-1 rounded-full ${SEGMENT_BAR[segment.tone]}`}
+            aria-hidden
+          />
+        ))}
+      </div>
+      <ol className="grid grid-cols-2 gap-1 text-xs @md:grid-cols-4 @md:text-center">
+        {segments.map((segment) => (
+          <li key={segment.label} className={SEGMENT_TEXT[segment.tone]}>
+            {segment.label}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+const SALE_PRICE_TEXT = {
+  plain: 'text-zinc-900 stage:text-white',
+  blue: 'text-brand-deep stage:text-brand',
+  green: 'text-emerald-700 stage:text-emerald-300',
+};
+
 type Panel = 'relance' | 'point' | 'details' | 'issue' | null;
 
 // Mission 130 — « Une seule prochaine étape » : à gauche le vendeur, son bien, le chemin du prix
@@ -274,6 +308,7 @@ export function SuiviRow({
   readyBuyers = null,
   followUpReadyBuyers = null,
   acceptedOfferBuyer = null,
+  sale = null,
 }: {
   dossier: SuiviDossier;
   followUp: DossierFollowUp;
@@ -289,6 +324,8 @@ export function SuiviRow({
   // place de « Acquéreurs · N » (un seul libellé).
   followUpReadyBuyers?: number | null;
   acceptedOfferBuyer?: { buyerId: string; name: string } | null;
+  // Lot C — la vente, après une offre acceptée : la pastille, le chemin du prix, sa frise.
+  sale?: SuiviSale | null;
 }) {
   const [panel, setPanel] = useState<Panel>(initialPanel);
   const [relancedOn, setRelancedOn] = useState<string | null>(null);
@@ -341,7 +378,7 @@ export function SuiviRow({
   const points = marketUpdates ?? [];
   const latestPoint = points[0] ?? null;
   const outcome = conclusion?.outcome ?? null;
-  const group = suiviGroup(outcome);
+  const group = suiviGroup(outcome, sale?.stage);
   const bien = propertyLabel(property);
   const price = conclusion?.commercializationPrice ?? null;
   const sellerStart = conclusion?.sellerPerceivedPrice ?? null;
@@ -364,8 +401,9 @@ export function SuiviRow({
   );
   const meetingDay = parisDayOf(conclusion?.concludedAt ?? null);
   const signedDay = parisDayOf(conclusion?.signedAt ?? conclusion?.concludedAt ?? null);
-  const badge =
-    outcome === 'signed'
+  const badge = sale
+    ? sale.badge
+    : outcome === 'signed'
       ? conclusion?.mandateType
         ? `Mandat signé · ${MANDATE_TYPE_LABELS[conclusion.mandateType].toLowerCase()}`
         : 'Mandat signé'
@@ -611,7 +649,40 @@ export function SuiviRow({
 
           {/* Le chemin du prix, la frise, ce qui le retient. */}
           <div className="flex min-w-0 flex-col gap-3 px-4 pb-4">
-            {pathSteps.length > 0 ? (
+            {sale && sale.prices.length > 0 ? (
+              <div className="flex flex-col gap-1">
+                <div
+                  data-testid="suivi-price-path"
+                  className="grid grid-cols-3 items-end gap-x-2 gap-y-2 @md:flex @md:flex-wrap @md:gap-x-3"
+                >
+                  {sale.prices.map((item, index) => (
+                    <div key={item.label} className="flex min-w-0 items-end gap-3">
+                      {index > 0 ? (
+                        <span
+                          className="hidden pb-0.5 text-zinc-300 @md:inline stage:text-white/30"
+                          aria-label="puis"
+                        >
+                          →
+                        </span>
+                      ) : null}
+                      <span className="flex flex-col">
+                        <span className="text-xs text-zinc-500 stage:text-white/60">
+                          {item.label}
+                        </span>
+                        <span
+                          className={`font-title text-[15px] font-bold whitespace-nowrap @md:text-lg @3xl:text-xl ${SALE_PRICE_TEXT[item.tone]}`}
+                        >
+                          {formatEuro(item.value)}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {sale.note ? (
+                  <span className="text-xs text-zinc-500 stage:text-white/60">{sale.note}</span>
+                ) : null}
+              </div>
+            ) : pathSteps.length > 0 ? (
               <div
                 data-testid="suivi-price-path"
                 className="grid grid-cols-3 items-end gap-x-2 gap-y-2 @md:flex @md:flex-wrap @md:gap-x-3"
@@ -650,6 +721,7 @@ export function SuiviRow({
                 ))}
               </div>
             ) : null}
+            {sale && sale.segments.length > 0 ? <SaleFrieze segments={sale.segments} /> : null}
             {frieze ? (
               <Frieze
                 frieze={frieze}
