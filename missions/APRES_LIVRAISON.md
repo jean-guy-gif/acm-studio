@@ -81,7 +81,7 @@ Une mission tient en une heure et demie (CLAUDE.md) : chaque lot se découpe en 
 | B2      | La fiche : « Comment finance-t-il ? », le prêt, la démo                                                                                   | 1 h 30              | sur l'essai le 28/11, attend le « oui » |
 | B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | sur l'essai le 28/11, attend le « oui » |
 | B4      | La lecture des notes, et sa mesure sur le vrai modèle                                                                                     | 1 h 30              | sur l'essai le 28/11, attend le « oui » |
-| B5      | Relecteur, specs, captures                                                                                                                | 1 h                 | à faire                 |
+| B5      | Relecteur, specs, captures                                                                                                                | 1 h                 | sur l'essai le 28/11, attend le « oui » |
 | C0      | La maquette : la fiche du dossier, le Suivi, une tâche d'« Aujourd'hui », aux trois tailles                                              | 1 h 30              | à faire                 |
 | C1 à C7 | La base ; les étapes et la fiche ; les saisies ; le lien avec l'offre et le compromis ; le Suivi et le Point marché ; « Aujourd'hui » et le tableau du manager ; la démo, relecteur, specs, captures | 1 h 30 chacun | à faire |
 
@@ -255,6 +255,25 @@ chacun, B5 en 1 h : 7 h au lieu de 6 h 30.
   inventées, deux passes, 18 lectures justes sur 18, aucun mode inventé, 0,39 €. Tests : 4 635 ;
   sur l'essai, `depuis-mes-notes` (le mode lu, sa ligne, la fiche, « Tout est juste ») et
   `mode-de-financement` : 3 sur 3.
+- B5 (28/11) · Le cas de Jean-Guy, une offre préparée, pas encore signée, quand la fiche dit « Pas
+  encore dit » à la signature : la signature rend la question au lieu d'un message ; l'écran la pose
+  à la place de la signature, rien de ce qui est saisi ne bouge, et « Comptant » s'écrit sur la
+  fiche puis la signature continue (« Avec prêt » : l'offre se ferme, la règle de B3). Prouvé sur
+  l'essai : l'offre des Keller préparée et signée au doigt, leur fiche passée à « Pas encore dit »
+  dans un autre onglet, la question, puis l'offre signée avec l'acompte saisi (31 415 €) ; captures
+  `LB5-*-question-a-la-signature.png`. Une page ouverte AVANT le lot B, mesurée sur l'essai (l'essai
+  au code de `main`, l'offre préparée, le lot B déployé pendant que la page restait ouverte, puis la
+  signature) : Vercel sert encore cette page avec l'ancienne version, écran et serveur, et l'offre
+  se signe comme avant le lot B, sans la question (les Keller en « Pas encore dit », l'offre signée
+  à 17 h 23, après que l'essai servait le lot B). Aucun code nouveau ne change une page déjà ouverte :
+  la question 13 ci-dessous. Relecteur une passe : un bloquant, la page de confidentialité qui
+  disait « sans montant ni justificatif » — la phrase préparée pour la juriste est dans la branche,
+  à publier seulement avec son accord ; deux « à corriger » faits (après la question, la règle de
+  l'offre décide, pas le composant ; « Passer en Validé » dans un service) et l'inventaire des
+  gestes à jour ; ses remarques, des cas imaginés, dans `PLUS_TARD`. Tests : 4 639 ; sur l'essai,
+  les specs du lot B, 16 sur 16 (`mode-de-financement`, `depuis-mes-notes`, `hors-mandat`,
+  `acquereur-sans-offre`, `presentation-directe`, `suivi-de-l-acquereur`, `demo`), puis
+  `mode-de-financement` 2 sur 2 après les corrections.
 
 ### Les questions du lot B (architecte, 28/11), chacune avec sa réponse par défaut
 
@@ -272,3 +291,11 @@ chacun, B5 en 1 h : 7 h au lieu de 6 h 30.
 12. Le message de l'offre bloquée contient « disponible », que le test de vocabulaire refuse côté
     acquéreur (M118). Par défaut : le message mot pour mot, avec une exception pour cette seule
     phrase dans le test (comme la M152 B).
+13. (B5, 28/11) Une page de l'offre ouverte avant la mise en production du lot B garde l'ancienne
+    version tant qu'elle n'est pas rechargée (Vercel la sert ainsi, mesuré sur l'essai) : elle
+    signerait l'offre comme aujourd'hui, sans la question. Par défaut : mettre le lot B en
+    production le soir, quand personne n'est connecté (comme la base le 25/11) ; en production,
+    deux visites de vraies agences sont « Offre envisagée », sans offre signée. Sinon : une petite
+    migration, pour que la base refuse une offre signée dont le financement ne suit pas le mode
+    confirmé de la fiche ; une page ancienne montrerait alors son message d'échec, sans rien signer,
+    la saisie restant à l'écran (environ 45 min, et votre geste pour l'appliquer).
