@@ -84,6 +84,7 @@ export function MandateSection({
             steps={view.steps.map((step, index) => ({ ...step, number: index + 1 }))}
             testId="mandate-steps"
             itemTestId="mandate-step"
+            columns={4}
           />
           <div
             className={`${socleCardBordered} flex flex-col divide-y divide-[#E3E6F0] stage:divide-white/10`}

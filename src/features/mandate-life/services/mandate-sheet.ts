@@ -303,14 +303,15 @@ export function mandateSheet(input: MandateSheetInput): MandateSheet {
   if (stage === 'under_compromise' || stage === 'sold') forms.push('vente');
   if (stage === 'signed') forms.push('terminer');
 
-  const signedLine = [
-    'Mandat',
-    input.mandateType ? MANDATE_TYPES[input.mandateType] : null,
-    'signé',
-    input.signedAt ? day(input.signedAt) : null,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  // « Mandat exclusif signé le 28/10 » ; au stade « Mandat signé », la pastille le dit déjà :
+  // « Signé le 28/10 ».
+  const signedLine =
+    stage === 'signed'
+      ? `Signé${input.signedAt ? ` ${day(input.signedAt)}` : ''}`
+      : ['Mandat', input.mandateType ? MANDATE_TYPES[input.mandateType] : null, 'signé']
+          .concat(input.signedAt ? [day(input.signedAt)] : [])
+          .filter(Boolean)
+          .join(' ');
   const line =
     life.endsOn && stage !== 'sold' && stage !== 'ended'
       ? `${signedLine} · jusqu’au ${dated(life.endsOn, today)}`
