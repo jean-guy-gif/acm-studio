@@ -1190,6 +1190,16 @@ privileges for role postgres grant execute on functions to public` (sans schéma
   fait lire par un agent qui ne rend que les colonnes utiles : la preuve reste vérifiable
   (identifiants et dates recopiés) et rien de sensible n'entre dans le fil.
 
+- 28/11 · Sauvegarde · `supabase storage cp -r` (CLI 3.0.0) copie un fichier à la fois (`--jobs` vaut
+  1), s'arrête net au premier fichier en erreur (« HttpClientError: Decode error (200 GET …) », une
+  erreur passagère, environ une photo sur 500 : deux échecs de suite le 28/11 à midi) et refuse
+  d'écrire par-dessus un fichier déjà là (« EEXIST: file already exists ») : une reprise retire
+  d'abord la copie partielle. Le dossier copié se pose sous la destination, sous son propre nom, et
+  une seconde copie s'y fond. Un appel de la CLI coûte environ 3 s, une photo 0,6 s dans `cp -r`.
+  La taille enregistrée par le stockage (`metadata->>'size'`) est celle du fichier téléchargé : vu
+  sur les 1 062 fichiers de la sauvegarde du 25/11. Le chemin des reprises s'éprouve avec la vraie
+  CLI, sur les logos (aucune donnée personnelle) : le test seul n'avait pas vu le refus d'écrire.
+
 ## Les rendus
 
 - 05/11 · M129 · `meetingDay()` écrit la date en toutes lettres (« 9 octobre 2026 ») : coupée à cinq
