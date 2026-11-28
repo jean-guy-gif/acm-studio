@@ -129,7 +129,8 @@ describe('« Son mandat » au mandat signé', () => {
       'Mandat terminé sans vente',
     ]);
     expect(result.next).toBeNull();
-    expect(result.line).toBe('Mandat exclusif signé le 28/10');
+    // La pastille dit déjà « Mandat signé · exclusif » : la ligne, la seule date.
+    expect(result.line).toBe('Signé le 28/10');
   });
 
   it('plusieurs avenants : le dernier fait le prix, les autres l’historique', () => {

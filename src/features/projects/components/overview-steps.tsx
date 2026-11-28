@@ -45,14 +45,19 @@ export function StepCardList({
   steps,
   testId,
   itemTestId,
+  columns = 5,
 }: {
   steps: StepCard[];
   testId: string;
   itemTestId: string;
+  // Sur une ligne quand la place le permet : cinq cartes (« Son dossier »), ou quatre.
+  columns?: 4 | 5;
 }) {
   return (
     <ol
-      className="grid grid-cols-1 gap-2 @lg:grid-cols-3 @lg:gap-2.5 @2xl:grid-cols-5"
+      className={`grid grid-cols-1 gap-2 @lg:gap-2.5 ${
+        columns === 4 ? '@lg:grid-cols-2 @2xl:grid-cols-4' : '@lg:grid-cols-3 @2xl:grid-cols-5'
+      }`}
       data-testid={testId}
     >
       {steps.map((step) => {
