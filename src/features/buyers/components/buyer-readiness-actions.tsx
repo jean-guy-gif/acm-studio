@@ -293,6 +293,27 @@ export function BuyerReadinessActions({
               </button>
               <span className={hintText}>Facultatifs&nbsp;: à noter quand il les donne.</span>
             </div>
+            {/* Jean-Guy (28/11) — l'accord de principe noté propose de passer le financement en
+                « Validé », sans rien changer de lui-même ; rien dans l'autre sens. */}
+            {mode.loan.agreement === true && current.financing !== 'validated' ? (
+              <div
+                className="flex flex-wrap items-center gap-3 border-t border-zinc-100 pt-3 stage:border-white/10"
+                data-testid="buyer-loan-suggest-validated"
+              >
+                <span className="text-sm text-zinc-700 stage:text-white/80">
+                  Accord de principe obtenu&nbsp;: passer le financement en
+                  «&nbsp;Validé&nbsp;»&#x202f;?
+                </span>
+                <button
+                  type="button"
+                  className={btnSecondary}
+                  disabled={pending}
+                  onClick={() => choose('validated')}
+                >
+                  Passer en Validé
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>

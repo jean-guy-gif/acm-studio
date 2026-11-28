@@ -80,4 +80,33 @@ describe('« Comment finance-t-il ? » sur la fiche', () => {
     expect(html).toContain('À vérifier · lu dans vos notes');
     expect(html).toContain('Un toucher sur le bon choix le confirme');
   });
+
+  // Jean-Guy (28/11) — l'accord de principe noté propose « Validé », sans rien changer de lui-même.
+  it('avec l’accord de principe noté et un financement pas encore validé : « Passer en Validé »', () => {
+    const html = render({
+      financing: 'in_progress',
+      financingMode: 'loan',
+      loan: { contribution: 250_000, amount: 540_000, agreement: true },
+    });
+    expect(html).toContain('data-testid="buyer-loan-suggest-validated"');
+    expect(html).toContain('Accord de principe obtenu');
+    expect(html).toContain('>Passer en Validé</button>');
+    // Rien n'est changé de lui-même : le financement reste « En cours ».
+    expect(pressed(html)).toEqual(['En cours', 'Avec prêt', 'Oui']);
+  });
+
+  it('rien quand le financement est déjà validé, sans accord, ni dans l’autre sens', () => {
+    const loan = { contribution: 250_000, amount: 540_000 };
+    for (const props of [
+      { financing: 'validated' as const, loan: { ...loan, agreement: true } },
+      { financing: 'in_progress' as const, loan: { ...loan, agreement: false } },
+      { financing: 'unknown' as const, loan: { ...loan, agreement: null } },
+    ]) {
+      const html = render({ ...props, financingMode: 'loan' });
+      expect(html).not.toContain('buyer-loan-suggest-validated');
+    }
+    expect(render({ financing: 'validated', financingMode: 'cash' })).not.toContain(
+      'Passer en Validé',
+    );
+  });
 });

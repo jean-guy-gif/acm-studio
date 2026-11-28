@@ -78,6 +78,17 @@ test('comment il finance : le mode, le prêt, gardés sur la fiche', async ({ pa
   await expect(amount).toHaveValue(/^640\s000$/);
   await expect(agreement('Oui')).toHaveAttribute('aria-pressed', 'true');
 
+  // Jean-Guy (28/11) — l'accord de principe noté, le financement encore « En cours » : une ligne le
+  // propose, sans rien changer d'elle-même ; un toucher le passe en « Validé », et elle s'en va.
+  const status = (name: string) =>
+    page.getByTestId('buyer-financing').getByRole('button', { name, exact: true });
+  const suggest = page.getByTestId('buyer-loan-suggest-validated');
+  await expect(status('En cours')).toHaveAttribute('aria-pressed', 'true');
+  await expect(suggest).toContainText('Accord de principe obtenu');
+  await suggest.getByRole('button', { name: 'Passer en Validé' }).click();
+  await expect(status('Validé')).toHaveAttribute('aria-pressed', 'true');
+  await expect(suggest).toHaveCount(0);
+
   // Repasser en « Comptant » efface le prêt : l'écran le demande d'abord ; « Annuler » ne change
   // rien.
   await choice('Comptant').click();
