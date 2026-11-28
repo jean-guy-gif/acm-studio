@@ -23,7 +23,12 @@ restauration vérifiée est celle de notre sauvegarde, dans une base locale à p
 - `npm run sauvegarde` lit la base partagée, sans rien y écrire : la structure, les données, les
   comptes et l'index du stockage, puis les fichiers du stockage (photos, logos). Elle note le
   nombre de lignes de chaque table dans `comptes.json`. Si la base change pendant la sauvegarde,
-  elle le dit : relancez-la.
+  elle le dit : relancez-la. La copie d'un bucket coupée par une erreur passagère (« HttpClientError:
+  Decode error », deux fois le 28/11, sur des fichiers sains) se reprend, jusqu'à trois fois, sur
+  les seuls fichiers manquants ou tronqués — un fichier est tronqué s'il n'a pas la taille
+  enregistrée par le stockage ; sa copie partielle est retirée avant d'être reprise, la CLI refusant
+  d'écrire par-dessus. L'échec n'est dit qu'après la troisième reprise, avec la liste des fichiers
+  (`fichiers-manquants.txt`, dans le dossier de la sauvegarde).
 - `npm run sauvegarde:verifier` restaure la dernière sauvegarde dans une base locale à part,
   créée puis supprimée (la base locale de travail n'est pas touchée), et compare les nombres de
   lignes, table par table, ainsi que les fichiers du stockage.
