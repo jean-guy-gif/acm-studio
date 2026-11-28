@@ -75,9 +75,10 @@ export function supabase(args, options = {}) {
   return run('npx', [...SUPABASE_CLI, ...args], options);
 }
 
-// Une requête en lecture seule sur le projet lié. `--agent no` fixe la forme de la sortie : un
-// tableau JSON ; en mode agent, la CLI l'enveloppe dans un objet `{ rows }` — on lit les deux.
-export function queryRemote(sql) {
+// Une requête en lecture seule sur le projet lié ; rend ses lignes. `--agent no` fixe la forme de
+// la sortie : un tableau JSON ; en mode agent, la CLI l'enveloppe dans un objet `{ rows }` — on
+// lit les deux.
+export function queryRemoteRows(sql, what = 'au comptage') {
   const out = supabase([
     'db',
     'query',
@@ -91,13 +92,17 @@ export function queryRemote(sql) {
   ]);
   const start = out.search(/[[{]/);
   if (start < 0) {
-    throw new Error('La CLI Supabase n’a rendu aucun résultat JSON au comptage.');
+    throw new Error(`La CLI Supabase n’a rendu aucun résultat JSON ${what}.`);
   }
   const json = JSON.parse(
     out.slice(start, Math.max(out.lastIndexOf(']'), out.lastIndexOf('}')) + 1),
   );
-  const rows = Array.isArray(json) ? json : json.rows;
-  return Object.fromEntries(rows.map((row) => [row.t, Number(row.n)]));
+  return Array.isArray(json) ? json : json.rows;
+}
+
+// Un comptage en lecture seule : `{ nom: nombre }`.
+export function queryRemote(sql) {
+  return Object.fromEntries(queryRemoteRows(sql).map((row) => [row.t, Number(row.n)]));
 }
 
 export function table(rows, headers) {

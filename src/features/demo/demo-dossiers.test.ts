@@ -267,6 +267,54 @@ describe('une étape en échec arrête tout et le dit', () => {
   });
 });
 
+// Lot B (Jean-Guy, 27/11) — la démo montre « Comment finance-t-il ? » comme le produit : les
+// Keller et les Wilson comptant, les Lambert avec prêt et l'accord de leur banque, M. Fontaine avec
+// prêt, sans accord encore ; les autres « Pas encore dit ». Chaque ligne de l'insertion groupée
+// porte le mode : une colonne absente d'une ligne y vaudrait NULL, que la base refuse.
+describe('le mode de financement des acquéreurs de la démo (lot B)', () => {
+  it('chaque fiche porte son mode, et le prêt seulement avec un prêt', async () => {
+    const { seedDemoBuyersStep } = await import('@/features/demo/actions/demo-setup');
+    state.respond = (table) =>
+      table === 'projects' ? { data: [{ id: 'm1', seller_name: 'M. Lefebvre' }] } : { data: [] };
+    await seedDemoBuyersStep(new Date().toISOString());
+    const rows = service.calls.find(
+      (call, index) =>
+        call.method === 'insert' &&
+        service.calls
+          .slice(0, index)
+          .reverse()
+          .find((c) => c.method === 'from')?.args[0] === 'buyers',
+    )?.args[0] as Array<Record<string, unknown>>;
+    expect(rows).toHaveLength(9);
+    for (const row of rows) {
+      expect(row.financing_mode).toMatch(/^(cash|loan|not_said)$/);
+      if (row.financing_mode !== 'loan') {
+        expect([row.loan_contribution, row.loan_amount, row.loan_agreement]).toEqual([
+          null,
+          null,
+          null,
+        ]);
+      }
+    }
+    const byName = (name: string) => rows.find((row) => row.name === name);
+    expect(byName('Famille Keller')?.financing_mode).toBe('cash');
+    expect(byName('Mr and Mrs Wilson')?.financing_mode).toBe('cash');
+    expect(byName('M. et Mme Lambert')).toMatchObject({
+      financing_mode: 'loan',
+      loan_contribution: 250_000,
+      loan_amount: 540_000,
+      loan_agreement: true,
+    });
+    expect(byName('M. Fontaine')).toMatchObject({
+      financing_mode: 'loan',
+      loan_contribution: 120_000,
+      loan_amount: 650_000,
+      loan_agreement: false,
+    });
+    expect(byName('M. et Mme Rossi')?.financing_mode).toBe('not_said');
+  });
+});
+
 describe('le logo et le téléphone de la démo (mission 147)', () => {
   it('sans logo, les deux versions sont déposées et enregistrées', async () => {
     const { prepareDemoAgency } = await import('@/features/demo/services/demo-dossiers');
