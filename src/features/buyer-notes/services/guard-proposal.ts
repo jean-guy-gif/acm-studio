@@ -79,10 +79,10 @@ export function saysFirm(line: string): boolean {
   return FIRM.test(fold(line)) || /\b[A-ZÀ-Ý]{3,}\b/.test(line.replace(ACRONYMS, ''));
 }
 
-// Lot B (Jean-Guy, 27/11) — comment il finance : la ligne d'origine doit le dire. « Sans prêt » est
-// un achat comptant, jamais un prêt.
+// Lot B (Jean-Guy, 27/11) — comment il finance : la ligne d'origine doit le dire. « Sans prêt »,
+// « pas de banque » sont un achat comptant, jamais un prêt.
 const SAYS_CASH =
-  /comptant|cash|sans (pret|credit|emprunt)|pas de (pret|credit|emprunt)|fonds propres/;
+  /comptant|cash|fonds propres|(sans|pas|pas besoin) (de |d'|d’|d'un |d’un )?(banque|pret|credit|emprunt)/;
 const SAYS_LOAN = /pret|credit|emprunt|banque|bancaire|courtier|accord de principe/;
 export function saysMode(mode: 'cash' | 'loan', line: string): boolean {
   const folded = fold(line);

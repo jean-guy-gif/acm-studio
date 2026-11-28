@@ -154,6 +154,19 @@ describe('guardProposal', () => {
     expect(mode('loan', 'crédit en cours chez le courtier')).toBe('loan');
     expect(mode('cash', 'achat COMPTANT')).toBe('cash');
     expect(mode('cash', 'sans emprunt')).toBe('cash');
+    // Mesure du lot B4 (28/11) : « pas de banque » se lit « Comptant », jamais « Avec prêt ».
+    for (const line of [
+      'pas de banque',
+      'sans banque',
+      'pas d’emprunt',
+      "pas besoin d'un crédit",
+    ]) {
+      expect(mode('cash', line)).toBe('cash');
+      expect(mode('loan', line)).toBeNull();
+    }
+    // … mais « a besoin d'un prêt » reste un prêt.
+    expect(mode('loan', "a besoin d'un prêt")).toBe('loan');
+    expect(mode('cash', "a besoin d'un prêt")).toBeNull();
     expect(mode('not_said', 'accord banque OK')).toBeNull();
     expect(mode('leasing', 'accord banque OK')).toBeNull();
     // Le mode ne pose jamais l'état du financement.
