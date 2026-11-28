@@ -55,6 +55,8 @@ const CLEANED = [
   'project_academia_requests',
   // Mission 159 — les blocs du quartier figés pour le vendeur (partent avec leur dossier).
   'project_neighbourhood_snapshots',
+  // Lot C — les avenants de baisse d'un mandat (partent avec leur dossier).
+  'mandate_price_amendments',
   'competitor_prospecting_files',
   'follow_up_contacts',
   'listing_observations',
@@ -257,6 +259,8 @@ begin
   delete from public.project_academia_requests where agency_id = v_agency;
   -- Mission 159 — l'instantané du quartier (il part aussi avec son dossier).
   delete from public.project_neighbourhood_snapshots where agency_id = v_agency;
+  -- Lot C — les avenants de baisse d'un mandat (ils partent aussi avec leur dossier).
+  delete from public.mandate_price_amendments where agency_id = v_agency;
   delete from public.comparables where agency_id = v_agency;
   delete from public.subject_properties where agency_id = v_agency;
   delete from public.projects where agency_id = v_agency;
