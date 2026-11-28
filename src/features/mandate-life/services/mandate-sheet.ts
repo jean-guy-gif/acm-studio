@@ -68,6 +68,10 @@ export type MandateSheet = {
   // null : le mandat ne change pas la prochaine étape du dossier.
   next: MandateNext | null;
   forms: MandateFormKey[];
+  // Pour l'avenant : le prix du mandat aujourd'hui, et tous ses prix gardés (« 1 639 500 € le
+  // 28/10 → 1 590 000 € le 14/11 »).
+  currentPrice: number | null;
+  priceChain: string | null;
 };
 
 export type MandateSheetInput = {
@@ -312,7 +316,23 @@ export function mandateSheet(input: MandateSheetInput): MandateSheet {
       ? `${signedLine} · jusqu’au ${dated(life.endsOn, today)}`
       : signedLine;
 
-  return { line, rows, exits, next: nextOf(input, today, renewalDue), forms };
+  const priceChain =
+    input.signedPrice != null
+      ? [
+          `${formatEuro(input.signedPrice)}${signedOn ? ` le ${dated(signedOn, today)}` : ''}`,
+          ...price.history.map((step) => `${formatEuro(step.price)} le ${dated(step.on, today)}`),
+        ].join(' → ')
+      : null;
+
+  return {
+    line,
+    rows,
+    exits,
+    next: nextOf(input, today, renewalDue),
+    forms,
+    currentPrice: price.current,
+    priceChain,
+  };
 }
 
 function nextOf(input: MandateSheetInput, today: string, renewalDue: boolean): MandateNext | null {

@@ -65,6 +65,11 @@ describe('« Son mandat » à l’offre acceptée (la maquette)', () => {
       ['Point marché', 'arrêté à l’offre acceptée, aujourd’hui · il reprend si l’offre tombe'],
     ]);
     expect(result.rows[1].history).toBe('1 639 500 € à la signature, le 28/10');
+    // Pour l'avenant : tous les prix gardés, et le prix d'aujourd'hui.
+    expect(result.priceChain).toBe(
+      '1\u202f639\u202f500\u00a0€ le 28/10 → 1\u202f590\u202f000\u00a0€ le 14/11',
+    );
+    expect(result.currentPrice).toBe(1_590_000);
   });
 
   it('les gestes : modifier la fin, un avenant (et retirer le dernier), voir l’offre', () => {

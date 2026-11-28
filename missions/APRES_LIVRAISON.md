@@ -82,8 +82,11 @@ Une mission tient en une heure et demie (CLAUDE.md) : chaque lot se découpe en 
 | B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | sur l'essai le 28/11, attend le « oui » |
 | B4      | La lecture des notes, et sa mesure sur le vrai modèle                                                                                     | 1 h 30              | sur l'essai le 28/11, attend le « oui » |
 | B5      | Relecteur, specs, captures                                                                                                                | 1 h                 | sur l'essai le 28/11, attend le « oui » |
-| C0      | La maquette : la fiche du dossier, le Suivi, une tâche d'« Aujourd'hui », aux trois tailles                                              | 1 h 30              | faite le 28/11 (branche `lot-c-vie-du-mandat`), attend la validation |
-| C1 à C7 | La base ; les étapes et la fiche ; les saisies ; le lien avec l'offre et le compromis ; le Suivi et le Point marché ; « Aujourd'hui » et le tableau du manager ; la démo, relecteur, specs, captures | 1 h 30 chacun | à faire |
+| C0      | La maquette : la fiche du dossier, le Suivi, une tâche d'« Aujourd'hui », aux trois tailles                                              | 1 h 30              | validée par Jean-Guy le 28/11, quatre retouches faites |
+| C1      | La migration de la vie du mandat, ses droits en toutes lettres, relue deux fois par le gardien-sql, jouée sur la base d'essai                                                                        | 1 h 30              | sur l'essai le 28/11, attend l'application de Jean-Guy |
+| C2      | Le cœur pur (l'étape, le prix et ses avenants, la fin du mandat, les quatre cartes), la lecture, les trois tâches                                                                                    | 1 h 30              | fait le 28/11           |
+| C3      | « Son mandat » sur la fiche du dossier : ses gestes au serveur, sa fiche, ses saisies                                                                                                                | 1 h 30              | en cours                |
+| C4 à C7 | Le côté acquéreur ; le Suivi et le Point marché ; « Aujourd'hui » et le tableau du manager ; le prix après avenant ; la démo, relecteur, specs, captures                                             | 1 h 30 chacun       | à faire                 |
 
 Lot A : environ 5 h. Lot B : environ 6 h 30. Lot C : environ 12 h. Au total, environ 23 h 30,
 hors les validations de Jean-Guy et l'application des deux migrations.

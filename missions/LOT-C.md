@@ -87,3 +87,23 @@ le Point marché ; C6 « Aujourd'hui » et le tableau du manager ; C6 bis le pri
     un prix qui n'est pas sous le prix du mandat.
 
 Le chef avance avec ces réponses ; Jean-Guy corrige après.
+
+## C1, la migration (28/11)
+
+- Relue par le gardien-sql deux fois. Son bloquant : une fiche acquéreur sans origine passait la
+  contrainte, un NULL passant un CHECK ; levé (`is not distinct from`). Ses corrections faites :
+  sous compromis ou vendu, l'issue ne quitte plus « mandat signé » (le même déclencheur, qui liste
+  aussi `outcome`), « Changer l'issue » et la conclusion le disent avant d'écrire, l'en-tête de la
+  migration le dit, et le test SQL prouve ce qui reste permis (« Compléter » le type, une seconde
+  conclusion signée) comme ce qui est refusé.
+- La base locale reconstruite, les 72 tests SQL verts ; un sabotage (le déclencheur sans `outcome`)
+  vu par le test.
+- Jouée sur la base d'essai le 28/11 vers 19 h 20, après une simulation qui ne listait qu'elle. Les
+  droits par défaut relus juste avant (36, sur l'essai comme sur la production). Comptes après,
+  exactement la prédiction : 112 migrations, 54 tables toutes avec la RLS, 59 politiques,
+  71 fonctions, 40 déclencheurs, 176 index, droits 645 / 27 / 117, 18 fonctions ouvertes à tous ;
+  les conclusions 44 colonnes et 40 contraintes, les 9 lignes intactes (empreinte `dafbb82f…`),
+  aucune n'a de fait du lot C, aucun avenant. Puis la spec `parcours` sur l'essai, verte.
+- La production, comptée avant en lecture seule : 38 conclusions dont 29 signées, empreinte
+  `9cb12d1b…`. Son application est le geste de Jean-Guy (sauvegarde vérifiée, simulation, `db push
+  --remote`) ; le chef relit ensuite en lecture seule.
