@@ -200,6 +200,12 @@ test('une offre préparée, « Pas encore dit » à la signature : la question, 
   await page.getByRole('link', { name: 'Famille Keller', exact: true }).first().click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
   const keller = page.url();
+  // Ils sont « Sous offre » : pendant une vente, « Prêt à visiter ? » et son mode sont masqués
+  // (M143). L'offre est tombée : de nouveau en visite, leur fiche dit comment ils financent.
+  const status = page.getByTestId('buyer-status');
+  await reveal(status);
+  await status.getByRole('button', { name: /L’offre est tombée/ }).click();
+  await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
   await page.goto(`${keller}/offre`);
   const form = page.getByTestId('offer-form');
   await expect(form).toBeVisible();
