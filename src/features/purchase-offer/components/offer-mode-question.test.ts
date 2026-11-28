@@ -45,7 +45,7 @@ describe('la question en tête de l’offre', () => {
     expect(html).not.toContain('data-testid="offer-ask-mode"');
     expect(html).toContain('Comment finance-t-il');
     expect(html).toMatch(/Avant de signer, dites comment l’acquéreur finance son achat\s:/);
-    expect(html).toContain('ce que vous avez saisi reste, et la signature continue');
+    expect(html).toMatch(/Comptant\s: la signature continue avec ce que vous avez saisi\./);
     expect(html).not.toContain('role="alert"');
   });
 

@@ -21,6 +21,7 @@ import { numberInWords } from '@/features/purchase-offer/services/amount-in-word
 import { frenchDay } from '@/features/purchase-offer/services/offer-dates';
 import {
   OFFER_LOAN_BLOCKED,
+  offerGate,
   type RefusedGate,
 } from '@/features/purchase-offer/services/offer-gate';
 import {
@@ -762,11 +763,17 @@ export function OfferForm({
             mode={atSigning.mode}
             toVerify={atSigning.toVerify}
             onAnswered={(answer) => {
-              if (answer === 'cash') {
-                // Comptant : la signature demandée continue, avec ce qui est saisi.
+              // La réponse repasse par la règle de l'offre, celle de la page et de la signature.
+              const next = offerGate({
+                mode: answer,
+                toVerify: false,
+                loanClauseValidated: OFFRE_AVEC_PRET_VALIDEE,
+              });
+              if (next.kind === 'form') {
+                // L'offre s'ouvre : la signature demandée continue, avec ce qui est saisi.
                 setAtSigning(null);
                 sign();
-              } else setAtSigning({ kind: 'blocked' });
+              } else setAtSigning(next);
             }}
           />
         ) : null}

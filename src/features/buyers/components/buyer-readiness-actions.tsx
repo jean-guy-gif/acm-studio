@@ -28,6 +28,7 @@ import {
   type BuyerFinancingMode,
 } from '@/features/buyers/types';
 import { GroupedDigitsInput, priceDigits } from '@/features/live-seller/components/price-input';
+import { suggestsValidated } from '@/features/buyers/services/loan-agreement';
 
 // Le choix d'une pastille : plein quand il est choisi, en contour sinon (aussi en tête de l'offre
 // d'achat, lot B).
@@ -296,7 +297,11 @@ export function BuyerReadinessActions({
             </div>
             {/* Jean-Guy (28/11) — l'accord de principe noté propose de passer le financement en
                 « Validé », sans rien changer de lui-même ; rien dans l'autre sens. */}
-            {mode.loan.agreement === true && current.financing !== 'validated' ? (
+            {suggestsValidated({
+              mode: mode.mode,
+              agreement: mode.loan.agreement,
+              financing: current.financing,
+            }) ? (
               <div
                 className="flex flex-wrap items-center gap-3 border-t border-zinc-100 pt-3 stage:border-white/10"
                 data-testid="buyer-loan-suggest-validated"

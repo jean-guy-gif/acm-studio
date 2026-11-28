@@ -81,7 +81,7 @@ export function OfferModeQuestion({
       </div>
       <p className={hintText}>
         {onAnswered
-          ? 'Le choix s’écrit sur sa fiche\u202f; ce que vous avez saisi reste, et la signature continue.'
+          ? 'Le choix s’écrit sur sa fiche. Comptant\u00a0: la signature continue avec ce que vous avez saisi.'
           : 'Le choix s’écrit sur sa fiche.'}
       </p>
       {error ? (

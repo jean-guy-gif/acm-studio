@@ -200,6 +200,12 @@ test('une offre préparée, « Pas encore dit » à la signature : la question, 
   await page.getByRole('link', { name: 'Famille Keller', exact: true }).first().click();
   await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
   const keller = page.url();
+  // Ils sont « Sous offre » : pendant une vente, « Prêt à visiter ? » et son mode sont masqués
+  // (M143). L'offre est tombée : de nouveau en visite, leur fiche dit comment ils financent.
+  const status = page.getByTestId('buyer-status');
+  await reveal(status);
+  await status.getByRole('button', { name: /L’offre est tombée/ }).click();
+  await expect(page.getByTestId('buyer-status-badge')).toHaveText('En visite');
   await page.goto(`${keller}/offre`);
   const form = page.getByTestId('offer-form');
   await expect(form).toBeVisible();
@@ -235,7 +241,9 @@ test('une offre préparée, « Pas encore dit » à la signature : la question, 
   await form.getByTestId('offer-sign').click();
   const ask = page.getByTestId('offer-ask-mode-at-signing');
   await expect(ask).toContainText('Comment finance-t-il');
-  await expect(ask).toContainText('ce que vous avez saisi reste, et la signature continue');
+  await expect(ask).toContainText(
+    /Comptant\s: la signature continue avec ce que vous avez saisi\./,
+  );
   await expect(form.getByRole('alert')).toHaveCount(0);
   await expect(page.getByTestId('offer-signed')).toHaveCount(0);
   await expect(form.getByTestId('offer-deposit')).toHaveValue('31415');

@@ -183,11 +183,15 @@ export default function ConfidentialitePage() {
               elles sont visibles par les seuls membres de l’agence, jamais par une autre agence ni
               par un vendeur. Le conseiller peut archiver une fiche&nbsp;: elle disparaît alors de
               l’outil et est effacée sur demande. Le conseiller peut aussi noter l’état de son
-              financement (validé, en cours ou inconnu, sans montant ni justificatif) et le jour de
-              son dernier échange avec lui&#x202f;; l’outil en déduit, sans rien envoyer, s’il est
-              prêt à visiter ou s’il est à recontacter, pour la seule agence. Pendant un rendez-vous
-              avec un vendeur, et seulement si le conseiller le choisit, l’outil peut montrer
-              combien d’acquéreurs prêts de l’agence cherchent un bien comme le sien, sous une forme
+              financement (validé, en cours ou inconnu, sans justificatif) et le jour de son dernier
+              échange avec lui&#x202f;; l’outil en déduit, sans rien envoyer, s’il est prêt à
+              visiter ou s’il est à recontacter, pour la seule agence. Il peut noter aussi comment
+              l’acquéreur finance son achat (comptant, avec un prêt, ou pas encore dit) et, s’il
+              emprunte, son apport, le montant de son prêt et s’il a l’accord de principe de sa
+              banque, chacun seulement s’il le donne&#x202f;; ces renseignements servent à préparer
+              une offre d’achat et ne sont jamais montrés à un vendeur. Pendant un rendez-vous avec
+              un vendeur, et seulement si le conseiller le choisit, l’outil peut montrer combien
+              d’acquéreurs prêts de l’agence cherchent un bien comme le sien, sous une forme
               anonyme&nbsp;: les communes cherchées, le budget en fourchette arrondie,
               «&nbsp;financement validé&nbsp;» et depuis combien de semaines il cherche — jamais un
               nom, un téléphone, un e-mail ni une note&#x202f;; l’agence garde le jour où ils ont
