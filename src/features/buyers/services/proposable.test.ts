@@ -29,7 +29,7 @@ describe('ce qui se propose à un acquéreur', () => {
 
   it('une offre acceptée tient le mandat tant que l’acquéreur est sous offre ou a acheté', () => {
     expect([...projectsUnderOffer([offer({})])]).toEqual(['p-mougins']);
-    expect([...projectsUnderOffer([offer({ buyerStatus: 'purchased' })])]).toEqual(['p-mougins']);
+    expect([...projectsUnderOffer([offer({ buyerStatus: 'bought' })])]).toEqual(['p-mougins']);
     expect(proposableMandate('signed', 'p-mougins', projectsUnderOffer([offer({})]))).toBe(false);
     // L'offre tombée : l'acquéreur revenu en visite, en recherche, ou abandonné.
     for (const buyerStatus of ['visiting', 'searching', 'abandoned', null]) {
@@ -47,8 +47,8 @@ describe('ce qui se propose à un acquéreur', () => {
     expect([...held]).toEqual(['p-b']);
     // A acheté ailleurs (B) : A n'est pas tenu pour toujours.
     const bought = projectsUnderOffer([
-      offer({ projectId: 'p-a', decidedAt: '2026-10-20T10:00:00Z', buyerStatus: 'purchased' }),
-      offer({ projectId: 'p-b', decidedAt: '2026-11-05T10:00:00Z', buyerStatus: 'purchased' }),
+      offer({ projectId: 'p-a', decidedAt: '2026-10-20T10:00:00Z', buyerStatus: 'bought' }),
+      offer({ projectId: 'p-b', decidedAt: '2026-11-05T10:00:00Z', buyerStatus: 'bought' }),
     ]);
     expect([...bought]).toEqual(['p-b']);
     // Deux acquéreurs, deux mandats tenus.
