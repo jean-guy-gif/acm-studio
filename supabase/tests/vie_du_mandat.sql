@@ -6,8 +6,9 @@
 --      l'acte et le prix de vente ensemble, après le compromis ; la fin sans vente jamais avec un
 --      compromis ni une vente ; la reconduction tacite avec une fin ; un prix de vente positif ;
 --   §4 la fiche de l'acquéreur est de l'agence ; supprimée, elle se vide sans bloquer ;
---   §5 « Changer l'issue » et une seconde conclusion ne réveillent pas la garde ; le compromis
---      qui tombe se vide ;
+--   §5 sous compromis ou vendu, l'issue ne quitte plus « mandat signé » (ni « Changer l'issue »
+--      ni une seconde conclusion) ; le compromis qui tombe se vide ; une seconde conclusion garde
+--      les faits ; hors mandat signé, l'issue change et vider reste permis ;
 --   §6 les avenants : sur un mandat signé de l'agence, par un auteur de l'agence, datés par la
 --      base, jamais modifiés, l'auteur vidé par la suppression de son compte, partis avec le
 --      dossier ;
@@ -43,7 +44,9 @@ insert into public.projects (id, agency_id, advisor_id, seller_name, status) val
   ('318ccccc-0000-0000-0000-000000000001', '318aaaaa-0000-0000-0000-000000000000',
    '31811111-1111-1111-1111-111111111111', 'signé', 'ready_for_meeting'),
   ('318ccccc-0000-0000-0000-000000000002', '318aaaaa-0000-0000-0000-000000000000',
-   '31811111-1111-1111-1111-111111111111', 'à relancer', 'ready_for_meeting');
+   '31811111-1111-1111-1111-111111111111', 'à relancer', 'ready_for_meeting'),
+  ('318ccccc-0000-0000-0000-000000000003', '318aaaaa-0000-0000-0000-000000000000',
+   '31811111-1111-1111-1111-111111111111', 'Live seul', 'ready_for_meeting');
 insert into public.buyers (id, agency_id, advisor_id, name, cities) values
   ('318ddddd-0000-0000-0000-000000000001', '318aaaaa-0000-0000-0000-000000000000',
    '31811111-1111-1111-1111-111111111111', 'Famille A', array['Mougins']),
@@ -94,6 +97,47 @@ begin
   exception when check_violation then
     if sqlerrm not like '%ne se note que sur un mandat signé%' then raise; end if;
   end;
+  -- Chaque fait, seul, hors mandat signé.
+  begin
+    update public.project_meeting_conclusions set mandate_tacit_renewal = true
+      where project_id = '318ccccc-0000-0000-0000-000000000002';
+    raise exception 'FAIL 2: une reconduction tacite posée sur un dossier à relancer';
+  exception when check_violation then
+    if sqlerrm not like '%ne se note que sur un mandat signé%' then raise; end if;
+  end;
+  begin
+    update public.project_meeting_conclusions
+      set deed_signed_on = date '2027-01-15', sale_price = 1560000
+      where project_id = '318ccccc-0000-0000-0000-000000000002';
+    raise exception 'FAIL 2: une vente posée sur un dossier à relancer';
+  exception when check_violation then
+    if sqlerrm not like '%ne se note que sur un mandat signé%' then raise; end if;
+  end;
+  begin
+    update public.project_meeting_conclusions set mandate_ended_on = date '2027-01-28'
+      where project_id = '318ccccc-0000-0000-0000-000000000002';
+    raise exception 'FAIL 2: une fin sans vente posée sur un dossier à relancer';
+  exception when check_violation then
+    if sqlerrm not like '%ne se note que sur un mandat signé%' then raise; end if;
+  end;
+  begin
+    update public.project_meeting_conclusions
+      set compromise_buyer_id = '318ddddd-0000-0000-0000-000000000001'
+      where project_id = '318ccccc-0000-0000-0000-000000000002';
+    raise exception 'FAIL 2: une fiche acquéreur posée sur un dossier à relancer';
+  exception when check_violation then
+    if sqlerrm not like '%ne se note que sur un mandat signé%' then raise; end if;
+  end;
+  -- Une ligne sans issue (celle que pose le prix du Live) ne naît pas avec un fait.
+  begin
+    insert into public.project_meeting_conclusions
+      (project_id, agency_id, commercialization_price, mandate_ends_on)
+    values ('318ccccc-0000-0000-0000-000000000003', '318aaaaa-0000-0000-0000-000000000000',
+            500000, date '2027-05-01');
+    raise exception 'FAIL 2: une ligne sans issue porte une fin de mandat';
+  exception when check_violation then
+    if sqlerrm not like '%ne se note que sur un mandat signé%' then raise; end if;
+  end;
   update public.project_meeting_conclusions
     set mandate_ends_on = date '2027-01-28', mandate_tacit_renewal = true
     where project_id = '318ccccc-0000-0000-0000-000000000001';
@@ -105,6 +149,14 @@ end $$;
 -- §3 — les paires et les ordres.
 do $$
 begin
+  begin
+    update public.project_meeting_conclusions
+      set compromise_buyer_id = '318ddddd-0000-0000-0000-000000000001'
+      where project_id = '318ccccc-0000-0000-0000-000000000001';
+    raise exception 'FAIL 3: une fiche acquéreur sans compromis ni origine acceptée';
+  exception when check_violation then
+    if sqlerrm not like '%buyer_with_compromise%' then raise; end if;
+  end;
   begin
     update public.project_meeting_conclusions
       set compromise_signed_on = date '2026-12-05', sale_buyer_origin = 'outside'
@@ -234,24 +286,32 @@ begin
   end if;
 end $$;
 
--- §5 — la vente notée ; « Changer l'issue » ne réveille pas la garde ; le compromis qui tombe.
+-- §5 — la vente notée : l'issue ne quitte plus « mandat signé », ni par « Changer l'issue » ni par
+-- une seconde conclusion. Le compromis tombe ; sans compromis, une seconde conclusion garde les
+-- faits, l'issue change, et hors mandat signé vider reste permis.
 update public.project_meeting_conclusions
   set deed_signed_on = date '2027-01-15', sale_price = 1560000
   where project_id = '318ccccc-0000-0000-0000-000000000001';
 do $$
 begin
-  perform public.change_meeting_outcome(
-    p_project_id => '318ccccc-0000-0000-0000-000000000001',
-    p_agency_id => '318aaaaa-0000-0000-0000-000000000000',
-    p_outcome => 'sold_elsewhere', p_reason => null);
-  if (select deed_signed_on from public.project_meeting_conclusions
-      where project_id = '318ccccc-0000-0000-0000-000000000001') is distinct from date '2027-01-15' then
-    raise exception 'FAIL 5: « Changer l''issue » a touché la vie du mandat';
-  end if;
-  perform public.change_meeting_outcome(
-    p_project_id => '318ccccc-0000-0000-0000-000000000001',
-    p_agency_id => '318aaaaa-0000-0000-0000-000000000000',
-    p_outcome => 'signed', p_reason => null, p_mandate_type => 'exclusive');
+  begin
+    perform public.change_meeting_outcome(
+      p_project_id => '318ccccc-0000-0000-0000-000000000001',
+      p_agency_id => '318aaaaa-0000-0000-0000-000000000000',
+      p_outcome => 'sold_elsewhere', p_reason => null);
+    raise exception 'FAIL 5: « Changer l''issue » a quitté « mandat signé » malgré la vente';
+  exception when check_violation then
+    if sqlerrm not like '%l''issue reste%' then raise; end if;
+  end;
+  begin
+    perform public.conclude_meeting(
+      '318ccccc-0000-0000-0000-000000000001', '318aaaaa-0000-0000-0000-000000000000',
+      'follow_up', null, 393000, 400000, 395000, 395000,
+      p_follow_up_motive => 'thinking_price');
+    raise exception 'FAIL 5: une seconde conclusion a quitté « mandat signé » malgré la vente';
+  exception when check_violation then
+    if sqlerrm not like '%l''issue reste%' then raise; end if;
+  end;
   -- Le compromis tombe : tout se vide ensemble (la vente d'abord, puis le compromis).
   update public.project_meeting_conclusions
     set deed_signed_on = null, sale_price = null
@@ -260,7 +320,34 @@ begin
     set compromise_signed_on = null, deed_planned_on = null, sale_buyer_origin = null,
         compromise_buyer_id = null
     where project_id = '318ccccc-0000-0000-0000-000000000001';
-  -- Puis la fin sans vente.
+  -- Une seconde conclusion signée, sans compromis : la fin du mandat reste.
+  update public.project_meeting_conclusions
+    set mandate_ends_on = date '2027-02-28', mandate_tacit_renewal = true
+    where project_id = '318ccccc-0000-0000-0000-000000000001';
+  perform public.conclude_meeting(
+    '318ccccc-0000-0000-0000-000000000001', '318aaaaa-0000-0000-0000-000000000000',
+    'signed', null, 1600000, 1700000, 1690000, 1690000, p_mandate_type => 'simple');
+  if (select mandate_ends_on from public.project_meeting_conclusions
+      where project_id = '318ccccc-0000-0000-0000-000000000001') is distinct from date '2027-02-28' then
+    raise exception 'FAIL 5: une seconde conclusion a effacé la fin du mandat';
+  end if;
+  -- Sans compromis ni vente, l'issue change ; les faits restent, et se vident hors mandat signé.
+  perform public.change_meeting_outcome(
+    p_project_id => '318ccccc-0000-0000-0000-000000000001',
+    p_agency_id => '318aaaaa-0000-0000-0000-000000000000',
+    p_outcome => 'sold_elsewhere', p_reason => null);
+  update public.project_meeting_conclusions
+    set mandate_tacit_renewal = false, mandate_ends_on = null
+    where project_id = '318ccccc-0000-0000-0000-000000000001';
+  if (select mandate_ends_on from public.project_meeting_conclusions
+      where project_id = '318ccccc-0000-0000-0000-000000000001') is not null then
+    raise exception 'FAIL 5: la fin du mandat ne se vide pas hors mandat signé';
+  end if;
+  perform public.change_meeting_outcome(
+    p_project_id => '318ccccc-0000-0000-0000-000000000001',
+    p_agency_id => '318aaaaa-0000-0000-0000-000000000000',
+    p_outcome => 'signed', p_reason => null, p_mandate_type => 'exclusive');
+  -- Puis la fin sans vente ; un compromis ne s'y ajoute pas.
   update public.project_meeting_conclusions set mandate_ended_on = date '2027-02-28'
     where project_id = '318ccccc-0000-0000-0000-000000000001';
   begin

@@ -60,11 +60,12 @@ alter table public.project_meeting_conclusions
       (compromise_signed_on is null) = (deed_planned_on is null)
       and (deed_planned_on is null or deed_planned_on >= compromise_signed_on)
     ),
-  -- L'acquéreur se dit avec le compromis, et sa fiche n'est que celle d'un acquéreur de l'agence.
+  -- L'acquéreur se dit avec le compromis, et sa fiche n'est que celle d'un acquéreur de l'agence
+  -- (`is not distinct from` : une fiche sans origine ne passe pas par un CHECK qui vaudrait nul).
   add constraint project_meeting_conclusions_buyer_with_compromise
     check (
       (sale_buyer_origin is null) = (compromise_signed_on is null)
-      and (compromise_buyer_id is null or sale_buyer_origin = 'agency')
+      and (compromise_buyer_id is null or sale_buyer_origin is not distinct from 'agency')
     ),
   -- L'acte et le prix de vente, ensemble, après un compromis, au plus tôt le jour du compromis.
   add constraint project_meeting_conclusions_sale_after_compromise
@@ -102,8 +103,10 @@ comment on column public.project_meeting_conclusions.mandate_ended_on is
   'Lot C — la fin du mandat sans vente, jamais avec un compromis ni une vente.';
 
 -- Un fait de la vie du mandat ne se pose que sur un mandat signé, et la fiche de l'acquéreur est de
--- l'agence. Vider un fait reste permis. Le déclencheur ne regarde que ces colonnes à la mise à jour :
--- ni `conclude_meeting` ni `change_meeting_outcome` ne le réveillent.
+-- l'agence. Vider un fait reste permis. Et un dossier ne quitte pas « Mandat signé » tant qu'un
+-- compromis ou une vente y est noté. Le déclencheur ne regarde que ces colonnes et l'issue :
+-- `conclude_meeting` et `change_meeting_outcome` ne le réveillent que par l'issue, et ne sont
+-- refusés que dans ce cas ; le code de `main`, qui ne note jamais ces faits, ne l'est jamais.
 create function public.check_mandate_life()
 returns trigger
 language plpgsql
@@ -133,6 +136,11 @@ begin
     raise exception 'project_meeting_conclusions : la vie du mandat ne se note que sur un mandat signé'
       using errcode = 'check_violation';
   end if;
+  if tg_op = 'UPDATE' and old.outcome = 'signed' and new.outcome is distinct from 'signed'
+     and (new.compromise_signed_on is not null or new.deed_signed_on is not null) then
+    raise exception 'project_meeting_conclusions : un compromis ou une vente est noté, l''issue reste « mandat signé »'
+      using errcode = 'check_violation';
+  end if;
   if new.compromise_buyer_id is not null
      and new.compromise_buyer_id is distinct from o.compromise_buyer_id
      and not exists (
@@ -148,7 +156,7 @@ end $$;
 revoke all on function public.check_mandate_life() from public, anon, authenticated;
 
 create trigger project_meeting_conclusions_mandate_life
-  before insert or update of mandate_ends_on, mandate_tacit_renewal, compromise_signed_on,
+  before insert or update of outcome, mandate_ends_on, mandate_tacit_renewal, compromise_signed_on,
     deed_planned_on, sale_buyer_origin, compromise_buyer_id, deed_signed_on, sale_price,
     mandate_ended_on
   on public.project_meeting_conclusions
@@ -230,7 +238,9 @@ create policy mandate_price_amendments_agency_read on public.mandate_price_amend
   using (agency_id = public.get_current_agency_id());
 
 -- 3. Les droits, en toutes lettres : anon n'a rien ; le navigateur lit (la politique de chaque table
--- le borne à son agence) et n'écrit rien ; le serveur écrit.
+-- le borne à son agence) et n'écrit rien ; le serveur écrit. Sur la conclusion, le navigateur avait
+-- aussi REFERENCES, TRIGGER et MAINTAIN (relevés sur la production le 28/11), qu'il ne peut pas
+-- employer par l'API : ils lui sont retirés, il garde la lecture.
 revoke all on table public.project_meeting_conclusions from anon, authenticated;
 grant select on table public.project_meeting_conclusions to authenticated;
 grant select, insert, update, delete on table public.project_meeting_conclusions to service_role;
