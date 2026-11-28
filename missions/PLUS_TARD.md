@@ -4,6 +4,15 @@ Ce qui se découvre pendant une mission et n'en fait pas partie (règle de Jean-
 CLAUDE.md) : une ligne datée par point, avec la mission où il a été vu. Un cas imaginé par un
 balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `docs/IDEES.md`.
 
+- 28/11 · Lot B (architecte), pour le lot C · `proposable.ts` et `buyer-journey.ts` attendent le
+  statut `'purchased'`, alors que la base et `buyers/types.ts` écrivent `'bought'` (« A acheté ») :
+  un acquéreur « A acheté » ne tient plus le mandat de son offre acceptée (M145 A), qui redevient
+  proposable, et l'étape « Compromis : signé » ne se coche jamais. Aucune fiche « A acheté » en
+  production le 28/11 (15 en recherche, 7 en visite, 2 sous offre).
+- 28/11 · Lot B (architecte, question 11, réponse par défaut), pour le lot C · Avec un prêt,
+  l'offre se fait sur le modèle de l'agence, hors d'ACM : la fiche acquéreur ne passe jamais
+  « Sous offre », et le dossier vendeur ne verra pas l'offre acceptée du lot C. Il faudra un geste
+  « offre faite hors d'ACM », ou l'offre avec prêt quand la juriste l'aura validée.
 - 27/11 · Refonte, en tête (Jean-Guy) · Visites, une seule action par visite : celle de son étape ;
   les autres apparaissent quand leur étape arrive. Aujourd'hui, sur téléphone, une visite en
   attente du propriétaire montre encore « Ouvrir le courrier » et quatre liens (« Suivre dans

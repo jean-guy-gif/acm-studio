@@ -77,6 +77,12 @@ base d'essai.
 | 27/11 | Lot A2-A3 — les espaces insécables : la règle, son test, environ 890 textes convertis par un script, le guide et le modèle d'e-mail, les tests repris ; de 18 h 30 à 19 h 43 | Moyen | 1 h 15 | 0 | 15 min |
 | 27/11 | Lot A4 — le relecteur (un bloquant levé : le CSS @page :first), la suite complète sur l'essai (42 sur 42, une spec corrigée), le banc de l'Étude, la démo rejouée, les preuves avant / après ; de 19 h 43 à 20 h 55 | Moyen | 1 h 10 | 0 | 55 min |
 | 27/11 | La livraison : le dernier contrôle de la production depuis le gel (vert) ; le lot A en production, vérifié sur le compte de Jean-Guy (la version, « Aujourd'hui », une synthèse et sa règle @page :first) et dans les journaux ; de 22 h à 22 h 40 | Moyen | 40 min | 0 | 0 |
+| 28/11 | L'ajout « espaces des textes saisis » — la règle des espaces insécables, à l'affichage seulement, pour les textes que tape le conseiller (synthèse, Live, acquéreur, courriers) ; en production et vérifiée ; de 8 h 37 à 9 h, dont le « oui » de Jean-Guy attendu de 8 h 44 à 8 h 57 | Moyen | 25 min | 13 min | 5 min |
+| 28/11 | Lot B1 — la migration du mode de financement : le plan de l'architecte (de 8 h 38 à 8 h 57, pendant l'ajout), la migration et ses droits en toutes lettres, son test SQL et sa place dans la CI, la phrase pour la juriste, le gardien-sql (aucun bloquant, quatre corrections faites), six sabotages, la migration jouée sur la base d'essai (comptage conforme), deux specs sur l'essai ; de 10 h 52 à 11 h 45 | Sensible | 1 h 15 | 0 | 15 min |
+
+Le 28/11 au matin : de 9 h à 10 h 52, la session est restée à l'arrêt alors que le plan de
+l'architecte était arrivé à 8 h 57 : 1 h 50 perdues, sans attente de Jean-Guy. Le lot B1 s'arrête
+avant la production, sur la demande de Jean-Guy : la migration attend qu'il l'applique.
 
 Le 27/11, de 7 h 05 à 22 h 40 : 8 h 55 de travail — les remarques, le lot F, les mises en
 production, les corrections avant le gel, le gel (4 h 25 jusqu'à 14 h 15), le lot A d'après la

@@ -77,7 +77,7 @@ Une mission tient en une heure et demie (CLAUDE.md) : chaque lot se découpe en 
 | A2      | Les espaces insécables : la règle et son test, sur les textes du vendeur et ses documents (Live, synthèse, Étude, Point marché, dossier acquéreur, courriers) | 1 h 30 | en production le 27/11 au soir |
 | A3      | La même règle sur tous les écrans du conseiller, le guide et le modèle d'e-mail « mot de passe oublié »                                | 1 h 30              | en production le 27/11 au soir |
 | A4      | Relecteur, suite complète sur l'essai, banc de l'Étude, captures avant / après                                                           | 1 h                 | en production le 27/11 au soir |
-| B1      | La migration du mode de financement, ses droits en toutes lettres, jouée sur la base d'essai, relue par le gardien-sql                   | 1 h 30              | à faire                 |
+| B1      | La migration du mode de financement, ses droits en toutes lettres, jouée sur la base d'essai, relue par le gardien-sql                   | 1 h 30              | jouée sur la base d'essai le 28/11, attend Jean-Guy pour la production |
 | B2      | La fiche : « Comment finance-t-il ? », le prêt, la démo                                                                                   | 1 h 30              | à faire                 |
 | B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | à faire                 |
 | B4      | La lecture des notes, et sa mesure sur le vrai modèle                                                                                     | 1 h 30              | à faire                 |
@@ -163,3 +163,59 @@ corriger ; il est corrigé dans le dépôt, et Jean-Guy le recollera dans Supaba
    est prévenue après, avec l'avertissement des notes ; si Jean-Guy préfère son accord avant, le
    lot A attend.
 
+
+## Lot B — ce qui est fait
+
+Le découpage, revu par l'architecte (28/11) : la phrase pour la juriste dès B1, puisque c'est elle
+qui retient la production ; une planche de maquette en tête de B2 (la fiche change d'écran), la démo
+passant en B3 ; B4 mesuré sur neuf notes inventées, deux passes, environ 0,35 €. B1 à B4 en 1 h 30
+chacun, B5 en 1 h : 7 h au lieu de 6 h 30.
+
+- B1 (28/11) · La migration `supabase/migrations/20261217090000_mode_de_financement.sql`, sur la
+  seule table `buyers` (la fiche acquéreur), qui n'ajoute que quatre colonnes : le mode
+  (`financing_mode` : `cash` comptant, `loan` avec prêt, `not_said` pas encore dit, le défaut) et,
+  avec un prêt seulement, l'apport (`loan_contribution`, de 0 à 99 999 999 €), le montant du prêt
+  (`loan_amount`, de 1 à 99 999 999 €) et l'accord de principe (`loan_agreement`, oui / non / non
+  dit), tous facultatifs ; la base refuse un apport, un prêt ou un accord sans prêt. Les fiches
+  existantes prennent « Pas encore dit », rien n'est reconstitué (M56). Les droits, redits en toutes
+  lettres en fin de fichier, sont ceux d'aujourd'hui : anon rien, le navigateur la lecture seule
+  (sa politique le borne à son agence, M117), le serveur l'écriture ; une garde annule tout si un
+  droit n'est plus celui-là, PUBLIC et droits d'une seule colonne compris. Compatible avec le code
+  de `main`, qui ne lit ni n'écrit ces colonnes. Le statut de financement (M132) et la règle « Prêt
+  à visiter » ne changent pas.
+- Son test `supabase/tests/mode_de_financement.sql`, dans la CI (`sql.yml`) : le défaut, les refus
+  (hors liste, vide, détails sans prêt, hors bornes, « Comptant » qui garderait les détails d'un
+  prêt), chacun par son code exact ; les droits ; le navigateur qui lit son agence et n'écrit rien ;
+  une autre agence et un membre retiré qui ne lisent rien ; le mode et le statut indépendants. Vert
+  sur la base locale, avec les 25 autres tests SQL qui touchent la fiche acquéreur ; six migrations
+  sabotées exprès, toutes vues (quatre par la garde, deux par le test).
+- Le gardien-sql : aucun bloquant ; ses quatre corrections faites (la garde et le test lisent aussi
+  PUBLIC, les droits d'une seule colonne et le droit de vider la table ; un refus de la RLS ne passe
+  plus pour un droit qui manque ; un NULL ne passe plus le premier contrôle). Sa prédiction, la
+  mienne, confirmée sur la base d'essai.
+- Jouée sur la base d'essai le 28/11 à 11 h 30, après une simulation qui ne listait qu'elle :
+  migrations 110 → 111, `buyers` 40 → 44 colonnes et 28 → 32 contraintes, les 9 fiches en « Pas
+  encore dit », aucun détail de prêt, 7 « financement validé » inchangées ; l'empreinte des 40
+  colonnes d'avant identique (`bbc4571f…`) : aucune ligne modifiée ; les droits identiques ; tout le
+  reste identique (53 tables, 58 politiques, 69 fonctions, 38 déclencheurs, 171 index, droits
+  639 / 27 / 115 / 0, 18 fonctions ouvertes à tous). Puis deux specs sur l'essai, qui sert encore le
+  code de `main` : `suivi-de-l-acquereur` et `depuis-mes-notes`, 3 sur 3.
+- La phrase pour la juriste : `missions/LOT-B-confidentialite-pour-le-juriste.md` (avant / après ;
+  non publiée, elle part avec le code du lot B).
+
+### Les questions du lot B (architecte, 28/11), chacune avec sa réponse par défaut
+
+8. Le statut et le mode restent indépendants : « Avec prêt · accord oui » ne pose pas « Validé ».
+   Par défaut : oui, sans coût. Sinon : une ligne qui propose « Validé », sans migration.
+9. « Comptant, à vérifier », que propose aujourd'hui la lecture des notes (M151), devient le mode
+   « Comptant », à vérifier, et le geste « financement validé » reste à côté. Par défaut : oui.
+10. Un mode lu par l'IA, encore « À vérifier », se confirme d'un toucher avant l'offre (la
+    validation du conseiller avant un résultat final). Par défaut : oui, sans coût. Sinon : il
+    compte comme dit.
+11. Avec un prêt, « Préparer son offre d'achat » mène à l'écran bloqué ; l'offre faite sur le modèle
+    de l'agence n'existe pas dans ACM, et la fiche ne passe jamais « Sous offre ». Par défaut :
+    rien au lot B, une ligne dans `PLUS_TARD` pour le lot C. L'adapter : environ 30 min, sans
+    migration.
+12. Le message de l'offre bloquée contient « disponible », que le test de vocabulaire refuse côté
+    acquéreur (M118). Par défaut : le message mot pour mot, avec une exception pour cette seule
+    phrase dans le test (comme la M152 B).
