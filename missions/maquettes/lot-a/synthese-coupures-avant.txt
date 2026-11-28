@@ -1,0 +1,24 @@
+M. et Mme MartinÀ préparerOuvrir → : pas de synthèse
+Mme GarciaPrêt pour le LiveOuvrir → : 49 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+Mr and Mrs BernardPrêt, en présentation  : pas de synthèse
+M. LefebvreConclu, mandat signéOuvrir → : 67 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+M. et Mme LopezConclu, mandat signéOuvri : 65 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+Mme FerrandConclu, mandat signéOuvrir → : 74 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 5
+  téléphone · «  (vous : Terrasse) » (synthèse)
+  téléphone · «  (vous : Excellent) » (synthèse)
+  téléphone · «  (vous : Parking couvert) » (synthèse)
+  téléphone · «  (vous : Terrasse) » (synthèse)
+  téléphone · «  (vous : Terrasse) » (synthèse)
+M. et Mme DelmasConclu, mandat signéOuvr : 66 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 2
+  téléphone · «  (vous : Parking extérieur) » (synthèse)
+  téléphone · «  (vous : Balcon) » (synthèse)
+Mme PerrinConclu, mandat signéOuvrir → : 74 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 2
+  téléphone · «  (vous : Box fermé) » (synthèse)
+  téléphone · «  (vous : Box fermé) » (synthèse)
+M. et Mme GarnierConclu, mandat signéOuv : 77 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+Mme NavarroConclu, mandat signéOuvrir → : 66 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 0
+M. et Mme CastelConclu, mandat signéOuvr : 70 endroit(s) à risque ; coupées à l'impression 0, sur téléphone 4
+  téléphone · «  (vous : Excellent) » (synthèse)
+  téléphone · «  (vous : Excellent) » (synthèse)
+  téléphone · «  (vous : Excellent) » (synthèse)
+  téléphone · «  (vous : Excellent) » (synthèse)

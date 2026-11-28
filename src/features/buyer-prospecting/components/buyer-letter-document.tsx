@@ -24,6 +24,7 @@ import type {
 import type { ExclusivityCard } from '@/features/buyer-prospecting/queries/get-buyer-letter-types';
 import type { QrCode } from '@/features/contact-card/services/qr-code';
 import type { AddressSource, ProspectingSender } from '@/features/prospecting-file/types';
+import { withFrenchSpacing } from '@/lib/typography/french-spacing';
 
 export type BuyerLetterDocumentProps = {
   // Mission 120 B — le courrier au propriétaire, ou le dossier de collaboration au confrère.
@@ -43,11 +44,22 @@ export type BuyerLetterDocumentProps = {
 // l'agence : ni le nom de l'acquéreur, ni son budget, ni une promesse ; les mentions de tout
 // courrier propriétaire (carte professionnelle, garantie, origine de l'adresse, droits, CNIL ;
 // M90, M102, M103), avec sa propre finalité.
+// Jean-Guy (28/11) — les textes que réécrit le conseiller suivent la règle des espaces
+// insécables, à l'affichage seulement : ce qui est enregistré ne change pas.
 export function BuyerLetterDocument(props: BuyerLetterDocumentProps) {
-  return props.version === 'colleague' ? (
-    <ColleagueLetter {...props} />
+  const shown: BuyerLetterDocumentProps = {
+    ...props,
+    texts: {
+      title: withFrenchSpacing(props.texts.title),
+      letter: withFrenchSpacing(props.texts.letter),
+      question: withFrenchSpacing(props.texts.question),
+      contactHook: withFrenchSpacing(props.texts.contactHook),
+    },
+  };
+  return shown.version === 'colleague' ? (
+    <ColleagueLetter {...shown} />
   ) : (
-    <OwnerLetter {...props} />
+    <OwnerLetter {...shown} />
   );
 }
 

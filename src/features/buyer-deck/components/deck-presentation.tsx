@@ -49,6 +49,7 @@ import type { LiveStageTheme } from '@/features/live-seller/components/live-comp
 import { photoKey } from '@/lib/photo-url';
 import { clientTexts, type TextLanguage } from '@/lib/client-texts';
 import { FRENCH_TEXTS } from '@/lib/client-texts/fr';
+import { withFrenchSpacing } from '@/lib/typography/french-spacing';
 
 // Mission 122 — la présentation du dossier qui fait agir, plein cadre (M72), tablette d'abord : ses
 // mots → la grille → un bien par écran → sa réponse. Il ne lit pas, il répond : le conseiller
@@ -351,7 +352,7 @@ export function DeckPresentation({
           <div className="flex flex-col gap-5" data-testid="deck-words">
             <h1 className={question}>{t.wordsTitle}</h1>
             <p className="font-title text-2xl leading-snug font-semibold text-zinc-900 sm:text-3xl stage:text-white">
-              «&nbsp;{deck.words}&nbsp;»
+              «&nbsp;{withFrenchSpacing(deck.words)}&nbsp;»
             </p>
           </div>
         ) : screen.type === 'grid' ? (
@@ -845,7 +846,9 @@ export function ItemScreen({
       {item.pitch ? (
         <section className={panelSoft} data-testid="deck-pitch">
           <h2 className={`${statLabel} mb-2`}>{t.pitchTitle}</h2>
-          <p className="text-lg text-zinc-800 stage:text-white/90">«&nbsp;{item.pitch}&nbsp;»</p>
+          <p className="text-lg text-zinc-800 stage:text-white/90">
+            «&nbsp;{withFrenchSpacing(item.pitch)}&nbsp;»
+          </p>
         </section>
       ) : null}
       {item.datedFact ? (

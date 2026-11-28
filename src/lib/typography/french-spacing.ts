@@ -61,3 +61,20 @@ export function frenchSpacingFaults(text: string): SpacingFault[] {
   }
   return faults;
 }
+
+// Lot A, suite (Jean-Guy, 28/11) — la même règle, à l'affichage seulement, pour ce que tape le
+// conseiller et que lisent le vendeur, l'acquéreur ou le destinataire d'un courrier (la
+// justification de sa décision de prix, les points forts du bien, ses mots pour l'acquéreur, les
+// textes d'un courrier) : chaque suite d'espaces fautive devient l'espace qu'attend sa marque. Le
+// texte enregistré ne change pas ; aucune espace n'est ajoutée là où il n'y en a pas.
+export function withFrenchSpacing(text: string): string {
+  let fixed = '';
+  let from = 0;
+  for (const fault of frenchSpacingFaults(text)) {
+    // Deux marques autour des mêmes espaces (« « : ») : la première décide.
+    if (fault.start < from) continue;
+    fixed += text.slice(from, fault.start) + fault.expected;
+    from = fault.end;
+  }
+  return fixed + text.slice(from);
+}

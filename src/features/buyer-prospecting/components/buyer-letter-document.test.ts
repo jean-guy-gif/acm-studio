@@ -14,6 +14,7 @@ import {
 } from '@/features/buyer-prospecting/services/buyer-letter';
 import { NO_FACTS } from '@/features/buyer-prospecting/services/prospect-facts';
 import { formatSquareMeters } from '@/lib/format';
+import { NARROW_NBSP, NBSP } from '@/lib/typography/french-spacing';
 
 // Mission 120 — le courrier au propriétaire né d'une recherche acquéreur, rendu : la recherche et
 // la question de la visite ; ni le nom ni le budget de l'acquéreur, ni une promesse ; les
@@ -166,5 +167,28 @@ describe('le dossier de collaboration au confrère', () => {
       'elle a refusé cette collaboration. Je m’adresse donc à vous directement.',
     );
     expect(defaultBuyerLetter(facts, buyer).letter).not.toContain('refusé');
+  });
+});
+
+// Jean-Guy (28/11) — les textes que réécrit le conseiller suivent la règle des espaces, à
+// l'affichage seulement.
+describe('les textes réécrits du courrier', () => {
+  it('ne coupent pas leur ligne devant « : » ni « ? », et le texte reçu ne change pas', () => {
+    const texts = {
+      ...defaultBuyerLetter(facts, buyer),
+      letter: 'Madame, Monsieur : une question ?',
+    };
+    const page = renderToStaticMarkup(
+      createElement(BuyerLetterDocument, {
+        addressee: buyerLetterAddressee(facts, '8 allée du Décor, 06370 Mouans-Sartoux'),
+        addressSource: 'locator',
+        texts,
+        sender,
+        theirPhotoUrl: null,
+        qr: { size: 21, path: 'M0 0h1v1H0z' },
+      }),
+    );
+    expect(page).toContain(`Madame, Monsieur${NBSP}: une question${NARROW_NBSP}?`);
+    expect(texts.letter).toBe('Madame, Monsieur : une question ?');
   });
 });

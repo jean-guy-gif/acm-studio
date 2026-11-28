@@ -18,6 +18,7 @@ import {
   agencyPriceForBuyer,
 } from '@/features/buyer-presentation/services/agency-price';
 import type { BuyerInput } from '@/features/buyers/types';
+import { NARROW_NBSP, NBSP } from '@/lib/typography/french-spacing';
 
 const buyer: BuyerInput = {
   name: 'Famille Keller',
@@ -458,5 +459,33 @@ describe('le lien « Vivre ici » d’Academia', () => {
     const dossier = withLinks([{ itemId: 'i1', url: 'https://app.myacademia.ai/l/abc' }]);
     const pdf = renderToStaticMarkup(createElement(BuyerDossierDocument, { dossier }));
     expect(pdf).not.toContain('myacademia');
+  });
+});
+
+// Jean-Guy (28/11) — ses mots et la phrase « Pourquoi », tapés par le conseiller, suivent la règle
+// des espaces à l'affichage ; ce qui est enregistré ne change pas.
+describe('les textes tapés par le conseiller, dans le dossier', () => {
+  it('« Vous m’avez dit » et « Pourquoi » ne coupent pas leur ligne devant « : » ni « ? »', () => {
+    const words = 'Un jardin : indispensable ?';
+    const typed = deck([item({ pitch: 'Le calme : à deux pas ?' })], words);
+    const dossier = buildBuyerDossier({
+      buyerId: 'b',
+      selectionId: 's',
+      selectedAt: '2026-10-24T10:00:00Z',
+      sector: 'Mougins',
+      deck: typed,
+      hidden: new Map(),
+      answered: false,
+      answers: [],
+      availability: [],
+      meetingAnswers: [],
+      meetingAvailability: [],
+      agency,
+      brandDeclarations: '',
+    });
+    const page = renderToStaticMarkup(createElement(BuyerDossierDocument, { dossier }));
+    expect(page).toContain(`Un jardin${NBSP}: indispensable${NARROW_NBSP}?`);
+    expect(page).toContain(`Le calme${NBSP}: à deux pas${NARROW_NBSP}?`);
+    expect(dossier.deck.words).toBe(words);
   });
 });
