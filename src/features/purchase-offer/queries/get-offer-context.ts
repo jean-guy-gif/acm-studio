@@ -6,6 +6,7 @@ import {
   type VisitLine,
 } from '@/features/buyer-presentation/queries/get-visit-requests';
 import { VISIT_OUTCOME_LABELS } from '@/features/buyer-presentation/types';
+import { BUYER_FINANCING_MODES, type BuyerFinancingMode } from '@/features/buyers/types';
 import { getVisitLetters } from '@/features/buyer-prospecting/queries/get-visit-letters';
 import {
   HORS_MANDAT_OUVERT,
@@ -87,7 +88,15 @@ function switchableToOffer(line: VisitLine): boolean {
 }
 
 export type OfferContext = {
-  buyer: { id: string; name: string; email: string | null };
+  // Lot B — comment il finance, et s'il est encore « À vérifier » (lu dans ses notes) : la porte
+  // de l'offre (`offerGate`), relue en base à chaque ouverture et à la signature.
+  buyer: {
+    id: string;
+    name: string;
+    email: string | null;
+    financingMode: BuyerFinancingMode;
+    modeToVerify: boolean;
+  };
   visits: OfferVisit[];
   agency: OfferAgency | null;
   gaps: string[];
@@ -125,7 +134,7 @@ export async function getOfferContext(
   const [buyer, agency, branding, legal, visitRead, lastOffer] = await Promise.all([
     supabase
       .from('buyers')
-      .select('id, name, email')
+      .select('id, name, email, financing_mode, fields_to_verify')
       .eq('id', buyerId)
       .eq('agency_id', agencyId)
       .is('archived_at', null)
@@ -380,7 +389,18 @@ export async function getOfferContext(
   return {
     ok: true,
     context: {
-      buyer: { id: buyer.data.id, name: buyer.data.name, email: buyer.data.email },
+      buyer: {
+        id: buyer.data.id,
+        name: buyer.data.name,
+        email: buyer.data.email,
+        // Une valeur hors liste vaut « Pas encore dit » : l'offre la demande.
+        financingMode: (BUYER_FINANCING_MODES as readonly string[]).includes(
+          buyer.data.financing_mode,
+        )
+          ? (buyer.data.financing_mode as BuyerFinancingMode)
+          : 'not_said',
+        modeToVerify: (buyer.data.fields_to_verify ?? []).includes('financing_mode'),
+      },
       visits,
       agency: offerAgency,
       gaps,

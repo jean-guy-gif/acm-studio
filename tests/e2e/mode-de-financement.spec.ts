@@ -8,7 +8,10 @@ import { demoCredentials, login, resetDemoByScreen, reveal } from './support';
 // - M. Fontaine : avec prêt, sans accord encore (apport 120 000 €, prêt 650 000 €) ; le prêt se
 //   corrige et se garde ; repasser en « Comptant » efface le prêt, l'écran le demande d'abord ;
 // - M. et Mme Rossi : « Pas encore dit », comme toutes les fiches d'avant le lot B.
-// `E2E_CAPTURES=1` range les captures de la fiche aux trois tailles dans `missions/maquettes/lot-b/`.
+// Lot B3 — l'offre d'achat selon comment il finance : les Rossi, la question d'abord, avant tout
+// champ ; M. Fontaine, avec prêt, l'offre bloquée, le message de Jean-Guy mot pour mot ; la famille
+// Keller, comptant, l'offre d'aujourd'hui.
+// `E2E_CAPTURES=1` range les captures aux trois tailles dans `missions/maquettes/lot-b/`.
 
 const HIDE_PREVIEW_TOOLBAR = 'vercel-live-feedback { display: none !important; }';
 const SIZES = [
@@ -118,7 +121,52 @@ test('comment il finance : le mode, le prêt, gardés sur la fiche', async ({ pa
   await page.goto('/acquereurs?vue=agence&q=rossi');
   await page.getByRole('link', { name: 'M. et Mme Rossi', exact: true }).first().click();
   await expect(page.getByTestId('buyer-name')).toHaveText('M. et Mme Rossi');
+  const rossi = page.url();
   await reveal(mode);
   await expect(choice('Pas encore dit')).toHaveAttribute('aria-pressed', 'true');
   await expect(loan).toHaveCount(0);
+
+  // Lot B3 — l'offre d'achat. Les Rossi, « Pas encore dit » : la question d'abord, avant tout
+  // champ ; « Comptant » s'écrit sur leur fiche, et la question s'en va.
+  const capture = async (name: string) => {
+    if (process.env.E2E_CAPTURES !== '1') return;
+    await page.addStyleTag({ content: HIDE_PREVIEW_TOOLBAR });
+    for (const size of SIZES) {
+      await page.setViewportSize({ width: size.width, height: size.height });
+      await page.screenshot({ path: `missions/maquettes/lot-b/LB3-${size.key}-${name}.png` });
+    }
+    await page.setViewportSize({ width: 1280, height: 1100 });
+  };
+  const ask = page.getByTestId('offer-ask-mode');
+  const blocked = page.getByTestId('offer-loan-blocked');
+  const deposit = page.getByTestId('offer-deposit');
+  await page.goto(`${rossi}/offre`);
+  await expect(ask).toContainText('Comment finance-t-il');
+  await expect(ask).toContainText('Dites d’abord comment l’acquéreur finance son achat');
+  await expect(deposit).toHaveCount(0);
+  await capture('question');
+  await ask.getByRole('button', { name: 'Comptant', exact: true }).click();
+  await expect(ask).toHaveCount(0);
+  await expect(blocked).toHaveCount(0);
+  await page.goto(rossi);
+  await reveal(mode);
+  await expect(choice('Comptant')).toHaveAttribute('aria-pressed', 'true');
+
+  // M. Fontaine, avec prêt : l'offre est bloquée, le message de Jean-Guy mot pour mot, aucun champ.
+  await page.goto(`${fontaine}/offre`);
+  await expect(blocked).toHaveText(
+    'Cet acquéreur finance avec un prêt : l’offre avec prêt n’est pas encore disponible dans ACM. Utilisez le modèle de votre agence.',
+  );
+  await expect(ask).toHaveCount(0);
+  await expect(deposit).toHaveCount(0);
+  await capture('bloquee');
+
+  // La famille Keller, comptant : l'offre d'aujourd'hui.
+  await page.goto('/acquereurs?vue=agence&q=keller');
+  await page.getByRole('link', { name: 'Famille Keller', exact: true }).first().click();
+  await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
+  await page.goto(`${page.url()}/offre`);
+  await expect(deposit).toBeVisible();
+  await expect(ask).toHaveCount(0);
+  await expect(blocked).toHaveCount(0);
 });

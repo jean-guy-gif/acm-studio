@@ -29,8 +29,9 @@ import {
 } from '@/features/buyers/types';
 import { GroupedDigitsInput, priceDigits } from '@/features/live-seller/components/price-input';
 
-// Le choix d'une pastille : plein quand il est choisi, en contour sinon.
-const pill = (chosen: boolean) =>
+// Le choix d'une pastille : plein quand il est choisi, en contour sinon (aussi en tête de l'offre
+// d'achat, lot B).
+export const financingPill = (chosen: boolean) =>
   `min-h-10 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
     chosen
       ? 'border-emerald-600 bg-emerald-600 text-white'
@@ -182,7 +183,7 @@ export function BuyerReadinessActions({
               aria-pressed={current.financing === value}
               disabled={pending}
               onClick={() => choose(value)}
-              className={pill(current.financing === value)}
+              className={financingPill(current.financing === value)}
             >
               {BUYER_FINANCING_LABELS[value]}
             </button>
@@ -213,7 +214,7 @@ export function BuyerReadinessActions({
               aria-pressed={mode.mode === value}
               disabled={pending}
               onClick={() => chooseMode(value)}
-              className={pill(mode.mode === value)}
+              className={financingPill(mode.mode === value)}
             >
               {BUYER_FINANCING_MODE_LABELS[value]}
             </button>
@@ -274,7 +275,7 @@ export function BuyerReadinessActions({
                         agreement: last.agreement === value ? null : value,
                       }))
                     }
-                    className={pill(draft.agreement === value)}
+                    className={financingPill(draft.agreement === value)}
                   >
                     {text}
                   </button>
