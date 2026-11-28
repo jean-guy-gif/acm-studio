@@ -1,0 +1,555 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
+@font-face{font-family:Rajdhani;font-weight:700;src:url(file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/rajdhani/rajdhani-latin-700.woff2)}
+@font-face{font-family:Montserrat;font-weight:100 900;src:url(file:///Users/jean-guyourmieres/Documents/acm-studio/src/features/branding/fonts/montserrat/montserrat-latin.woff2)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Montserrat,Arial,sans-serif;color:#18181b;background:#d4d4d8;padding:28px;display:flex;flex-direction:column;gap:22px}
+h1{font-size:24px}.sub{font-size:14px;color:#3f3f46;max-width:1900px;line-height:1.5}
+.part{font-family:Rajdhani;font-size:26px;color:#003a57;border-top:2px solid #a1a1aa;padding-top:14px}
+.layout{display:flex;gap:22px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px}.ftitle{font-size:13px;font-weight:700;color:#3f3f46}
+.notes{width:360px;flex:none;display:flex;flex-direction:column;gap:10px}
+.note{background:#fef6c7;border:1px solid #e8cf5a;border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.5;color:#3d3200}
+.shot{border-radius:12px;border:1px solid #a1a1aa;display:block}
+.page{background:#f2f4f8;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.page.desk{width:1000px}.page.tab{width:760px}.page.phone{width:390px;padding:14px}
+.card{background:#fff;border:1px solid #e4e4e7;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+h2{font-family:Rajdhani;font-size:30px;color:#003a57;line-height:1.1}h3{font-family:Rajdhani;font-size:24px;color:#003a57}h4{font-family:Rajdhani;font-size:20px;color:#003a57}
+.back{font-size:13px;color:#52525b}.hrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.hrow.small{gap:10px}.grow{flex:1}
+.muted{font-size:13px;color:#52525b}.muted.big{font-size:14.5px}.xs{font-size:11.5px}.gap{margin-left:8px}
+.kicker{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#52525b}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:4px 12px;white-space:nowrap}
+.pill.ok{background:#d1fae5;color:#047857}.pill.okl{background:#fff;border:1px solid #6ee7b7;color:#047857;font-weight:600}
+.pill.now{background:#e0f2fe;color:#075985}.pill.grey{background:#f4f4f5;color:#52525b;border:1px solid #e4e4e7}
+.next{padding:20px 24px;display:flex;align-items:center;gap:18px}.nextt{flex:1;display:flex;flex-direction:column;gap:6px}.next p{font-size:13.5px;color:#3f3f46;line-height:1.5}
+.bfill{background:#00527a;color:#fff;font-weight:700;font-size:15px;border-radius:12px;padding:13px 26px;white-space:nowrap;text-align:center}
+.bline{background:#fff;color:#18181b;border:1px solid #d4d4d8;font-size:13.5px;border-radius:12px;padding:9px 16px;white-space:nowrap;text-align:center}
+.sm{font-size:13px;padding:9px 16px}.wide{display:block}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.tile{padding:14px 16px;display:flex;flex-direction:column;gap:2px}.tile b{font-size:26px;color:#003a57}.tile span{font-size:13px;color:#52525b}
+.sectiont{font-size:16px;font-weight:700;color:#003a57;margin-top:2px}
+.life,.dsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.dsteps{grid-template-columns:repeat(5,1fr)}
+.stepc{background:#fff;border:1px solid #e4e4e7;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.stepc b{display:block;font-size:14.5px;color:#003a57}.stepc span{font-size:12.5px;color:#52525b}
+.stepc.now{border:2px solid #0284c7}.stepc.later b{color:#71717a}
+.dot{width:26px;height:26px;border-radius:999px;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.dot.ok{background:#d1fae5;color:#047857}.dot.now{background:#0284c7;box-shadow:inset 0 0 0 7px #e0f2fe}.dot.later{background:#f4f4f5;border:2px solid #d4d4d8}
+.mandate{padding:6px 18px}.mrow{display:grid;grid-template-columns:190px 1fr auto;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid #f4f4f5;font-size:13.5px}
+.mrow:last-of-type{border-bottom:none}.mlabel{font-weight:700;color:#3f3f46}.mvalue{color:#18181b;display:flex;flex-direction:column;gap:2px}.hist{font-size:12px;color:#71717a}
+.exits{display:flex;gap:18px;padding:10px 0 12px;border-top:1px solid #f4f4f5}
+.l{font-size:13px;font-weight:600;color:#00527a;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+.fold{padding:14px 18px;font-weight:700;color:#003a57;display:flex;justify-content:space-between}
+.statesgrid{display:flex;gap:18px;align-items:flex-start}.statesgrid .page.desk{width:640px}.statesgrid .life{grid-template-columns:repeat(2,1fr)}
+.formsgrid{display:grid;grid-template-columns:repeat(4,330px);gap:14px}
+.form{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:#3f3f46}.input{border:1px solid #d4d4d8;border-radius:10px;padding:9px 11px;font-weight:500;color:#18181b;background:#fff}.hint{font-size:11.5px;font-weight:400;color:#71717a}
+.tabs{display:flex;gap:6px;background:#fff;border-radius:12px;padding:4px;align-self:flex-start;border:1px solid #e4e4e7}.tabs span{font-size:13.5px;font-weight:600;color:#52525b;padding:6px 14px;border-radius:9px}.tabs .on{background:#e0f2fe;color:#075985}
+.filters{display:flex;flex-wrap:wrap;gap:8px}.fp{font-size:13px;font-weight:600;border:1px solid #e4e4e7;background:#fff;border-radius:999px;padding:6px 12px;white-space:nowrap}.fp.on{background:#e0f2fe;color:#075985;border-color:#bae6fd}
+.scard{display:grid;grid-template-columns:minmax(0,1fr) 290px;border-left:5px solid #059669;overflow:hidden}
+.sleft{padding:14px 16px;display:flex;flex-direction:column;gap:8px}.sright{padding:14px 16px;border-left:1px solid #f4f4f5;display:flex;flex-direction:column;gap:6px}
+.sname{font-family:Rajdhani;font-size:22px;color:#003a57}
+.prices{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}.pr{display:flex;flex-direction:column;gap:1px}.pr b{font-size:16px}.pr b.blue{color:#0369a1}.pr b.green{color:#047857}.pr b.orange{color:#c2410c}.arrow{color:#a1a1aa;padding-bottom:2px}
+.segs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.seg{font-size:11.5px;color:#71717a;border-top:3px solid #e4e4e7;padding-top:4px;text-align:center}.seg.done{border-top-color:#059669;color:#047857;font-weight:600}.seg.due{border-top-color:#0284c7;color:#075985;font-weight:700}
+.links{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px}
+.block{padding:16px 20px;display:flex;flex-direction:column}.btitle{display:flex;gap:6px;align-items:baseline;padding-bottom:6px}.btitle b{font-family:Rajdhani;font-size:22px;color:#003a57}
+.task{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid #f4f4f5}.task .what{flex:1;display:flex;flex-direction:column;gap:2px}.task .what b{font-size:14px}
+.round{width:28px;height:28px;border-radius:999px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px}.round.orange{background:#f97316}
+/* tablette et téléphone */
+.tab .life{grid-template-columns:repeat(2,1fr)}.tab .dsteps{grid-template-columns:repeat(3,1fr)}
+.tab .scard{grid-template-columns:1fr}.tab .sright{border-left:none;border-top:1px solid #f4f4f5}
+.phone .next{flex-direction:column;align-items:stretch;padding:16px}.phone .bfill{display:block}
+.phone .life,.phone .dsteps{grid-template-columns:1fr}.phone .tiles{gap:8px}.phone .tile b{font-size:22px}
+.phone .mrow{grid-template-columns:1fr;gap:4px}.phone .exits{flex-direction:column;gap:8px}
+.phone .scard{grid-template-columns:1fr}.phone .sright{border-left:none;border-top:1px solid #f4f4f5}
+.phone .segs{grid-template-columns:repeat(2,1fr)}.phone .task{flex-wrap:wrap}.phone .task .bline{margin-left:42px}
+.phone .hrow.small{flex-direction:column;align-items:flex-start;gap:6px}
+</style></head><body>
+<h1>Lot C — La vie du mandat côté vendeur : la maquette (C0)</h1>
+<p class="sub">Aujourd’hui, le dossier vendeur s’arrête à « Mandat signé ». Après : Mandat signé → Offre acceptée → Sous compromis → Vendu par l’agence, et la sortie « Mandat terminé sans vente ». Trois écrans, aux trois tailles, dans le socle de la refonte : la fiche du dossier (M. Lefebvre, de la démo : le mandat de Mougins, offre acceptée de la famille Keller), le Suivi, une tâche d’« Aujourd’hui ». L’« avant » est la capture réelle de l’essai ce 28/11 ; dans l’« après », dates et prix sont inventés, pour montrer chaque état.</p>
+
+<div class="part">1 · La fiche du dossier, état « Offre acceptée »</div>
+<div class="layout">
+  <div class="col"><div class="ftitle">Avant · ordinateur (capture de l’essai)</div><img class="shot" src="file:///Users/jean-guyourmieres/Documents/acm-studio/missions/maquettes/lot-c/C0-avant-dossier-ordinateur.png" width="640"></div>
+  <div class="col"><div class="ftitle">Après · ordinateur</div>
+<div class="page desk">
+  
+<div class="back">← Vendeurs</div>
+<div class="hrow"><h2>M. Lefebvre</h2><span class="grow"></span><span class="pill now">Offre acceptée</span></div>
+<div class="muted big">Maison · 7 pièces · 210 m² · Mougins</div>
+<div class="hrow small"><span class="pill okl">Mandat exclusif signé le 28/10 · jusqu’au 28/01/2027</span><span class="muted">Créé le 20/10</span></div>
+  
+<div class="card next">
+  <div class="nextt"><span class="kicker">Prochaine étape</span><h3>Noter le compromis</h3><p>L’offre de la famille Keller est acceptée depuis le 28/11, à 1 560 000 €. Notez la date du compromis et la date prévue de l’acte : le dossier passera « Sous compromis ».</p></div>
+  <span class="bfill">Noter le compromis</span>
+</div>
+  
+<div class="tiles">
+  <div class="card tile"><b>5</b><span>Concurrents retenus</span></div>
+  <div class="card tile"><b>0</b><span>Prix ou surface à vérifier</span></div>
+  <div class="card tile"><b>0</b><span>Acquéreur prêt à visiter</span></div>
+</div>
+  <div class="sectiont">Son mandat</div>
+  
+<div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc now"><span class="dot now"></span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Sous compromis</b><span>à noter</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>l’acte et son prix</span></div></div></div>
+  
+<div class="card mandate">
+  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div>
+  <div class="exits"><span class="l">Vendu à un acquéreur venu d’ailleurs</span><span class="l">Mandat terminé sans vente</span></div>
+</div>
+  
+<div class="sectiont">Son dossier</div>
+<div class="dsteps">
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le bien</b><span>fiche saisie · 6 photos</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Les concurrents</b><span>5 retenus</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le prix</b><span>1 690 000 €</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le rendez-vous</b><span>fait le 28/10</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Conclure</b><span>mandat signé le 28/10</span></div></div>
+</div>
+<div class="card fold">Tout le dossier <span>›</span></div>
+</div></div>
+  <div class="notes">
+    <div class="note"><b>« Son mandat »</b>, nouveau, avant « Son dossier » : c’est ce qui vit maintenant. Quatre étapes, dans les cartes de « Son dossier » : vert fait, bleu maintenant, gris à venir. Dessous, « Le mandat » : sa fin, son prix et ses avenants, l’offre acceptée. « Son dossier » garde la préparation et le rendez-vous.</div>
+    <div class="note"><b>La prochaine étape suit le mandat</b> : « Noter le compromis » quand une offre est acceptée (aujourd’hui : « Voir le Suivi »). Un seul bouton plein, le sien.</div>
+    <div class="note"><b>Le badge</b> dit l’étape du mandat (« Offre acceptée », « Sous compromis », « Vendu par l’agence », « Mandat terminé ») ; le type et la fin du mandat passent sur la ligne dessous.</div>
+    <div class="note"><b>Rien de nouveau dans <code>projects.status</code></b> (CLAUDE.md : le statut dit la position, jamais l’issue) : chaque étape se lit dans un fait daté — la signature, l’offre acceptée (côté acquéreur), le compromis, l’acte et son prix, la fin sans vente.</div>
+    <div class="note"><b>Une vente à un acquéreur venu d’ailleurs</b> : le lien en bas de « Le mandat » ouvre la même saisie que « Noter le compromis », sans fiche acquéreur.</div>
+  </div>
+</div>
+<div class="layout">
+  <div class="col"><div class="ftitle">Après · tablette</div>
+<div class="page tab">
+  
+<div class="back">← Vendeurs</div>
+<div class="hrow"><h2>M. Lefebvre</h2><span class="grow"></span><span class="pill now">Offre acceptée</span></div>
+<div class="muted big">Maison · 7 pièces · 210 m² · Mougins</div>
+<div class="hrow small"><span class="pill okl">Mandat exclusif signé le 28/10 · jusqu’au 28/01/2027</span><span class="muted">Créé le 20/10</span></div>
+  
+<div class="card next">
+  <div class="nextt"><span class="kicker">Prochaine étape</span><h3>Noter le compromis</h3><p>L’offre de la famille Keller est acceptée depuis le 28/11, à 1 560 000 €. Notez la date du compromis et la date prévue de l’acte : le dossier passera « Sous compromis ».</p></div>
+  <span class="bfill">Noter le compromis</span>
+</div>
+  
+<div class="tiles">
+  <div class="card tile"><b>5</b><span>Concurrents retenus</span></div>
+  <div class="card tile"><b>0</b><span>Prix ou surface à vérifier</span></div>
+  <div class="card tile"><b>0</b><span>Acquéreur prêt à visiter</span></div>
+</div>
+  <div class="sectiont">Son mandat</div>
+  
+<div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc now"><span class="dot now"></span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Sous compromis</b><span>à noter</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>l’acte et son prix</span></div></div></div>
+  
+<div class="card mandate">
+  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div>
+  <div class="exits"><span class="l">Vendu à un acquéreur venu d’ailleurs</span><span class="l">Mandat terminé sans vente</span></div>
+</div>
+  
+<div class="sectiont">Son dossier</div>
+<div class="dsteps">
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le bien</b><span>fiche saisie · 6 photos</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Les concurrents</b><span>5 retenus</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le prix</b><span>1 690 000 €</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le rendez-vous</b><span>fait le 28/10</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Conclure</b><span>mandat signé le 28/10</span></div></div>
+</div>
+<div class="card fold">Tout le dossier <span>›</span></div>
+</div></div>
+  <div class="col"><div class="ftitle">Après · téléphone</div>
+<div class="page phone">
+  
+<div class="back">← Vendeurs</div>
+<div class="hrow"><h2>M. Lefebvre</h2><span class="grow"></span><span class="pill now">Offre acceptée</span></div>
+<div class="muted big">Maison · 7 pièces · 210 m² · Mougins</div>
+<div class="hrow small"><span class="pill okl">Mandat exclusif signé le 28/10 · jusqu’au 28/01/2027</span><span class="muted">Créé le 20/10</span></div>
+  
+<div class="card next">
+  <div class="nextt"><span class="kicker">Prochaine étape</span><h3>Noter le compromis</h3><p>L’offre de la famille Keller est acceptée depuis le 28/11, à 1 560 000 €. Notez la date du compromis et la date prévue de l’acte : le dossier passera « Sous compromis ».</p></div>
+  <span class="bfill">Noter le compromis</span>
+</div>
+  
+<div class="tiles">
+  <div class="card tile"><b>5</b><span>Concurrents retenus</span></div>
+  <div class="card tile"><b>0</b><span>Prix ou surface à vérifier</span></div>
+  <div class="card tile"><b>0</b><span>Acquéreur prêt à visiter</span></div>
+</div>
+  <div class="sectiont">Son mandat</div>
+  
+<div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc now"><span class="dot now"></span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Sous compromis</b><span>à noter</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>l’acte et son prix</span></div></div></div>
+  
+<div class="card mandate">
+  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027, 3 mois après la signature</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 € depuis l’avenant du 14/11<span class="hist">1 639 500 € à la signature, le 28/10</span></span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Offre acceptée</span><span class="mvalue">1 560 000 € · famille Keller · le 28/11</span><span class="l">Voir l’offre</span></div>
+  <div class="exits"><span class="l">Vendu à un acquéreur venu d’ailleurs</span><span class="l">Mandat terminé sans vente</span></div>
+</div>
+  
+<div class="sectiont">Son dossier</div>
+<div class="dsteps">
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le bien</b><span>fiche saisie · 6 photos</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Les concurrents</b><span>5 retenus</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le prix</b><span>1 690 000 €</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Le rendez-vous</b><span>fait le 28/10</span></div></div>
+  <div class="stepc ok"><span class="dot ok">✓</span><div><b>Conclure</b><span>mandat signé le 28/10</span></div></div>
+</div>
+<div class="card fold">Tout le dossier <span>›</span></div>
+</div></div>
+  <div class="col"><div class="ftitle">Avant · téléphone</div><img class="shot" src="file:///Users/jean-guyourmieres/Documents/acm-studio/missions/maquettes/lot-c/C0-avant-dossier-telephone.png" width="390"></div>
+</div>
+
+<div class="part">2 · « Son mandat » dans ses autres états (ordinateur)</div>
+
+<div class="statesgrid">
+  <div class="col"><div class="ftitle">« Sous compromis » · la prochaine étape attend le 31/12 (15 jours avant l’acte)</div>
+    <div class="page desk">
+      
+<div class="card next">
+  <div class="nextt"><span class="kicker">Prochaine étape</span><h3>Préparer l’acte · le 31/12</h3><p>L’acte est prévu le 15/01 chez le notaire. Quinze jours avant, la préparation de l’acte arrive dans « Aujourd’hui ».</p></div>
+  
+</div>
+      <div class="sectiont">Son mandat</div>
+      
+<div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc ok"><span class="dot ok">✓</span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc now"><span class="dot now"></span><div><b>Sous compromis</b><span>le 05/12 · acte prévu le 15/01</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>l’acte et son prix</span></div></div></div>
+      
+<div class="card mandate">
+  <div class="mrow"><span class="mlabel">Fin du mandat</span><span class="mvalue">le 28/01/2027</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Prix du mandat</span><span class="mvalue">1 590 000 €</span><span class="l">Ajouter un avenant de baisse</span></div><div class="mrow"><span class="mlabel">Compromis</span><span class="mvalue">signé le 05/12 · acte prévu le 15/01 · famille Keller</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Point marché</span><span class="mvalue">arrêté au compromis, le 05/12</span><span></span></div>
+  
+</div>
+    </div></div>
+  <div class="col"><div class="ftitle">« Vendu par l’agence » · après « Noter la vente »</div>
+    <div class="page desk">
+      
+<div class="card next">
+  <div class="nextt"><span class="kicker">Prochaine étape</span><h3>Voir le Suivi</h3><p>Vendu le 15/01 par l’agence : sa suite vit dans le Suivi, sous « Vendus par l’agence ».</p></div>
+  <span class="bline">Voir le Suivi</span>
+</div>
+      <div class="sectiont">Son mandat</div>
+      
+<div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc ok"><span class="dot ok">✓</span><div><b>Offre acceptée</b><span>le 28/11 · famille Keller</span></div></div><div class="stepc ok"><span class="dot ok">✓</span><div><b>Sous compromis</b><span>le 05/12</span></div></div><div class="stepc ok"><span class="dot ok">✓</span><div><b>Vendu par l’agence</b><span>le 15/01 · 1 560 000 €</span></div></div></div>
+      
+<div class="card mandate">
+  <div class="mrow"><span class="mlabel">Vente</span><span class="mvalue">1 560 000 € · acte du 15/01 · famille Keller</span><span class="l">Modifier</span></div><div class="mrow"><span class="mlabel">Écart</span><span class="mvalue">−1,9 % sur le prix du mandat (1 590 000 €)</span><span></span></div><div class="mrow"><span class="mlabel">Du mandat au compromis</span><span class="mvalue">38 jours</span><span></span></div>
+  
+</div>
+    </div></div>
+  <div class="col"><div class="ftitle">« Mandat terminé sans vente » · la sortie</div>
+    <div class="page desk">
+      
+<div class="card next">
+  <div class="nextt"><span class="kicker">Prochaine étape</span><h3>Voir le Suivi</h3><p>Le mandat s’est terminé le 28/01/2027 sans vente : le dossier rejoint « Vendus ailleurs · retirés · terminés ».</p></div>
+  <span class="bline">Voir le Suivi</span>
+</div>
+      <div class="sectiont">Son mandat</div>
+      
+<div class="life"><div class="stepc ok"><span class="dot ok">✓</span><div><b>Mandat signé</b><span>le 28/10 · exclusif</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Offre acceptée</b><span>—</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Sous compromis</b><span>—</span></div></div><div class="stepc later"><span class="dot later"></span><div><b>Vendu par l’agence</b><span>—</span></div></div></div>
+      <div class="card mandate"><div class="mrow"><span class="mlabel">Fin</span><span class="mvalue"><span class="pill grey">Mandat terminé sans vente</span> le 28/01/2027</span><span class="l">Annuler</span></div></div>
+    </div></div>
+</div>
+
+<div class="part">3 · Les saisies, ouvertes sur place</div>
+<div class="layout">
+<div class="formsgrid">
+  <div class="card form"><h4>Noter le compromis</h4>
+    <label class="field"><span>Date du compromis</span><span class="input">05/12/2026</span></label>
+    <label class="field"><span>Date prévue de l’acte</span><span class="input">15/01/2027</span></label>
+    <label class="field"><span>L’acquéreur</span><span class="input">Famille Keller · offre acceptée le 28/11</span><span class="hint">ou « Un acquéreur venu d’ailleurs »</span></label>
+    <div class="hrow"><span class="bfill sm">Enregistrer</span><span class="bline sm">Annuler</span></div></div>
+  <div class="card form"><h4>Avenant de baisse</h4>
+    <label class="field"><span>Date de l’avenant</span><span class="input">14/11/2026</span></label>
+    <label class="field"><span>Nouveau prix</span><span class="input">1 590 000 €</span></label>
+    <p class="hist">Gardés : 1 639 500 € le 28/10 → 1 590 000 € le 14/11.</p>
+    <div class="hrow"><span class="bfill sm">Enregistrer</span><span class="bline sm">Annuler</span></div></div>
+  <div class="card form"><h4>Fin du mandat</h4>
+    <label class="field"><span>Durée</span><span class="input">3 mois</span><span class="hint">ou une date</span></label>
+    <label class="field"><span>Fin le</span><span class="input">28/01/2027</span><span class="hint">calculée depuis la signature, le 28/10</span></label>
+    <div class="hrow"><span class="bfill sm">Enregistrer</span><span class="bline sm">Annuler</span></div></div>
+  <div class="card form"><h4>Noter la vente</h4>
+    <label class="field"><span>Date de l’acte</span><span class="input">15/01/2027</span></label>
+    <label class="field"><span>Prix de vente</span><span class="input">1 560 000 €</span><span class="hint">tel que signé chez le notaire</span></label>
+    <div class="hrow"><span class="bfill sm">Enregistrer</span><span class="bline sm">Annuler</span></div></div>
+</div>
+  <div class="notes">
+    <div class="note"><b>Fin du mandat</b> : la durée ou la date, l’une calcule l’autre depuis la signature. <b>Avenant de baisse</b> : date et nouveau prix ; l’historique est gardé, le prix du mandat est le dernier.</div>
+    <div class="note"><b>Noter le compromis</b> : depuis le dossier, ou depuis la fiche de l’acquéreur (« Avant le compromis », où la date du compromis attendait une colonne, M143) — le même fait. <b>Noter la vente</b> : après l’acte, sa date et le prix ; l’écart au prix du mandat et le délai du mandat au compromis se calculent.</div>
+    <div class="note">Chaque saisie ouverte porte le seul bouton plein de l’écran (M146) ; tout est relu au serveur ; un dossier archivé ne se modifie pas.</div>
+  </div>
+</div>
+
+<div class="part">4 · Le Suivi : deux onglets nouveaux</div>
+<div class="layout">
+  <div class="col"><div class="ftitle">Après · ordinateur</div>
+<div class="page desk">
+  <div class="tabs"><span>Préparation</span><span>Live</span><span class="on">Suivi</span></div>
+  <span class="kicker">Après le rendez-vous</span>
+  <h2>Suivi</h2>
+  <div class="filters">
+    <span class="fp">Tous · 11</span><span class="fp">Mandats signés · 6</span><span class="fp on">Sous offre · compromis · 2</span><span class="fp">Vendus par l’agence · 1</span><span class="fp">À relancer · 1</span><span class="fp">Vendus ailleurs · retirés · terminés · 1</span>
+  </div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. Lefebvre</b><span class="pill now">Offre acceptée · famille Keller</span></div>
+    <div class="muted">Maison · 7 pièces · 210 m² · Mougins · signé le 28/10, jusqu’au 28/01</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Prix signé</span><b class="">1 639 500 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Avenant du 14/11</span><b class="">1 590 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Offre acceptée</span><b class="blue">1 560 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg due">Compromis · à noter</span><span class="seg ">Vente</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Noter le compromis</b>
+    <span class="muted">Offre de la famille Keller acceptée le 28/11</span>
+    <span class="bfill sm wide">Noter le compromis</span>
+    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. et Mme Castel</b><span class="pill now">Sous compromis · acte prévu le 12/12</span></div>
+    <div class="muted">Maison · 6 pièces · 195 m² · Valbonne · signé le 19/09</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Prix signé</span><b class="">1 590 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Compromis</span><b class="blue">1 560 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg done">Compromis le 25/10 ✓</span><span class="seg due">Acte le 12/12</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Préparer l’acte</b>
+    <span class="muted">Acte prévu le 12/12, dans 14 jours · Point marché arrêté au compromis</span>
+    <span class="bline sm wide">Préparer l’acte</span>
+    <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  <div class="ftitle">Sous « Vendus par l’agence »</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. et Mme Garnier</b><span class="pill ok">Vendu par l’agence · le 25/11</span></div>
+    <div class="muted">Maison · 5 pièces · 145 m² · La Colle-sur-Loup · signé le 22/08</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Il voulait</span><b class="">850 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Prix signé</span><b class="">785 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Vendu</span><b class="green">770 000 €</b></span><span class="muted xs gap">−1,9 % sur le prix du mandat · 24 jours du mandat au compromis</span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg done">Compromis ✓</span><span class="seg done">Vendu le 25/11 ✓</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Vendu</span>
+    <b>Plus rien à faire</b>
+    <span class="muted">Acte signé le 25/11 chez le notaire</span>
+    
+    <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  <div class="ftitle">Sous « Mandats signés »</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">Mme Navarro</b><span class="pill ok">Mandat signé · exclusif</span></div>
+    <div class="muted">Maison · 4 pièces · 118 m² · Saint-Paul-de-Vence · signé le 22/09, jusqu’au 22/12</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Il voulait</span><b class="">763 500 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Prix signé</span><b class="orange">705 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg due">Concurrents · 5 à démarcher</span><span class="seg ">Point marché · le 22/12</span><span class="seg ">Visites acquéreurs · 0</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Préparer le renouvellement</b>
+    <span class="muted">Le mandat se termine le 22/12, dans 24 jours</span>
+    <span class="bline sm wide">Préparer le renouvellement</span>
+    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+</div></div>
+  <div class="notes">
+    <div class="note"><b>Deux onglets</b> : « Sous offre · compromis » et « Vendus par l’agence ». « Mandats signés » ne garde que les mandats sans offre acceptée.</div>
+    <div class="note"><b>La sortie « Mandat terminé sans vente »</b> rejoint « Vendus ailleurs · retirés », qui devient « Vendus ailleurs · retirés · terminés » : pour le conseiller, le même geste, plus rien à faire (question 5 du 27/11). « Vendu ailleurs » et « Retiré de la vente » ne bougent pas.</div>
+    <div class="note"><b>La frise de la carte</b> : tant qu’aucune offre n’est acceptée, celle d’aujourd’hui (concurrents, Point marché, visites : le travail pour vendre) ; dès l’offre acceptée, celle de la vente : Mandat signé → Offre acceptée → Compromis → Vente. <b>Le Point marché</b> continue pendant l’offre acceptée et s’arrête au compromis : la carte le dit.</div>
+    <div class="note"><b>Vendu</b> : le prix de vente en vert, l’écart au prix du mandat et le délai du mandat au compromis ; plus de bouton.</div>
+  </div>
+  <div class="col"><div class="ftitle">Après · téléphone</div>
+<div class="page phone">
+  <div class="tabs"><span>Préparation</span><span>Live</span><span class="on">Suivi</span></div>
+  <span class="kicker">Après le rendez-vous</span>
+  <h2>Suivi</h2>
+  <div class="filters">
+    <span class="fp">Tous · 11</span><span class="fp">Mandats signés · 6</span><span class="fp on">Sous offre · compromis · 2</span><span class="fp">Vendus par l’agence · 1</span><span class="fp">À relancer · 1</span><span class="fp">Vendus ailleurs · retirés · terminés · 1</span>
+  </div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. Lefebvre</b><span class="pill now">Offre acceptée · famille Keller</span></div>
+    <div class="muted">Maison · 7 pièces · 210 m² · Mougins · signé le 28/10, jusqu’au 28/01</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Prix signé</span><b class="">1 639 500 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Avenant du 14/11</span><b class="">1 590 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Offre acceptée</span><b class="blue">1 560 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg due">Compromis · à noter</span><span class="seg ">Vente</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Noter le compromis</b>
+    <span class="muted">Offre de la famille Keller acceptée le 28/11</span>
+    <span class="bfill sm wide">Noter le compromis</span>
+    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. et Mme Castel</b><span class="pill now">Sous compromis · acte prévu le 12/12</span></div>
+    <div class="muted">Maison · 6 pièces · 195 m² · Valbonne · signé le 19/09</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Prix signé</span><b class="">1 590 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Compromis</span><b class="blue">1 560 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg done">Compromis le 25/10 ✓</span><span class="seg due">Acte le 12/12</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Préparer l’acte</b>
+    <span class="muted">Acte prévu le 12/12, dans 14 jours · Point marché arrêté au compromis</span>
+    <span class="bline sm wide">Préparer l’acte</span>
+    <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  <div class="ftitle">Sous « Vendus par l’agence »</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. et Mme Garnier</b><span class="pill ok">Vendu par l’agence · le 25/11</span></div>
+    <div class="muted">Maison · 5 pièces · 145 m² · La Colle-sur-Loup · signé le 22/08</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Il voulait</span><b class="">850 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Prix signé</span><b class="">785 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Vendu</span><b class="green">770 000 €</b></span><span class="muted xs gap">−1,9 % sur le prix du mandat · 24 jours du mandat au compromis</span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg done">Compromis ✓</span><span class="seg done">Vendu le 25/11 ✓</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Vendu</span>
+    <b>Plus rien à faire</b>
+    <span class="muted">Acte signé le 25/11 chez le notaire</span>
+    
+    <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  <div class="ftitle">Sous « Mandats signés »</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">Mme Navarro</b><span class="pill ok">Mandat signé · exclusif</span></div>
+    <div class="muted">Maison · 4 pièces · 118 m² · Saint-Paul-de-Vence · signé le 22/09, jusqu’au 22/12</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Il voulait</span><b class="">763 500 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Prix signé</span><b class="orange">705 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg due">Concurrents · 5 à démarcher</span><span class="seg ">Point marché · le 22/12</span><span class="seg ">Visites acquéreurs · 0</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Préparer le renouvellement</b>
+    <span class="muted">Le mandat se termine le 22/12, dans 24 jours</span>
+    <span class="bline sm wide">Préparer le renouvellement</span>
+    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+</div></div>
+</div>
+<div class="layout">
+  <div class="col"><div class="ftitle">Après · tablette</div>
+<div class="page tab">
+  <div class="tabs"><span>Préparation</span><span>Live</span><span class="on">Suivi</span></div>
+  <span class="kicker">Après le rendez-vous</span>
+  <h2>Suivi</h2>
+  <div class="filters">
+    <span class="fp">Tous · 11</span><span class="fp">Mandats signés · 6</span><span class="fp on">Sous offre · compromis · 2</span><span class="fp">Vendus par l’agence · 1</span><span class="fp">À relancer · 1</span><span class="fp">Vendus ailleurs · retirés · terminés · 1</span>
+  </div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. Lefebvre</b><span class="pill now">Offre acceptée · famille Keller</span></div>
+    <div class="muted">Maison · 7 pièces · 210 m² · Mougins · signé le 28/10, jusqu’au 28/01</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Prix signé</span><b class="">1 639 500 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Avenant du 14/11</span><b class="">1 590 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Offre acceptée</span><b class="blue">1 560 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg due">Compromis · à noter</span><span class="seg ">Vente</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Noter le compromis</b>
+    <span class="muted">Offre de la famille Keller acceptée le 28/11</span>
+    <span class="bfill sm wide">Noter le compromis</span>
+    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. et Mme Castel</b><span class="pill now">Sous compromis · acte prévu le 12/12</span></div>
+    <div class="muted">Maison · 6 pièces · 195 m² · Valbonne · signé le 19/09</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Prix signé</span><b class="">1 590 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Compromis</span><b class="blue">1 560 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg done">Compromis le 25/10 ✓</span><span class="seg due">Acte le 12/12</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Préparer l’acte</b>
+    <span class="muted">Acte prévu le 12/12, dans 14 jours · Point marché arrêté au compromis</span>
+    <span class="bline sm wide">Préparer l’acte</span>
+    <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  <div class="ftitle">Sous « Vendus par l’agence »</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">M. et Mme Garnier</b><span class="pill ok">Vendu par l’agence · le 25/11</span></div>
+    <div class="muted">Maison · 5 pièces · 145 m² · La Colle-sur-Loup · signé le 22/08</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Il voulait</span><b class="">850 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Prix signé</span><b class="">785 000 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Vendu</span><b class="green">770 000 €</b></span><span class="muted xs gap">−1,9 % sur le prix du mandat · 24 jours du mandat au compromis</span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg done">Offre acceptée ✓</span><span class="seg done">Compromis ✓</span><span class="seg done">Vendu le 25/11 ✓</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Vendu</span>
+    <b>Plus rien à faire</b>
+    <span class="muted">Acte signé le 25/11 chez le notaire</span>
+    
+    <div class="links"><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+  <div class="ftitle">Sous « Mandats signés »</div>
+  
+<div class="card scard green">
+  <div class="sleft">
+    <div class="hrow"><b class="sname">Mme Navarro</b><span class="pill ok">Mandat signé · exclusif</span></div>
+    <div class="muted">Maison · 4 pièces · 118 m² · Saint-Paul-de-Vence · signé le 22/09, jusqu’au 22/12</div>
+    <div class="prices"><span class="pr"><span class="muted xs">Il voulait</span><b class="">763 500 €</b></span><span class="arrow">→</span><span class="pr"><span class="muted xs">Prix signé</span><b class="orange">705 000 €</b></span></div>
+    <div class="segs"><span class="seg done">Mandat signé ✓</span><span class="seg due">Concurrents · 5 à démarcher</span><span class="seg ">Point marché · le 22/12</span><span class="seg ">Visites acquéreurs · 0</span></div>
+  </div>
+  <div class="sright">
+    <span class="kicker">Prochaine étape · aujourd’hui</span>
+    <b>Préparer le renouvellement</b>
+    <span class="muted">Le mandat se termine le 22/12, dans 24 jours</span>
+    <span class="bline sm wide">Préparer le renouvellement</span>
+    <div class="links"><span class="l">Point marché</span><span class="l">Détail des prix</span><span class="l">Ouvrir le dossier →</span></div>
+  </div>
+</div>
+</div></div>
+  <div class="col"><div class="ftitle">Avant · ordinateur (capture de l’essai)</div><img class="shot" src="file:///Users/jean-guyourmieres/Documents/acm-studio/missions/maquettes/lot-c/C0-avant-suivi-ordinateur.png" width="560"></div>
+</div>
+
+<div class="part">5 · « Aujourd’hui » : préparer l’acte, préparer le renouvellement</div>
+<div class="layout">
+  <div class="col"><div class="ftitle">Après · ordinateur</div>
+<div class="page desk">
+  <span class="kicker">Samedi 28 novembre</span>
+  <h2>Aujourd’hui</h2>
+  <div class="card block">
+    <div class="btitle"><b>Vendeurs</b><span class="muted xs">· 4</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer l’acte de M. et Mme Castel</b><span class="muted">acte prévu le 12/12 chez le notaire · dans 14 jours</span></div><span class="bline sm">Préparer l’acte</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer le renouvellement du mandat de Mme Navarro</b><span class="muted">le mandat se termine le 22/12 · dans 24 jours</span></div><span class="bline sm">Préparer le renouvellement</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Relancer M. et Mme Lambert-Duval</b><span class="muted">Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui</span></div><span class="bline sm">Préparer la relance</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Point marché de M. Lefebvre</b><span class="muted">Mandat signé le 28/10 · offre acceptée : le point continue jusqu’au compromis</span></div><span class="bline sm">Faire le point</span></div>
+  </div>
+</div></div>
+  <div class="col"><div class="ftitle">Après · tablette</div>
+<div class="page tab">
+  <span class="kicker">Samedi 28 novembre</span>
+  <h2>Aujourd’hui</h2>
+  <div class="card block">
+    <div class="btitle"><b>Vendeurs</b><span class="muted xs">· 4</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer l’acte de M. et Mme Castel</b><span class="muted">acte prévu le 12/12 chez le notaire · dans 14 jours</span></div><span class="bline sm">Préparer l’acte</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer le renouvellement du mandat de Mme Navarro</b><span class="muted">le mandat se termine le 22/12 · dans 24 jours</span></div><span class="bline sm">Préparer le renouvellement</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Relancer M. et Mme Lambert-Duval</b><span class="muted">Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui</span></div><span class="bline sm">Préparer la relance</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Point marché de M. Lefebvre</b><span class="muted">Mandat signé le 28/10 · offre acceptée : le point continue jusqu’au compromis</span></div><span class="bline sm">Faire le point</span></div>
+  </div>
+</div></div>
+  <div class="col"><div class="ftitle">Après · téléphone</div>
+<div class="page phone">
+  <span class="kicker">Samedi 28 novembre</span>
+  <h2>Aujourd’hui</h2>
+  <div class="card block">
+    <div class="btitle"><b>Vendeurs</b><span class="muted xs">· 4</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer l’acte de M. et Mme Castel</b><span class="muted">acte prévu le 12/12 chez le notaire · dans 14 jours</span></div><span class="bline sm">Préparer l’acte</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Préparer le renouvellement du mandat de Mme Navarro</b><span class="muted">le mandat se termine le 22/12 · dans 24 jours</span></div><span class="bline sm">Préparer le renouvellement</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Relancer M. et Mme Lambert-Duval</b><span class="muted">Réfléchit au prix · dernier contact il y a 8 jours · relance prévue aujourd’hui</span></div><span class="bline sm">Préparer la relance</span></div>
+    <div class="task"><span class="round orange">!</span><div class="what"><b>Point marché de M. Lefebvre</b><span class="muted">Mandat signé le 28/10 · offre acceptée : le point continue jusqu’au compromis</span></div><span class="bline sm">Faire le point</span></div>
+  </div>
+</div></div>
+  <div class="notes">
+    <div class="note"><b>« Préparer l’acte »</b> arrive 15 jours avant la date prévue de l’acte ; <b>« Préparer le renouvellement »</b>, 30 jours avant la fin du mandat. Dans le bloc Vendeurs, avec son bouton en contour, comme les autres tâches ; « en retard » seulement une fois la date passée.</div>
+    <div class="note"><b>Quand elles s’en vont</b> : « Préparer le renouvellement », quand la fin du mandat est repoussée ou le mandat terminé ; « Préparer l’acte », quand la vente est notée. Le jour de l’acte passé sans vente notée, elle devient « Noter la vente ».</div>
+    <div class="note">Les boutons ouvrent le dossier sur « Son mandat », la saisie déjà ouverte (« Fin du mandat », « Noter la vente »).</div>
+  </div>
+</div>
+<div class="layout"><div class="col"><div class="ftitle">Avant · ordinateur (capture de l’essai)</div><img class="shot" src="file:///Users/jean-guyourmieres/Documents/acm-studio/missions/maquettes/lot-c/C0-avant-aujourdhui-ordinateur.png" width="760"></div></div>
+</body></html>
