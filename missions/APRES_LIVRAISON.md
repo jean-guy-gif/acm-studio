@@ -299,3 +299,21 @@ chacun, B5 en 1 h : 7 h au lieu de 6 h 30.
     migration, pour que la base refuse une offre signée dont le financement ne suit pas le mode
     confirmé de la fiche ; une page ancienne montrerait alors son message d'échec, sans rien signer,
     la saisie restant à l'écran (environ 45 min, et votre geste pour l'appliquer).
+
+### Les réponses de Jean-Guy (28/11, vers 18 h)
+
+- Lot B : « oui » pour la production, dimanche 29/11 au soir, une fois la phrase de confidentialité
+  acceptée par la juriste. Question 13 : le choix par défaut, la mise en production le soir ; le
+  chef le prévient avant de la lancer.
+- Lot C : la maquette validée, et les cinq choix par défaut. Quatre retouches, puis le code :
+  1. chez M. Lefebvre, « Le prix » de « Son dossier » (1 690 000 €) contredit le prix du mandat à
+     la signature (1 639 500 €) : soit ils concordent, soit la tuile s'appelle « Prix proposé au
+     rendez-vous » ;
+  2. « Aujourd'hui » sur téléphone : le bouton d'une tâche est toujours sous son texte, jamais à
+     côté ;
+  3. le Point marché s'arrête dès « Offre acceptée », plus au compromis ; il reprend si l'offre
+     tombe ;
+  4. « Fin du mandat » : la case « Reconduction tacite » ; cochée, la tâche devient « Faire le point
+     avant la reconduction », toujours 30 jours avant la date.
+  La migration du lot C se joue sur l'essai d'abord, puis le point du chef avant que Jean-Guy
+  l'applique.
