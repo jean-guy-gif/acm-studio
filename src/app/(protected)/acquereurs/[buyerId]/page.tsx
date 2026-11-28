@@ -449,6 +449,13 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
           contactedToday={
             buyer.contactedAt != null && parisDay(new Date(buyer.contactedAt)) === parisDay(now)
           }
+          financingMode={buyer.financingMode}
+          loan={{
+            contribution: buyer.loanContribution,
+            amount: buyer.loanAmount,
+            agreement: buyer.loanAgreement,
+          }}
+          modeToVerify={buyer.fieldsToVerify.includes('financing_mode')}
         />
         {/* Mission 136 — la veille : une recherche par semaine, pour un acquéreur prêt. */}
         {lastWatch.ok ? (
