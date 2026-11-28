@@ -5,7 +5,7 @@
 // Prérequis : la CLI Supabase reliée au projet (`supabase link`) et Docker lancé (la CLI s'en
 // sert pour `pg_dump`). Rien n'est affiché du contenu : seulement où c'est, et combien.
 import { chmodSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import {
   assertOutsideRepo,
@@ -14,9 +14,11 @@ import {
   COUNT_SQL,
   FILES,
   queryRemote,
+  queryRemoteRows,
   supabase,
   table,
 } from './sauvegarde-commun.mjs';
+import { copyBucket, STORAGE_OBJECTS_SQL, STORAGE_RETRIES } from './sauvegarde-stockage.mjs';
 
 const pad = (n) => String(n).padStart(2, '0');
 const now = new Date();
@@ -28,6 +30,36 @@ function countFiles(dir) {
     (sum, entry) => sum + (entry.isDirectory() ? countFiles(join(dir, entry.name)) : 1),
     0,
   );
+}
+
+// La taille d'un fichier copié, ou null s'il n'existe pas.
+function fileSize(path) {
+  return existsSync(path) ? statSync(path).size : null;
+}
+
+// Une pause entre deux reprises (la CLI se lance de façon synchrone : rien n'attend en parallèle).
+function pause(seconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, seconds * 1000);
+}
+
+const filesLabel = (n) => `${n} fichier${n > 1 ? 's' : ''}`;
+
+// Une copie par la CLI, chacune à sa place sous `stockage/<bucket>/` : le bucket entier (la copie
+// d'avant le 28/11), un dossier dont tous les fichiers manquent, ou un seul fichier.
+function copyStep(bucket, step, storageDir) {
+  if (step.kind === 'bucket') {
+    supabase(['storage', 'cp', '-r', '--experimental', '--remote', `ss:///${bucket}`, storageDir]);
+    return;
+  }
+  const source = `ss:///${bucket}/${step.path}`;
+  const target = join(storageDir, bucket, step.path);
+  mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
+  if (step.kind === 'dir') {
+    // La CLI pose le dossier copié sous la destination, sous son propre nom.
+    supabase(['storage', 'cp', '-r', '--experimental', '--remote', source, dirname(target)]);
+  } else {
+    supabase(['storage', 'cp', '--experimental', '--remote', source, target]);
+  }
 }
 
 function lockDown(dir) {
@@ -89,14 +121,42 @@ try {
 
   console.log('3/4 Fichiers du stockage…');
   const buckets = queryRemote(BUCKET_SQL);
+  const listed = {};
+  for (const row of queryRemoteRows(STORAGE_OBJECTS_SQL, 'à la lecture du stockage')) {
+    (listed[row.b] ??= []).push({ name: row.n, size: row.s === null ? null : Number(row.s) });
+  }
   const storageDir = join(dir, FILES.storage);
   mkdirSync(storageDir, { mode: 0o700 });
-  for (const [bucket, objects] of Object.entries(buckets)) {
-    if (objects === 0) {
+  // Une copie coupée par une erreur passagère se reprend, jusqu'à trois fois, sur les seuls
+  // fichiers manquants (Jean-Guy, 28/11).
+  const stillMissing = [];
+  for (const [bucket, count] of Object.entries(buckets)) {
+    if (count === 0) {
       mkdirSync(join(storageDir, bucket), { mode: 0o700 });
       continue;
     }
-    supabase(['storage', 'cp', '-r', '--experimental', '--remote', `ss:///${bucket}`, storageDir]);
+    const { missing } = copyBucket({
+      objects: listed[bucket] ?? [],
+      copy: (step) => copyStep(bucket, step, storageDir),
+      sizeOf: (name) => fileSize(join(storageDir, bucket, name)),
+      onRetry: (retry, lost) => {
+        console.log(
+          `    ${bucket} : ${filesLabel(lost.length)} à reprendre, reprise ${retry} sur ${STORAGE_RETRIES}…`,
+        );
+        pause(5 * retry);
+      },
+    });
+    stillMissing.push(...missing.map((object) => `${bucket}/${object.name}`));
+  }
+  if (stillMissing.length > 0) {
+    const list = join(dir, 'fichiers-manquants.txt');
+    writeFileSync(list, `${stillMissing.join('\n')}\n`, { mode: 0o600 });
+    const shown = stillMissing.slice(0, 20).map((path) => `\n  ${path}`);
+    const more = stillMissing.length > 20 ? [`\n  … et ${stillMissing.length - 20} autres`] : [];
+    throw new Error(
+      `${filesLabel(stillMissing.length)} du stockage manquant(s) ou incomplet(s) après ${STORAGE_RETRIES} reprises :` +
+        `${[...shown, ...more].join('')}\nLa liste complète : ${list}`,
+    );
   }
 
   console.log('4/4 Comptes enregistrés, accès restreint…');
