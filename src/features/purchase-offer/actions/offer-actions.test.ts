@@ -295,7 +295,9 @@ describe('l’offre selon comment il finance', () => {
     state.context = buyerWith('not_said');
     expect(await signPurchaseOffer(input())).toEqual({
       ok: false,
-      error: 'Dites d’abord comment l’acquéreur finance son achat\u00a0: l’offre en dépend.',
+      error:
+        'Comment finance-t-il\u202f? Notez-le sur sa fiche, «\u00a0Comptant\u00a0» ou «\u00a0Avec prêt\u00a0», puis touchez de nouveau «\u00a0Signer l’offre d’achat\u00a0»\u00a0: ce que vous avez saisi reste à l’écran.',
+      gate: { kind: 'ask', mode: 'not_said', toVerify: false },
     });
     expect(state.writes).toEqual([]);
     expect(state.uploads).toEqual([]);
@@ -303,7 +305,10 @@ describe('l’offre selon comment il finance', () => {
 
   it('lu dans les notes, encore « À vérifier » : refusé tant que le conseiller ne l’a pas confirmé', async () => {
     state.context = buyerWith('cash', true);
-    expect((await signPurchaseOffer(input())).ok).toBe(false);
+    expect(await signPurchaseOffer(input())).toMatchObject({
+      ok: false,
+      gate: { kind: 'ask', mode: 'cash', toVerify: true },
+    });
     expect(state.writes).toEqual([]);
   });
 
@@ -312,6 +317,7 @@ describe('l’offre selon comment il finance', () => {
       ok: false,
       error:
         'Cet acquéreur finance avec un prêt\u00a0: l’offre avec prêt n’est pas encore disponible dans ACM. Utilisez le modèle de votre agence.',
+      gate: { kind: 'blocked' },
     };
     state.context = buyerWith('loan');
     expect(await signPurchaseOffer(input())).toEqual(blocked);
