@@ -166,6 +166,42 @@ describe('les actions de la fiche acquéreur', () => {
     expect(fake.writes()).toEqual([]);
   });
 
+  it('lot C — un compromis noté pour lui le garde dans la vente ; « A acheté » reste permis', async () => {
+    const { COMPROMISE_HOLDS_BUYER } =
+      await import('@/features/mandate-life/queries/get-buyer-compromise');
+    const underOffer = { ...row, status: 'under_offer' };
+    const withCompromise = (compromise: unknown) =>
+      fakeSupabase((calls) => {
+        const table = lastTable(calls);
+        if (table === 'project_meeting_conclusions') return compromise as never;
+        return calls.some((call) => call.method === 'update')
+          ? { data: { ...underOffer, status: 'bought' } }
+          : { data: underOffer };
+      });
+    const held = withCompromise({
+      data: [{ project_id: 'p-1', compromise_signed_on: '2026-11-25', deed_planned_on: null }],
+    });
+    service.client = held.client;
+    for (const move of ['back', 'abandon'] as const) {
+      expect(await moveBuyerStatus('b1', move)).toEqual({
+        ok: false,
+        error: COMPROMISE_HOLDS_BUYER,
+      });
+    }
+    expect(held.writes()).toEqual([]);
+    const moved = await moveBuyerStatus('b1', 'forward');
+    expect(moved.ok && moved.buyer.status).toBe('bought');
+    // Le compromis illisible : refusé, jamais lu comme « aucun » (M98).
+    const unread = withCompromise({ error: { message: 'panne' } });
+    service.client = unread.client;
+    expect((await moveBuyerStatus('b1', 'back')).ok).toBe(false);
+    expect(unread.writes()).toEqual([]);
+    // Sans compromis noté pour lui : « L'offre est tombée » passe.
+    const free = withCompromise({ data: [] });
+    service.client = free.client;
+    expect((await moveBuyerStatus('b1', 'back')).ok).toBe(true);
+  });
+
   it('archiver pose archived_at dans l’agence : une suppression douce, jamais un delete', async () => {
     const fake = fakeSupabase(() => ({ data: row }));
     service.client = fake.client;

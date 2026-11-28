@@ -20,6 +20,10 @@ import {
 import { projectsUnderOffer } from '@/features/buyers/services/proposable';
 import { idealLabel } from '@/features/ideal-properties/services/ideal-label';
 import type { SuiviTask } from '@/features/meeting-conclusion/services/suivi-tasks';
+import {
+  getMandatesBeyondSigned,
+  heldMandates,
+} from '@/features/mandate-life/queries/get-mandates-beyond-signed';
 import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { createClient } from '@/lib/supabase/server';
 
@@ -72,12 +76,16 @@ export async function loadLoopCatalog(
   // Les mandats signés de l'agence, au prix de la 133, sauf ceux qu'une offre acceptée tient.
   const signed = (conclusions.data ?? []).filter((row) => projectOf.has(row.project_id));
   const signedIds = signed.map((row) => row.project_id);
-  const [loop, answers] = await Promise.all([
+  const [loop, answers, beyond] = await Promise.all([
     loadLoopProperties(agencyId, signedIds),
     getAgencyOfferAnswers(supabase, agencyId),
+    // Lot C — ni un mandat sous compromis, vendu ou terminé sans vente.
+    getMandatesBeyondSigned(supabase, agencyId),
   ]);
-  if (loop.failed || answers == null) return { items: [], contacts: empty, failed: true };
-  const held = projectsUnderOffer(answers);
+  if (loop.failed || answers == null || beyond == null) {
+    return { items: [], contacts: empty, failed: true };
+  }
+  const held = heldMandates(projectsUnderOffer(answers), beyond);
   const list: LoopProperty[] = [];
   for (const row of signed) {
     if (held.has(row.project_id)) continue;

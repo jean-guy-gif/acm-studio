@@ -40,6 +40,17 @@ describe('le statut d’un acquéreur, un cran à la fois', () => {
     ]);
   });
 
+  it('lot C — un compromis noté pour lui : ni « L’offre est tombée », ni « Abandonné »', () => {
+    expect(buyerStatusActions('under_offer').map((action) => action.move)).toEqual([
+      'forward',
+      'back',
+      'abandon',
+    ]);
+    expect(
+      buyerStatusActions('under_offer', { compromiseNoted: true }).map((action) => action.move),
+    ).toEqual(['forward']);
+  });
+
   it('un mouvement hors liste n’est pas un mouvement', () => {
     expect(isBuyerStatusMove('forward')).toBe(true);
     expect(isBuyerStatusMove('bought')).toBe(false);

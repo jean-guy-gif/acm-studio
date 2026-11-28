@@ -24,9 +24,16 @@ export function isBuyerStatusMove(value: unknown): value is BuyerStatusMove {
   return typeof value === 'string' && (BUYER_STATUS_MOVES as readonly string[]).includes(value);
 }
 
+// Lot C (question 18) — tant qu'un compromis est noté pour lui, il ne quitte pas la vente : ni
+// « L'offre est tombée », ni « Abandonné » ; le compromis tombe d'abord, sur le dossier du vendeur.
+export function leavesTheSale(move: BuyerStatusMove): boolean {
+  return move === 'back' || move === 'abandon';
+}
+
 // Les boutons de l'écran : ce que chaque cran permet, avec son libellé.
 export function buyerStatusActions(
   current: BuyerStatus,
+  options: { compromiseNoted?: boolean } = {},
 ): { move: BuyerStatusMove; label: string; primary: boolean }[] {
   const actions: { move: BuyerStatusMove; label: string; primary: boolean }[] = [];
   const forward = nextBuyerStatus(current, 'forward');
@@ -49,5 +56,7 @@ export function buyerStatusActions(
   if (nextBuyerStatus(current, 'abandon')) {
     actions.push({ move: 'abandon', label: 'Abandonné', primary: false });
   }
-  return actions;
+  return options.compromiseNoted
+    ? actions.filter((action) => !leavesTheSale(action.move))
+    : actions;
 }

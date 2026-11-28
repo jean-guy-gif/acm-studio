@@ -33,6 +33,10 @@ import {
 } from '@/features/meeting-conclusion/services/buyer-reconciliation';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getAgencyProspecting } from '@/features/prospecting/queries/get-agency-prospecting';
+import {
+  getMandatesBeyondSigned,
+  heldMandates,
+} from '@/features/mandate-life/queries/get-mandates-beyond-signed';
 import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { getSearchBudget } from '@/features/search-budget/queries/get-search-budget';
 import { budgetWarningLabel } from '@/features/search-budget/services/budget';
@@ -68,6 +72,7 @@ export async function loadIdealPanel(buyer: Buyer, profile: Profile) {
     condominiums,
     followUpRows,
     visitRead,
+    beyond,
   ] = await Promise.all([
     getAgencyProspecting(dossiers),
     getIdealSelection(buyer.id),
@@ -86,9 +91,14 @@ export async function loadIdealPanel(buyer: Buyer, profile: Profile) {
     // Lancement, mission 3 (suite) — « Déjà vus avec lui » : les lignes de « Son suivi ».
     getBuyerFollowUpRows(supabase, profile.agency_id, buyer.id),
     readVisitLines(),
+    // Lot C — ni un mandat sous compromis, vendu ou terminé sans vente.
+    getMandatesBeyondSigned(supabase, profile.agency_id),
   ]);
   // Une lecture des offres en échec ne propose aucun mandat (M98) : les concurrents restent.
-  const underOffer = offers == null ? new Set(signedIds) : projectsUnderOffer(offers);
+  const underOffer =
+    offers == null || beyond == null
+      ? new Set(signedIds)
+      : heldMandates(projectsUnderOffer(offers), beyond);
   const agency = reconcileBuyer(
     buyerToCriteria(buyer),
     idealAgencyCandidates(

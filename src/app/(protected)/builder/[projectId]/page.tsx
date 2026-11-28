@@ -380,7 +380,11 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
               // Mission 145 (partie A) — un mandat signé sans offre acceptée, et lui seul ; une
               // lecture des offres en échec ne propose rien (M98).
               agencyOffers != null &&
-              proposableMandate(conclusion?.outcome, projectId, projectsUnderOffer(agencyOffers))
+              proposableMandate(conclusion?.outcome, projectId, projectsUnderOffer(agencyOffers)) &&
+              // Lot C — ni sous compromis, ni vendu, ni terminé ; la vie du mandat illisible ne
+              // propose rien.
+              mandateView?.readable === true &&
+              mandateView.stage === 'signed'
                 ? `project:${projectId}`
                 : null
             }

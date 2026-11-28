@@ -93,6 +93,12 @@ import { OfferAnswerBadge } from '@/features/purchase-offer/components/offer-ans
 import { NEXT_STEP_LABELS, visitReportLine } from '@/features/buyer-messages/report';
 import { watchLine } from '@/features/buyer-watch/services/watch-schedule';
 import { formatEuro, formatRelativeDay } from '@/lib/format';
+import {
+  BoughtProposal,
+  BuyerCompromiseLines,
+} from '@/features/mandate-life/components/buyer-compromise';
+import { getBuyerCompromise } from '@/features/mandate-life/queries/get-buyer-compromise';
+import { nextBuyerStatus } from '@/features/buyers/services/buyer-status';
 import { displayPhotoUrl } from '@/lib/photo-url';
 import { createClient } from '@/lib/supabase/server';
 
@@ -219,7 +225,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     .filter((line) => line.visitedAt != null)
     .sort((a, b) => b.visitedAt!.localeCompare(a.visitedAt!));
   // Mission 137 — et le bon de visite signé de chaque visite, toutes visites de la fiche.
-  const [letters, vouchers, signedVouchers, signedOffers] = await Promise.all([
+  const [letters, vouchers, signedVouchers, signedOffers, compromiseRead] = await Promise.all([
     getVisitLetters([...visits, ...doneVisits]),
     getVisitVouchers(
       supabase,
@@ -227,6 +233,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     ),
     profile ? getBuyerVouchers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
     profile ? getBuyerOffers(supabase, profile.agency_id, buyer.id) : Promise.resolve([]),
+    // Lot C (question 17) — le compromis noté pour lui, puis la vente.
+    profile ? getBuyerCompromise(supabase, profile.agency_id, buyer.id) : Promise.resolve(null),
   ]);
   const suggestions = answerSuggestions(buyer, buyer.ignoredSuggestions, answers.forSuggestions);
   // Lancement, mission 6 — « Son suivi » : un bien = une ligne, ses visites sur sa ligne.
@@ -260,6 +268,32 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   // pause (sélection, « Prêt à visiter ? », « Rapprocher », suggestions masqués), tout revient si
   // l'offre tombe (M138).
   const sale = saleInProgress(facts, buyer.status) ? (facts.offer ?? null) : null;
+  // Lot C — le compromis noté pour lui, ses dates et la vente, sans changer son statut d'office ;
+  // la vente notée propose « A acheté » (choix 5 de la maquette C0).
+  const buyerCompromise = compromiseRead && compromiseRead !== 'unknown' ? compromiseRead : null;
+  const compromiseLines = buyerCompromise
+    ? {
+        signedText: formatRelativeDay(buyerCompromise.compromiseSignedOn, now),
+        deedPlannedText: buyerCompromise.deedPlannedOn
+          ? formatRelativeDay(buyerCompromise.deedPlannedOn, now)
+          : null,
+        saleText: buyerCompromise.deedSignedOn
+          ? `${formatRelativeDay(buyerCompromise.deedSignedOn, now)}${
+              buyerCompromise.salePrice != null ? ` · ${formatEuro(buyerCompromise.salePrice)}` : ''
+            }`
+          : null,
+        sellerHref: `/builder/${buyerCompromise.projectId}#son-mandat`,
+      }
+    : null;
+  const proposeBought =
+    buyerCompromise?.deedSignedOn != null && nextBuyerStatus(buyer.status, 'forward') === 'bought';
+  const boughtProposal =
+    proposeBought && buyerCompromise?.deedSignedOn ? (
+      <BoughtProposal
+        buyerId={buyer.id}
+        saleDay={formatRelativeDay(buyerCompromise.deedSignedOn, now)}
+      />
+    ) : null;
   const saleVisit = sale ? ownVisits.find((line) => line.id === sale.visitId) : undefined;
   const saleSeller =
     sale?.projectId && profile
@@ -739,9 +773,41 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
                   </li>
                 ))}
               </ul>
+              {/* Lot C — le compromis, noté sur le mandat ; d'ici, on va le noter. */}
+              {compromiseLines ? (
+                <BuyerCompromiseLines compromise={compromiseLines} />
+              ) : compromiseRead === 'unknown' ? (
+                <p role="alert" className="text-sm font-semibold text-red-700">
+                  Le compromis n’a pas pu être lu&nbsp;: rechargez la page.
+                </p>
+              ) : sale.projectId ? (
+                <Link
+                  href={`/builder/${sale.projectId}?mandat=compromis#son-mandat`}
+                  className={`${link} text-sm underline underline-offset-4`}
+                  data-testid="buyer-note-compromise"
+                >
+                  Noter le compromis
+                </Link>
+              ) : null}
+              {boughtProposal}
             </section>
           ) : null}
         </div>
+
+        {/* Lot C (question 17) — un compromis noté pour lui sans offre dans ACM, ou la vente
+            faite : la fiche le voit, son statut ne change pas d'office. */}
+        {!sale && compromiseLines ? (
+          <section
+            className={`${card} flex flex-col gap-2 p-5`}
+            data-testid="buyer-compromise-card"
+          >
+            <h2 className="font-title text-xl font-bold text-brand-darker stage:text-white">
+              Le compromis
+            </h2>
+            <BuyerCompromiseLines compromise={compromiseLines} />
+            {boughtProposal}
+          </section>
+        ) : null}
 
         {/* Mission 143 (B1) — « La vente » : le bien de l'offre, son vendeur, le montant offert. */}
         {sale ? (
@@ -1245,7 +1311,7 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
             data-testid="buyer-status-block"
           >
             <h3 className={subTitle}>Son statut</h3>
-            <BuyerStatusActions buyer={buyer} />
+            <BuyerStatusActions buyer={buyer} compromiseNoted={buyerCompromise != null} />
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <BuyerArchiveButton buyerId={buyer.id} name={buyer.name} />
               <span className="text-xs text-zinc-500 stage:text-white/60">

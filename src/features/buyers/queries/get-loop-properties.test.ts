@@ -123,6 +123,28 @@ describe('le catalogue de la boucle', () => {
     expect(catalog.contacts.proposals.get('x')?.get('b1')).toBe('2026-11-06T09:00:00Z');
   });
 
+  it('lot C — sous compromis, vendu ou terminé sans vente : plus proposé ; le compromis tombé, si', async () => {
+    const conclusions = answers.project_meeting_conclusions as Record<string, unknown>[];
+    for (const fact of [
+      { compromise_signed_on: '2026-11-06' },
+      { deed_signed_on: '2026-11-06' },
+      { mandate_ended_on: '2026-11-06' },
+    ]) {
+      answers.project_meeting_conclusions = conclusions.map((row) =>
+        row.project_id === 'p-lopez' ? { ...row, ...fact } : row,
+      );
+      const catalog = await loadLoopCatalog('agency-a', now);
+      expect(catalog.failed).toBe(false);
+      expect(catalog.items).toEqual([]);
+    }
+    answers.project_meeting_conclusions = conclusions.map((row) =>
+      row.project_id === 'p-lopez' ? { ...row, compromise_signed_on: null } : row,
+    );
+    expect((await loadLoopCatalog('agency-a', now)).items.map((item) => item.key)).toEqual([
+      'project:p-lopez',
+    ]);
+  });
+
   it('un bien déjà reçu dans une sélection présentée, visité ou refusé ne se repropose pas', async () => {
     answers.buyer_selections = [
       { id: 's1', buyer_id: 'b-sent', presented_at: '2026-11-05T10:00:00Z' },
