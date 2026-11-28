@@ -98,7 +98,14 @@ const agency = {
 };
 
 const context = (over: Partial<OfferContext> = {}): OfferContext => ({
-  buyer: { id: BUYER, name: 'Famille Test', email: 'test@example.com' },
+  buyer: {
+    id: BUYER,
+    name: 'Famille Test',
+    email: 'test@example.com',
+    // Lot B — comptant, confirmé : l'offre d'aujourd'hui.
+    financingMode: 'cash',
+    modeToVerify: false,
+  },
   visits: [
     {
       visitId: VISIT,
@@ -274,6 +281,57 @@ describe('signer l’offre d’achat', () => {
     expect((await signPurchaseOffer(input())).ok).toBe(false);
     expect(state.writes).toEqual([]);
     expect(state.uploads).toEqual([]);
+  });
+});
+
+// Lot B (Jean-Guy, 27/11) — rien ne se signe tant que l'acquéreur n'a pas dit, confirmé, qu'il
+// achète comptant : la fiche relue en base à la signature, l'offre hors mandat comprise. Une offre
+// comptant renonce à recourir à un prêt : elle ne se signe jamais pour un acquéreur qui emprunte.
+describe('l’offre selon comment il finance', () => {
+  const buyerWith = (financingMode: 'cash' | 'loan' | 'not_said', modeToVerify = false) =>
+    context({ buyer: { ...context().buyer, financingMode, modeToVerify } });
+
+  it('pas encore dit : refusé, rien n’est écrit', async () => {
+    state.context = buyerWith('not_said');
+    expect(await signPurchaseOffer(input())).toEqual({
+      ok: false,
+      error: 'Dites d’abord comment l’acquéreur finance son achat\u00a0: l’offre en dépend.',
+    });
+    expect(state.writes).toEqual([]);
+    expect(state.uploads).toEqual([]);
+  });
+
+  it('lu dans les notes, encore « À vérifier » : refusé tant que le conseiller ne l’a pas confirmé', async () => {
+    state.context = buyerWith('cash', true);
+    expect((await signPurchaseOffer(input())).ok).toBe(false);
+    expect(state.writes).toEqual([]);
+  });
+
+  it('avec prêt : refusé avec le message de Jean-Guy, sous mandat comme hors mandat', async () => {
+    const blocked = {
+      ok: false,
+      error:
+        'Cet acquéreur finance avec un prêt\u00a0: l’offre avec prêt n’est pas encore disponible dans ACM. Utilisez le modèle de votre agence.',
+    };
+    state.context = buyerWith('loan');
+    expect(await signPurchaseOffer(input())).toEqual(blocked);
+    expect(
+      await signPurchaseOffer(
+        input({
+          visitId: OUTSIDE,
+          mandateNumber: '',
+          propertyAddress: '8 allée des Cistes Blancs, 06250 Mougins',
+          title: { kind: 'search', number: 'R-1', signedOn: '2026-11-04' },
+        }),
+      ),
+    ).toEqual(blocked);
+    expect(state.writes).toEqual([]);
+    expect(state.uploads).toEqual([]);
+  });
+
+  it('comptant, confirmé : l’offre d’aujourd’hui', async () => {
+    state.context = buyerWith('cash');
+    expect((await signPurchaseOffer(input())).ok).toBe(true);
   });
 });
 

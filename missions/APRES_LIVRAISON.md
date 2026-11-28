@@ -77,8 +77,8 @@ Une mission tient en une heure et demie (CLAUDE.md) : chaque lot se découpe en 
 | A2      | Les espaces insécables : la règle et son test, sur les textes du vendeur et ses documents (Live, synthèse, Étude, Point marché, dossier acquéreur, courriers) | 1 h 30 | en production le 27/11 au soir |
 | A3      | La même règle sur tous les écrans du conseiller, le guide et le modèle d'e-mail « mot de passe oublié »                                | 1 h 30              | en production le 27/11 au soir |
 | A4      | Relecteur, suite complète sur l'essai, banc de l'Étude, captures avant / après                                                           | 1 h                 | en production le 27/11 au soir |
-| B1      | La migration du mode de financement, ses droits en toutes lettres, jouée sur la base d'essai, relue par le gardien-sql                   | 1 h 30              | jouée sur la base d'essai le 28/11, attend Jean-Guy pour la production |
-| B2      | La fiche : « Comment finance-t-il ? », le prêt, la démo                                                                                   | 1 h 30              | à faire                 |
+| B1      | La migration du mode de financement, ses droits en toutes lettres, jouée sur la base d'essai, relue par le gardien-sql                   | 1 h 30              | appliquée en production le 28/11 par Jean-Guy |
+| B2      | La fiche : « Comment finance-t-il ? », le prêt, la démo                                                                                   | 1 h 30              | sur l'essai le 28/11, attend le « oui » |
 | B3      | L'offre : le mode demandé d'abord, bloquée avec prêt                                                                                      | 1 h                 | à faire                 |
 | B4      | La lecture des notes, et sa mesure sur le vrai modèle                                                                                     | 1 h 30              | à faire                 |
 | B5      | Relecteur, specs, captures                                                                                                                | 1 h                 | à faire                 |
@@ -202,6 +202,30 @@ chacun, B5 en 1 h : 7 h au lieu de 6 h 30.
   code de `main` : `suivi-de-l-acquereur` et `depuis-mes-notes`, 3 sur 3.
 - La phrase pour la juriste : `missions/LOT-B-confidentialite-pour-le-juriste.md` (avant / après ;
   non publiée, elle part avec le code du lot B).
+- B1, en production (28/11) · Appliquée par Jean-Guy après la sauvegarde `2026-11-28_1318`
+  (vérifiée) ; relue en lecture seule ensuite, exactement la prédiction : 111 migrations, `buyers`
+  44 colonnes et 32 contraintes, les 24 fiches en « Pas encore dit », aucun détail de prêt, 17
+  « financement validé » inchangées, l'empreinte des 40 colonnes d'avant identique
+  (`3b40c630…`) : aucune ligne modifiée ; les droits et tout le reste identiques.
+- La sauvegarde (28/11, demande de Jean-Guy) · Deux échecs à midi, à l'étape 3 (les fichiers du
+  stockage) : la copie d'un bucket s'arrêtait au premier fichier en erreur. Elle se reprend
+  désormais, jusqu'à trois fois, sur les seuls fichiers manquants ou tronqués ; un défaut trouvé en
+  l'éprouvant avec la vraie CLI (elle refuse d'écrire par-dessus un fichier) et corrigé. Dans
+  `main` le 28/11, sur l'ordre de Jean-Guy.
+- B2 (28/11) · La planche `missions/maquettes/lot-b/LB2-comment-finance-t-il.png`, faite sur la
+  vraie fiche de M. Fontaine à l'essai, aux trois tailles (la question insérée avec les classes de
+  l'application, `LB2-generateur.mjs`). Puis la fiche : sous l'état du financement, « Comment
+  finance-t-il ? » — Comptant · Avec prêt · Pas encore dit, un toucher l'enregistre ; avec un
+  prêt, l'apport, le montant du prêt et l'accord de principe, tous facultatifs, « Enregistrer le
+  prêt » ; quitter « Avec prêt » efface ce qui est noté, l'écran le demande d'abord ; « À vérifier
+  · lu dans vos notes » prêt pour B4. Un geste à part (`setBuyerFinancingMode`), relu au serveur ;
+  ni l'état du financement ni « Prêt à visiter » ne le lisent ; jamais au vendeur (un piège sur les
+  cartes du Live). La démo : Keller et Wilson comptant, Lambert avec prêt et accord (250 000 € et
+  540 000 €), Fontaine avec prêt sans accord (120 000 € et 650 000 €), les autres « Pas encore
+  dit ». Tests : 4 620 au total ; CI verte. Sur l'essai : la spec `mode-de-financement` (le prêt
+  corrigé et gardé, « Comptant » qui demande d'abord, les Rossi en « Pas encore dit ») et ses
+  captures de la vraie fiche (`LB2-apres-*-avec-pret.png`), puis `suivi-de-l-acquereur`,
+  `acquereur-sans-offre`, `depuis-mes-notes`, `parcours` et `demo` : 7 sur 7, sans aléa.
 
 ### Les questions du lot B (architecte, 28/11), chacune avec sa réponse par défaut
 
