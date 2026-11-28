@@ -14,10 +14,15 @@ import {
   sectionTitle,
 } from '@/components/ui/styles';
 import { signPurchaseOffer } from '@/features/purchase-offer/actions/sign-offer';
+import { OfferModeQuestion } from '@/features/purchase-offer/components/offer-mode-question';
 import { OfferShare } from '@/features/purchase-offer/components/offer-share';
 import type { OfferContext } from '@/features/purchase-offer/queries/get-offer-context';
 import { numberInWords } from '@/features/purchase-offer/services/amount-in-words';
 import { frenchDay } from '@/features/purchase-offer/services/offer-dates';
+import {
+  OFFER_LOAN_BLOCKED,
+  type RefusedGate,
+} from '@/features/purchase-offer/services/offer-gate';
 import {
   OFFRE_AVEC_PRET_VALIDEE,
   renderOffer,
@@ -151,6 +156,10 @@ export function OfferForm({
   const [approvedText, setApprovedText] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Lot B5 (Jean-Guy, 28/11) — une offre préparée, et la fiche dit « Pas encore dit » à la
+  // signature : la question se pose ici, à la place de la signature ; rien de ce qui est saisi
+  // n'est perdu.
+  const [atSigning, setAtSigning] = useState<RefusedGate | null>(null);
   const [done, setDone] = useState<{
     documentId: string;
     buyerLinkPath: string;
@@ -274,53 +283,62 @@ export function OfferForm({
     </label>
   );
 
+  const sign = () => {
+    if (!visit) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await signPurchaseOffer({
+        buyerId: context.buyer.id,
+        visitId: visit.visitId,
+        offrants,
+        address,
+        matrimonial: matrimonial.trim() ? matrimonial : null,
+        fiscalResidenceFrance: fiscalFrance,
+        mandateNumber: outside ? '' : mandateNumber,
+        title: validTitle,
+        propertyAddress: outside ? propertyAddress : null,
+        condominium: outside ? outsideCondominium : false,
+        agent: withAgent ? agent : null,
+        parcels,
+        totalArea,
+        lots: condominium
+          ? lots.map((lot) => ({
+              number: integer(lot.number),
+              description: lot.description,
+              shares: integer(lot.shares),
+              base: integer(lot.base),
+            }))
+          : [],
+        price: euros(price),
+        fees: euros(fees),
+        feesPaidBy,
+        deposit: euros(deposit),
+        financing: 'cash',
+        validUntil,
+        contractDeadline,
+        signatures: signatures.slice(0, offrants.length),
+        approved,
+      }).catch(() => ({ ok: false as const, error: 'Connexion perdue\u00a0: réessayez.' }));
+      if (!result.ok) {
+        // La porte dit la question à poser : elle se pose ici, rien n'est perdu.
+        if ('gate' in result && result.gate) {
+          setAtSigning(result.gate);
+          return;
+        }
+        setError(result.error);
+        return;
+      }
+      setDone(result);
+    });
+  };
+
   return (
     <form
       className="flex flex-col gap-5"
       data-testid="offer-form"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!visit) return;
-        setError(null);
-        startTransition(async () => {
-          const result = await signPurchaseOffer({
-            buyerId: context.buyer.id,
-            visitId: visit.visitId,
-            offrants,
-            address,
-            matrimonial: matrimonial.trim() ? matrimonial : null,
-            fiscalResidenceFrance: fiscalFrance,
-            mandateNumber: outside ? '' : mandateNumber,
-            title: validTitle,
-            propertyAddress: outside ? propertyAddress : null,
-            condominium: outside ? outsideCondominium : false,
-            agent: withAgent ? agent : null,
-            parcels,
-            totalArea,
-            lots: condominium
-              ? lots.map((lot) => ({
-                  number: integer(lot.number),
-                  description: lot.description,
-                  shares: integer(lot.shares),
-                  base: integer(lot.base),
-                }))
-              : [],
-            price: euros(price),
-            fees: euros(fees),
-            feesPaidBy,
-            deposit: euros(deposit),
-            financing: 'cash',
-            validUntil,
-            contractDeadline,
-            signatures: signatures.slice(0, offrants.length),
-            approved,
-          }).catch(() => ({ ok: false as const, error: 'Connexion perdue\u00a0: réessayez.' }));
-          if (!result.ok) {
-            setError(result.error);
-            return;
-          }
-          setDone(result);
-        });
+        sign();
       }}
     >
       <section className={`${card} flex flex-col gap-3 p-5`}>
@@ -738,10 +756,32 @@ export function OfferForm({
             }
           />
         ))}
+        {atSigning?.kind === 'ask' ? (
+          <OfferModeQuestion
+            buyerId={context.buyer.id}
+            mode={atSigning.mode}
+            toVerify={atSigning.toVerify}
+            onAnswered={(answer) => {
+              if (answer === 'cash') {
+                // Comptant : la signature demandée continue, avec ce qui est saisi.
+                setAtSigning(null);
+                sign();
+              } else setAtSigning({ kind: 'blocked' });
+            }}
+          />
+        ) : null}
+        {atSigning?.kind === 'blocked' ? (
+          <p
+            className="text-sm font-semibold text-amber-800"
+            data-testid="offer-loan-blocked-at-signing"
+          >
+            {OFFER_LOAN_BLOCKED}
+          </p>
+        ) : null}
         <button
           type="submit"
           className={`${btnPrimary} self-start`}
-          disabled={pending || !ready}
+          disabled={pending || !ready || atSigning != null}
           data-testid="offer-sign"
         >
           {pending ? 'Signature…' : 'Signer l’offre d’achat'}

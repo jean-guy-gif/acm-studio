@@ -12,6 +12,11 @@ export const OFFER_LOAN_BLOCKED =
   'Cet acquéreur finance avec un prêt\u00a0: l’offre avec prêt n’est pas encore disponible dans ACM. Utilisez le modèle de votre agence.';
 export const OFFER_MODE_FIRST =
   'Dites d’abord comment l’acquéreur finance son achat\u00a0: l’offre en dépend.';
+// Lot B5 (Jean-Guy, 28/11) — ce que lit, à la signature, un écran de l'offre ouvert avant le lot B :
+// il n'affiche qu'une ligne, qui pose la question et dit quoi faire ; rien de ce qui est saisi n'est
+// perdu. L'écran d'aujourd'hui pose la question elle-même et ne montre pas cette ligne.
+export const OFFER_MODE_AT_SIGNING =
+  'Comment finance-t-il\u202f? Notez-le sur sa fiche, «\u00a0Comptant\u00a0» ou «\u00a0Avec prêt\u00a0», puis touchez de nouveau «\u00a0Signer l’offre d’achat\u00a0»\u00a0: ce que vous avez saisi reste à l’écran.';
 
 export type OfferGate =
   | { kind: 'form' }
@@ -30,9 +35,13 @@ export function offerGate(input: {
   return { kind: 'form' };
 }
 
-// Ce que répond la signature quand l'offre n'est pas ouverte : rien ne se signe.
-export function offerGateRefusal(gate: OfferGate): string | null {
-  if (gate.kind === 'ask') return OFFER_MODE_FIRST;
-  if (gate.kind === 'blocked') return OFFER_LOAN_BLOCKED;
+export type RefusedGate = Exclude<OfferGate, { kind: 'form' }>;
+
+// Ce que répond la signature quand l'offre n'est pas ouverte : rien ne se signe. La porte dit à
+// l'écran ce qu'il doit demander (lot B5 : la question, à la place de la signature) ; la phrase est
+// pour l'écran d'avant, qui n'affiche qu'une ligne.
+export function signingRefusal(gate: OfferGate): { error: string; gate: RefusedGate } | null {
+  if (gate.kind === 'ask') return { error: OFFER_MODE_AT_SIGNING, gate };
+  if (gate.kind === 'blocked') return { error: OFFER_LOAN_BLOCKED, gate };
   return null;
 }

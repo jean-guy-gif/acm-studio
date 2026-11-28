@@ -30,6 +30,24 @@ describe('la question en tête de l’offre', () => {
     expect(pressed(html)).toEqual([]);
   });
 
+  // Lot B5 (Jean-Guy, 28/11) — à la signature d'une offre préparée : la même question, à la place
+  // de la signature, et ce qui est saisi reste.
+  it('à la signature : la question à sa place, ce qui est saisi reste', () => {
+    const html = renderToStaticMarkup(
+      createElement(OfferModeQuestion, {
+        buyerId: 'b1',
+        mode: 'not_said',
+        toVerify: false,
+        onAnswered: () => undefined,
+      }),
+    );
+    expect(html).toContain('data-testid="offer-ask-mode-at-signing"');
+    expect(html).not.toContain('data-testid="offer-ask-mode"');
+    expect(html).toContain('Comment finance-t-il');
+    expect(html).toContain('ce que vous avez saisi reste, et la signature continue');
+    expect(html).not.toContain('role="alert"');
+  });
+
   it('lu dans ses notes : ce qu’elles disent, à confirmer ou corriger', () => {
     const html = render('cash', true);
     expect(html).toMatch(/Lu dans ses notes\s:\s«\sComptant\s»/);

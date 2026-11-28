@@ -15,14 +15,19 @@ const CHOICES = ['cash', 'loan'] as const;
 // l'offre d'achat demande d'abord comment il finance, avant tout champ. Le choix s'écrit sur sa
 // fiche, par le geste de la fiche (`setBuyerFinancingMode`) ; la page se relit : comptant, l'offre
 // d'aujourd'hui ; avec prêt, le message qui la bloque.
+// Lot B5 (Jean-Guy, 28/11) — `onAnswered` : la même question, posée à la signature d'une offre déjà
+// préparée, à la place de la signature ; la page ne se relit pas, le formulaire garde ce qui est
+// saisi, et la réponse lui revient.
 export function OfferModeQuestion({
   buyerId,
   mode,
   toVerify,
+  onAnswered,
 }: {
   buyerId: string;
   mode: BuyerFinancingMode;
   toVerify: boolean;
+  onAnswered?: (mode: (typeof CHOICES)[number]) => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -40,12 +45,16 @@ export function OfferModeQuestion({
         setError(result.error);
         return;
       }
-      router.refresh();
+      if (onAnswered) onAnswered(next);
+      else router.refresh();
     });
   };
 
   return (
-    <div className={`${card} flex flex-col gap-3 p-5`} data-testid="offer-ask-mode">
+    <div
+      className={`${card} flex flex-col gap-3 p-5`}
+      data-testid={onAnswered ? 'offer-ask-mode-at-signing' : 'offer-ask-mode'}
+    >
       <h2 className="font-title text-lg font-semibold text-brand-deep">
         Comment finance-t-il&#x202f;?
       </h2>
@@ -68,7 +77,11 @@ export function OfferModeQuestion({
           </button>
         ))}
       </div>
-      <p className={hintText}>Le choix s’écrit sur sa fiche.</p>
+      <p className={hintText}>
+        {onAnswered
+          ? 'Le choix s’écrit sur sa fiche\u202f; ce que vous avez saisi reste, et la signature continue.'
+          : 'Le choix s’écrit sur sa fiche.'}
+      </p>
       {error ? (
         <p role="alert" className={errorText}>
           {error}
