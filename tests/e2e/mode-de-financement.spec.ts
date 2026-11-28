@@ -241,7 +241,9 @@ test('une offre préparée, « Pas encore dit » à la signature : la question, 
   await form.getByTestId('offer-sign').click();
   const ask = page.getByTestId('offer-ask-mode-at-signing');
   await expect(ask).toContainText('Comment finance-t-il');
-  await expect(ask).toContainText('ce que vous avez saisi reste, et la signature continue');
+  await expect(ask).toContainText(
+    /Comptant\s: la signature continue avec ce que vous avez saisi\./,
+  );
   await expect(form.getByRole('alert')).toHaveCount(0);
   await expect(page.getByTestId('offer-signed')).toHaveCount(0);
   await expect(form.getByTestId('offer-deposit')).toHaveValue('31415');

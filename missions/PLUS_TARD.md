@@ -4,6 +4,21 @@ Ce qui se découvre pendant une mission et n'en fait pas partie (règle de Jean-
 CLAUDE.md) : une ligne datée par point, avec la mission où il a été vu. Un cas imaginé par un
 balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `docs/IDEES.md`.
 
+- 28/11 · Lot B (relecture), notés sans les corriger, des cas imaginés :
+  - à la signature, « Avec prêt » s'écrit tout de suite sur la fiche et l'offre se ferme (la
+    règle) : revenir dessus demande la fiche, et ce qui était saisi n'est plus à l'écran ;
+  - « Compléter depuis mes notes » : cocher « Remplacer « Avec prêt » » efface l'apport, le prêt et
+    l'accord sans le dire, alors que la fiche le demande d'abord (B2) ;
+  - la garde du mode lit « Avec prêt » dans « sans condition suspensive de prêt », « sans recours à
+    un prêt », « aucun prêt », « sans passer par la banque », et « Comptant » dans « apport en fonds
+    propres, prêt pour le reste » : la négation ne compte que si elle touche le mot. Le modèle ne
+    s'y est pas trompé (18 sur 18), et l'offre redemande un mode « À vérifier » ;
+  - un mode « À vérifier » compte dans « À vérifier · N » et ouvre « Ses critères », où il n'est pas :
+    chez un acquéreur prêt à visiter, il est replié dans « Tout le dossier › Prêt à visiter ? »
+    (l'état du financement est dans ce cas depuis la M151).
+- 28/11 · Lot B5 · Pendant une vente (« Sous offre »), « Comment finance-t-il ? » ne se voit pas
+  sur la fiche : il vit dans « Prêt à visiter ? », masqué pendant la vente (M143). L'offre d'achat
+  le demande elle-même ; une seconde offre pendant une vente est rare : noté, pas corrigé.
 - 28/11 · Lot B4 (mesure) · La garde du mode « Avec prêt » accepte une ligne qui nomme la banque
   sans parler d'un prêt (« se méfie des banques », C5 de la mission 151) ; le modèle ne l'a jamais
   proposé (2 lectures sur 2, `missions/LB4-mesure.md`) : noté, pas corrigé. La ligne montrée pour
