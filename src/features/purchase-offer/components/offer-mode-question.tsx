@@ -61,7 +61,9 @@ export function OfferModeQuestion({
       <p className="text-sm text-zinc-700">
         {read
           ? `Lu dans ses notes\u00a0: «\u00a0${read}\u00a0». Confirmez-le, ou corrigez\u00a0: l’offre en dépend.`
-          : OFFER_MODE_FIRST}
+          : onAnswered
+            ? 'Avant de signer, dites comment l’acquéreur finance son achat\u00a0: l’offre en dépend.'
+            : OFFER_MODE_FIRST}
       </p>
       <div className="flex flex-wrap gap-2">
         {CHOICES.map((value) => (

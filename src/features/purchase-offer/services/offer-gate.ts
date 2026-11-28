@@ -16,7 +16,7 @@ export const OFFER_MODE_FIRST =
 // il n'affiche qu'une ligne, qui pose la question et dit quoi faire ; rien de ce qui est saisi n'est
 // perdu. L'écran d'aujourd'hui pose la question elle-même et ne montre pas cette ligne.
 export const OFFER_MODE_AT_SIGNING =
-  'Comment finance-t-il\u202f? Notez-le sur sa fiche, «\u00a0Comptant\u00a0» ou «\u00a0Avec prêt\u00a0», puis touchez de nouveau «\u00a0Signer l’offre d’achat\u00a0»\u00a0: ce que vous avez saisi reste à l’écran.';
+  'Comment finance-t-il\u202f? Pour répondre, ouvrez son offre d’achat dans un nouvel onglet\u00a0: elle vous le demande. Puis revenez ici et touchez de nouveau «\u00a0Signer l’offre d’achat\u00a0»\u00a0: ce que vous avez saisi reste à l’écran.';
 
 export type OfferGate =
   | { kind: 'form' }
