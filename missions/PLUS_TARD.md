@@ -4,6 +4,35 @@ Ce qui se découvre pendant une mission et n'en fait pas partie (règle de Jean-
 CLAUDE.md) : une ligne datée par point, avec la mission où il a été vu. Un cas imaginé par un
 balayage se note ici, il ne se corrige pas. Les idées de produit restent dans `docs/IDEES.md`.
 
+- 28/11 · Lot B (relecture), notés sans les corriger, des cas imaginés :
+  - à la signature, « Avec prêt » s'écrit tout de suite sur la fiche et l'offre se ferme (la
+    règle) : revenir dessus demande la fiche, et ce qui était saisi n'est plus à l'écran ;
+  - « Compléter depuis mes notes » : cocher « Remplacer « Avec prêt » » efface l'apport, le prêt et
+    l'accord sans le dire, alors que la fiche le demande d'abord (B2) ;
+  - la garde du mode lit « Avec prêt » dans « sans condition suspensive de prêt », « sans recours à
+    un prêt », « aucun prêt », « sans passer par la banque », et « Comptant » dans « apport en fonds
+    propres, prêt pour le reste » : la négation ne compte que si elle touche le mot. Le modèle ne
+    s'y est pas trompé (18 sur 18), et l'offre redemande un mode « À vérifier » ;
+  - un mode « À vérifier » compte dans « À vérifier · N » et ouvre « Ses critères », où il n'est pas :
+    chez un acquéreur prêt à visiter, il est replié dans « Tout le dossier › Prêt à visiter ? »
+    (l'état du financement est dans ce cas depuis la M151).
+- 28/11 · Lot B5 · Pendant une vente (« Sous offre »), « Comment finance-t-il ? » ne se voit pas
+  sur la fiche : il vit dans « Prêt à visiter ? », masqué pendant la vente (M143). L'offre d'achat
+  le demande elle-même ; une seconde offre pendant une vente est rare : noté, pas corrigé.
+- 28/11 · Lot B4 (mesure) · La garde du mode « Avec prêt » accepte une ligne qui nomme la banque
+  sans parler d'un prêt (« se méfie des banques », C5 de la mission 151) ; le modèle ne l'a jamais
+  proposé (2 lectures sur 2, `missions/LB4-mesure.md`) : noté, pas corrigé. La ligne montrée pour
+  le mode garde parfois l'origine des fonds (« cash (vente Stockholm), pas de prêt ») : montrée
+  seulement, jamais gardée, tolérée comme en M151.
+- 28/11 · Lot B (architecte), pour le lot C · `proposable.ts` et `buyer-journey.ts` attendent le
+  statut `'purchased'`, alors que la base et `buyers/types.ts` écrivent `'bought'` (« A acheté ») :
+  un acquéreur « A acheté » ne tient plus le mandat de son offre acceptée (M145 A), qui redevient
+  proposable, et l'étape « Compromis : signé » ne se coche jamais. Aucune fiche « A acheté » en
+  production le 28/11 (15 en recherche, 7 en visite, 2 sous offre).
+- 28/11 · Lot B (architecte, question 11, réponse par défaut), pour le lot C · Avec un prêt,
+  l'offre se fait sur le modèle de l'agence, hors d'ACM : la fiche acquéreur ne passe jamais
+  « Sous offre », et le dossier vendeur ne verra pas l'offre acceptée du lot C. Il faudra un geste
+  « offre faite hors d'ACM », ou l'offre avec prêt quand la juriste l'aura validée.
 - 27/11 · Refonte, en tête (Jean-Guy) · Visites, une seule action par visite : celle de son étape ;
   les autres apparaissent quand leur étape arrive. Aujourd'hui, sur téléphone, une visite en
   attente du propriétaire montre encore « Ouvrir le courrier » et quatre liens (« Suivre dans

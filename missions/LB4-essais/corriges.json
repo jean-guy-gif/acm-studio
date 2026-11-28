@@ -1,0 +1,77 @@
+{
+  "_lire": "INVENTÉ — corrigés de la mesure du lot B4 (« Comment finance-t-il ? » lu dans les notes), écrits le 28/11/2026 AVANT tout appel au modèle. Pour chaque cas : « mode », ce que la fiche doit proposer après la garde du serveur — \"cash\" (Comptant), \"loan\" (Avec prêt), ou null (rien de proposé : la fiche reste « Pas encore dit ») ; « etat », l'état du financement proposé (\"validated\", \"in_progress\" ou null) ; « accepte_etat », les seuls autres états tolérés. Un mode proposé quand les notes ne le disent pas est une faute grave (inventé). « jamais » : les mots de la mission 151 qui ne doivent pas être relevés ; trouvés dans une source (seulement montrée au conseiller, jamais gardée), ils sont comptés à part et tolérés, comme en M151. N1 à C5 sont les notes inventées de la mission 151 (missions/M151-essais), N7 et N8 sont écrites pour cette mesure.",
+  "cas": {
+    "N1": {
+      "source": "../M151-essais/notes/N1-ferrandi.txt",
+      "ligne": "accord de principe CA ok (apport 30%)",
+      "mode": "loan",
+      "etat": "validated",
+      "accepte_etat": [],
+      "jamais": ["divorce", "bavard", "perdue", "apport", "30 %", "30%"]
+    },
+    "N2": {
+      "source": "../M151-essais/notes/N2-delmas-dictee.txt",
+      "ligne": "le financement ils ont un prêt en cours d'étude à la banque pas encore de réponse",
+      "mode": "loan",
+      "etat": "in_progress",
+      "accepte_etat": [],
+      "jamais": ["de dos", "enfant", "soucis"]
+    },
+    "N4": {
+      "source": "../M151-essais/notes/N4-lindqvist.txt",
+      "ligne": "cash (vente Stockholm), pas de prêt",
+      "mode": "cash",
+      "etat": null,
+      "accepte_etat": [],
+      "jamais": ["suedois", "suede", "stockholm", "nationalit"]
+    },
+    "N6": {
+      "source": "../M151-essais/notes/N6-rocheteau.txt",
+      "ligne": "doivent vendre leur maison de Grasse avant (compromis signé, acte en février) — ne dit ni comptant ni prêt",
+      "mode": null,
+      "etat": "in_progress",
+      "accepte_etat": [null],
+      "jamais": ["radin"]
+    },
+    "C2": {
+      "source": "../M151-essais/crm/C2-garnier-huet.csv",
+      "ligne": "Premier achat, prêt en cours chez courtier.",
+      "mode": "loan",
+      "etat": "in_progress",
+      "accepte_etat": [],
+      "jamais": ["gentil"]
+    },
+    "C3": {
+      "source": "../M151-essais/crm/C3-teyssier.txt",
+      "ligne": "Financement : À l'étude — ne dit ni comptant ni prêt",
+      "mode": null,
+      "etat": "in_progress",
+      "accepte_etat": [],
+      "jamais": ["marie", "enfant"]
+    },
+    "C5": {
+      "source": "../M151-essais/crm/C5-aubertin.vcf",
+      "ligne": "Rentier, très fortuné, se méfie des banques. — un jugement sur le patrimoine, qui ne dit ni comptant ni prêt",
+      "mode": null,
+      "etat": null,
+      "accepte_etat": [],
+      "jamais": ["rentier", "fortun", "mefi", "5000000", "5 000 000", "50000"]
+    },
+    "N7": {
+      "source": "notes/N7-pastorelli.txt",
+      "ligne": "paiement comptant, pas de prêt",
+      "mode": "cash",
+      "etat": null,
+      "accepte_etat": [],
+      "jamais": []
+    },
+    "N8": {
+      "source": "notes/N8-achard-lemoine-dictee.txt",
+      "ligne": "elle achète sans crédit sur ses fonds propres",
+      "mode": "cash",
+      "etat": null,
+      "accepte_etat": [],
+      "jamais": []
+    }
+  }
+}

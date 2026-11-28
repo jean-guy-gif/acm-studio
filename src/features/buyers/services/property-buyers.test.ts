@@ -62,6 +62,10 @@ function buyer(over: Partial<Buyer> = {}): Buyer {
     financing: 'validated',
     financingChangedAt: daysAgo(10),
     contactedAt: daysAgo(3),
+    financingMode: 'not_said',
+    loanContribution: null,
+    loanAmount: null,
+    loanAgreement: null,
     condominiumAccepted: null,
     condominiumMustHave: false,
     softCriteria: [],
@@ -266,6 +270,23 @@ describe('le compteur caché du Live', () => {
     });
     expect(budgetBandLabel(reveal.cards[0]!.budget!)).toBe('700 – 800 k€');
     expect(budgetBandLabel(reveal.cards[0]!.budget!, 'en')).toBe('€700k – €800k');
+  });
+
+  // Lot B (Jean-Guy, 27/11) — comment il finance, son apport et son prêt ne vont jamais au vendeur :
+  // la carte ne recopie que ce que sa liste d'autorisation nomme.
+  it('ni le mode de financement, ni l’apport, ni le prêt, ni l’accord', () => {
+    const borrowers = Array.from({ length: 5 }, () =>
+      buyer({
+        financingMode: 'loan',
+        loanContribution: 987_654,
+        loanAmount: 543_210,
+        loanAgreement: true,
+      }),
+    );
+    const payload = JSON.stringify(liveBuyersReveal(run(borrowers), NOW));
+    for (const forbidden of ['987', '543', 'loan', 'cash', 'prêt', 'Comptant', 'agreement']) {
+      expect(payload).not.toContain(forbidden);
+    }
   });
 
   it('le budget en fourchette arrondie, jamais un seul montant', () => {
