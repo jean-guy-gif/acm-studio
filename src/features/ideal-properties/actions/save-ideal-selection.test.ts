@@ -430,6 +430,22 @@ describe('saveIdealSelection : seul un mandat signé sans offre acceptée', () =
     expect(fallen.writes()).toContain('insert buyer_selections');
   });
 
+  it('lot C — un mandat sous compromis, vendu ou terminé sans vente : refusé', async () => {
+    for (const fact of [
+      { compromise_signed_on: '2026-11-06' },
+      { deed_signed_on: '2026-11-06' },
+      { mandate_ended_on: '2026-11-06' },
+    ]) {
+      const beyond = clientWith([{ project_id: 'p-1', outcome: 'signed', ...fact }], []);
+      state.client = beyond.client;
+      expect(await saveIdealSelection(BUYER, [item('p-1', 'project')], null)).toEqual({
+        ok: false,
+        error: NOT_PROPOSABLE,
+      });
+      expect(beyond.writes()).toEqual([]);
+    }
+  });
+
   it('un bien de l’agence déjà dans la sélection précédente reste, sans être relu', async () => {
     const fake = clientWith([], [], [{ source: 'project', reference: 'p-1' }]);
     state.client = fake.client;

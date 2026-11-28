@@ -19,6 +19,10 @@ import {
   seenMatcher,
 } from '@/features/buyers/services/seen-properties';
 import { NOT_PROPOSABLE } from '@/features/ideal-properties/services/ideal-agency';
+import {
+  getMandatesBeyondSigned,
+  heldMandates,
+} from '@/features/mandate-life/queries/get-mandates-beyond-signed';
 import { getAgencyOfferAnswers } from '@/features/purchase-offer/queries/get-offer-answers';
 import { parisDay } from '@/features/meeting-conclusion/services/follow-up-contacts';
 import { getProfile } from '@/lib/auth/get-profile';
@@ -137,9 +141,12 @@ export async function saveIdealSelection(
       .in('project_id', newProjects);
     if (conclusionsError) return { ok: false, error: FAILED };
     const answers = await getAgencyOfferAnswers(client, profile.agency_id);
-    if (answers == null) return { ok: false, error: FAILED };
+    // Lot C — ni un mandat sous compromis, vendu ou terminé sans vente.
+    const beyond =
+      answers == null ? null : await getMandatesBeyondSigned(client, profile.agency_id);
+    if (answers == null || beyond == null) return { ok: false, error: FAILED };
     const outcomeOf = new Map((conclusions ?? []).map((row) => [row.project_id, row.outcome]));
-    const held = projectsUnderOffer(answers);
+    const held = heldMandates(projectsUnderOffer(answers), beyond);
     const refused = newProjects.some(
       (projectId) => !proposableMandate(outcomeOf.get(projectId), projectId, held),
     );

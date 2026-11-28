@@ -13,9 +13,17 @@ import {
   parseFinancingMode,
 } from '@/features/buyers/services/financing-mode';
 import { fieldsStillToVerify } from '@/features/buyer-notes/services/fields-to-verify';
-import { isBuyerStatusMove, nextBuyerStatus } from '@/features/buyers/services/buyer-status';
+import {
+  isBuyerStatusMove,
+  leavesTheSale,
+  nextBuyerStatus,
+} from '@/features/buyers/services/buyer-status';
 import { BUYER_FINANCINGS, type Buyer, type BuyerFinancing } from '@/features/buyers/types';
 import type { BuyerFormErrors } from '@/features/buyers/schemas/buyer-input';
+import {
+  COMPROMISE_HOLDS_BUYER,
+  getBuyerCompromise,
+} from '@/features/mandate-life/queries/get-buyer-compromise';
 import { getProfile } from '@/lib/auth/get-profile';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
@@ -111,6 +119,14 @@ export async function moveBuyerStatus(buyerId: string, move: unknown): Promise<B
   if (!existing) return { ok: false, error: NOT_FOUND };
   const next = nextBuyerStatus(toBuyer(existing).status, move);
   if (!next) return { ok: false, error: 'Ce changement n’est pas permis depuis ce statut.' };
+  // Lot C (question 18) — un compromis noté pour lui le garde dans la vente ; illisible, refusé.
+  if (leavesTheSale(move)) {
+    const compromise = await getBuyerCompromise(client, profile.agency_id, buyerId);
+    if (compromise === 'unknown') {
+      return { ok: false, error: 'Le statut n’a pas pu être enregistré. Réessayez.' };
+    }
+    if (compromise) return { ok: false, error: COMPROMISE_HOLDS_BUYER };
+  }
   const now = new Date().toISOString();
   const { data, error } = await client
     .from('buyers')

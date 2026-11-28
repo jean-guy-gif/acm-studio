@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './test';
 
-import { demoCredentials, expectOneFilled, login, resetDemoByScreen } from './support';
+import { demoCredentials, expectOneFilled, login, resetDemoByScreen, reveal } from './support';
 
 // Lot C (maquette C0, validée par Jean-Guy le 28/11) — la vie du mandat côté vendeur, jouée sur la
 // démo remise à zéro :
@@ -70,12 +70,33 @@ test('la vie du mandat : le compromis, la fin du mandat, un avenant, la fin sans
   await expect(section.locator('[data-row="market"]')).toContainText('arrêté à l’offre acceptée');
   await expectOneFilled(page, 'Le dossier sous compromis');
 
+  // Côté acquéreur (question 17) : la fiche des Keller voit le compromis ; il ne quitte plus la
+  // vente d'ici (question 18).
+  await page.goto('/acquereurs?vue=agence&q=keller');
+  await page.getByRole('link', { name: 'Famille Keller', exact: true }).first().click();
+  await expect(page.getByTestId('buyer-name')).toHaveText('Famille Keller');
+  const keller = page.url();
+  await expect(page.getByTestId('buyer-compromise')).toContainText('Compromis signé');
+  const held = page.getByTestId('buyer-status-held');
+  await reveal(held);
+  await expect(held).toContainText('Un compromis est noté pour lui');
+  await expect(
+    page.getByTestId('buyer-status').getByRole('button', { name: /L’offre est tombée/ }),
+  ).toHaveCount(0);
+  await page.goto(`/builder/${mougins}`);
+
   // « Le compromis est tombé », confirmé dans l'écran : l'offre acceptée revient.
   await section.getByTestId('mandate-confirm-tombe').click();
   await page.getByTestId('mandate-confirm-tombe-yes').click();
   await expect(nextTitle).toHaveText('Noter le compromis');
   await expect(current).toContainText('Offre acceptée');
   await expect(section.locator('[data-row="compromise"]')).toHaveCount(0);
+  // La fiche des Keller : « Noter le compromis » de nouveau, et « L'offre est tombée » revient.
+  await page.goto(keller);
+  await expect(page.getByTestId('buyer-note-compromise')).toBeVisible();
+  const status = page.getByTestId('buyer-status');
+  await reveal(status);
+  await expect(status.getByRole('button', { name: /L’offre est tombée/ })).toBeVisible();
 
   // M. et Mme Castel : la fin du mandat, trois mois après la signature, reconduction tacite.
   await page.goto(`/builder/${valbonne}`);
